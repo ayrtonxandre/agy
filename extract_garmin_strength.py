@@ -55,11 +55,12 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 TOKEN_DIR = SCRIPT_DIR / "garmin_tokens"
 
 # How many recent activities to inspect (Garmin returns activities in reverse chronological order)
-ACTIVITIES_LIMIT = 50
+ACTIVITIES_LIMIT = 250
 
 # Output filenames
 OUTPUT_CSV = SCRIPT_DIR / "garmin_extracted_workouts.csv"
 OUTPUT_JSON = SCRIPT_DIR / "garmin_extracted_workouts.json"
+OUTPUT_VOL_JSON = SCRIPT_DIR / "garmin_workout_volume.json"
 
 
 # ==============================================================================
@@ -161,11 +162,26 @@ def infer_session_type(activity_name: str, exercises: list[str]) -> str:
 # ==============================================================================
 # 4. EXTRACTION: STRENGTH ACTIVITIES & DETAILED EXERCISE SETS
 # ==============================================================================
-def extract_strength_workouts(garmin: Garmin, limit: int = 50) -> list[dict]:
+def extract_strength_workouts(garmin: Garmin, limit: int = 250) -> list[dict]:
     """
     Pulls recent activities, filters for strength training,
     and calls `get_activity_exercise_sets` for each to extract sets, reps, and weights.
+    Uses local cache to preserve existing sets and only query new/missing sessions.
     """
+    # Load cached workouts if present
+    cached_by_act_id = {}
+    if OUTPUT_JSON.exists():
+        try:
+            with open(OUTPUT_JSON, "r", encoding="utf-8") as f:
+                cached_records = json.load(f)
+            for r in cached_records:
+                aid = r.get("Activity_ID")
+                if aid:
+                    cached_by_act_id.setdefault(aid, []).append(r)
+            print(f"📦 Loaded {len(cached_records)} cached sets across {len(cached_by_act_id)} sessions from {OUTPUT_JSON.name}")
+        except Exception as e:
+            print(f"⚠️ Could not read cache: {e}")
+
     print(f"\n📡 Querying last {limit} activities from Garmin Connect...")
     activities = garmin.get_activities(0, limit)
     
@@ -191,7 +207,12 @@ def extract_strength_workouts(garmin: Garmin, limit: int = 50) -> list[dict]:
         # Format date as YYYY-MM-DD
         date_str = start_time_local.split(" ")[0] if start_time_local else datetime.now().strftime("%Y-%m-%d")
 
-        print(f"\n[{idx}/{len(strength_activities)}] Processing: '{act_name}' (ID: {act_id}) on {date_str}...")
+        if act_id in cached_by_act_id:
+            print(f"[{idx}/{len(strength_activities)}] ⚡ Cached: '{act_name}' (ID: {act_id}) on {date_str} ({len(cached_by_act_id[act_id])} sets)")
+            extracted_records.extend(cached_by_act_id[act_id])
+            continue
+
+        print(f"[{idx}/{len(strength_activities)}] 📡 Fetching: '{act_name}' (ID: {act_id}) on {date_str}...")
 
         try:
             # Call Garmin Connect API for set-by-set exercise data
@@ -295,10 +316,18 @@ def save_results(records: list[dict], csv_path: Path, json_path: Path):
         writer.writerows(records)
     print(f"\n💾 Saved {len(records)} workout sets to CSV: {csv_path}")
 
+    # Sort records chronologically
+    records.sort(key=lambda x: (x.get("Date", ""), x.get("Set", 0)))
+
     # Export to JSON
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(records, f, indent=2, ensure_ascii=False)
     print(f"💾 Saved JSON export to: {json_path}")
+
+    # Also update garmin_workout_volume.json
+    with open(OUTPUT_VOL_JSON, "w", encoding="utf-8") as f:
+        json.dump(records, f, indent=2, ensure_ascii=False)
+    print(f"💾 Saved Volume JSON export to: {OUTPUT_VOL_JSON}")
 
     # Console Summary Table
     print("\n" + "=" * 80)

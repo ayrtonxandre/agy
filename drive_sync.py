@@ -39,6 +39,7 @@ SYNC_TARGETS = [
     # Biometrics & Health Datasets
     "apple_body_composition.csv",
     "apple_daily_activity.csv",
+    "apple_mobility_biomechanics.csv",
     "apple_nutrition_macros.csv",
     "apple_sleep.csv",
     "apple_workouts_history.csv",
