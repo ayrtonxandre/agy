@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Secrets, OAuth Tokens & Private Keys (STRICTLY FORBIDDEN FROM VCS)
+credentials.json
+token.json
+gcp_token.json
+drive_token.json
+garmin_tokens/
+.icloud_calendar_config.json
+*.pem
+*.key
+*.env
+
+# Local Daemon Logs & Raw Payloads
+server_access.log
+last_payload.json
+*.log
+
+# Large Apple Health raw exports (hosted on Google Drive)
+export.zip
+apple_health_export/
+
+# macOS System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*

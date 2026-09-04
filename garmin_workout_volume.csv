@@ -1,0 +1,126 @@
+Date,Session_Type,Exercise,Set,Reps,Weight_kg,Total_Volume_kg
+2026-08-18,Push,Bench Press,1,10,20.0,200.0
+2026-08-18,Push,Bench Press,2,10,60.0,600.0
+2026-08-18,Push,Bench Press,3,8,65.0,520.0
+2026-08-18,Push,Bench Press,4,8,70.0,560.0
+2026-08-18,Push,Bench Press,5,6,75.0,450.0
+2026-08-18,Push,Barbell Shoulder Press,1,8,20.0,160.0
+2026-08-18,Push,Barbell Shoulder Press,2,8,30.0,240.0
+2026-08-18,Push,Barbell Shoulder Press,3,8,35.0,280.0
+2026-08-18,Push,Push Press,1,8,40.0,320.0
+2026-08-18,Push,Machine Butterfly,1,10,65.0,650.0
+2026-08-18,Push,Machine Butterfly,2,10,80.0,800.0
+2026-08-18,Push,Machine Butterfly,3,10,85.0,850.0
+2026-08-18,Push,Lateral Raise,1,20,6.0,120.0
+2026-08-18,Push,Lateral Raise,2,20,8.0,160.0
+2026-08-18,Push,Lateral Raise,3,20,10.0,200.0
+2026-08-18,Push,Triceps Extension,1,10,25.0,250.0
+2026-08-18,Push,Triceps Extension,2,10,25.0,250.0
+2026-08-18,Push,Triceps Extension,3,10,30.0,300.0
+2026-08-18,Push,Triceps Press Machine,1,10,80.0,800.0
+2026-08-18,Push,Triceps Press Machine,2,10,85.0,850.0
+2026-08-18,Push,Triceps Press Machine,3,10,90.0,900.0
+2026-08-18,Push,Sit-up,1,15,0.0,0.0
+2026-08-18,Push,Sit-up,2,15,0.0,0.0
+2026-08-18,Push,Sit-up,3,15,0.0,0.0
+2026-08-19,Legs,Barbell Back Squat,1,8,20.0,160.0
+2026-08-19,Legs,Barbell Back Squat,2,8,60.0,480.0
+2026-08-19,Legs,Barbell Back Squat,3,8,70.0,560.0
+2026-08-19,Legs,Barbell Back Squat,4,8,75.0,600.0
+2026-08-19,Legs,Dumbbell RDL,1,10,14.0,140.0
+2026-08-19,Legs,Dumbbell RDL,2,10,18.0,180.0
+2026-08-19,Legs,Dumbbell RDL,3,10,20.0,200.0
+2026-08-19,Legs,Machine Calf Press,1,20,75.0,1500.0
+2026-08-19,Legs,Machine Calf Press,2,20,80.0,1600.0
+2026-08-19,Legs,Machine Calf Press,3,15,90.0,1350.0
+2026-08-19,Legs,Bulgarian Split Squat,1,16,16.0,256.0
+2026-08-19,Legs,Bulgarian Split Squat,2,16,18.0,288.0
+2026-08-19,Legs,Bulgarian Split Squat,3,16,20.0,320.0
+2026-08-19,Legs,Leg Raise,1,9,0.0,0.0
+2026-08-19,Legs,Sit-up,1,15,0.0,0.0
+2026-08-19,Legs,Sit-up,2,15,0.0,0.0
+2026-08-25,Pull,Pull-up,1,8,0.0,0.0
+2026-08-25,Pull,Pull-up,2,8,0.0,0.0
+2026-08-25,Pull,T-Bar Row,1,10,48.0,480.0
+2026-08-25,Pull,T-Bar Row,2,10,58.0,580.0
+2026-08-25,Pull,T-Bar Row,3,8,68.0,544.0
+2026-08-25,Pull,Straight-arm Pulldown,1,10,25.0,250.0
+2026-08-25,Pull,Straight-arm Pulldown,2,10,30.0,300.0
+2026-08-25,Pull,Straight-arm Pulldown,3,7,35.0,245.0
+2026-08-25,Pull,Bent-over DB Row,1,16,24.0,384.0
+2026-08-25,Pull,Bent-over DB Row,2,16,34.0,544.0
+2026-08-25,Pull,Bent-over DB Row,3,8,40.0,320.0
+2026-08-25,Pull,Barbell Biceps Curl,1,10,20.0,200.0
+2026-08-25,Pull,Barbell Biceps Curl,2,8,25.0,200.0
+2026-08-25,Pull,Barbell Biceps Curl,3,8,30.0,240.0
+2026-08-25,Pull,Dumbbell Hammer Curl,1,20,10.0,200.0
+2026-08-25,Pull,Dumbbell Hammer Curl,2,20,12.0,240.0
+2026-08-25,Pull,Dumbbell Hammer Curl,3,20,14.0,280.0
+2026-08-25,Pull,Barbell Reverse Wrist Curl,1,8,20.0,160.0
+2026-08-25,Pull,Barbell Reverse Wrist Curl,2,7,20.0,140.0
+2026-08-25,Pull,Barbell Reverse Wrist Curl,3,8,20.0,160.0
+2026-08-25,Pull,Sit-up,1,15,0.0,0.0
+2026-08-25,Pull,Sit-up,2,15,0.0,0.0
+2026-08-25,Pull,Sit-up,3,15,0.0,0.0
+2026-08-25,Pull,Russian Twist,1,20,5.0,100.0
+2026-08-25,Pull,Russian Twist,2,20,10.0,200.0
+2026-08-25,Pull,Russian Twist,3,20,10.0,200.0
+2026-08-26,Push,Bench Press,1,10,20.0,200.0
+2026-08-26,Push,Bench Press,2,8,60.0,480.0
+2026-08-26,Push,Bench Press,3,8,70.0,560.0
+2026-08-26,Push,Bench Press,4,8,75.0,600.0
+2026-08-26,Push,Barbell Shoulder Press,1,8,20.0,160.0
+2026-08-26,Push,Barbell Shoulder Press,2,8,25.0,200.0
+2026-08-26,Push,Barbell Shoulder Press,3,8,30.0,240.0
+2026-08-26,Push,Barbell Shoulder Press,4,6,35.0,210.0
+2026-08-26,Push,Machine Butterfly,1,8,65.0,520.0
+2026-08-26,Push,Machine Butterfly,2,8,75.0,600.0
+2026-08-26,Push,Machine Butterfly,3,8,85.0,680.0
+2026-08-26,Push,Lateral Raise,1,10,12.0,120.0
+2026-08-26,Push,Lateral Raise,2,10,16.0,160.0
+2026-08-26,Push,Lateral Raise,3,8,20.0,160.0
+2026-08-26,Push,Triceps Press-down,1,8,21.5,172.0
+2026-08-26,Push,Triceps Press-down,2,8,25.0,200.0
+2026-08-26,Push,Triceps Press-down,3,8,29.0,232.0
+2026-08-26,Push,Triceps Press Machine,1,8,75.0,600.0
+2026-08-26,Push,Triceps Press Machine,2,8,85.0,680.0
+2026-08-26,Push,Triceps Press Machine,3,8,90.0,720.0
+2026-08-27,Legs,Barbell Back Squat,1,8,20.0,160.0
+2026-08-27,Legs,Barbell Back Squat,2,8,60.0,480.0
+2026-08-27,Legs,Barbell Back Squat,3,8,70.0,560.0
+2026-08-27,Legs,Barbell Back Squat,4,8,70.0,560.0
+2026-08-27,Legs,Bulgarian Split Squat,1,16,32.0,512.0
+2026-08-27,Legs,Bulgarian Split Squat,2,16,36.0,576.0
+2026-08-27,Legs,Bulgarian Split Squat,3,16,38.0,608.0
+2026-08-27,Legs,Machine Calf Press,1,13,80.0,1040.0
+2026-08-27,Legs,Machine Calf Press,2,13,85.0,1105.0
+2026-08-27,Legs,Machine Calf Press,3,13,90.0,1170.0
+2026-08-27,Legs,Dumbbell RDL,1,10,40.0,400.0
+2026-08-27,Legs,Dumbbell RDL,2,10,40.0,400.0
+2026-08-27,Legs,Dumbbell RDL,3,8,40.0,320.0
+2026-08-27,Legs,Sit-up,1,15,0.0,0.0
+2026-08-27,Legs,Sit-up,2,15,5.0,75.0
+2026-08-27,Legs,Sit-up,3,15,5.0,75.0
+2026-08-28,Pull,Straight-arm Pulldown,1,10,25.0,250.0
+2026-08-28,Pull,Straight-arm Pulldown,2,10,30.0,300.0
+2026-08-28,Pull,Straight-arm Pulldown,3,8,35.0,280.0
+2026-08-28,Pull,Lat Pulldown,1,10,50.0,500.0
+2026-08-28,Pull,Lat Pulldown,2,10,60.0,600.0
+2026-08-28,Pull,Lat Pulldown,3,8,70.0,560.0
+2026-08-28,Pull,Rear Delt Machine Fly,1,10,40.0,400.0
+2026-08-28,Pull,Rear Delt Machine Fly,2,10,50.0,500.0
+2026-08-28,Pull,Rear Delt Machine Fly,3,8,60.0,480.0
+2026-08-28,Pull,Barbell Biceps Curl,1,10,20.0,200.0
+2026-08-28,Pull,Barbell Biceps Curl,2,8,25.0,200.0
+2026-08-28,Pull,Barbell Biceps Curl,3,8,30.0,240.0
+2026-08-28,Pull,Dumbbell Hammer Curl,1,20,10.0,200.0
+2026-08-28,Pull,Dumbbell Hammer Curl,2,20,12.0,240.0
+2026-08-28,Pull,Dumbbell Hammer Curl,3,16,14.0,224.0
+2026-08-28,Pull,Dumbbell Wrist Curl,1,40,10.0,400.0
+2026-08-28,Pull,Dumbbell Wrist Curl,2,50,10.0,500.0
+2026-08-28,Pull,Dumbbell Wrist Curl,3,40,10.0,400.0
+2026-08-28,Pull,Reverse Barbell Curl,1,10,20.0,200.0
+2026-08-28,Pull,Reverse Barbell Curl,2,10,20.0,200.0
+2026-08-28,Pull,Reverse Barbell Curl,3,7,20.0,140.0
+2026-08-28,Pull,Pull-up,1,8,0.0,0.0
+2026-08-28,Pull,Pull-up,2,8,0.0,0.0
