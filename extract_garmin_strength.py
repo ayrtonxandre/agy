@@ -41,6 +41,9 @@ except ImportError:
     print("Or run using uv: uv run --with garminconnect python extract_garmin_strength.py")
     sys.exit(1)
 
+import athx_config
+
+
 # ==============================================================================
 # 1. CONFIGURATION & CREDENTIALS
 # ==============================================================================
@@ -139,7 +142,7 @@ def format_exercise_name(raw_name: str | None) -> str:
     return clean
 
 def infer_session_type(activity_name: str, exercises: list[str]) -> str:
-    """Infers Push, Pull, or Legs split based on activity title or exercises."""
+    """Infers Push, Pull, Legs, or Full Body split based on activity title or dominant muscle group."""
     name_low = activity_name.lower()
     if "push" in name_low:
         return "Push"
@@ -148,15 +151,24 @@ def infer_session_type(activity_name: str, exercises: list[str]) -> str:
     if "leg" in name_low or "squat" in name_low:
         return "Legs"
 
-    # Inspect exercise keywords
-    ex_str = " ".join(exercises).lower()
-    if any(k in ex_str for k in ["squat", "press", "quad", "lunge", "calf", "hamstring"]):
-        return "Legs"
-    if any(k in ex_str for k in ["curl", "row", "pull", "lat", "chin"]):
-        return "Pull"
-    if any(k in ex_str for k in ["bench", "chest", "shoulder", "tricep", "dip"]):
-        return "Push"
-    return "Strength"
+    # Tally sets by muscle group split association
+    tallies = {"Push": 0, "Pull": 0, "Legs": 0}
+    for ex in exercises:
+        m = athx_config.EXERCISE_MUSCLE_MAP.get(ex)
+        if m:
+            split = athx_config.MUSCLE_TO_SPLIT_MAP.get(m)
+            if split in tallies:
+                tallies[split] += 1
+
+    total = sum(tallies.values())
+    if total == 0:
+        return "Full Body"
+
+    top_split, count = max(tallies.items(), key=lambda x: x[1])
+    if count / total >= 0.45:
+        return top_split
+    return "Full Body"
+
 
 
 # ==============================================================================
@@ -268,8 +280,18 @@ def extract_strength_workouts(garmin: Garmin, limit: int = 250) -> list[dict]:
 
             duration_s = s.get("duration", 0.0) or 0.0
 
-            # Epley Estimated 1RM
-            e1rm = round(weight_kg * (1 + reps / 30.0), 1) if reps > 0 and weight_kg > 0 else weight_kg
+            # Epley Estimated 1RM (restricted to reps <= E1RM_MAX_REPS and plausible loads)
+            plausible = True
+            if ex_name in athx_config.PLAUSIBLE_LOAD_RANGES:
+                min_p, max_p = athx_config.PLAUSIBLE_LOAD_RANGES[ex_name]
+                if weight_kg < min_p or weight_kg > max_p:
+                    plausible = False
+
+            if plausible and 0 < reps <= athx_config.E1RM_MAX_REPS and weight_kg > 0:
+                e1rm = round(weight_kg * (1.0 + reps / 30.0), 1)
+            else:
+                e1rm = None
+
 
             record = {
                 "Activity_ID": act_id,
