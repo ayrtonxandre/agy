@@ -49,8 +49,17 @@ def list_upcoming_events(max_results=10):
     
     return events_result.get("items", [])
 
-def create_calendar_event(summary: str, start_iso: str, end_iso: str, description: str = "", location: str = ""):
-    """Creates a new event with full edit rights."""
+def create_calendar_event(
+    summary: str,
+    start_iso: str,
+    end_iso: str,
+    description: str = "",
+    location: str = "",
+    attendees: list[str] | None = None,
+    with_meet: bool = False,
+    send_updates: str = "all",
+):
+    """Creates a new event with full edit rights, optional attendees and Google Meet."""
     service = get_calendar_service()
     event_body = {
         "summary": summary,
@@ -59,8 +68,33 @@ def create_calendar_event(summary: str, start_iso: str, end_iso: str, descriptio
         "start": {"dateTime": start_iso, "timeZone": "Europe/Paris"},
         "end": {"dateTime": end_iso, "timeZone": "Europe/Paris"},
     }
-    created_event = service.events().insert(calendarId="primary", body=event_body).execute()
+    if attendees:
+        event_body["attendees"] = [{"email": email} for email in attendees]
+    if with_meet:
+        event_body["conferenceData"] = {
+            "createRequest": {
+                "requestId": f"meet_{int(datetime.now().timestamp())}",
+                "conferenceSolutionKey": {"type": "hangoutsMeet"},
+            }
+        }
+    created_event = service.events().insert(
+        calendarId="primary",
+        body=event_body,
+        conferenceDataVersion=1 if with_meet else 0,
+        sendUpdates=send_updates,
+    ).execute()
     return created_event
+
+def query_freebusy(emails: list[str], time_min_iso: str, time_max_iso: str):
+    """Queries Free/Busy schedules for multiple email addresses."""
+    service = get_calendar_service()
+    body = {
+        "timeMin": time_min_iso,
+        "timeMax": time_max_iso,
+        "timeZone": "Europe/Paris",
+        "items": [{"id": email} for email in emails],
+    }
+    return service.freebusy().query(body=body).execute()
 
 def delete_calendar_event(event_id: str):
     """Deletes an event by ID."""
@@ -83,12 +117,71 @@ def schedule_workout(title: str, start_time: datetime, duration_minutes: int = 7
     )
 
 if __name__ == "__main__":
-    service = get_calendar_service()
-    events = list_upcoming_events(5)
-    print("==================================================")
-    print("⚡ Live Google Calendar Connected with FULL EDIT RIGHTS")
-    print("==================================================")
-    for ev in events:
-        start = ev["start"].get("dateTime", ev["start"].get("date"))
-        summary = ev.get("summary", "No title")
-        print(f"• {start} : {summary}")
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(description="Google Calendar CLI Manager")
+    subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to run")
+
+    # list
+    list_parser = subparsers.add_parser("list", help="List upcoming events")
+    list_parser.add_argument("--limit", type=int, default=5, help="Max events to display")
+
+    # freebusy
+    fb_parser = subparsers.add_parser("freebusy", help="Query free/busy slots")
+    fb_parser.add_argument("--emails", nargs="+", required=True, help="List of email addresses")
+    fb_parser.add_argument("--time-min", required=True, help="Start time ISO (e.g. 2026-09-10T08:00:00+02:00)")
+    fb_parser.add_argument("--time-max", required=True, help="End time ISO (e.g. 2026-09-10T20:00:00+02:00)")
+
+    # create
+    create_parser = subparsers.add_parser("create", help="Create calendar event")
+    create_parser.add_argument("--summary", required=True, help="Event summary/title")
+    create_parser.add_argument("--start", required=True, help="Start datetime ISO")
+    create_parser.add_argument("--end", required=True, help="End datetime ISO")
+    create_parser.add_argument("--attendees", nargs="*", default=[], help="Attendee emails")
+    create_parser.add_argument("--description", default="", help="Event description")
+    create_parser.add_argument("--location", default="", help="Event location")
+    create_parser.add_argument("--meet", action="store_true", help="Attach Google Meet link")
+    create_parser.add_argument("--send-updates", default="all", choices=["all", "externalOnly", "none"], help="Send email notifications")
+
+    # delete
+    del_parser = subparsers.add_parser("delete", help="Delete event by ID")
+    del_parser.add_argument("--event-id", required=True, help="Calendar event ID")
+
+    args = parser.parse_args()
+
+    if args.subcommand == "freebusy":
+        res = query_freebusy(args.emails, args.time_min, args.time_max)
+        print(json.dumps(res, indent=2))
+    elif args.subcommand == "create":
+        ev = create_calendar_event(
+            summary=args.summary,
+            start_iso=args.start,
+            end_iso=args.end,
+            description=args.description,
+            location=args.location,
+            attendees=args.attendees,
+            with_meet=args.meet,
+            send_updates=args.send_updates,
+        )
+        print(f"Created event ID: {ev.get('id')}")
+        print(f"Link: {ev.get('htmlLink')}")
+        if "conferenceData" in ev:
+            for ep in ev["conferenceData"].get("entryPoints", []):
+                if ep.get("entryPointType") == "video":
+                    print(f"Google Meet: {ep.get('uri')}")
+    elif args.subcommand == "delete":
+        delete_calendar_event(args.event_id)
+        print(f"Deleted event {args.event_id}")
+    else:
+        # Default behavior: list
+        limit = args.limit if hasattr(args, "limit") else 5
+        events = list_upcoming_events(limit)
+        print("==================================================")
+        print("⚡ Live Google Calendar Connected with FULL EDIT RIGHTS")
+        print("==================================================")
+        for ev in events:
+            start = ev["start"].get("dateTime", ev["start"].get("date"))
+            summary = ev.get("summary", "No title")
+            print(f"• {start} : {summary}")
+

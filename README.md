@@ -85,7 +85,62 @@ An autonomous agentic intelligence platform integrating multi-source athletic bi
    ```
    *Instantly downloads all Apple Health CSVs, Garmin volumes, and HTML dashboards from Google Drive.*
 
-4. **Run Local Orchestrator (Optional)**:
+4. **Transfer Antigravity CLI Permissions & Whitelist**:
+   Antigravity CLI stores tool approval permissions in a local configuration file:
+   * **macOS / Linux**: `~/.gemini/antigravity-cli/settings.json`
+   * **Windows**: `%USERPROFILE%\.gemini\antigravity-cli\settings.json`
+
+   > [!IMPORTANT]
+   > **Why Paths Differ Across Machines**:
+   > * On Machine 1, the Python virtualenv is `/Users/ayrton.andre/Documents/work/.venv/bin/python`.
+   > * On Machine 2, your username, home directory, or repo path will differ (e.g., `/Users/<username>/...`, `/home/<username>/...`, or `C:\Users\<username>\...`).
+   > * Corporate accounts enforce Google Cloud enterprise admin controls (`terminal_command_auto_execution_policy: REQUIRE_REVIEW`). Enterprise policy overrides local flags like `--dangerously-skip-permissions`. Commands will prompt interactively on every run unless their exact binary is whitelisted in `settings.json`.
+
+   **Option A: 1-Click Automatic Setup (Recommended)**
+   Run the setup helper using Machine 2's virtual environment:
+   ```bash
+   python setup_antigravity_permissions.py
+   ```
+   This script automatically:
+   * Detects Machine 2's Python and pip binary paths.
+   * Adds both the absolute binary path and relative paths (`command(./.venv/bin/python)`, `command(.\.venv\Scripts\python.exe)`).
+   * Whitelists 30 standard shell utilities (`git`, `uv`, `python3`, `ls`, `grep`, `cat`, `mkdir`, `ps`, etc.).
+   * Copies workspace rules (`AGENTS.md`) to your home root to prevent multiline `-c` prompt friction.
+   * Backs up existing settings to `settings.json.bak`.
+
+   **Option B: Manual Configuration**
+   1. Locate your virtualenv binary on Machine 2:
+      ```bash
+      which python
+      # Example output: /Users/johndoe/projects/agy/.venv/bin/python
+      ```
+   2. Edit `~/.gemini/antigravity-cli/settings.json` and add your binary under `permissions.allow`:
+      ```json
+      {
+        "permissions": {
+          "allow": [
+            "command(git)",
+            "command(uv)",
+            "command(python)",
+            "command(python3)",
+            "command(./.venv/bin/python)",
+            "command(./.venv/bin/pip)",
+            "command(/Users/<your-user>/.../.venv/bin/python)",
+            "command(/Users/<your-user>/.../.venv/bin/pip)",
+            "command(ls)",
+            "command(pwd)",
+            "command(cat)",
+            "command(mkdir)"
+          ]
+        }
+      }
+      ```
+   3. Ensure [`AGENTS.md`](AGENTS.md) is present in your repository root to guide agents to use clean single-line script calls.
+
+   > [!TIP]
+   > Always restart `agy` after editing `settings.json`, as the whitelist is loaded into memory only at startup.
+
+5. **Run Local Orchestrator (Optional)**:
    ```bash
    python orchestrator.py serve
    ```

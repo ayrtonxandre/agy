@@ -1,0 +1,755 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "elements": [
+    {
+      "type": "rectangle",
+      "id": "header_card",
+      "x": 60,
+      "y": -30,
+      "width": 1420,
+      "height": 85,
+      "backgroundColor": "#1e1e2e",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#3b82f6",
+      "strokeWidth": 2
+    },
+    {
+      "type": "text",
+      "id": "title_main",
+      "x": 85,
+      "y": -18,
+      "text": "AGY - ATHLETE & WORK INTELLIGENCE HUB",
+      "fontSize": 24,
+      "strokeColor": "#60a5fa"
+    },
+    {
+      "type": "text",
+      "id": "title_sub",
+      "x": 85,
+      "y": 14,
+      "text": "Full Architecture Reference: Multi-Source Biometrics, Tri-Calendar Sync, Master Orchestrator, & Cloud Drive Hub",
+      "fontSize": 14,
+      "strokeColor": "#cbd5e1"
+    },
+    {
+      "type": "rectangle",
+      "id": "zone_sources",
+      "x": 60,
+      "y": 80,
+      "width": 320,
+      "height": 550,
+      "backgroundColor": "#dbe4ff",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#4a9eed",
+      "strokeWidth": 1,
+      "opacity": 30
+    },
+    {
+      "type": "text",
+      "id": "zone_sources_title",
+      "x": 80,
+      "y": 95,
+      "text": "[1] DATA SOURCES & WEARABLES",
+      "fontSize": 16,
+      "strokeColor": "#1e40af"
+    },
+    {
+      "type": "rectangle",
+      "id": "src_apple_health",
+      "x": 80,
+      "y": 130,
+      "width": 280,
+      "height": 95,
+      "backgroundColor": "#ffd8a8",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#f59e0b",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Apple Health / iPhone\n(Health Auto Export App)\n\u2022 HTTP POST Webhook\n\u2022 Weight, Sleep, HR, Steps",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "src_hae_mcp",
+      "x": 80,
+      "y": 245,
+      "width": 280,
+      "height": 95,
+      "backgroundColor": "#ffd8a8",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#f59e0b",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Health Auto Export MCP\n(iOS Local MCP :9000)\n\u2022 JSON-RPC Protocol\n\u2022 get_health_metrics, workouts",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "src_garmin",
+      "x": 80,
+      "y": 360,
+      "width": 280,
+      "height": 95,
+      "backgroundColor": "#a5d8ff",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#4a9eed",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Garmin Connect Cloud\n(Garmin Connect SSO)\n\u2022 Garth Session & MFA\n\u2022 82+ Workouts, 770+ Sets",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "src_client_cal",
+      "x": 80,
+      "y": 475,
+      "width": 280,
+      "height": 95,
+      "backgroundColor": "#eebefa",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#8b5cf6",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Client Calendar Feed\n(Clariane M365 ICS)\n\u2022 Corporate Engagements\n\u2022 Real-Time Commitments",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "zone_orchestration",
+      "x": 420,
+      "y": 80,
+      "width": 330,
+      "height": 550,
+      "backgroundColor": "#e5dbff",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#8b5cf6",
+      "strokeWidth": 1,
+      "opacity": 30
+    },
+    {
+      "type": "text",
+      "id": "zone_orchestration_title",
+      "x": 440,
+      "y": 95,
+      "text": "[2] CORE ENGINES & DAEMONS",
+      "fontSize": 16,
+      "strokeColor": "#6b21a8"
+    },
+    {
+      "type": "rectangle",
+      "id": "engine_orchestrator",
+      "x": 440,
+      "y": 130,
+      "width": 290,
+      "height": 115,
+      "backgroundColor": "#d0bfff",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#7048e8",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Master Orchestrator (orchestrator.py)\n\u2022 Multi-Threaded HTTP :8080 (launchd)\n\u2022 Webhook: POST /api/health\n\u2022 Serves /workout & /calendar\n\u2022 Auto-triggers drive_sync.auto_push",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "engine_sync_mcp",
+      "x": 440,
+      "y": 260,
+      "width": 290,
+      "height": 85,
+      "backgroundColor": "#ffd8a8",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#e8590c",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Health Auto Export Sync (sync_health_mcp.py)\n\u2022 Streamable MCP Session Client\n\u2022 Ingests 90-day Bio & Activity Diffs",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "engine_garmin",
+      "x": 440,
+      "y": 360,
+      "width": 290,
+      "height": 95,
+      "backgroundColor": "#a5d8ff",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#1971c2",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Garmin Strength Engine (extract_garmin.py)\n\u2022 Garth OAuth Token Handshake\n\u2022 Muscle Group Volume (garmin_volume.py)\n\u2022 Historical Set & Rep Parsing",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "engine_calendar",
+      "x": 440,
+      "y": 475,
+      "width": 290,
+      "height": 110,
+      "backgroundColor": "#b2f2bb",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#2f9e44",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Tri-Calendar Engine (unified_calendar.py)\n\u2022 Aggregates Google, iCloud & M365\n\u2022 Deduplicates Shared Work Invites\n\u2022 True Free Window Calculation\n\u2022 Workout Injection (Push/Legs/Pull)",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "zone_storage",
+      "x": 790,
+      "y": 80,
+      "width": 330,
+      "height": 550,
+      "backgroundColor": "#c3fae8",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#20c997",
+      "strokeWidth": 1,
+      "opacity": 30
+    },
+    {
+      "type": "text",
+      "id": "zone_storage_title",
+      "x": 810,
+      "y": 95,
+      "text": "[3] DATASETS & AUTH VAULT",
+      "fontSize": 16,
+      "strokeColor": "#087f5b"
+    },
+    {
+      "type": "rectangle",
+      "id": "ds_apple_csv",
+      "x": 810,
+      "y": 130,
+      "width": 290,
+      "height": 115,
+      "backgroundColor": "#ffffff",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#0ca678",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Apple Health Datasets (CSV)\n\u2022 apple_body_composition.csv (Weight, Fat %)\n\u2022 apple_daily_activity.csv (Steps, Burn, HR)\n\u2022 apple_sleep.csv (Deep, REM, Core)\n\u2022 apple_mobility_biomechanics.csv\n\u2022 apple_workouts_history.csv",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "ds_garmin_data",
+      "x": 810,
+      "y": 260,
+      "width": 290,
+      "height": 95,
+      "backgroundColor": "#ffffff",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#1971c2",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Garmin Strength Datasets\n\u2022 garmin_extracted_workouts.csv (Sets)\n\u2022 garmin_extracted_workouts.json\n\u2022 garmin_workout_volume.json (Tonnage)",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "ds_secrets",
+      "x": 810,
+      "y": 370,
+      "width": 290,
+      "height": 105,
+      "backgroundColor": "#ffc9c9",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#e03131",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Secure Secrets & Configs (.gitignore)\n\u2022 credentials.json & token.json (Google Cal)\n\u2022 drive_token.json (Drive v3 API)\n\u2022 garmin_tokens/ (Garth OAuth1/2)\n\u2022 ~/.icloud_calendar_config.json (CalDAV)",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "ds_logs",
+      "x": 810,
+      "y": 490,
+      "width": 290,
+      "height": 80,
+      "backgroundColor": "#ffffff",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#495057",
+      "strokeWidth": 2,
+      "label": {
+        "text": "System Logs & Diagnostic State\n\u2022 server_access.log (HTTP audit trace)\n\u2022 last_payload.json (Raw webhook cache)",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "zone_cloud",
+      "x": 1160,
+      "y": 80,
+      "width": 320,
+      "height": 550,
+      "backgroundColor": "#fff3bf",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#f59e0b",
+      "strokeWidth": 1,
+      "opacity": 30
+    },
+    {
+      "type": "text",
+      "id": "zone_cloud_title",
+      "x": 1180,
+      "y": 95,
+      "text": "[4] CLOUD & ENTERPRISE HUB",
+      "fontSize": 16,
+      "strokeColor": "#b45309"
+    },
+    {
+      "type": "rectangle",
+      "id": "cloud_gdrive",
+      "x": 1180,
+      "y": 130,
+      "width": 280,
+      "height": 135,
+      "backgroundColor": "#ffd8a8",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#d9480f",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Google Drive Cloud Hub (drive_sync.py)\nFolder: 'AGY - Intelligence Hub'\n\u2022 push: Uploads all CSVs & HTML\n\u2022 pull: Syncs datasets across machines\n\u2022 status: Local vs Cloud diff verification\n\u2022 auto_push: Real-time background upload",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "cloud_cal_apis",
+      "x": 1180,
+      "y": 280,
+      "width": 280,
+      "height": 115,
+      "backgroundColor": "#b2f2bb",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#2b8a3e",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Calendar APIs (Live Read/Write)\n\u2022 Google Calendar API v3 (google_calendar_api.py)\n  Full edit rights on Artefact Work Cal\n\u2022 iCloud CalDAV API (icloud_calendar.py)\n  Personal schedule sync & workout injection",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "cloud_enterprise",
+      "x": 1180,
+      "y": 410,
+      "width": 280,
+      "height": 140,
+      "backgroundColor": "#eebefa",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#7048e8",
+      "strokeWidth": 2,
+      "label": {
+        "text": "GCP Vertex & Excalidraw Tooling\n\u2022 GCP privategpt-437907 Discovery Engine\n  (excalidraw_1787583517655_diagrams)\n\u2022 Federated Excalidraw MCP Connector\n  (mcp.excalidraw.com/mcp)\n\u2022 Programmatic Diagram Export URL",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "zone_dashboards",
+      "x": 60,
+      "y": 660,
+      "width": 1420,
+      "height": 210,
+      "backgroundColor": "#d3f9d8",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#22c55e",
+      "strokeWidth": 1,
+      "opacity": 30
+    },
+    {
+      "type": "text",
+      "id": "zone_dashboards_title",
+      "x": 80,
+      "y": 675,
+      "text": "[5] INTERACTIVE INTELLIGENCE DASHBOARDS (Served by Orchestrator :8080)",
+      "fontSize": 16,
+      "strokeColor": "#15803d"
+    },
+    {
+      "type": "rectangle",
+      "id": "dash_athx",
+      "x": 80,
+      "y": 705,
+      "width": 660,
+      "height": 145,
+      "backgroundColor": "#ffffff",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#1971c2",
+      "strokeWidth": 2,
+      "label": {
+        "text": "ATHX 2027 Athlete Performance Dashboard (garmin_workout.html)\nGenerated by: generate_unified_athlete_dashboard.py\n\u2022 ACWR Fatigue Engine: Acute (7d) vs Chronic (28d) Workload Monitoring\n\u2022 Muscle Group Volume Radar & 82-session progressive overload curves\n\u2022 90-day Apple Health Ingestion: Body Fat, Lean Mass, Sleep Architecture, Resting HR\n\u2022 Live Browser UI: http://localhost:8080/workout",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "rectangle",
+      "id": "dash_calendar",
+      "x": 780,
+      "y": 705,
+      "width": 680,
+      "height": 145,
+      "backgroundColor": "#ffffff",
+      "fillStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "strokeColor": "#2f9e44",
+      "strokeWidth": 2,
+      "label": {
+        "text": "Smart Unified Calendar Dashboard (calendar_dashboard.html)\nGenerated by: generate_calendar_dashboard.py\n\u2022 3-Way Schedule Consolidation: Artefact (Google) + Personal (iCloud) + Client (M365)\n\u2022 Open Training Window Detection: Auto-aligns Gym & Crossfit routines\n\u2022 Live Workout Injection with warmups, working sets & target intensities\n\u2022 Live Browser UI: http://localhost:8080/calendar",
+        "fontSize": 14
+      }
+    },
+    {
+      "type": "arrow",
+      "id": "arr_wh_orch",
+      "x": 360,
+      "y": 175,
+      "width": 80,
+      "height": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ]
+      ],
+      "strokeColor": "#f59e0b",
+      "strokeWidth": 2,
+      "endArrowhead": "arrow",
+      "label": {
+        "text": "POST /api/health",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "arrow",
+      "id": "arr_mcp_sync",
+      "x": 360,
+      "y": 290,
+      "width": 80,
+      "height": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ]
+      ],
+      "strokeColor": "#e8590c",
+      "strokeWidth": 2,
+      "endArrowhead": "arrow",
+      "label": {
+        "text": "MCP :9000 Stream",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "arrow",
+      "id": "arr_garmin_ext",
+      "x": 360,
+      "y": 405,
+      "width": 80,
+      "height": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ]
+      ],
+      "strokeColor": "#1971c2",
+      "strokeWidth": 2,
+      "endArrowhead": "arrow",
+      "label": {
+        "text": "Garth SSO Auth",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "arrow",
+      "id": "arr_client_cal",
+      "x": 360,
+      "y": 520,
+      "width": 80,
+      "height": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ]
+      ],
+      "strokeColor": "#8b5cf6",
+      "strokeWidth": 2,
+      "endArrowhead": "arrow",
+      "label": {
+        "text": "ICS Feed Import",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "arrow",
+      "id": "arr_orch_csv",
+      "x": 730,
+      "y": 175,
+      "width": 80,
+      "height": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ]
+      ],
+      "strokeColor": "#0ca678",
+      "strokeWidth": 2,
+      "endArrowhead": "arrow",
+      "label": {
+        "text": "Update CSVs",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "arrow",
+      "id": "arr_garmin_ds",
+      "x": 730,
+      "y": 305,
+      "width": 80,
+      "height": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          80,
+          0
+        ]
+      ],
+      "strokeColor": "#1971c2",
+      "strokeWidth": 2,
+      "endArrowhead": "arrow",
+      "label": {
+        "text": "Dump JSON/CSV",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "arrow",
+      "id": "arr_cal_api",
+      "x": 730,
+      "y": 525,
+      "width": 450,
+      "height": -185,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          150,
+          0
+        ],
+        [
+          450,
+          -185
+        ]
+      ],
+      "strokeColor": "#2b8a3e",
+      "strokeWidth": 2,
+      "endArrowhead": "arrow",
+      "label": {
+        "text": "OAuth / CalDAV Sync",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "arrow",
+      "id": "arr_orch_gdrive",
+      "x": 730,
+      "y": 150,
+      "width": 450,
+      "height": 0,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          450,
+          0
+        ]
+      ],
+      "strokeColor": "#d9480f",
+      "strokeWidth": 2,
+      "endArrowhead": "arrow",
+      "label": {
+        "text": "drive_sync.auto_push()",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "arrow",
+      "id": "arr_ds_athx",
+      "x": 810,
+      "y": 200,
+      "width": -400,
+      "height": 505,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -30,
+          250
+        ],
+        [
+          -400,
+          505
+        ]
+      ],
+      "strokeColor": "#1971c2",
+      "strokeWidth": 2,
+      "endArrowhead": "arrow",
+      "strokeStyle": "dashed",
+      "label": {
+        "text": "Biometrics + Garmin Sets Ingest",
+        "fontSize": 13
+      }
+    },
+    {
+      "type": "arrow",
+      "id": "arr_cal_dash",
+      "x": 720,
+      "y": 585,
+      "width": 380,
+      "height": 120,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          200,
+          60
+        ],
+        [
+          380,
+          120
+        ]
+      ],
+      "strokeColor": "#2f9e44",
+      "strokeWidth": 2,
+      "endArrowhead": "arrow",
+      "strokeStyle": "dashed",
+      "label": {
+        "text": "Inject Open Windows & Workouts",
+        "fontSize": 13
+      }
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#fafafa"
+  }
+}
