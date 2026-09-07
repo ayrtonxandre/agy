@@ -16,6 +16,7 @@ gcp_token.json
 drive_token.json
 garmin_tokens/
 .icloud_calendar_config.json
+hae_token.txt
 *.pem
 *.key
 *.env
