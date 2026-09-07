@@ -112,12 +112,15 @@ def get_day_unified_schedule(target_date: date | None = None) -> list[dict]:
     end_dt = start_dt + timedelta(days=1)
     return get_unified_events(start_dt, end_dt)
 
-def find_unified_free_slots(target_date: date | None = None, min_minutes: int = 60, day_start_hour: int = 7, day_end_hour: int = 21) -> list[tuple[datetime, datetime]]:
+def find_unified_free_slots(target_date: date | None = None, min_minutes: int = 60, day_start_hour: int = 7, day_end_hour: int = 21, preloaded_events: list[dict] | None = None) -> list[tuple[datetime, datetime]]:
     """Calculates true open windows where all 3 calendars are completely free."""
     if target_date is None:
         target_date = datetime.now(LOCAL_TZ).date()
 
-    events = get_day_unified_schedule(target_date)
+    if preloaded_events is not None:
+        events = [ev for ev in preloaded_events if ev["start"].date() <= target_date <= ev["end"].date()]
+    else:
+        events = get_day_unified_schedule(target_date)
 
     day_start = datetime(target_date.year, target_date.month, target_date.day, day_start_hour, 0, tzinfo=LOCAL_TZ)
     day_end = datetime(target_date.year, target_date.month, target_date.day, day_end_hour, 0, tzinfo=LOCAL_TZ)

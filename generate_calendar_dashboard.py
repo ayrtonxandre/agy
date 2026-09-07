@@ -36,7 +36,7 @@ def build_dashboard():
     free_slots_data = {}
     for d_offset in range(-2, 8):
         cur_d = (now + timedelta(days=d_offset)).date()
-        slots = find_unified_free_slots(cur_d, min_minutes=45)
+        slots = find_unified_free_slots(cur_d, min_minutes=45, preloaded_events=events)
         free_slots_data[cur_d.strftime("%Y-%m-%d")] = [
             {
                 "start": s.strftime("%H:%M"),

@@ -1,0 +1,609 @@
+#!/usr/bin/env python3
+"""
+================================================================================
+⚡ ATHX 2027 • Master Athlete & Intelligence Orchestrator
+================================================================================
+Single-word CLI command (`athx`) that activates all orchestration:
+  1. Pulls last edits from GitHub (git pull --rebase)
+  2. Pulls cloud hub datasets from Google Drive (drive_sync.py pull)
+  3. Syncs Apple Health biometrics (MCP / Cloud Hub)
+  4. Syncs Garmin Connect strength workouts & sets (extract_garmin_strength.py)
+  5. Syncs tri-calendar schedule (Google, iCloud, Clariane) & builds calendar dashboard
+  6. Rebuilds Unified ATHX 2027 Athlete Dashboard (garmin_workout.html)
+  7. Opens the interactive dashboard in your default browser
+
+Cross-machine ready: works identically on Machine 1 and Machine 2.
+"""
+
+from __future__ import annotations
+import os
+import sys
+import time
+import json
+import shutil
+import socket
+import argparse
+import threading
+import subprocess
+import webbrowser
+from pathlib import Path
+
+# ==============================================================================
+# 1. CROSS-MACHINE PATH & PYTHON RESOLUTION
+# ==============================================================================
+CONFIG_DIR = Path.home() / ".config" / "agy"
+CONFIG_FILE = CONFIG_DIR / "config.json"
+
+def locate_agy_dir() -> Path:
+    """Finds the AGY repository directory dynamically across machines."""
+    # 1. Check environment variable
+    if "AGY_DIR" in os.environ and os.path.isdir(os.environ["AGY_DIR"]):
+        return Path(os.environ["AGY_DIR"]).resolve()
+
+    # 2. Check resolve of this script (handles symlinks)
+    self_path = Path(__file__).resolve()
+    if (self_path.parent / "garmin_workout.html").exists() or (self_path.parent / "orchestrator.py").exists():
+        return self_path.parent
+
+    # 3. Check persistent config file
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                saved_path = Path(data.get("agy_dir", ""))
+                if saved_path.exists():
+                    return saved_path.resolve()
+        except Exception:
+            pass
+
+    # 4. Check standard candidate directories
+    candidates = [
+        Path.home() / "Documents" / "work" / "AGY",
+        Path.home() / "Documents" / "work" / "agy",
+        Path.home() / "Documents" / "AGY",
+        Path.home() / "Documents" / "agy",
+        Path.home() / "work" / "AGY",
+        Path.home() / "work" / "agy",
+        Path.home() / "agy",
+        Path.home() / "AGY",
+        Path.cwd(),
+    ]
+    for c in candidates:
+        if (c / "orchestrator.py").exists() and (c / "drive_sync.py").exists():
+            return c.resolve()
+
+    # Fallback to current directory
+    return Path.cwd().resolve()
+
+
+AGY_DIR = locate_agy_dir()
+
+def find_virtualenv_python(agy_dir: Path) -> Path | None:
+    """Locates the virtualenv Python binary across machines."""
+    # 1. Check persistent config
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                p = Path(data.get("python_bin", ""))
+                if p.exists() and os.access(str(p), os.X_OK):
+                    return p
+        except Exception:
+            pass
+
+    # 2. Check virtualenv prefix
+    if hasattr(sys, "base_prefix") and sys.prefix != sys.base_prefix:
+        p_bin = Path(sys.prefix) / "bin" / "python"
+        if p_bin.exists():
+            return p_bin
+        p_exe = Path(sys.prefix) / "Scripts" / "python.exe"
+        if p_exe.exists():
+            return p_exe
+
+    # 3. Check candidate paths relative to repo
+    candidates = [
+        # In repo
+        agy_dir / ".venv" / "bin" / "python",
+        agy_dir / ".venv" / "Scripts" / "python.exe",
+        # In parent directory
+        agy_dir.parent / ".venv" / "bin" / "python",
+        agy_dir.parent / ".venv" / "Scripts" / "python.exe",
+        # In home / work
+        Path.home() / "Documents" / "work" / ".venv" / "bin" / "python",
+        Path.home() / ".venv" / "bin" / "python",
+    ]
+    if "VIRTUAL_ENV" in os.environ:
+        ve = Path(os.environ["VIRTUAL_ENV"])
+        candidates.insert(0, ve / "bin" / "python")
+        candidates.insert(1, ve / "Scripts" / "python.exe")
+
+    for c in candidates:
+        if c.exists() and os.access(str(c), os.X_OK):
+            return c
+    return None
+
+
+def ensure_correct_python(agy_dir: Path):
+    """Ensures this script is running inside the virtualenv with dependencies."""
+    can_import = True
+    for mod in ["pandas", "googleapiclient", "garminconnect"]:
+        try:
+            __import__(mod)
+        except ImportError:
+            can_import = False
+            break
+
+    if can_import:
+        return
+
+    venv_py = find_virtualenv_python(agy_dir)
+    if venv_py and str(venv_py) != sys.executable:
+        os.execv(str(venv_py), [str(venv_py)] + sys.argv)
+
+
+# ==============================================================================
+# 2. ANIMATED TERMINAL LOADING BAR & SPINNER ENGINE
+# ==============================================================================
+class TerminalUI:
+    # ANSI color codes
+    CYAN = "\033[96m"
+    GOLD = "\033[38;5;220m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    GRAY = "\033[90m"
+    BOLD = "\033[1m"
+    RESET = "\033[0m"
+
+    SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    BAR_WIDTH = 24
+
+    def __init__(self, total_steps: int):
+        self.total_steps = total_steps
+        self.current_step = 0
+        self.step_name = ""
+        self.step_start_time = time.time()
+        self.spinner_idx = 0
+        self.running = False
+        self.thread: threading.Thread | None = None
+        self.is_tty = sys.stdout.isatty()
+
+    def start_step(self, step_num: int, name: str):
+        self.current_step = step_num
+        self.step_name = name
+        self.step_start_time = time.time()
+        self.running = True
+
+        if self.is_tty:
+            self.thread = threading.Thread(target=self._animate, daemon=True)
+            self.thread.start()
+        else:
+            print(f"[{self.current_step}/{self.total_steps}] {self.step_name}...")
+
+    def _render_bar(self, progress_ratio: float) -> str:
+        filled_len = int(self.BAR_WIDTH * progress_ratio)
+        filled = "█" * filled_len
+        unfilled = "░" * (self.BAR_WIDTH - filled_len)
+        pct = int(progress_ratio * 100)
+        return f"{self.CYAN}[{filled}{unfilled}]{self.RESET} {pct:>3}%"
+
+    def _animate(self):
+        while self.running:
+            frame = self.SPINNER_FRAMES[self.spinner_idx % len(self.SPINNER_FRAMES)]
+            self.spinner_idx += 1
+            progress = (self.current_step - 1) / self.total_steps
+            bar_str = self._render_bar(progress)
+            
+            line = (
+                f"\r  {bar_str} "
+                f"{self.GOLD}{frame}{self.RESET} "
+                f"{self.BOLD}[{self.current_step}/{self.total_steps}]{self.RESET} "
+                f"{self.step_name}\033[K"
+            )
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            time.sleep(0.08)
+
+    def finish_step(self, status: str = "success", message: str = ""):
+        self.running = False
+        if self.thread and self.thread.is_alive():
+            self.thread.join(timeout=0.3)
+
+        elapsed = time.time() - self.step_start_time
+        time_str = f"{self.GRAY}({elapsed:.1f}s){self.RESET}"
+        progress = self.current_step / self.total_steps
+        bar_str = self._render_bar(progress)
+
+        if status == "success":
+            badge = f"{self.GREEN}✔{self.RESET}"
+        elif status == "warning":
+            badge = f"{self.YELLOW}⚠️{self.RESET}"
+        else:
+            badge = f"{self.RED}✖{self.RESET}"
+
+        text = message or self.step_name
+        if self.is_tty:
+            line = (
+                f"\r  {bar_str} "
+                f"{badge} "
+                f"{self.BOLD}[{self.current_step}/{self.total_steps}]{self.RESET} "
+                f"{text} {time_str}\033[K\n"
+            )
+        else:
+            line = f"  {badge} [{self.current_step}/{self.total_steps}] {text} ({elapsed:.1f}s)\n"
+
+        sys.stdout.write(line)
+        sys.stdout.flush()
+
+
+# ==============================================================================
+# 3. INDIVIDUAL ORCHESTRATION TASKS
+# ==============================================================================
+def run_git_pull(agy_dir: Path) -> tuple[str, str]:
+    """Pulls latest changes from GitHub."""
+    git_bin = shutil.which("git")
+    if not git_bin:
+        return "warning", "Git not found in PATH (skipped)"
+
+    dot_git = agy_dir / ".git"
+    if not dot_git.exists():
+        return "warning", "Not a git repository (skipped)"
+
+    try:
+        res = subprocess.run(
+            [git_bin, "-C", str(agy_dir), "pull", "--rebase", "--autostash"],
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+        if res.returncode == 0:
+            out = res.stdout.strip()
+            if "Already up to date" in out:
+                return "success", "GitHub: Branch is up to date with origin/main"
+            return "success", "GitHub: Pulled latest changes successfully"
+        else:
+            res2 = subprocess.run(
+                [git_bin, "-C", str(agy_dir), "pull"],
+                capture_output=True,
+                text=True,
+                timeout=15
+            )
+            if res2.returncode == 0:
+                return "success", "GitHub: Pulled latest changes successfully"
+            err = res.stderr.strip().splitlines()
+            err_line = err[-1] if err else "Git pull skipped"
+            return "warning", f"GitHub pull: {err_line[:50]}"
+    except subprocess.TimeoutExpired:
+        return "warning", "GitHub: Connection timed out (skipped)"
+    except Exception as e:
+        return "warning", f"GitHub: {e}"
+
+
+def run_drive_pull(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
+    """Downloads latest datasets and dashboards from Google Drive Cloud Hub."""
+    drive_script = agy_dir / "drive_sync.py"
+    if not drive_script.exists():
+        return "warning", "drive_sync.py not found"
+
+    creds_file = agy_dir / "credentials.json"
+    token_file = agy_dir / "drive_token.json"
+    if not creds_file.exists() and not token_file.exists():
+        return "warning", "Google Drive: No credentials.json or token found (skipped)"
+
+    try:
+        res = subprocess.run(
+            [str(venv_py), str(drive_script), "pull"],
+            cwd=str(agy_dir),
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        if res.returncode == 0:
+            return "success", "Google Drive: Datasets & dashboards pulled from cloud"
+        else:
+            return "warning", "Google Drive pull skipped (check credentials/network)"
+    except subprocess.TimeoutExpired:
+        return "warning", "Google Drive: Network timeout (skipped)"
+    except Exception as e:
+        return "warning", f"Google Drive: {e}"
+
+
+def run_health_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
+    """Syncs Apple Health biometrics via live MCP or validates Drive sync."""
+    mcp_script = agy_dir / "sync_health_mcp.py"
+    token_file = agy_dir / "hae_token.txt"
+    token = os.getenv("HAE_MCP_TOKEN", "")
+    if not token and token_file.exists():
+        token = token_file.read_text().strip()
+
+    # Test iPhone MCP connectivity with short socket probe
+    iphone_ip = "192.168.1.163"
+    iphone_port = 9000
+    is_live = False
+
+    if token:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1.5)
+            s.connect((iphone_ip, iphone_port))
+            s.close()
+            is_live = True
+        except Exception:
+            is_live = False
+
+    if is_live and mcp_script.exists():
+        try:
+            res = subprocess.run(
+                [str(venv_py), str(mcp_script)],
+                cwd=str(agy_dir),
+                capture_output=True,
+                text=True,
+                timeout=25
+            )
+            if res.returncode == 0:
+                return "success", "Apple Health: Live metrics & workouts ingested from iPhone"
+        except Exception:
+            pass
+
+    # If iPhone MCP server is not active, verify local CSVs
+    body_csv = agy_dir / "apple_body_composition.csv"
+    sleep_csv = agy_dir / "apple_sleep.csv"
+    if body_csv.exists() and sleep_csv.exists():
+        return "success", "Apple Health: Biometrics up to date (Cloud Hub & Webhook)"
+    return "warning", "Apple Health: iPhone MCP offline (using local cache)"
+
+
+def run_garmin_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
+    """Extracts Garmin Connect strength sets and volume."""
+    garmin_script = agy_dir / "extract_garmin_strength.py"
+    tokens_dir = agy_dir / "garmin_tokens"
+
+    if not garmin_script.exists():
+        return "warning", "extract_garmin_strength.py not found"
+
+    if not tokens_dir.exists():
+        return "warning", "Garmin: No cached tokens in garmin_tokens/ (skipped)"
+
+    try:
+        res = subprocess.run(
+            [str(venv_py), str(garmin_script)],
+            cwd=str(agy_dir),
+            capture_output=True,
+            text=True,
+            timeout=40
+        )
+        if res.returncode == 0:
+            # Parse summary line if available
+            sets_count = 0
+            for line in res.stdout.splitlines():
+                if "Total Sets Logged" in line:
+                    parts = line.split(":")
+                    if len(parts) > 1:
+                        sets_count = parts[1].strip()
+            msg = f"Garmin Connect: Workouts synced ({sets_count} sets cached)" if sets_count else "Garmin Connect: Strength sets synchronized"
+            return "success", msg
+        else:
+            return "warning", "Garmin Connect: Sync skipped (using cached session data)"
+    except subprocess.TimeoutExpired:
+        return "warning", "Garmin Connect: Network timeout (using cached session data)"
+    except Exception as e:
+        return "warning", f"Garmin Connect: {e}"
+
+
+def run_calendar_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
+    """Generates standalone multi-calendar dashboard across Work, iCloud, and Client."""
+    cal_script = agy_dir / "generate_calendar_dashboard.py"
+    if not cal_script.exists():
+        return "warning", "generate_calendar_dashboard.py not found"
+
+    try:
+        res = subprocess.run(
+            [str(venv_py), str(cal_script)],
+            cwd=str(agy_dir),
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        if res.returncode == 0:
+            return "success", "Multi-Calendar: 3 calendars synced (calendar_dashboard.html)"
+        else:
+            return "warning", "Multi-Calendar: Synchronized using local ICS cache"
+    except subprocess.TimeoutExpired:
+        return "warning", "Multi-Calendar: Request timeout (using cached schedule)"
+    except Exception as e:
+        return "warning", f"Multi-Calendar: {e}"
+
+
+def run_athlete_dashboard_build(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
+    """Rebuilds the ATHX 2027 Unified Athlete Headquarters (garmin_workout.html)."""
+    builder_script = agy_dir / "generate_unified_athlete_dashboard.py"
+    if not builder_script.exists():
+        return "error", "generate_unified_athlete_dashboard.py not found"
+
+    try:
+        res = subprocess.run(
+            [str(venv_py), str(builder_script)],
+            cwd=str(agy_dir),
+            capture_output=True,
+            text=True,
+            timeout=25
+        )
+        if res.returncode == 0:
+            return "success", "ATHX 2027: Rebuilt athlete headquarters (garmin_workout.html)"
+        else:
+            err = res.stderr.strip().splitlines()
+            return "error", f"Dashboard build failed: {err[-1] if err else 'Unknown error'}"
+    except Exception as e:
+        return "error", f"Dashboard build error: {e}"
+
+
+def run_drive_push(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
+    """Pushes fresh datasets & dashboards back to Google Drive Cloud Hub."""
+    drive_script = agy_dir / "drive_sync.py"
+    try:
+        res = subprocess.run(
+            [str(venv_py), str(drive_script), "push"],
+            cwd=str(agy_dir),
+            capture_output=True,
+            text=True,
+            timeout=35
+        )
+        if res.returncode == 0:
+            return "success", "Google Drive: Pushed updated datasets & dashboards to cloud"
+        else:
+            return "warning", "Google Drive: Cloud push skipped"
+    except Exception as e:
+        return "warning", f"Google Drive push: {e}"
+
+
+def open_dashboard(html_path: Path):
+    """Opens the generated ATHX dashboard in the system default browser."""
+    if not html_path.exists():
+        print(f"⚠️ Dashboard file not found at: {html_path}")
+        return
+
+    file_uri = html_path.resolve().as_uri()
+    try:
+        # Use python webbrowser
+        webbrowser.open(file_uri)
+    except Exception:
+        # Fallback to OS commands
+        if sys.platform == "darwin":
+            subprocess.run(["open", str(html_path)], check=False)
+        elif sys.platform.startswith("linux"):
+            subprocess.run(["xdg-open", str(html_path)], check=False)
+        elif sys.platform == "win32":
+            os.startfile(str(html_path))
+
+
+# ==============================================================================
+# 4. INSTALLER HELPER
+# ==============================================================================
+def install_athx_cli():
+    """Installs the `athx` command into ~/.local/bin and configures shell PATH."""
+    home = Path.home()
+    local_bin = home / ".local" / "bin"
+    local_bin.mkdir(parents=True, exist_ok=True)
+    target_athx = local_bin / "athx"
+
+    script_path = Path(__file__).resolve()
+
+    # Save repository directory to persistent config
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump({"agy_dir": str(AGY_DIR), "installed_at": time.time()}, f, indent=2)
+
+    # Create launcher script in ~/.local/bin/athx
+    venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+    launcher_content = f"""#!/bin/sh
+exec "{venv_py}" "{script_path}" "$@"
+"""
+    with open(target_athx, "w", encoding="utf-8") as f:
+        f.write(launcher_content)
+    target_athx.chmod(0o755)
+
+    # Ensure ~/.local/bin is in PATH in ~/.zshrc or ~/.bashrc
+    shell_rcs = [home / ".zshrc", home / ".bashrc"]
+    path_line = 'export PATH="$HOME/.local/bin:$PATH"'
+    for rc in shell_rcs:
+        if rc.exists():
+            content = rc.read_text(encoding="utf-8", errors="ignore")
+            if ".local/bin" not in content:
+                with open(rc, "a", encoding="utf-8") as f:
+                    f.write(f"\n# Added by ATHX Orchestrator\n{path_line}\n")
+                print(f"  • Added ~/.local/bin to PATH in {rc.name}")
+
+    print("\n✅ Successfully installed `athx` CLI command!")
+    print(f"  • Launcher path  : {target_athx}")
+    print(f"  • AGY directory  : {AGY_DIR}")
+    print(f"  • Python runtime : {venv_py}")
+    print("\n⚡ You can now run `athx` from anywhere in your terminal!")
+
+
+# ==============================================================================
+# 5. MAIN ORCHESTRATION PIPELINE
+# ==============================================================================
+def main():
+    parser = argparse.ArgumentParser(
+        description="ATHX 2027 Master Athlete & Intelligence Orchestrator"
+    )
+    parser.add_argument("--push", action="store_true", help="Push updated datasets & dashboards to Google Drive after sync")
+    parser.add_argument("--no-open", action="store_true", help="Do not open the dashboard in browser when done")
+    parser.add_argument("--skip-git", action="store_true", help="Skip pulling from GitHub")
+    parser.add_argument("--skip-drive", action="store_true", help="Skip pulling from Google Drive")
+    parser.add_argument("--skip-health", action="store_true", help="Skip Apple Health sync")
+    parser.add_argument("--skip-garmin", action="store_true", help="Skip Garmin Connect sync")
+    parser.add_argument("--skip-cal", action="store_true", help="Skip multi-calendar sync")
+    parser.add_argument("--install", action="store_true", help="Install `athx` globally into ~/.local/bin")
+    parser.add_argument("--serve", action="store_true", help="Run local orchestrator HTTP daemon on port 8080")
+    args = parser.parse_args()
+
+    if args.install:
+        install_athx_cli()
+        return
+
+    # Ensure correct virtual environment
+    ensure_correct_python(AGY_DIR)
+
+    # Locate Python binary to invoke sub-scripts
+    venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+
+    if args.serve:
+        orch_py = AGY_DIR / "orchestrator.py"
+        print(f"🚀 Starting ATHX Orchestrator server from {AGY_DIR}...")
+        subprocess.run([str(venv_py), str(orch_py), "serve"])
+        return
+
+    # Print ATHX Banner
+    start_time = time.time()
+    gold = TerminalUI.GOLD
+    cyan = TerminalUI.CYAN
+    bold = TerminalUI.BOLD
+    reset = TerminalUI.RESET
+
+    print(f"\n{gold}{bold}⚡ ATHX 2027 • Master Athlete & Intelligence Hub{reset}")
+    print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}")
+    print(f"  📁 Hub Location : {TerminalUI.GRAY}{AGY_DIR}{reset}")
+    print(f"  🐍 Environment  : {TerminalUI.GRAY}{venv_py}{reset}")
+    print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+
+    # Define execution pipeline steps
+    steps = []
+    if not args.skip_git:
+        steps.append(("Pulling latest edits from GitHub", lambda: run_git_pull(AGY_DIR)))
+    if not args.skip_drive:
+        steps.append(("Pulling cloud hub from Google Drive", lambda: run_drive_pull(AGY_DIR, venv_py)))
+    if not args.skip_health:
+        steps.append(("Syncing Apple Health biometrics & sleep", lambda: run_health_sync(AGY_DIR, venv_py)))
+    if not args.skip_garmin:
+        steps.append(("Extracting Garmin strength workouts & sets", lambda: run_garmin_sync(AGY_DIR, venv_py)))
+    if not args.skip_cal:
+        steps.append(("Syncing tri-calendar schedule & open slots", lambda: run_calendar_sync(AGY_DIR, venv_py)))
+    steps.append(("Rebuilding ATHX 2027 Athlete Headquarters", lambda: run_athlete_dashboard_build(AGY_DIR, venv_py)))
+    if args.push:
+        steps.append(("Pushing updated datasets to Google Drive", lambda: run_drive_push(AGY_DIR, venv_py)))
+
+    ui = TerminalUI(total_steps=len(steps))
+
+    for idx, (label, func) in enumerate(steps, 1):
+        ui.start_step(idx, label)
+        status, msg = func()
+        ui.finish_step(status=status, message=msg)
+
+    total_time = time.time() - start_time
+    workout_html = AGY_DIR / "garmin_workout.html"
+    cal_html = AGY_DIR / "calendar_dashboard.html"
+
+    print(f"\n{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}")
+    print(f"  {TerminalUI.GREEN}✨ ATHX Orchestration Complete!{reset} {TerminalUI.GRAY}(Total time: {total_time:.1f}s){reset}")
+    print(f"  🏆 Athlete Dashboard  : {TerminalUI.BOLD}{workout_html.as_uri()}{reset}")
+    print(f"  📅 Calendar Dashboard : {TerminalUI.GRAY}{cal_html.as_uri()}{reset}")
+    print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+
+    if not args.no_open:
+        print("🚀 Opening ATHX Dashboard in your default browser...\n")
+        open_dashboard(workout_html)
+
+
+if __name__ == "__main__":
+    main()

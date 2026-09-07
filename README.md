@@ -31,6 +31,54 @@ An autonomous agentic intelligence platform integrating multi-source athletic bi
 
 ---
 
+## ⚡ One-Word Master Command: `athx`
+
+Launch the complete athlete & work intelligence pipeline with a single word from **any** terminal directory:
+
+```bash
+athx
+```
+
+### 📺 Visual Progress Display
+While running, `athx` renders a live, fluid loading bar and animated spinner:
+
+```text
+⚡ ATHX 2027 • Master Athlete & Intelligence Hub
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📁 Hub Location : /Users/ayrton.andre/Documents/work/AGY
+  🐍 Environment  : /Users/ayrton.andre/Documents/work/.venv/bin/python
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [████████████████████░░░░] 83%  ⠋  [5/6] Syncing tri-calendar schedule & open slots...
+  ✔ [1/6] GitHub: Branch is up to date with origin/main (1.8s)
+  ✔ [2/6] Google Drive: Datasets & dashboards pulled from cloud (7.8s)
+  ✔ [3/6] Apple Health: Biometrics up to date (Cloud Hub & Webhook) (0.0s)
+  ✔ [4/6] Garmin Connect: Workouts synced (1728 sets cached) (8.4s)
+  ✔ [5/6] Multi-Calendar: 3 calendars synced (calendar_dashboard.html) (11.2s)
+  ✔ [6/6] ATHX 2027: Rebuilt athlete headquarters (garmin_workout.html) (0.1s)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✨ ATHX Orchestration Complete! (Total time: 29.3s)
+  🏆 Athlete Dashboard  : file:///Users/ayrton.andre/Documents/work/AGY/garmin_workout.html
+  📅 Calendar Dashboard : file:///Users/ayrton.andre/Documents/work/AGY/calendar_dashboard.html
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 🎛️ CLI Options & Flags
+| Command | Action |
+| :--- | :--- |
+| `athx` | Standard full sync, dashboard rebuild, and browser launch |
+| `athx --push` | Runs full orchestration and pushes updated datasets & HTML back to Google Drive |
+| `athx --no-open` | Runs headless (skips opening the browser) |
+| `athx --serve` | Starts local HTTP daemon on `http://localhost:8080` (`/workout`, `/calendar`) |
+| `athx --install` | Installs/symlinks `athx` into `~/.local/bin/athx` and updates shell `$PATH` |
+| `athx --skip-git` | Skips pulling from GitHub |
+| `athx --skip-drive` | Skips pulling from Google Drive |
+| `athx --skip-garmin`| Skips Garmin Connect API extraction |
+| `athx --skip-cal` | Skips calendar synchronization |
+
+---
+
 ## 🚀 Key Modules
 
 1. **`orchestrator.py`**:
@@ -140,9 +188,16 @@ An autonomous agentic intelligence platform integrating multi-source athletic bi
    > [!TIP]
    > Always restart `agy` after editing `settings.json`, as the whitelist is loaded into memory only at startup.
 
-5. **Run Local Orchestrator (Optional)**:
+5. **Install Global `athx` Command (Recommended)**:
    ```bash
-   python orchestrator.py serve
+   python setup_athx.py
+   ```
+   *Instantly installs the `athx` executable into `~/.local/bin/athx`, registers shell `$PATH`, verifies required dependencies, and whitelists `athx` in Antigravity settings. You can now launch the full orchestration pipeline with a single word (`athx`) from anywhere!*
+
+6. **Run Local Orchestrator (Optional)**:
+   ```bash
+   athx --serve
+   # Or: python orchestrator.py serve
    ```
    Open `http://localhost:8080/workout` or `http://localhost:8080/calendar` in your browser.
 
