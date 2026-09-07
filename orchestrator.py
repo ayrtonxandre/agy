@@ -195,7 +195,6 @@ def process_health_auto_export_payload(payload: dict) -> dict:
                     st_end = st.get("endDate", "")
                     st_hrs = 0.0
                     try:
-                        from datetime import datetime
                         t1 = datetime.fromisoformat(st_start[:19])
                         t2 = datetime.fromisoformat(st_end[:19])
                         st_hrs = (t2 - t1).total_seconds() / 3600.0
