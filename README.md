@@ -108,9 +108,14 @@ While running, `athx` renders a live, fluid loading bar and animated spinner:
    * Synchronizes Artefact Google Calendar, iCloud CalDAV, and Client M365 schedules.
    * Injects structured workout plans (Push, Pull, Legs) with warmup sets, top working weights, reps, and rest intervals.
 
-6. **`extract_garmin_strength.py` & `generate_unified_athlete_dashboard.py`**:
-   * Extracts historical strength sets (771+ sets) from Garmin Connect.
-   * Generates interactive Chart.js analytics dashboard (`garmin_workout.html`).
+6. **`athx_config.py` & `athx_analytics.py` (ATHX 2027 Core Intelligence)**:
+   * **`athx_config.py`**: Single source of truth for the ATHX Games 2027 preparation (Target Date: `2027-05-27`, Mass Target: `85.0 kg`). Maps all 62 Garmin exercise variations to 8 muscle groups and PPL splits, defines movement-specific plausible load ranges, MEV/MAV/MRV hypertrophy bands (Mike Israetel methodology), and Tier-1 Non-Pro competition standards (S2O, Back Squat, Deadlift, 5km Run, Sandbag Carry).
+   * **`athx_analytics.py`**: Robust data-cleaning and athletic telemetry pipeline. Enforces a strict analysis floor at `2026-05-01` with a complete audit trail. Imputes Unknown exercise sets using session load signatures, classifies dominant session splits to eliminate Garmin's `"press" -> Legs` bug, restricts e1RM calculations strictly to sets $\le 10$ reps on plausible loads, computes Foster training monotony and weekly strain, dynamically evaluates ACWR as of latest activity, cleans sleep data by filtering recording overflows ($\text{In\_Bed} > 14\text{h}$) and dropping non-wear periods ($< 3\text{h}$), and computes a transparent 5-component recovery composite score.
+
+7. **`extract_garmin_strength.py` & `generate_unified_athlete_dashboard.py`**:
+   * Extracts historical and live strength sets from Garmin Connect (1,728 raw sets; 1,169 valid sets post-May 1).
+   * Generates the zero-hardcoded, fully audited ATHX 2027 Athlete Headquarters (`garmin_workout.html`).
+   * Features: Top-level ATHX event qualification readiness table, 37-week countdown, leg hypertrophy deficit alerts (Quads & Hamstrings vs MEV), 28-day trailing best e1RM trajectories, 7-day smoothed weight recomposition curve, default `Date DESC` tables with sorting & pagination, and an interactive Data Quality & Audit trail panel with JSON export.
 
 ---
 
