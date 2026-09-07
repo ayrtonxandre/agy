@@ -411,9 +411,37 @@ def update_workouts(workouts_payload: dict):
     print(f"✅ `apple_workouts_history.csv`: {len(merged)} workouts recorded (latest: {merged.iloc[-1]['Date']} - {merged.iloc[-1]['Workout_Type']})")
 
 
+def discover_mcp_url(default_url: str) -> str:
+    """Probes candidate IPs on port 9000 if default_url is not reachable."""
+    candidates = []
+    if "HAE_IP" in os.environ:
+        candidates.append(f"http://{os.environ['HAE_IP']}:9000/mcp")
+    candidates.extend([
+        "http://10.10.251.25:9000/mcp",
+        "http://192.168.1.163:9000/mcp",
+        "http://127.0.0.1:9000/mcp",
+    ])
+    if default_url not in candidates:
+        candidates.insert(0, default_url)
+
+    for curl in candidates:
+        try:
+            host = curl.split("://")[1].split(":")[0]
+            port = int(curl.split(":")[2].split("/")[0])
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(0.8)
+            res = s.connect_ex((host, port))
+            s.close()
+            if res == 0:
+                return curl
+        except Exception:
+            pass
+    return default_url
+
+
 def main():
     parser = argparse.ArgumentParser(description="Health Auto Export MCP Live Sync")
-    parser.add_argument("--url", default="http://192.168.1.163:9000/mcp", help="MCP endpoint URL")
+    parser.add_argument("--url", default="", help="MCP endpoint URL (auto-detected if omitted)")
     parser.add_argument("--token", default=os.getenv("HAE_MCP_TOKEN", ""), help="Bearer token from Server screen")
     parser.add_argument("--days", type=int, default=60, help="Days of history to fetch (default: 60)")
     parser.add_argument("--push", action="store_true", help="Push to Google Drive Cloud Hub after sync")
@@ -431,15 +459,17 @@ def main():
     # Save valid token
     TOKEN_FILE.write_text(token)
 
+    endpoint_url = discover_mcp_url(args.url or "http://10.10.251.25:9000/mcp")
+
     end_dt = datetime.now(LOCAL_TZ)
     start_dt = end_dt - timedelta(days=args.days)
     start_str = start_dt.strftime("%Y-%m-%d")
     end_str = end_dt.strftime("%Y-%m-%d")
 
-    print(f"🔌 Connecting to Health Auto Export MCP: {args.url}")
+    print(f"🔌 Connecting to Health Auto Export MCP: {endpoint_url}")
     print(f"📅 Syncing date range: {start_str} -> {end_str} ({args.days} days)")
 
-    client = McpHttpClient(args.url, token)
+    client = McpHttpClient(endpoint_url, token)
     client.initialize()
 
     # 1. Fetch Health Metrics
@@ -476,7 +506,7 @@ def main():
     if args.push:
         print("\n☁️ Triggering Google Drive cloud sync (`drive_sync.py push`)...")
         import subprocess
-        subprocess.run(["python3", str(BASE_DIR / "drive_sync.py"), "push"])
+        subprocess.run([sys.executable, str(BASE_DIR / "drive_sync.py"), "push"])
 
 
 if __name__ == "__main__":
