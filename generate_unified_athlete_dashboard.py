@@ -663,9 +663,10 @@ def build_html(payload_json: str, d: dict) -> str:
     <!-- 2. Header & Competition Countdown Bar -->
     <header>
       <div>
-        <div class="header-title">
+        <div class="header-title" style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
           <h1>ATHX 2027 Athlete Headquarters</h1>
           <span class="badge badge-athx">Non-Pro Category</span>
+          <a href="calendar_dashboard.html" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.75rem; border-radius: 6px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; font-size: 0.8rem; font-weight: 600; transition: all 0.2s ease;">📅 Calendar Dashboard ↗</a>
         </div>
         <div class="header-subtext" style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
           Unified Decision Hub • Strict Analysis Floor: <strong style="color: var(--primary);">{cfg['data_start']}</strong> • Updated: <strong>{as_of_date_display}</strong>

@@ -680,6 +680,7 @@ def build_dashboard():
                 <button class="stepper-btn" onclick="shiftDate(1)">▶</button>
             </div>
             <button class="pill-btn" onclick="goToToday()">Today</button>
+            <a href="garmin_workout.html" class="pill-btn" style="text-decoration: none; color: #ffd700; border: 1px solid rgba(255, 215, 0, 0.4); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.75rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; background: rgba(255, 215, 0, 0.08);">🏋️ ATHX Dashboard ↗</a>
 
             <div class="view-tabs">
                 <button class="tab-btn active" onclick="switchView('day')">Day Timeline</button>

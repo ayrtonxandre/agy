@@ -1,5 +1,5 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect
-24287114557,2026-09-08,2026-09-08 19:03:11,Cardio,indoor_cardio,Cardio / Cross-Training,31.5,0.0,319,130.0,169.0,RECOVERY
+24287114557,2026-09-08,2026-09-08 19:03:11,"ATHX 2027: Light Session - S2O Technique, Shoulders Prehab & Core",indoor_cardio,Cardio / Cross-Training,31.5,0.0,319,130.0,169.0,RECOVERY
 24285053565,2026-09-08,2026-09-08 16:39:20,Paris Running,running,Running,27.6,5.01,420,167.0,185.0,VO2MAX
 24266663499,2026-09-07,2026-09-07 06:39:00,Push,strength_training,Strength,44.6,0.0,342,115.0,151.0,AEROBIC_BASE
 24191921542,2026-09-01,2026-09-01 06:35:15,Leg Day,strength_training,Strength,51.5,0.0,372,112.0,164.0,ANAEROBIC_CAPACITY
