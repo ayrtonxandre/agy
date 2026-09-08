@@ -77,7 +77,13 @@ def main():
     print(f"   • Mobility: {apple_data['mobility']['days_tracked']} days tracked, RHR: {apple_data['mobility']['current_rhr']} bpm")
     print(f"   • Readiness Score: {apple_data['readiness_composite']['score']}%")
 
-    comp_data = athx_analytics.evaluate_competition_readiness(strength_data, apple_data)
+    running_data = athx_analytics.process_running_data(BASE_DIR / "garmin_running_activities.json", audit)
+    print(f"✅ Garmin Running Processed: {running_data['total_runs']} runs, {running_data['total_distance_km']} km. Best 5k: {running_data['best_5k_pace_formatted']} (VO2Max: {running_data['latest_vo2max']})")
+
+    workout_data = athx_analytics.process_workout_activities(BASE_DIR / "garmin_workout_activities.json", audit)
+    print(f"✅ Garmin Workouts Processed: {workout_data['total_sessions']} sessions, {workout_data['total_duration_min']} min, {workout_data['total_calories']:,} kcal.")
+
+    comp_data = athx_analytics.evaluate_competition_readiness(strength_data, apple_data, running_data)
     print(f"✅ ATHX 2027 Competition Evaluation: {comp_data['weeks_remaining']} weeks to {comp_data['competition_date']}")
 
     months_set = set()
@@ -151,6 +157,8 @@ def main():
         "audit": audit.to_dict(),
         "strength": strength_data,
         "apple": apple_data,
+        "running": running_data,
+        "workouts": workout_data,
         "competition": comp_data,
         "monthly_summary": monthly_summary,
         "freshness": freshness_info
@@ -168,6 +176,8 @@ def build_html(payload_json: str, d: dict) -> str:
     cfg = d["config"]
     st = d["strength"]
     ap = d["apple"]
+    rn = d.get("running", {})
+    wk = d.get("workouts", {})
     cp = d["competition"]
     fr = d["freshness"]
     au = d["audit"]
@@ -706,6 +716,9 @@ def build_html(payload_json: str, d: dict) -> str:
       <button class="nav-tab active" data-tab="garminTab">
         🏋️ Garmin PPL, Hypertrophy & Workload Engine
       </button>
+      <button class="nav-tab" data-tab="aerobicTab">
+        🏃 Running & Conditioning Engine
+      </button>
       <button class="nav-tab" data-tab="appleTab">
         🍏 Apple Health: Body Comp & Fueling
       </button>
@@ -904,6 +917,115 @@ def build_html(payload_json: str, d: dict) -> str:
             <button class="btn-page" id="btnWorkoutPrev" disabled>&larr; Previous</button>
             <button class="btn-page" id="btnWorkoutNext">Next &rarr;</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AEROBIC ENGINE, RUNNING & CONDITIONING -->
+    <div id="aerobicTab" class="tab-section">
+      <section class="kpi-grid">
+        <!-- Running 5k Pace -->
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">5km Running Benchmark</span>
+            <span class="badge badge-warning">ATHX Std: 4:30/km</span>
+          </div>
+          <div class="kpi-value">{rn.get('best_5k_pace_formatted', 'N/A')}</div>
+          <div class="kpi-subtext">
+            Trailing 28d Best: <strong style="color: var(--primary);">{rn.get('current_28d_best_pace_formatted', 'N/A')}</strong><br>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">Garmin GPS tracking | Target: sub-4:30/km for ATHX Tier 1</span>
+          </div>
+        </div>
+
+        <!-- VO2Max & Aerobic Capacity -->
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">VO2Max & Aerobic Capacity</span>
+            <span class="badge badge-sweetspot">Aerobic Base</span>
+          </div>
+          <div class="kpi-value">{rn.get('latest_vo2max', '51.0')} <span>ml/kg/min</span></div>
+          <div class="kpi-subtext">
+            Garmin Firstbeat Analytics<br>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">Avg Run Cadence: {rn.get('avg_cadence_spm', 'N/A')} spm | Avg HR: {rn.get('avg_hr', 'N/A')} bpm</span>
+          </div>
+        </div>
+
+        <!-- Running Volume Since May 1 -->
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Running Volume (Since May 1)</span>
+            <span class="badge badge-sweetspot">{rn.get('total_runs', 0)} Runs</span>
+          </div>
+          <div class="kpi-value">{rn.get('total_distance_km', 0.0)} <span>km</span></div>
+          <div class="kpi-subtext">
+            Total Time: <span class="highlight">{rn.get('total_duration_min', 0.0)} min</span><br>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">Active Phase 1 aerobic tempo target: 5-8km weekly</span>
+          </div>
+        </div>
+
+        <!-- Cross-Training & Conditioning Sessions -->
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Conditioning & Workouts</span>
+            <span class="badge badge-sweetspot">{wk.get('total_sessions', 0)} Sessions</span>
+          </div>
+          <div class="kpi-value">{wk.get('total_duration_min', 0.0)} <span>min</span></div>
+          <div class="kpi-subtext">
+            Conditioning Energy: <span class="highlight">{wk.get('total_calories', 0):,} kcal</span><br>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">Cross-training, indoor cardio, hiking/rucking & bouldering</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Running Activities Log Table -->
+      <div class="table-card">
+        <div class="chart-header">
+          <span class="chart-title">🏃 Garmin Running Activities Log ({len(rn.get('history', []))} Recorded Runs)</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Pace, Heart Rate, VO2Max & Training Effect</span>
+        </div>
+        <div class="table-container">
+          <table id="runningTable">
+            <thead>
+              <tr>
+                <th>Date ▾</th>
+                <th>Activity Name</th>
+                <th>Distance</th>
+                <th>Duration</th>
+                <th>Avg Pace</th>
+                <th>Avg HR</th>
+                <th>Max HR</th>
+                <th>Cadence</th>
+                <th>VO2Max</th>
+                <th>Training Effect</th>
+              </tr>
+            </thead>
+            <tbody id="runningTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Conditioning / Workout Activities Log Table -->
+      <div class="table-card" style="margin-top: 1.5rem;">
+        <div class="chart-header">
+          <span class="chart-title">⚡ Cardio, Cross-Training & Recovery Workouts ({len(wk.get('history', []))} Sessions)</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Modalities, Energy Burn & Intensity Distribution</span>
+        </div>
+        <div class="table-container">
+          <table id="workoutsTable">
+            <thead>
+              <tr>
+                <th>Date ▾</th>
+                <th>Activity Name</th>
+                <th>Category</th>
+                <th>Duration</th>
+                <th>Calories</th>
+                <th>Avg HR</th>
+                <th>Max HR</th>
+                <th>Training Effect</th>
+              </tr>
+            </thead>
+            <tbody id="workoutsTableBody"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1362,6 +1484,40 @@ def build_html(payload_json: str, d: dict) -> str:
       </tr>`).join("");
     }}
 
+    function renderRunningTable() {{
+      const tbody = document.getElementById("runningTableBody");
+      if (!tbody) return;
+      const items = [...(ATHX_DATA.running ? ATHX_DATA.running.history : [])].reverse();
+      tbody.innerHTML = items.map(r => `<tr>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 600;">${{r.Date}}</td>
+        <td style="font-weight: 600; color: var(--text-main);">${{r.Activity_Name}}</td>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 700; color: var(--primary);">${{r.Distance_km}} km</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.Duration_min}} min</td>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 700; color: var(--athx-gold);">${{r.Pace_formatted}}</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.Average_HR || '—'}} bpm</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.Max_HR || '—'}} bpm</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.Cadence_spm ? r.Cadence_spm + ' spm' : '—'}}</td>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 700; color: var(--accent);">${{r.VO2Max || '—'}}</td>
+        <td><span class="badge badge-sweetspot">${{r.Training_Effect_Label || 'AEROBIC'}}</span></td>
+      </tr>`).join("");
+    }}
+
+    function renderWorkoutsTable() {{
+      const tbody = document.getElementById("workoutsTableBody");
+      if (!tbody) return;
+      const items = [...(ATHX_DATA.workouts ? ATHX_DATA.workouts.history : [])].reverse();
+      tbody.innerHTML = items.map(r => `<tr>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 600;">${{r.Date}}</td>
+        <td style="font-weight: 600; color: var(--text-main);">${{r.Activity_Name}}</td>
+        <td><span class="badge ${{r.Category && r.Category.includes('Cross') ? 'badge-sweetspot' : (r.Category && r.Category.includes('Hiking') ? 'badge-neutral' : 'badge-warning')}}">${{r.Category || 'Workout'}}</span></td>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 700; color: var(--primary);">${{r.Duration_min}} min</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.Calories_kcal ? r.Calories_kcal.toLocaleString() + ' kcal' : '—'}}</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.Average_HR || '—'}} bpm</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.Max_HR || '—'}} bpm</td>
+        <td><span class="badge badge-sweetspot">${{r.Training_Effect_Label || 'WORKOUT'}}</span></td>
+      </tr>`).join("");
+    }}
+
     const btnExportAudit = document.getElementById("btnExportAudit");
     if (btnExportAudit) {{
       btnExportAudit.addEventListener("click", () => {{
@@ -1691,6 +1847,8 @@ def build_html(payload_json: str, d: dict) -> str:
       renderWorkoutTable();
       renderMonthlyTable();
       renderSleepTable();
+      renderRunningTable();
+      renderWorkoutsTable();
       renderAuditTable();
       initCharts();
     }});

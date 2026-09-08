@@ -47,6 +47,12 @@ SYNC_TARGETS = [
     "garmin_extracted_workouts.csv",
     "garmin_extracted_workouts.json",
     "garmin_workout_volume.json",
+    "garmin_running_activities.csv",
+    "garmin_running_activities.json",
+    "garmin_workout_activities.csv",
+    "garmin_workout_activities.json",
+    "garmin_all_activities.csv",
+    "garmin_all_activities.json",
     # Live Dashboards
     "garmin_workout.html",
     "calendar_dashboard.html"

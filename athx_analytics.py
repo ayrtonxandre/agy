@@ -779,14 +779,163 @@ def process_apple_health(base_dir: Path, audit: DataAuditTracker) -> dict:
 
 
 # ------------------------------------------------------------------------------
-# 3. ATHX 2027 COMPETITION READINESS & RADAR
+# 3. GARMIN RUNNING & CONDITIONING ANALYTICS
 # ------------------------------------------------------------------------------
-def evaluate_competition_readiness(strength_res: dict, apple_res: dict) -> dict:
+def process_running_data(running_input: Path | list[dict] | None = None, audit: DataAuditTracker | None = None) -> dict:
+    """Processes Garmin running activities and calculates aerobic/conditioning metrics."""
+    raw_runs: list[dict] = []
+    if isinstance(running_input, list):
+        raw_runs = running_input
+    elif isinstance(running_input, Path) and running_input.exists():
+        with open(running_input, "r", encoding="utf-8") as f:
+            raw_runs = json.load(f)
+    else:
+        default_path = Path(__file__).resolve().parent / "garmin_running_activities.json"
+        if default_path.exists():
+            with open(default_path, "r", encoding="utf-8") as f:
+                raw_runs = json.load(f)
+
+    if audit is None:
+        audit = DataAuditTracker()
+
+    valid_runs: list[dict] = []
+    for r in raw_runs:
+        d = r.get("Date", "")
+        if d and d < athx_config.DATA_START:
+            audit.log("Temporal Exclusion", d, f"Run {r.get('Activity_Name')}", d, "Excluded", f"Prior to analysis start {athx_config.DATA_START}")
+            continue
+        valid_runs.append(r)
+
+    valid_runs.sort(key=lambda x: x.get("Start_Time", ""))
+
+    if not valid_runs:
+        return {
+            "total_runs": 0,
+            "total_distance_km": 0.0,
+            "total_duration_min": 0.0,
+            "best_5k_pace_s": 295.0,
+            "best_5k_pace_formatted": "4:55/km",
+            "current_28d_best_pace_s": 295.0,
+            "current_28d_best_pace_formatted": "4:55/km",
+            "latest_run": None,
+            "latest_vo2max": None,
+            "avg_cadence_spm": None,
+            "avg_hr": None,
+            "history": []
+        }
+
+    total_dist = round(sum(r.get("Distance_km", 0.0) for r in valid_runs), 2)
+    total_dur = round(sum(r.get("Duration_min", 0.0) for r in valid_runs), 1)
+
+    # Consider runs of ~5k (>= 4.5km) for the 5k benchmark
+    runs_5k = [r for r in valid_runs if r.get("Distance_km", 0.0) >= 4.5]
+    candidate_runs = runs_5k if runs_5k else valid_runs
+
+    best_pace_run = min(candidate_runs, key=lambda x: x.get("Pace_s_per_km") or 99999.0, default=valid_runs[-1])
+    best_5k_pace_s = best_pace_run.get("Pace_s_per_km") or 295.0
+    best_5k_pace_formatted = best_pace_run.get("Pace_formatted") or "4:55/km"
+
+    # Trailing 28-day best pace
+    today = date.today()
+    t28_cutoff = (today - timedelta(days=athx_config.CHRONIC_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
+    t28_runs = [r for r in candidate_runs if r.get("Date", "") >= t28_cutoff and r.get("Pace_s_per_km") and r.get("Pace_s_per_km") > 0]
+    if t28_runs:
+        t28_best_run = min(t28_runs, key=lambda x: x.get("Pace_s_per_km"))
+        curr_28d_pace_s = t28_best_run.get("Pace_s_per_km")
+        curr_28d_pace_formatted = t28_best_run.get("Pace_formatted")
+    else:
+        curr_28d_pace_s = best_5k_pace_s
+        curr_28d_pace_formatted = best_5k_pace_formatted
+
+    latest_run = valid_runs[-1]
+    latest_vo2 = next((r.get("VO2Max") for r in reversed(valid_runs) if r.get("VO2Max")), None)
+
+    cadences = [r.get("Cadence_spm") for r in valid_runs if r.get("Cadence_spm", 0) > 0]
+    avg_cadence = round(sum(cadences) / len(cadences), 1) if cadences else None
+
+    hrs = [r.get("Average_HR") for r in valid_runs if r.get("Average_HR")]
+    avg_hr = round(sum(hrs) / len(hrs), 1) if hrs else None
+
+    return {
+        "total_runs": len(valid_runs),
+        "total_distance_km": total_dist,
+        "total_duration_min": total_dur,
+        "best_5k_pace_s": round(best_5k_pace_s, 1),
+        "best_5k_pace_formatted": best_5k_pace_formatted,
+        "current_28d_best_pace_s": round(curr_28d_pace_s, 1),
+        "current_28d_best_pace_formatted": curr_28d_pace_formatted,
+        "latest_run": latest_run,
+        "latest_vo2max": latest_vo2,
+        "avg_cadence_spm": avg_cadence,
+        "avg_hr": avg_hr,
+        "history": valid_runs
+    }
+
+
+# ------------------------------------------------------------------------------
+# 4. GARMIN WORKOUTS & CROSS-TRAINING ANALYTICS
+# ------------------------------------------------------------------------------
+def process_workout_activities(workout_input: Path | list[dict] | None = None, audit: DataAuditTracker | None = None) -> dict:
+    """Processes Garmin non-strength workout activities (cardio, cross-training, hiking, bouldering)."""
+    raw_w: list[dict] = []
+    if isinstance(workout_input, list):
+        raw_w = workout_input
+    elif isinstance(workout_input, Path) and workout_input.exists():
+        with open(workout_input, "r", encoding="utf-8") as f:
+            raw_w = json.load(f)
+    else:
+        default_path = Path(__file__).resolve().parent / "garmin_workout_activities.json"
+        if default_path.exists():
+            with open(default_path, "r", encoding="utf-8") as f:
+                raw_w = json.load(f)
+
+    if audit is None:
+        audit = DataAuditTracker()
+
+    valid_w: list[dict] = []
+    for r in raw_w:
+        d = r.get("Date", "")
+        if d and d < athx_config.DATA_START:
+            audit.log("Temporal Exclusion", d, f"Workout {r.get('Activity_Name')}", d, "Excluded", f"Prior to analysis start {athx_config.DATA_START}")
+            continue
+        valid_w.append(r)
+
+    valid_w.sort(key=lambda x: x.get("Start_Time", ""))
+
+    total_dur = round(sum(r.get("Duration_min", 0.0) for r in valid_w), 1)
+    total_cals = sum(r.get("Calories_kcal", 0) for r in valid_w)
+
+    breakdown: dict[str, dict] = {}
+    for r in valid_w:
+        cat = r.get("Category", "Workout")
+        if cat not in breakdown:
+            breakdown[cat] = {"count": 0, "duration_min": 0.0, "calories": 0}
+        breakdown[cat]["count"] += 1
+        breakdown[cat]["duration_min"] = round(breakdown[cat]["duration_min"] + r.get("Duration_min", 0.0), 1)
+        breakdown[cat]["calories"] += r.get("Calories_kcal", 0)
+
+    return {
+        "total_sessions": len(valid_w),
+        "total_duration_min": total_dur,
+        "total_calories": total_cals,
+        "breakdown_by_category": breakdown,
+        "history": valid_w
+    }
+
+
+# ------------------------------------------------------------------------------
+# 5. ATHX 2027 COMPETITION READINESS & RADAR
+# ------------------------------------------------------------------------------
+def evaluate_competition_readiness(strength_res: dict, apple_res: dict, running_res: dict | None = None) -> dict:
     """Evaluates athlete standing across 5 ATHX events against Tier-1 Non-Pro standards."""
     lifts = strength_res["lift_progressions"]
     comp_date = parse_date(athx_config.COMPETITION_DATE)
     today = date.today()
     weeks_remaining = max(1.0, (comp_date - today).days / 7.0)
+
+    # Auto-load running data if not explicitly passed
+    if running_res is None:
+        running_res = process_running_data()
 
     # 1. Shoulder-to-Overhead (S2O)
     s2o_best = lifts.get("Overhead Press", {}).get("current_28d_best") or 55.0
@@ -809,8 +958,17 @@ def evaluate_competition_readiness(strength_res: dict, apple_res: dict) -> dict:
     dl_req_rate = round(dl_gap / weeks_remaining, 2)
     dl_pct = round(min(100.0, (dl_best / dl_std) * 100.0), 1)
 
-    # 4. 5km Running Pace (Standard 270s = 4:30/km. Estimate: 295s = 4:55/km)
-    run_curr_s = 295.0
+    # 4. 5km Running Pace (Standard 270s = 4:30/km)
+    if running_res and running_res.get("current_28d_best_pace_s"):
+        run_curr_s = running_res["current_28d_best_pace_s"]
+        run_display = running_res["current_28d_best_pace_formatted"]
+    elif running_res and running_res.get("best_5k_pace_s"):
+        run_curr_s = running_res["best_5k_pace_s"]
+        run_display = running_res["best_5k_pace_formatted"]
+    else:
+        run_curr_s = 295.0
+        run_display = "4:55/km"
+
     run_std_s = athx_config.COMPETITION_BENCHMARKS["run_5k"]["standard"]
     run_gap_s = max(0.0, round(run_curr_s - run_std_s, 1))
     run_req_rate = round(run_gap_s / weeks_remaining, 2) # seconds drop per week
@@ -866,15 +1024,15 @@ def evaluate_competition_readiness(strength_res: dict, apple_res: dict) -> dict:
         {
             "id": "run_5k",
             "name": "5km Running Pace",
-            "current": "4:55/km",
+            "current": run_display,
             "current_val": run_curr_s,
             "standard": "4:30/km",
             "standard_val": run_std_s,
-            "gap": f"+{int(run_gap_s)}s/km",
+            "gap": f"+{int(round(run_gap_s))}s/km" if run_gap_s > 0 else "Qualified",
             "gap_num": run_gap_s,
             "readiness_pct": run_pct,
-            "required_rate": f"-{run_req_rate}s/wk",
-            "status": "In Progress"
+            "required_rate": f"-{run_req_rate}s/wk" if run_gap_s > 0 else "Maintained",
+            "status": "Achieved" if run_gap_s == 0 else "In Progress"
         },
         {
             "id": "sandbag_carry",

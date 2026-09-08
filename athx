@@ -377,14 +377,7 @@ def run_garmin_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
             timeout=40
         )
         if res.returncode == 0:
-            # Parse summary line if available
-            sets_count = 0
-            for line in res.stdout.splitlines():
-                if "Total Sets Logged" in line:
-                    parts = line.split(":")
-                    if len(parts) > 1:
-                        sets_count = parts[1].strip()
-            msg = f"Garmin Connect: Workouts synced ({sets_count} sets cached)" if sets_count else "Garmin Connect: Strength sets synchronized"
+            msg = "Garmin Connect: Synchronized Strength, Running & Workouts"
             return "success", msg
         else:
             return "warning", "Garmin Connect: Sync skipped (using cached session data)"
@@ -580,7 +573,7 @@ def main():
     if not args.skip_health:
         steps.append(("Syncing Apple Health biometrics & sleep", lambda: run_health_sync(AGY_DIR, venv_py)))
     if not args.skip_garmin:
-        steps.append(("Extracting Garmin strength workouts & sets", lambda: run_garmin_sync(AGY_DIR, venv_py)))
+        steps.append(("Extracting Garmin strength, running & workouts", lambda: run_garmin_sync(AGY_DIR, venv_py)))
     if not args.skip_cal:
         steps.append(("Syncing tri-calendar schedule & open slots", lambda: run_calendar_sync(AGY_DIR, venv_py)))
     steps.append(("Rebuilding ATHX 2027 Athlete Headquarters", lambda: run_athlete_dashboard_build(AGY_DIR, venv_py)))

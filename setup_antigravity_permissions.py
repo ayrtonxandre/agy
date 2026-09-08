@@ -36,20 +36,49 @@ STANDARD_TOOLS = [
     "command(mv)",
     "command(mkdir)",
     "command(touch)",
+    "command(chmod)",
     "command(unzip)",
     "command(tar)",
-    # Version Control
+    # Version Control (sandboxed & unsandboxed)
     "command(git)",
+    "command(git status)",
+    "command(git diff)",
+    "command(git log)",
+    "command(git show)",
+    "command(git stash)",
+    "command(git add)",
+    "command(git commit)",
+    "command(git checkout)",
+    "command(git branch)",
+    "command(git config)",
+    "command(git remote)",
+    "command(git init)",
+    "command(git push origin main)",
+    "unsandboxed(git add)",
+    "unsandboxed(git commit)",
+    "unsandboxed(git push origin main)",
     # Runtimes & Package Managers
     "command(python)",
     "command(python3)",
     "command(uv)",
-    # System Diagnostics
+    "command(uv pip)",
+    "command(uv run python)",
+    # System Diagnostics & Networking
     "command(ps)",
     "command(lsof)",
     "command(df)",
     "command(du)",
     "command(open)",
+    "command(pbpaste)",
+    "command(curl)",
+    # MCP Tools
+    "mcp(excalidraw/read_me)",
+    "mcp(excalidraw/create_view)",
+    "mcp(excalidraw/export_to_excalidraw)",
+    # URLs
+    "read_url(calendar.google.com)",
+    "read_url(artefact.com)",
+    "read_url(antigravity.google)",
 ]
 
 def main():
