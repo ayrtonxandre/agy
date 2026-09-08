@@ -162,6 +162,40 @@ def ingest_health_export(zip_path: Path):
     mob_df.to_csv(mob_path, index=False)
     print(f"✅ Generated `apple_mobility_biomechanics.csv`: {len(mob_df)} days of gait & mobility metrics.")
 
+    # --------------------------------------------------------------------------
+    # 5. UPDATE NUTRITION MACROS (`apple_nutrition_macros.csv`)
+    # --------------------------------------------------------------------------
+    nut_path = BASE_DIR / "apple_nutrition_macros.csv"
+    existing_nut = pd.read_csv(nut_path) if nut_path.exists() else pd.DataFrame()
+
+    export_nut = export_df.dropna(subset=["Dietary Energy (kJ)"]).copy() if "Dietary Energy (kJ)" in export_df.columns else pd.DataFrame()
+    if not export_nut.empty:
+        new_nut_rows = []
+        for _, r in export_nut.iterrows():
+            cals = round(float(r["Dietary Energy (kJ)"]) * 0.239006, 1) if pd.notna(r.get("Dietary Energy (kJ)")) else 0.0
+            prot = round(float(r["Protein (g)"]), 1) if pd.notna(r.get("Protein (g)")) else 0.0
+            carbs = round(float(r["Carbohydrates (g)"]), 1) if pd.notna(r.get("Carbohydrates (g)")) else 0.0
+            fat = round(float(r["Total Fat (g)"]), 1) if pd.notna(r.get("Total Fat (g)")) else 0.0
+            fiber = round(float(r["Dietary Fiber (g)"]), 1) if pd.notna(r.get("Dietary Fiber (g)")) else (round(float(r["Fiber (g)"]), 1) if pd.notna(r.get("Fiber (g)")) else 0.0)
+
+            new_nut_rows.append({
+                "Date": r["Date"],
+                "Calories_kcal": cals,
+                "Protein_g": prot,
+                "Carbs_g": carbs,
+                "Fat_g": fat,
+                "Fiber_g": fiber
+            })
+        new_nut_df = pd.DataFrame(new_nut_rows)
+        if not existing_nut.empty:
+            merged_nut = pd.concat([existing_nut, new_nut_df], ignore_index=True)
+        else:
+            merged_nut = new_nut_df
+        merged_nut.drop_duplicates(subset=["Date"], keep="last", inplace=True)
+        merged_nut.sort_values(by="Date", inplace=True)
+        merged_nut.to_csv(nut_path, index=False)
+        print(f"✅ Updated `apple_nutrition_macros.csv`: {len(merged_nut)} days logged (latest: {merged_nut['Date'].max()})")
+
 if __name__ == "__main__":
     default_zip = Path("/Users/ayrtonandre/Downloads/HealthAutoExport_20260904160946.zip")
     target = Path(sys.argv[1]) if len(sys.argv) > 1 else default_zip

@@ -353,7 +353,7 @@ def run_health_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
     candidates = []
     if "HAE_IP" in os.environ:
         candidates.append(os.environ["HAE_IP"])
-    candidates.extend(["10.10.251.25", "192.168.1.163"])
+    candidates.extend(["192.168.1.163", "10.10.251.25"])
 
     for cip in candidates:
         try:

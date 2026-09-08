@@ -136,6 +136,9 @@ def process_health_auto_export_payload(payload: dict) -> dict:
     new_bf = None
     new_cals = None
     new_prot = None
+    new_carbs = None
+    new_fat = None
+    new_fiber = None
     new_steps = None
 
     for m in metrics:
@@ -151,16 +154,29 @@ def process_health_auto_export_payload(payload: dict) -> dict:
         if "weight" in name or "body_mass" in name or "bodymass" in name:
             try: new_weight = (sample_date, round(float(qty), 1))
             except: pass
-        elif "fat" in name:
+        elif "body_fat" in name or "bodyfat" in name:
             try:
                 val = float(qty)
                 new_bf = (sample_date, round(val if val > 1.0 else val * 100, 1))
             except: pass
-        elif "energy" in name or "calorie" in name:
-            try: new_cals = (sample_date, round(float(qty)))
+        elif "dietary_energy" in name or "dietaryenergy" in name or ("energy" in name and "diet" in name) or "calorie" in name:
+            try:
+                val = float(qty)
+                unit = str(latest.get("unit", m.get("units", ""))).lower()
+                cals = val * 0.239006 if "kj" in unit else val
+                new_cals = (sample_date, round(cals, 1))
             except: pass
         elif "protein" in name:
             try: new_prot = (sample_date, round(float(qty), 1))
+            except: pass
+        elif "carb" in name:
+            try: new_carbs = (sample_date, round(float(qty), 1))
+            except: pass
+        elif "total_fat" in name or ("fat" in name and "body" not in name):
+            try: new_fat = (sample_date, round(float(qty), 1))
+            except: pass
+        elif "fiber" in name:
+            try: new_fiber = (sample_date, round(float(qty), 1))
             except: pass
         elif "step" in name:
             try: new_steps = (sample_date, int(float(qty)))
@@ -313,6 +329,45 @@ def process_health_auto_export_payload(payload: dict) -> dict:
             writer.writeheader()
             writer.writerows(rows)
         updates["sleep"] = len(daily_sleep)
+
+    # 4. Update Nutrition Macros if nutrition received
+    if new_cals or new_prot:
+        s_date = (new_cals or new_prot)[0]
+        cals_val = new_cals[1] if new_cals and new_cals[0] == s_date else 0.0
+        prot_val = new_prot[1] if new_prot and new_prot[0] == s_date else 0.0
+        carbs_val = new_carbs[1] if new_carbs and new_carbs[0] == s_date else 0.0
+        fat_val = new_fat[1] if new_fat and new_fat[0] == s_date else 0.0
+        fiber_val = new_fiber[1] if new_fiber and new_fiber[0] == s_date else 0.0
+
+        nut_rows = []
+        if NUTRITION_CSV.exists():
+            with open(NUTRITION_CSV, "r", encoding="utf-8") as f:
+                nut_rows = list(csv.DictReader(f))
+
+        existing = next((r for r in nut_rows if r.get("Date") == s_date), None)
+        if existing:
+            if cals_val: existing["Calories_kcal"] = cals_val
+            if prot_val: existing["Protein_g"] = prot_val
+            if carbs_val: existing["Carbs_g"] = carbs_val
+            if fat_val: existing["Fat_g"] = fat_val
+            if fiber_val: existing["Fiber_g"] = fiber_val
+        else:
+            nut_rows.append({
+                "Date": s_date,
+                "Calories_kcal": cals_val,
+                "Protein_g": prot_val,
+                "Carbs_g": carbs_val,
+                "Fat_g": fat_val,
+                "Fiber_g": fiber_val
+            })
+
+        nut_rows.sort(key=lambda x: x["Date"])
+        with open(NUTRITION_CSV, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["Date", "Calories_kcal", "Protein_g", "Carbs_g", "Fat_g", "Fiber_g"])
+            writer.writeheader()
+            writer.writerows(nut_rows)
+        updates["nutrition"] += 1
+        log_event(f"🥗 Health Auto Export: Logged {cals_val} kcal, {prot_val}g protein on {s_date}")
 
     # Regenerate dashboard
     try:

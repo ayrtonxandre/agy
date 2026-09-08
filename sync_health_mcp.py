@@ -40,6 +40,7 @@ SLEEP_CSV = BASE_DIR / "apple_sleep.csv"
 DAILY_ACT_CSV = BASE_DIR / "apple_daily_activity.csv"
 MOBILITY_CSV = BASE_DIR / "apple_mobility_biomechanics.csv"
 WORKOUTS_CSV = BASE_DIR / "apple_workouts_history.csv"
+NUTRITION_CSV = BASE_DIR / "apple_nutrition_macros.csv"
 
 
 class McpHttpClient:
@@ -411,14 +412,76 @@ def update_workouts(workouts_payload: dict):
     print(f"✅ `apple_workouts_history.csv`: {len(merged)} workouts recorded (latest: {merged.iloc[-1]['Date']} - {merged.iloc[-1]['Workout_Type']})")
 
 
+def update_nutrition(metrics_dict: dict):
+    """Updates apple_nutrition_macros.csv with calories, protein, carbs, fat, and fiber."""
+    energy_samples = metrics_dict.get("dietary_energy", {}).get("data", [])
+    prot_samples = metrics_dict.get("protein", {}).get("data", [])
+    carb_samples = metrics_dict.get("carbohydrates", {}).get("data", [])
+    fat_samples = metrics_dict.get("total_fat", {}).get("data", [])
+    fiber_samples = metrics_dict.get("fiber", {}).get("data", [])
+
+    if not energy_samples and not prot_samples:
+        return
+
+    day_map = {}
+    energy_units = str(metrics_dict.get("dietary_energy", {}).get("units", "")).lower()
+    for s in energy_samples:
+        d = str(s.get("date", ""))[:10]
+        qty = float(s.get("qty", 0))
+        unit = str(s.get("unit", energy_units)).lower()
+        kcal = round(qty * 0.239006, 1) if "kj" in unit else round(qty, 1)
+        day_map.setdefault(d, {})["Calories_kcal"] = kcal
+
+    for s in prot_samples:
+        d = str(s.get("date", ""))[:10]
+        day_map.setdefault(d, {})["Protein_g"] = round(float(s.get("qty", 0)), 1)
+
+    for s in carb_samples:
+        d = str(s.get("date", ""))[:10]
+        day_map.setdefault(d, {})["Carbs_g"] = round(float(s.get("qty", 0)), 1)
+
+    for s in fat_samples:
+        d = str(s.get("date", ""))[:10]
+        day_map.setdefault(d, {})["Fat_g"] = round(float(s.get("qty", 0)), 1)
+
+    for s in fiber_samples:
+        d = str(s.get("date", ""))[:10]
+        day_map.setdefault(d, {})["Fiber_g"] = round(float(s.get("qty", 0)), 1)
+
+    existing_df = pd.read_csv(NUTRITION_CSV) if NUTRITION_CSV.exists() else pd.DataFrame()
+
+    new_rows = []
+    for d, vals in day_map.items():
+        new_rows.append({
+            "Date": d,
+            "Calories_kcal": vals.get("Calories_kcal", 0.0),
+            "Protein_g": vals.get("Protein_g", 0.0),
+            "Carbs_g": vals.get("Carbs_g", 0.0),
+            "Fat_g": vals.get("Fat_g", 0.0),
+            "Fiber_g": vals.get("Fiber_g", 0.0),
+        })
+
+    new_df = pd.DataFrame(new_rows)
+    if not existing_df.empty:
+        merged = pd.concat([existing_df, new_df], ignore_index=True)
+    else:
+        merged = new_df
+
+    merged.drop_duplicates(subset=["Date"], keep="last", inplace=True)
+    merged.sort_values(by="Date", inplace=True)
+    merged.to_csv(NUTRITION_CSV, index=False)
+    latest = merged.iloc[-1]
+    print(f"✅ `apple_nutrition_macros.csv`: {len(merged)} days logged (latest: {latest['Date']} @ {latest['Calories_kcal']} kcal, {latest['Protein_g']}g protein)")
+
+
 def discover_mcp_url(default_url: str) -> str:
     """Probes candidate IPs on port 9000 if default_url is not reachable."""
     candidates = []
     if "HAE_IP" in os.environ:
         candidates.append(f"http://{os.environ['HAE_IP']}:9000/mcp")
     candidates.extend([
-        "http://10.10.251.25:9000/mcp",
         "http://192.168.1.163:9000/mcp",
+        "http://10.10.251.25:9000/mcp",
         "http://127.0.0.1:9000/mcp",
     ])
     if default_url not in candidates:
@@ -489,6 +552,7 @@ def main():
     update_daily_activity(metrics_dict)
     update_sleep(metrics_dict)
     update_mobility(metrics_dict)
+    update_nutrition(metrics_dict)
 
     # 2. Fetch Workouts
     print("🏋️ Fetching workout history...")
@@ -505,8 +569,6 @@ def main():
     # 3. Optional GitHub Sync
     if args.push:
         print("\n🚀 Pushing updated biometrics & health datasets to GitHub origin/main...")
-        import subprocess
-        from datetime import datetime
         subprocess.run(["git", "-C", str(BASE_DIR), "add", "-A"])
         ts = datetime.now().strftime("%Y-%m-%d %H:%M")
         subprocess.run(["git", "-C", str(BASE_DIR), "commit", "-m", f"chore(health): live MCP biometrics sync [{ts}]"])
