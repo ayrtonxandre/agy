@@ -169,7 +169,9 @@ def main():
 
     out_file = BASE_DIR / "garmin_workout.html"
     out_file.write_text(html_content, encoding="utf-8")
-    print(f"\n🎉 Successfully rebuilt ATHX Athlete Dashboard: {out_file} ({out_file.stat().st_size:,} bytes)")
+    index_file = BASE_DIR / "index.html"
+    index_file.write_text(html_content, encoding="utf-8")
+    print(f"\n🎉 Successfully rebuilt ATHX Athlete Dashboard: {out_file} & index.html ({out_file.stat().st_size:,} bytes)")
 
 
 def build_html(payload_json: str, d: dict) -> str:

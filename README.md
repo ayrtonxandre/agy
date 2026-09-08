@@ -1,6 +1,6 @@
 # ⚡ AGY - Athlete & Work Intelligence Hub
 
-An autonomous agentic intelligence platform integrating multi-source athletic biometrics, strength analytics, smart multi-calendar scheduling, Excalidraw architecture generation, and on-demand Google Drive cloud synchronization.
+An autonomous agentic intelligence platform integrating multi-source athletic biometrics, strength analytics, smart multi-calendar scheduling, Excalidraw architecture generation, and automated GitHub continuous synchronization.
 
 ---
 
@@ -16,11 +16,11 @@ An autonomous agentic intelligence platform integrating multi-source athletic bi
                                               │
  📱 iPhone / Apple Watch                      ▼
     (Health Auto Export) ────┐    ┌────────────────────────┐    ┌────────────────────────┐
-    • Live MCP :9000/mcp     ├───►│  Master Orchestrator   │───►│ Google Drive Cloud Hub │
-    • Webhook :8080/api      │    │  (Python :8080 launchd)│    │ ("AGY-Intelligence-Hub")
-                             │    └───────────┬────────────┘    └────────────────────────┘
- ⌚ Garmin Cloud             │                │
-    (Garth OAuth / MFA) ─────┘                ▼
+    • Live MCP :9000/mcp     ├───►│  Master Orchestrator   │───►│ GitHub Repository     │
+    • Webhook :8080/api      │    │  (Python :8080 launchd)│    │ • Single Source Truth  │
+                             │    └───────────┬────────────┘    │ • Auto-Sync & History  │
+ ⌚ Garmin Cloud             │                │                 │ • GitHub Pages Hosting │
+    (Garth OAuth / MFA) ─────┘                ▼                 └────────────────────────┘
                                   ┌────────────────────────┐
                                   │  Tri-Calendar Sync     │
                                   │  • Artefact Google Cal │
@@ -49,17 +49,18 @@ While running, `athx` renders a live, fluid loading bar and animated spinner:
   🐍 Environment  : /Users/ayrton.andre/Documents/work/.venv/bin/python
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  [████████████████████░░░░] 83%  ⠋  [5/6] Syncing tri-calendar schedule & open slots...
+  [████████████████████░░░░] 83%  ⠋  [5/6] Rebuilding ATHX 2027 Athlete Headquarters...
   ✔ [1/6] GitHub: Branch is up to date with origin/main (1.8s)
-  ✔ [2/6] Google Drive: Datasets & dashboards pulled from cloud (7.8s)
-  ✔ [3/6] Apple Health: Biometrics up to date (Cloud Hub & Webhook) (0.0s)
-  ✔ [4/6] Garmin Connect: Workouts synced (1728 sets cached) (8.4s)
-  ✔ [5/6] Multi-Calendar: 3 calendars synced (calendar_dashboard.html) (11.2s)
-  ✔ [6/6] ATHX 2027: Rebuilt athlete headquarters (garmin_workout.html) (0.1s)
+  ✔ [2/6] Apple Health: Biometrics up to date (Cloud Hub & Webhook) (0.0s)
+  ✔ [3/6] Garmin Connect: Synchronized Strength, Running & Workouts (2.7s)
+  ✔ [4/6] Multi-Calendar: 3 calendars synced (calendar_dashboard.html) (11.2s)
+  ✔ [5/6] ATHX 2027: Rebuilt athlete headquarters (garmin_workout.html & index.html) (0.2s)
+  ✔ [6/6] GitHub: Synced & pushed latest datasets & dashboards to origin/main (1.5s)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ✨ ATHX Orchestration Complete! (Total time: 29.3s)
+  ✨ ATHX Orchestration Complete! (Total time: 17.4s)
   🏆 Athlete Dashboard  : file:///Users/ayrton.andre/Documents/work/AGY/garmin_workout.html
+  🌐 Live GitHub Pages  : https://ayrtonxandre.github.io/agy/
   📅 Calendar Dashboard : file:///Users/ayrton.andre/Documents/work/AGY/calendar_dashboard.html
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
@@ -67,13 +68,13 @@ While running, `athx` renders a live, fluid loading bar and animated spinner:
 ### 🎛️ CLI Options & Flags
 | Command | Action |
 | :--- | :--- |
-| `athx` | Standard full sync, dashboard rebuild, and browser launch |
-| `athx --push` | Runs full orchestration and pushes updated datasets & HTML back to Google Drive |
+| `athx` | Standard full sync, dashboard rebuild, automated GitHub push, and browser launch |
+| `athx --no-push` | Skips pushing updated datasets & HTML to GitHub after sync |
 | `athx --no-open` | Runs headless (skips opening the browser) |
 | `athx --serve` | Starts local HTTP daemon on `http://localhost:8080` (`/workout`, `/calendar`) |
 | `athx --install` | Installs/symlinks `athx` into `~/.local/bin/athx` and updates shell `$PATH` |
 | `athx --skip-git` | Skips pulling from GitHub |
-| `athx --skip-drive` | Skips pulling from Google Drive |
+| `athx --skip-health`| Skips Apple Health biometrics sync |
 | `athx --skip-garmin`| Skips Garmin Connect API extraction |
 | `athx --skip-cal` | Skips calendar synchronization |
 
@@ -85,20 +86,17 @@ While running, `athx` renders a live, fluid loading bar and animated spinner:
    * Multi-threaded HTTP daemon listening on port `8080`.
    * Webhook endpoint: `POST /api/health` for real-time ingestion of iOS Health Auto Export payloads (weight, body fat %, sleep stages, steps).
    * Serves local dashboards at `/workout` and `/calendar`.
-   * Automatically triggers background Google Drive cloud sync (`auto_push`) on incoming data.
+   * Automatically triggers debounced background GitHub auto-sync (`git_auto_commit_and_push`) on incoming data.
 
 2. **`sync_health_mcp.py`**:
    * Model Context Protocol (MCP) client connecting directly to the Health Auto Export server running on iOS (`http://<iPhone-IP>:9000/mcp`).
    * Queries real-time Apple Health biometrics (`get_health_metrics`) and workouts (`get_workouts`) on demand over local Wi-Fi.
    * Directly updates `apple_body_composition.csv`, `apple_sleep.csv`, `apple_daily_activity.csv`, and `apple_workouts_history.csv`.
-   * Supports optional `--push` flag to trigger immediate cloud synchronization to Google Drive.
+   * Pushes updated datasets directly to GitHub `origin/main`.
 
-3. **`drive_sync.py`**:
-   * Decoupled cloud storage layer connecting to Google Drive v3 API.
-   * Manages dedicated cloud folder: **`AGY - Intelligence Hub`**.
-   * `push`: Uploads biometrics, workout volume, and HTML dashboards.
-   * `pull`: Downloads latest datasets and dashboards on demand on any machine.
-   * `status`: Compares local vs remote files and timestamps.
+3. **`drive_sync.py` [DEPRECATED]**:
+   * Retired from automated runtime. GitHub (`git@github.com:ayrtonxandre/agy.git`) is now the single source of truth.
+   * Preserved strictly for optional manual cold-archive snapshots (`python drive_sync.py push`).
 
 4. **`excalidraw_tool.py`**:
    * Bridges Google Cloud Discovery Engine (Data Store: `excalidraw_1787583517655_diagrams`) and the federated Excalidraw MCP server (`https://mcp.excalidraw.com/mcp`).
@@ -113,9 +111,9 @@ While running, `athx` renders a live, fluid loading bar and animated spinner:
    * **`athx_analytics.py`**: Robust data-cleaning and athletic telemetry pipeline. Enforces a strict analysis floor at `2026-05-01` with a complete audit trail. Imputes Unknown exercise sets using session load signatures, classifies dominant session splits to eliminate Garmin's `"press" -> Legs` bug, restricts e1RM calculations strictly to sets $\le 10$ reps on plausible loads, computes Foster training monotony and weekly strain, dynamically evaluates ACWR as of latest activity, cleans sleep data by filtering recording overflows ($\text{In\_Bed} > 14\text{h}$) and dropping non-wear periods ($< 3\text{h}$), and computes a transparent 5-component recovery composite score.
 
 7. **`extract_garmin_strength.py` & `generate_unified_athlete_dashboard.py`**:
-   * Extracts historical and live strength sets from Garmin Connect (1,728 raw sets; 1,169 valid sets post-May 1).
-   * Generates the zero-hardcoded, fully audited ATHX 2027 Athlete Headquarters (`garmin_workout.html`).
-   * Features: Top-level ATHX event qualification readiness table, 37-week countdown, leg hypertrophy deficit alerts (Quads & Hamstrings vs MEV), 28-day trailing best e1RM trajectories, 7-day smoothed weight recomposition curve, default `Date DESC` tables with sorting & pagination, and an interactive Data Quality & Audit trail panel with JSON export.
+   * Extracts historical and live strength, running, and conditioning sets from Garmin Connect (83 strength workouts, 8 runs, 45 cardio/hiking workouts, 136 total activities).
+   * Generates the zero-hardcoded, fully audited ATHX 2027 Athlete Headquarters (`garmin_workout.html` and `index.html` for GitHub Pages).
+   * Features: Top-level ATHX event qualification readiness table, 37-week countdown, 🏃 Running & Conditioning Engine tab, leg hypertrophy deficit alerts (Quads & Hamstrings vs MEV), 28-day trailing best e1RM trajectories, 7-day smoothed weight recomposition curve, default `Date DESC` tables with sorting & pagination, and an interactive Data Quality & Audit trail panel with JSON export.
 
 ---
 
@@ -123,20 +121,18 @@ While running, `athx` renders a live, fluid loading bar and animated spinner:
 
 ### Setting up on Machine 2 (Other Computer)
 
-1. **Clone Repository**:
+1. **Clone Repository (Single Source of Truth)**:
    ```bash
    git clone git@github.com:ayrtonxandre/agy.git
    cd agy
    ```
+   *All datasets (CSVs, JSONs), dashboards (`garmin_workout.html`, `index.html`), and python engines are immediately available.*
 
-2. **Add Credentials**:
-   * Copy `credentials.json` and `drive_token.json` from Machine 1 (or run OAuth login on first execution).
-
-3. **Pull All Cloud Data & Dashboards on Demand**:
+2. **One-Command Execution**:
    ```bash
-   python drive_sync.py pull
+   athx
    ```
-   *Instantly downloads all Apple Health CSVs, Garmin volumes, and HTML dashboards from Google Drive.*
+   *Instantly pulls latest GitHub changes, syncs local devices, rebuilds headquarters, and pushes updates.*
 
 4. **Transfer Antigravity CLI Permissions & Whitelist**:
    Antigravity CLI stores tool approval permissions in a local configuration file:
@@ -230,7 +226,7 @@ python sync_health_mcp.py --url http://192.168.1.163:9000/mcp --token "<YOUR_BEA
 export HAE_MCP_TOKEN="<YOUR_BEARER_TOKEN>"
 python sync_health_mcp.py
 
-# Pull data and automatically push updates to Google Drive Cloud Hub
+# Pull data and automatically push updates to GitHub origin/main
 python sync_health_mcp.py --push
 ```
 

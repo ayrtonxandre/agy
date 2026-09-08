@@ -1,5 +1,22 @@
 [
   {
+    "Activity_ID": 24287114557,
+    "Date": "2026-09-08",
+    "Start_Time": "2026-09-08 19:03:11",
+    "Activity_Name": "Cardio",
+    "Activity_Type": "indoor_cardio",
+    "Category": "Cardio",
+    "Duration_min": 31.5,
+    "Distance_km": 0.0,
+    "Calories_kcal": 319,
+    "Average_HR": 130.0,
+    "Max_HR": 169.0,
+    "Training_Effect_Label": "RECOVERY",
+    "Moderate_Intensity_Min": 0,
+    "Vigorous_Intensity_Min": 0,
+    "Steps": 1338
+  },
+  {
     "Activity_ID": 24026445362,
     "Date": "2026-08-18",
     "Start_Time": "2026-08-18 19:03:36",

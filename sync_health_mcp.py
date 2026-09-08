@@ -502,11 +502,19 @@ def main():
 
     print("\n✨ Live Health Sync Complete!")
 
-    # 3. Optional Google Drive Sync
+    # 3. Optional GitHub Sync
     if args.push:
-        print("\n☁️ Triggering Google Drive cloud sync (`drive_sync.py push`)...")
+        print("\n🚀 Pushing updated biometrics & health datasets to GitHub origin/main...")
         import subprocess
-        subprocess.run([sys.executable, str(BASE_DIR / "drive_sync.py"), "push"])
+        from datetime import datetime
+        subprocess.run(["git", "-C", str(BASE_DIR), "add", "-A"])
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+        subprocess.run(["git", "-C", str(BASE_DIR), "commit", "-m", f"chore(health): live MCP biometrics sync [{ts}]"])
+        push_res = subprocess.run(["git", "-C", str(BASE_DIR), "push", "origin", "main"], capture_output=True, text=True)
+        if push_res.returncode == 0:
+            print("✅ Successfully pushed to GitHub origin/main!")
+        else:
+            print(f"⚠️ Git push notice: {push_res.stderr.strip()}")
 
 
 if __name__ == "__main__":

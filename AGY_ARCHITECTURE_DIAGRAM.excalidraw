@@ -4,6 +4,13 @@
   "source": "https://excalidraw.com",
   "elements": [
     {
+      "type": "cameraUpdate",
+      "width": 1200,
+      "height": 900,
+      "x": 0,
+      "y": -50
+    },
+    {
       "type": "rectangle",
       "id": "header_card",
       "x": 60,
@@ -32,7 +39,7 @@
       "id": "title_sub",
       "x": 85,
       "y": 14,
-      "text": "Full Architecture Reference: Multi-Source Biometrics, Tri-Calendar Sync, Master Orchestrator, & Cloud Drive Hub",
+      "text": "Full Architecture Reference: Multi-Source Biometrics, Tri-Calendar Sync, Master Orchestrator, & GitHub Central Hub",
       "fontSize": 14,
       "strokeColor": "#cbd5e1"
     },
@@ -177,7 +184,7 @@
       "strokeColor": "#7048e8",
       "strokeWidth": 2,
       "label": {
-        "text": "Master Orchestrator (orchestrator.py)\n\u2022 Multi-Threaded HTTP :8080 (launchd)\n\u2022 Webhook: POST /api/health\n\u2022 Serves /workout & /calendar\n\u2022 Auto-triggers drive_sync.auto_push",
+        "text": "Master Orchestrator (orchestrator.py)\n\u2022 Multi-Threaded HTTP :8080 (launchd)\n\u2022 Webhook: POST /api/health\n\u2022 Serves /workout & /calendar\n\u2022 Auto-sync to GitHub origin/main",
         "fontSize": 14
       }
     },
@@ -379,7 +386,7 @@
       "strokeColor": "#d9480f",
       "strokeWidth": 2,
       "label": {
-        "text": "Google Drive Cloud Hub (drive_sync.py)\nFolder: 'AGY - Intelligence Hub'\n\u2022 push: Uploads all CSVs & HTML\n\u2022 pull: Syncs datasets across machines\n\u2022 status: Local vs Cloud diff verification\n\u2022 auto_push: Real-time background upload",
+        "text": "GitHub Central Hub & Pages\nRepo: 'ayrtonxandre/agy'\n\u2022 Single source of truth (origin/main)\n\u2022 Automated git commit & push\n\u2022 Live Pages: ayrtonxandre.github.io/agy\n\u2022 Complete commit history & diff safety",
         "fontSize": 13
       }
     },
@@ -684,7 +691,7 @@
       "strokeWidth": 2,
       "endArrowhead": "arrow",
       "label": {
-        "text": "drive_sync.auto_push()",
+        "text": "git_auto_commit_and_push()",
         "fontSize": 13
       }
     },
@@ -747,9 +754,17 @@
         "text": "Inject Open Windows & Workouts",
         "fontSize": 13
       }
+    },
+    {
+      "type": "cameraUpdate",
+      "width": 1600,
+      "height": 1200,
+      "x": -30,
+      "y": -80
     }
   ],
   "appState": {
-    "viewBackgroundColor": "#fafafa"
+    "viewBackgroundColor": "#0f172a",
+    "gridSize": 20
   }
 }

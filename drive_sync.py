@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 """
-drive_sync.py - Cross-Machine Data & Dashboard Synchronization via Google Drive.
-Enables Machine 1 (Mac) and Machine 2 to share, push, and query on-demand:
-  - Apple Health & Biometrics CSVs
-  - Garmin Strength Volumes & Extracted Workouts
-  - Interactive ATHX & Calendar HTML Dashboards
+drive_sync.py - [DEPRECATED] Google Drive Cloud Hub Utility.
 
-Usage:
-  python drive_sync.py push    # Uploads local datasets & dashboards to Google Drive
-  python drive_sync.py pull    # Downloads latest datasets & dashboards from Google Drive
-  python drive_sync.py list    # Lists files in the cloud hub folder
-  python drive_sync.py status  # Compares local vs remote files
+⚠️ NOTE: GitHub (git@github.com:ayrtonxandre/agy.git) is now the SINGLE SOURCE OF TRUTH
+for all datasets, dashboards, and automation scripts across machines.
+
+This script is retired from all automated pipelines (athx CLI, orchestrator.py daemon,
+and sync_health_mcp.py). It is preserved strictly as an optional manual cold-archive utility:
+  python drive_sync.py push    # Uploads manual snapshot to Google Drive
+  python drive_sync.py pull    # Manual recovery download from Google Drive
 """
 
 from __future__ import annotations

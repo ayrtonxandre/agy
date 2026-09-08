@@ -40,7 +40,7 @@ def generate_schema():
         "id": "title_sub",
         "x": 85,
         "y": 14,
-        "text": "Full Architecture Reference: Multi-Source Biometrics, Tri-Calendar Sync, Master Orchestrator, & Cloud Drive Hub",
+        "text": "Full Architecture Reference: Multi-Source Biometrics, Tri-Calendar Sync, Master Orchestrator, & GitHub Central Hub",
         "fontSize": 14,
         "strokeColor": "#cbd5e1"
     })
@@ -189,7 +189,7 @@ def generate_schema():
         "strokeColor": "#7048e8",
         "strokeWidth": 2,
         "label": {
-            "text": "Master Orchestrator (orchestrator.py)\n• Multi-Threaded HTTP :8080 (launchd)\n• Webhook: POST /api/health\n• Serves /workout & /calendar\n• Auto-triggers drive_sync.auto_push",
+            "text": "Master Orchestrator (orchestrator.py)\n• Multi-Threaded HTTP :8080 (launchd)\n• Webhook: POST /api/health\n• Serves /workout & /calendar\n• Auto-sync to GitHub origin/main",
             "fontSize": 14
         }
     })
@@ -381,7 +381,7 @@ def generate_schema():
         "strokeColor": "#b45309"
     })
 
-    # Google Drive Hub
+    # GitHub Central Hub & Pages
     elements.append({
         "type": "rectangle",
         "id": "cloud_gdrive",
@@ -395,7 +395,7 @@ def generate_schema():
         "strokeColor": "#d9480f",
         "strokeWidth": 2,
         "label": {
-            "text": "Google Drive Cloud Hub (drive_sync.py)\nFolder: 'AGY - Intelligence Hub'\n• push: Uploads all CSVs & HTML\n• pull: Syncs datasets across machines\n• status: Local vs Cloud diff verification\n• auto_push: Real-time background upload",
+            "text": "GitHub Central Hub & Pages\nRepo: 'ayrtonxandre/agy'\n• Single source of truth (origin/main)\n• Automated git commit & push\n• Live Pages: ayrtonxandre.github.io/agy\n• Complete commit history & diff safety",
             "fontSize": 13
         }
     })
@@ -612,7 +612,7 @@ def generate_schema():
         "label": {"text": "OAuth / CalDAV Sync", "fontSize": 13}
     })
 
-    # 8. Orchestrator auto-sync -> Google Drive Hub
+    # 8. Orchestrator auto-sync -> GitHub Hub
     elements.append({
         "type": "arrow",
         "id": "arr_orch_gdrive",
@@ -624,7 +624,7 @@ def generate_schema():
         "strokeColor": "#d9480f",
         "strokeWidth": 2,
         "endArrowhead": "arrow",
-        "label": {"text": "drive_sync.auto_push()", "fontSize": 13}
+        "label": {"text": "git_auto_commit_and_push()", "fontSize": 13}
     })
 
     # 9. Local Datasets -> ATHX Athlete Dashboard
@@ -672,6 +672,15 @@ def generate_schema():
 
 if __name__ == "__main__":
     els = generate_schema()
-    with open("excalidraw_elements.json", "w") as f:
+    with open("excalidraw_elements.json", "w", encoding="utf-8") as f:
         json.dump(els, f, indent=2)
-    print(f"Generated {len(els)} elements successfully.")
+    diag = {
+        "type": "excalidraw",
+        "version": 2,
+        "source": "https://excalidraw.com",
+        "elements": els,
+        "appState": {"viewBackgroundColor": "#0f172a", "gridSize": 20}
+    }
+    with open("AGY_ARCHITECTURE_DIAGRAM.excalidraw", "w", encoding="utf-8") as f:
+        json.dump(diag, f, indent=2)
+    print(f"Generated {len(els)} elements successfully into excalidraw_elements.json & AGY_ARCHITECTURE_DIAGRAM.excalidraw")

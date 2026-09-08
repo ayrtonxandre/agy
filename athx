@@ -5,11 +5,11 @@
 ================================================================================
 Single-word CLI command (`athx`) that activates all orchestration:
   1. Pulls last edits from GitHub (git pull --rebase)
-  2. Pulls cloud hub datasets from Google Drive (drive_sync.py pull)
-  3. Syncs Apple Health biometrics (MCP / Cloud Hub)
-  4. Syncs Garmin Connect strength workouts & sets (extract_garmin_strength.py)
-  5. Syncs tri-calendar schedule (Google, iCloud, Clariane) & builds calendar dashboard
-  6. Rebuilds Unified ATHX 2027 Athlete Dashboard (garmin_workout.html)
+  2. Syncs Apple Health biometrics (MCP / Webhook)
+  3. Syncs Garmin Connect strength, running & workouts (extract_garmin_strength.py)
+  4. Syncs tri-calendar schedule (Google, iCloud, Clariane) & builds calendar dashboard
+  5. Rebuilds Unified ATHX 2027 Athlete Headquarters (garmin_workout.html & index.html)
+  6. Pushes updated datasets & dashboards to GitHub (origin/main)
   7. Opens the interactive dashboard in your default browser
 
 Cross-machine ready: works identically on Machine 1 and Machine 2.
@@ -26,6 +26,7 @@ import argparse
 import threading
 import subprocess
 import webbrowser
+from datetime import datetime
 from pathlib import Path
 
 # ==============================================================================
@@ -69,7 +70,7 @@ def locate_agy_dir() -> Path:
         Path.cwd(),
     ]
     for c in candidates:
-        if (c / "orchestrator.py").exists() and (c / "drive_sync.py").exists():
+        if (c / "orchestrator.py").exists() and (c / "athx_analytics.py").exists():
             return c.resolve()
 
     # Fallback to current directory
@@ -279,33 +280,64 @@ def run_git_pull(agy_dir: Path) -> tuple[str, str]:
         return "warning", f"GitHub: {e}"
 
 
-def run_drive_pull(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
-    """Downloads latest datasets and dashboards from Google Drive Cloud Hub."""
-    drive_script = agy_dir / "drive_sync.py"
-    if not drive_script.exists():
-        return "warning", "drive_sync.py not found"
-
-    creds_file = agy_dir / "credentials.json"
-    token_file = agy_dir / "drive_token.json"
-    if not creds_file.exists() and not token_file.exists():
-        return "warning", "Google Drive: No credentials.json or token found (skipped)"
+def run_git_push(agy_dir: Path) -> tuple[str, str]:
+    """Automatically stages updated data files and dashboards, commits, and pushes to GitHub."""
+    git_bin = shutil.which("git")
+    if not git_bin:
+        return "warning", "Git not found in PATH (push skipped)"
 
     try:
-        res = subprocess.run(
-            [str(venv_py), str(drive_script), "pull"],
-            cwd=str(agy_dir),
+        # 1. Check if there are changes
+        status_res = subprocess.run(
+            [git_bin, "-C", str(agy_dir), "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if status_res.returncode != 0:
+            return "warning", "Git status check failed"
+
+        changes = status_res.stdout.strip()
+        if not changes:
+            return "success", "GitHub: Working tree clean (up to date with remote)"
+
+        # 2. Stage updated files
+        subprocess.run(
+            [git_bin, "-C", str(agy_dir), "add", "-A"],
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+
+        # 3. Create structured commit
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        commit_msg = f"chore(data): automated sync biometrics, workouts & dashboards [{timestamp}]"
+        commit_res = subprocess.run(
+            [git_bin, "-C", str(agy_dir), "commit", "-m", commit_msg],
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+        if commit_res.returncode != 0:
+            return "success", "GitHub: No new changes to commit"
+
+        # 4. Push to remote origin main
+        push_res = subprocess.run(
+            [git_bin, "-C", str(agy_dir), "push", "origin", "main"],
             capture_output=True,
             text=True,
             timeout=30
         )
-        if res.returncode == 0:
-            return "success", "Google Drive: Datasets & dashboards pulled from cloud"
+        if push_res.returncode == 0:
+            return "success", "GitHub: Synced & pushed latest datasets & dashboards to origin/main"
         else:
-            return "warning", "Google Drive pull skipped (check credentials/network)"
+            err = push_res.stderr.strip().splitlines()
+            err_line = err[-1] if err else "Git push failed"
+            return "warning", f"GitHub push: {err_line[:60]}"
     except subprocess.TimeoutExpired:
-        return "warning", "Google Drive: Network timeout (skipped)"
+        return "warning", "GitHub: Push connection timed out (skipped)"
     except Exception as e:
-        return "warning", f"Google Drive: {e}"
+        return "warning", f"GitHub push error: {e}"
 
 
 def run_health_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
@@ -434,24 +466,6 @@ def run_athlete_dashboard_build(agy_dir: Path, venv_py: Path) -> tuple[str, str]
         return "error", f"Dashboard build error: {e}"
 
 
-def run_drive_push(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
-    """Pushes fresh datasets & dashboards back to Google Drive Cloud Hub."""
-    drive_script = agy_dir / "drive_sync.py"
-    try:
-        res = subprocess.run(
-            [str(venv_py), str(drive_script), "push"],
-            cwd=str(agy_dir),
-            capture_output=True,
-            text=True,
-            timeout=35
-        )
-        if res.returncode == 0:
-            return "success", "Google Drive: Pushed updated datasets & dashboards to cloud"
-        else:
-            return "warning", "Google Drive: Cloud push skipped"
-    except Exception as e:
-        return "warning", f"Google Drive push: {e}"
-
 
 def open_dashboard(html_path: Path):
     """Opens the generated ATHX dashboard in the system default browser."""
@@ -524,10 +538,11 @@ def main():
     parser = argparse.ArgumentParser(
         description="ATHX 2027 Master Athlete & Intelligence Orchestrator"
     )
-    parser.add_argument("--push", action="store_true", help="Push updated datasets & dashboards to Google Drive after sync")
+    parser.add_argument("--no-push", action="store_true", help="Skip automatically pushing updated datasets & dashboards to GitHub after sync")
+    parser.add_argument("--push", action="store_true", help="Deprecated alias (auto-push to GitHub is enabled by default)")
     parser.add_argument("--no-open", action="store_true", help="Do not open the dashboard in browser when done")
     parser.add_argument("--skip-git", action="store_true", help="Skip pulling from GitHub")
-    parser.add_argument("--skip-drive", action="store_true", help="Skip pulling from Google Drive")
+    parser.add_argument("--skip-drive", action="store_true", help="Deprecated (Google Drive is retired as source of truth)")
     parser.add_argument("--skip-health", action="store_true", help="Skip Apple Health sync")
     parser.add_argument("--skip-garmin", action="store_true", help="Skip Garmin Connect sync")
     parser.add_argument("--skip-cal", action="store_true", help="Skip multi-calendar sync")
@@ -568,8 +583,6 @@ def main():
     steps = []
     if not args.skip_git:
         steps.append(("Pulling latest edits from GitHub", lambda: run_git_pull(AGY_DIR)))
-    if not args.skip_drive:
-        steps.append(("Pulling cloud hub from Google Drive", lambda: run_drive_pull(AGY_DIR, venv_py)))
     if not args.skip_health:
         steps.append(("Syncing Apple Health biometrics & sleep", lambda: run_health_sync(AGY_DIR, venv_py)))
     if not args.skip_garmin:
@@ -577,8 +590,8 @@ def main():
     if not args.skip_cal:
         steps.append(("Syncing tri-calendar schedule & open slots", lambda: run_calendar_sync(AGY_DIR, venv_py)))
     steps.append(("Rebuilding ATHX 2027 Athlete Headquarters", lambda: run_athlete_dashboard_build(AGY_DIR, venv_py)))
-    if args.push:
-        steps.append(("Pushing updated datasets to Google Drive", lambda: run_drive_push(AGY_DIR, venv_py)))
+    if not args.no_push:
+        steps.append(("Pushing updated datasets & dashboards to GitHub", lambda: run_git_push(AGY_DIR)))
 
     ui = TerminalUI(total_steps=len(steps))
 

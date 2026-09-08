@@ -10,6 +10,9 @@ import os
 import sys
 import json
 import csv
+import shutil
+import subprocess
+import threading
 from datetime import datetime
 from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -35,6 +38,61 @@ def log_event(msg: str):
     with open(ACCESS_LOG, "a", encoding="utf-8") as f:
         f.write(entry + "\n")
         f.flush()
+
+GIT_LOCK = threading.Lock()
+
+def git_auto_commit_and_push(reason: str = "apple health webhook sync"):
+    """Batches and pushes data and dashboard changes to GitHub origin/main in background."""
+    if not GIT_LOCK.acquire(blocking=False):
+        log_event("⏳ Git push already in progress, skipping concurrent trigger")
+        return
+
+    try:
+        git_bin = shutil.which("git")
+        if not git_bin:
+            log_event("Warning: git binary not found")
+            return
+
+        # Check status
+        res = subprocess.run(
+            [git_bin, "-C", str(BASE_DIR), "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if res.returncode != 0 or not res.stdout.strip():
+            log_event("Git: Working tree clean (nothing to commit)")
+            return
+
+        subprocess.run(
+            [git_bin, "-C", str(BASE_DIR), "add", "-A"],
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+        timestamp = datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M")
+        commit_msg = f"chore(data): {reason} [{timestamp}]"
+        subprocess.run(
+            [git_bin, "-C", str(BASE_DIR), "commit", "-m", commit_msg],
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+        push_res = subprocess.run(
+            [git_bin, "-C", str(BASE_DIR), "push", "origin", "main"],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        if push_res.returncode == 0:
+            log_event("🚀 Pushed updated data & dashboards to GitHub origin/main")
+        else:
+            err = push_res.stderr.strip().splitlines()[-1] if push_res.stderr else "unknown error"
+            log_event(f"Warning: Git push failed: {err[:60]}")
+    except Exception as e:
+        log_event(f"Notice: Git auto-push error: {e}")
+    finally:
+        GIT_LOCK.release()
 
 # Athletic Routine Constraints
 ATHLETIC_SCHEDULE = {
@@ -263,14 +321,12 @@ def process_health_auto_export_payload(payload: dict) -> dict:
     except Exception as e:
         log_event(f"Warning: Could not regenerate dashboard: {e}")
 
-    # Trigger automatic background sync to Google Drive
+    # Trigger automatic background sync to GitHub
     try:
-        import threading
-        from drive_sync import auto_push
-        threading.Thread(target=auto_push, daemon=True).start()
-        log_event("☁️ Triggered background Google Drive auto-sync")
+        threading.Thread(target=git_auto_commit_and_push, args=("apple health webhook sync",), daemon=True).start()
+        log_event("☁️ Triggered background GitHub auto-sync")
     except Exception as e:
-        log_event(f"Notice: Drive auto-sync skipped: {e}")
+        log_event(f"Notice: GitHub auto-sync skipped: {e}")
 
     return {"status": "success", "updates": updates, "timestamp": now_str}
 

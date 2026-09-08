@@ -1,5 +1,19 @@
 [
   {
+    "Activity_ID": 24287114557,
+    "Date": "2026-09-08",
+    "Start_Time": "2026-09-08 19:03:11",
+    "Activity_Name": "Cardio",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 31.5,
+    "Distance_km": 0.0,
+    "Calories_kcal": 319,
+    "Average_HR": 130.0,
+    "Max_HR": 169.0,
+    "Training_Effect": "RECOVERY"
+  },
+  {
     "Activity_ID": 24285053565,
     "Date": "2026-09-08",
     "Start_Time": "2026-09-08 16:39:20",
