@@ -1,5 +1,19 @@
 [
   {
+    "Activity_ID": 24292490080,
+    "Date": "2026-09-09",
+    "Start_Time": "2026-09-09 06:40:00",
+    "Activity_Name": "Upper-body Day",
+    "Activity_Type": "strength_training",
+    "Primary_Category": "Strength",
+    "Duration_min": 50.1,
+    "Distance_km": 0.0,
+    "Calories_kcal": 341,
+    "Average_HR": 112.0,
+    "Max_HR": 139.0,
+    "Training_Effect": "AEROBIC_BASE"
+  },
+  {
     "Activity_ID": 24287114557,
     "Date": "2026-09-08",
     "Start_Time": "2026-09-08 19:03:11",
