@@ -1,0 +1,40 @@
+# ==============================================================================
+# ATHX 2027 / AGY — Standalone & Local Development Docker Compose
+# ==============================================================================
+# Use this configuration to build and run AGY locally or on any standalone server.
+# Run: docker compose up -d --build
+#
+# Once running:
+#   • Athlete Headquarters : http://localhost:8080/
+#   • Multi-Calendar View  : http://localhost:8080/calendar
+#   • Healthcheck Endpoint : http://localhost:8080/health
+#   • Webhook Endpoint     : http://localhost:8080/api/health
+# ==============================================================================
+
+services:
+  agy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: agy:latest
+    container_name: agy
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - TZ=${TZ:-Europe/Paris}
+      - PYTHONUNBUFFERED=1
+      # Optional: Auto-sync frequency in hours (e.g., 6). Set to 0 to disable.
+      - SYNC_INTERVAL_HOURS=${SYNC_INTERVAL_HOURS:-0}
+      # Optional: Apple Health MCP Bearer Token
+      - HAE_MCP_TOKEN=${HAE_MCP_TOKEN:-}
+    volumes:
+      # Persists all biometric CSVs, Garmin workout caches, tokens, logs, and generated HTML dashboards
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

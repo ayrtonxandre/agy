@@ -12,32 +12,40 @@ import json
 import csv
 import shutil
 import subprocess
+import time
 import threading
 from datetime import datetime
 from pathlib import Path
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse
+from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 from zoneinfo import ZoneInfo
 
 BASE_DIR = Path(__file__).resolve().parent
-LOCAL_TZ = ZoneInfo("Europe/Paris")
+DATA_DIR = Path(os.environ.get("AGY_DATA_DIR", str(BASE_DIR)))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+LOCAL_TZ = ZoneInfo(os.environ.get("TZ", "Europe/Paris"))
 
-# Paths
-GARMIN_CSV = BASE_DIR / "garmin_extracted_workouts.csv"
-BODY_COMP_CSV = BASE_DIR / "apple_body_composition.csv"
-NUTRITION_CSV = BASE_DIR / "apple_nutrition_macros.csv"
-DAILY_ACT_CSV = BASE_DIR / "apple_daily_activity.csv"
-WORKOUT_HTML = BASE_DIR / "garmin_workout.html"
-CALENDAR_HTML = BASE_DIR / "calendar_dashboard.html"
-ACCESS_LOG = BASE_DIR / "server_access.log"
-LAST_PAYLOAD_FILE = BASE_DIR / "last_payload.json"
+# Paths (check DATA_DIR first, then fallback to BASE_DIR if needed)
+GARMIN_CSV = DATA_DIR / "garmin_extracted_workouts.csv"
+BODY_COMP_CSV = DATA_DIR / "apple_body_composition.csv"
+NUTRITION_CSV = DATA_DIR / "apple_nutrition_macros.csv"
+DAILY_ACT_CSV = DATA_DIR / "apple_daily_activity.csv"
+WORKOUT_HTML = DATA_DIR / "garmin_workout.html"
+CALENDAR_HTML = DATA_DIR / "calendar_dashboard.html"
+ACCESS_LOG = DATA_DIR / "server_access.log"
+LAST_PAYLOAD_FILE = DATA_DIR / "last_payload.json"
 
 def log_event(msg: str):
     timestamp = datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
     entry = f"[{timestamp}] {msg}"
     print(entry, flush=True)
-    with open(ACCESS_LOG, "a", encoding="utf-8") as f:
-        f.write(entry + "\n")
-        f.flush()
+    try:
+        ACCESS_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with open(ACCESS_LOG, "a", encoding="utf-8") as f:
+            f.write(entry + "\n")
+            f.flush()
+    except Exception as e:
+        print(f"Failed to write to access log: {e}", flush=True)
 
 GIT_LOCK = threading.Lock()
 
@@ -371,8 +379,17 @@ def process_health_auto_export_payload(payload: dict) -> dict:
 
     # Regenerate dashboard
     try:
-        os.system(f"python3 {BASE_DIR / 'generate_unified_athlete_dashboard.py'} > /dev/null 2>&1")
-        log_event("⚡ Regenerated athlete dashboard (garmin_workout.html)")
+        res = subprocess.run(
+            [sys.executable, str(BASE_DIR / "generate_unified_athlete_dashboard.py")],
+            capture_output=True,
+            text=True,
+            timeout=35
+        )
+        if res.returncode == 0:
+            log_event("⚡ Regenerated athlete dashboard (garmin_workout.html)")
+        else:
+            err = res.stderr.strip().splitlines()[-1] if res.stderr else "unknown error"
+            log_event(f"Warning: Dashboard regeneration error: {err}")
     except Exception as e:
         log_event(f"Warning: Could not regenerate dashboard: {e}")
 
@@ -403,11 +420,17 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
         self.send_cors_headers()
         self.end_headers()
 
+    def _get_clean_path(self) -> str:
+        clean = urlparse(self.path).path.rstrip("/")
+        return clean if clean else "/"
+
     def do_GET(self):
         client_ip = self.client_address[0]
-        log_event(f"GET request from {client_ip} to {self.path}")
+        clean_path = self._get_clean_path()
+        log_event(f"GET request from {client_ip} to {clean_path}")
 
-        if self.path == "/" or self.path == "/health" or self.path == "/api/health":
+        # Healthcheck endpoints (used by Docker & SWAG)
+        if clean_path in ("/health", "/api/health"):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_cors_headers()
@@ -415,43 +438,56 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
             resp = {
                 "system": "ATHX 2027 Athlete Intelligence Orchestrator",
                 "status": "online",
+                "version": "2.0.0",
                 "time": datetime.now(LOCAL_TZ).isoformat(),
                 "endpoints": {
-                    "webhook": "POST http://10.10.251.27:8080/api/health",
-                    "workout_dashboard": "GET http://localhost:8080/workout",
-                    "calendar_dashboard": "GET http://localhost:8080/calendar"
+                    "athlete_headquarters": "/",
+                    "workout_dashboard": "/workout",
+                    "calendar_dashboard": "/calendar",
+                    "webhook": "POST /api/health",
+                    "healthcheck": "GET /health"
                 }
             }
             self.wfile.write(json.dumps(resp, indent=2).encode("utf-8"))
 
-        elif self.path == "/workout":
-            if WORKOUT_HTML.exists():
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_cors_headers()
-                self.end_headers()
-                with open(WORKOUT_HTML, "rb") as f:
-                    self.wfile.write(f.read())
-            else:
-                self.send_error(404, "Workout dashboard not found")
+        # Main Athlete Headquarters Dashboard
+        elif clean_path in ("/", "/workout", "/index.html", "/garmin_workout.html"):
+            target_file = WORKOUT_HTML if WORKOUT_HTML.exists() else (BASE_DIR / "garmin_workout.html")
+            if not target_file.exists() and (BASE_DIR / "index.html").exists():
+                target_file = BASE_DIR / "index.html"
 
-        elif self.path == "/calendar":
-            if CALENDAR_HTML.exists():
+            if target_file.exists():
+                content = target_file.read_bytes()
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
                 self.send_cors_headers()
                 self.end_headers()
-                with open(CALENDAR_HTML, "rb") as f:
-                    self.wfile.write(f.read())
+                self.wfile.write(content)
+            else:
+                self.send_error(404, "Athlete Dashboard not found. Run ATHX dashboard build first.")
+
+        # Multi-Calendar Dashboard
+        elif clean_path in ("/calendar", "/calendar.html", "/calendar_dashboard.html"):
+            target_file = CALENDAR_HTML if CALENDAR_HTML.exists() else (BASE_DIR / "calendar_dashboard.html")
+            if target_file.exists():
+                content = target_file.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
             else:
                 self.send_error(404, "Calendar dashboard not found")
 
         else:
-            self.send_error(404, "Not Found")
+            self.send_error(404, f"Path not found: {clean_path}")
 
     def do_POST(self):
         client_ip = self.client_address[0]
-        log_event(f"POST request received from {client_ip} to {self.path}")
+        clean_path = self._get_clean_path()
+        log_event(f"POST request received from {client_ip} to {clean_path}")
 
         try:
             content_length = int(self.headers.get("Content-Length", 0))
@@ -460,13 +496,55 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
 
             log_event(f"📦 Payload size: {len(body)} bytes from {client_ip}")
 
-            result = process_health_auto_export_payload(payload)
+            # iOS Health Auto Export webhook ingestion
+            if clean_path in ("/api/health", "/health", "/webhook"):
+                result = process_health_auto_export_payload(payload)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode("utf-8"))
 
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_cors_headers()
-            self.end_headers()
-            self.wfile.write(json.dumps(result).encode("utf-8"))
+            # On-demand dashboard rebuild API
+            elif clean_path in ("/api/rebuild", "/api/sync/rebuild"):
+                res = subprocess.run(
+                    [sys.executable, str(BASE_DIR / "generate_unified_athlete_dashboard.py")],
+                    capture_output=True,
+                    text=True,
+                    timeout=35
+                )
+                self.send_response(200 if res.returncode == 0 else 500)
+                self.send_header("Content-Type", "application/json")
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "status": "success" if res.returncode == 0 else "error",
+                    "code": res.returncode,
+                    "output": res.stdout.strip() if res.returncode == 0 else res.stderr.strip()
+                }).encode("utf-8"))
+
+            # On-demand Garmin extraction API
+            elif clean_path == "/api/sync/garmin":
+                res = subprocess.run(
+                    [sys.executable, str(BASE_DIR / "extract_garmin_strength.py")],
+                    capture_output=True,
+                    text=True,
+                    timeout=45
+                )
+                if res.returncode == 0:
+                    subprocess.run([sys.executable, str(BASE_DIR / "generate_unified_athlete_dashboard.py")], timeout=35)
+                self.send_response(200 if res.returncode == 0 else 500)
+                self.send_header("Content-Type", "application/json")
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "status": "success" if res.returncode == 0 else "error",
+                    "output": res.stdout.strip() if res.returncode == 0 else res.stderr.strip()
+                }).encode("utf-8"))
+
+            else:
+                self.send_error(404, f"API endpoint not found: {clean_path}")
+
         except Exception as e:
             log_event(f"❌ Error processing POST: {e}")
             self.send_response(500)
@@ -475,22 +553,47 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
 
-def run_server(port: int = 8080):
-    server = HTTPServer(("0.0.0.0", port), AthleteServerHandler)
+def run_server(port: int | None = None):
+    if port is None:
+        port = int(os.environ.get("PORT", os.environ.get("AGY_PORT", "8080")))
+
+    # Optional background periodic sync scheduler
+    interval_hours = float(os.environ.get("SYNC_INTERVAL_HOURS", "0"))
+    if interval_hours > 0:
+        def background_scheduler():
+            log_event(f"⏰ Background sync scheduler active (every {interval_hours}h)")
+            while True:
+                time.sleep(interval_hours * 3600)
+                log_event("⏰ Running scheduled background sync...")
+                try:
+                    garmin_tokens = BASE_DIR / "garmin_tokens"
+                    if garmin_tokens.exists():
+                        subprocess.run([sys.executable, str(BASE_DIR / "extract_garmin_strength.py")], timeout=45)
+                    subprocess.run([sys.executable, str(BASE_DIR / "generate_unified_athlete_dashboard.py")], timeout=35)
+                    threading.Thread(target=git_auto_commit_and_push, args=("periodic background sync",), daemon=True).start()
+                except Exception as ex:
+                    log_event(f"Periodic sync warning: {ex}")
+
+        threading.Thread(target=background_scheduler, daemon=True).start()
+
+    server = ThreadingHTTPServer(("0.0.0.0", port), AthleteServerHandler)
     log_event(f"🚀 Athlete Orchestrator Server running on port {port}")
-    log_event(f"  • Webhook Endpoint: http://10.10.251.27:{port}/api/health")
+    log_event(f"  • Athlete Dashboard  : http://0.0.0.0:{port}/")
+    log_event(f"  • Calendar Dashboard : http://0.0.0.0:{port}/calendar")
+    log_event(f"  • Healthcheck        : http://0.0.0.0:{port}/health")
+    log_event(f"  • Webhook Endpoint   : http://0.0.0.0:{port}/api/health")
     server.serve_forever()
 
 if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "status"
 
     if mode == "serve":
-        run_server(8080)
+        run_server()
     elif mode == "plan":
         print("ATHX 2027 Schedule:")
         for d, s in ATHLETIC_SCHEDULE.items():
             print(f"  • {d}: {s['type']} ({s.get('time', 'Rest')})")
     elif mode == "sync-garmin":
-        os.system(f"python3 {BASE_DIR / 'extract_garmin_strength.py'}")
+        subprocess.run([sys.executable, str(BASE_DIR / "extract_garmin_strength.py")])
     else:
         print("Usage: python3 orchestrator.py [serve|plan|sync-garmin]")

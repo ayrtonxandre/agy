@@ -20,6 +20,7 @@ Completely overhauled athlete intelligence generator:
 """
 
 from __future__ import annotations
+import os
 import json
 import csv
 import sys
@@ -27,6 +28,7 @@ from pathlib import Path
 from datetime import datetime, date
 
 BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = Path(os.environ.get("AGY_DATA_DIR", str(BASE_DIR)))
 sys.path.insert(0, str(BASE_DIR))
 
 import athx_config
@@ -167,10 +169,16 @@ def main():
     payload_json = json.dumps(dashboard_payload, ensure_ascii=False)
     html_content = build_html(payload_json, dashboard_payload)
 
-    out_file = BASE_DIR / "garmin_workout.html"
+    out_file = DATA_DIR / "garmin_workout.html"
     out_file.write_text(html_content, encoding="utf-8")
-    index_file = BASE_DIR / "index.html"
+    index_file = DATA_DIR / "index.html"
     index_file.write_text(html_content, encoding="utf-8")
+    if DATA_DIR != BASE_DIR:
+        try:
+            (BASE_DIR / "garmin_workout.html").write_text(html_content, encoding="utf-8")
+            (BASE_DIR / "index.html").write_text(html_content, encoding="utf-8")
+        except Exception:
+            pass
     print(f"\n🎉 Successfully rebuilt ATHX Athlete Dashboard: {out_file} & index.html ({out_file.stat().st_size:,} bytes)")
 
 

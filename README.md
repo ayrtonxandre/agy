@@ -117,6 +117,27 @@ While running, `athx` renders a live, fluid loading bar and animated spinner:
 
 ---
 
+## 🐳 Docker & SWAG Remote Server Deployment
+
+AGY can be containerized and hosted behind **LinuxServer.io SWAG** (Nginx reverse proxy + SSL) to allow accessing dashboards from anywhere and receiving automated iOS Health webhooks 24/7.
+
+Detailed instructions: [Docker & SWAG Deployment Guide](file:///docs/how-to/docker-deployment.md)
+
+### Quick Start (Production Server):
+```bash
+# 1. Place agy.subdomain.conf into SWAG proxy-confs
+cp swag/agy.subdomain.conf ${DOCKER_ROOT}/swag/nginx/proxy-confs/
+
+# 2. Launch AGY on the 'lsio' external docker network
+docker compose -f docker-compose.prod.yml up -d
+```
+
+* **Web UI**: `https://agy.yourdomain.com/` (Athlete Dashboard) and `/calendar`
+* **Health Auto Export Webhook**: `https://agy.yourdomain.com/api/health`
+* **Docker Healthcheck**: `https://agy.yourdomain.com/health`
+
+---
+
 ## 💻 Cross-Machine Setup Guide
 
 ### Setting up on Machine 2 (Other Computer)

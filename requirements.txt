@@ -1,0 +1,14 @@
+# ATHX 2027 / AGY Python Dependencies
+pandas>=2.0.0
+requests>=2.31.0
+garminconnect>=0.2.8
+garth>=0.4.47
+caldav>=2.2.0
+icalendar>=6.0.0
+google-api-python-client>=2.100.0
+google-auth>=2.20.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.0.0
+urllib3>=2.0.0
+python-dateutil>=2.8.2
+tzdata>=2024.1

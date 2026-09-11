@@ -1,0 +1,49 @@
+# ==============================================================================
+# ATHX 2027 / AGY — Production Docker Compose (SWAG Reverse Proxy Setup)
+# ==============================================================================
+# Designed for deployment alongside LinuxServer.io SWAG on a remote server.
+#
+# Requirements:
+#   1. The 'lsio' external docker network must exist (managed by SWAG).
+#   2. Place 'agy.subdomain.conf' in SWAG's proxy-confs directory:
+#      ${DOCKER_ROOT}/swag/nginx/proxy-confs/agy.subdomain.conf
+#   3. Configure your DNS with a CNAME record: agy -> your-domain.tld
+# ==============================================================================
+
+services:
+  agy:
+    image: ghcr.io/ayrtonxandre/agy:latest
+    # Fallback to local build if image not pulled from GHCR:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agy
+    restart: unless-stopped
+    ports:
+      # Exposes port on the host (e.g. 8095:8080) for internal/direct access or debugging
+      - "${AGY_HOST_PORT:-8095}:8080"
+    environment:
+      - PORT=8080
+      - TZ=${TZ:-Europe/Paris}
+      - PYTHONUNBUFFERED=1
+      # Optional: Health Auto Export MCP Bearer Token
+      - HAE_MCP_TOKEN=${HAE_MCP_TOKEN:-}
+      # Optional: Background periodic sync frequency in hours (e.g., 6). Set to 0 to disable.
+      - SYNC_INTERVAL_HOURS=${SYNC_INTERVAL_HOURS:-0}
+    volumes:
+      # Persists all biometric CSVs, Garmin workout caches, tokens, logs, and generated HTML dashboards
+      - ${DOCKER_ROOT}/agy/data:/app/data
+      # Optional: Mount SSH key for automated Git push to origin/main
+      # - ${DOCKER_ROOT}/agy/ssh:/root/.ssh:ro
+    networks:
+      - lsio
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  lsio:
+    external: true
