@@ -1,4 +1,5 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect_Label,Moderate_Intensity_Min,Vigorous_Intensity_Min,Steps
+24347510893,2026-09-13,2026-09-13 14:07:59,Squash,squash,Squash,39.2,0.12,379,131.0,160.0,AEROBIC_BASE,15,25,1810
 24287114557,2026-09-08,2026-09-08 19:03:11,Cardio,indoor_cardio,Cardio,31.5,0.0,319,130.0,169.0,RECOVERY,0,0,1338
 24026445362,2026-08-18,2026-08-18 19:03:36,Cross-training ,indoor_cardio,Cross-Training,48.8,0.0,405,120.0,165.0,AEROBIC_BASE,29,16,1076
 23974250400,2026-08-14,2026-08-14 11:39:07,Aurland Hiking,hiking,Hiking / Ruck,168.7,8.45,1036,111.0,157.0,AEROBIC_BASE,67,30,12092

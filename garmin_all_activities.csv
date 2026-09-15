@@ -1,4 +1,8 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect
+24365724397,2026-09-15,2026-09-15 07:00:57,Treadmill Running,treadmill_running,Running,27.8,5.0,271,126.0,137.0,RECOVERY
+24353113405,2026-09-14,2026-09-14 06:28:38,Strength,strength_training,Strength,42.0,0.0,264,107.0,153.0,ANAEROBIC_CAPACITY
+24347510893,2026-09-13,2026-09-13 14:07:59,Squash,squash,Workout,39.2,0.12,379,131.0,160.0,AEROBIC_BASE
+24319615620,2026-09-11,2026-09-11 11:40:00,ATHX 2027: Lower Body B (Deadlift & Posterior Chain),strength_training,Strength,51.4,0.0,362,114.0,163.0,ANAEROBIC_CAPACITY
 24292490080,2026-09-09,2026-09-09 06:40:00,Upper-body Day,strength_training,Strength,50.1,0.0,341,112.0,139.0,AEROBIC_BASE
 24287114557,2026-09-08,2026-09-08 19:03:11,"ATHX 2027: Light Session - S2O Technique, Shoulders Prehab & Core",indoor_cardio,Cardio / Cross-Training,31.5,0.0,319,130.0,169.0,RECOVERY
 24285053565,2026-09-08,2026-09-08 16:39:20,Paris Running,running,Running,27.6,5.01,420,167.0,185.0,VO2MAX
