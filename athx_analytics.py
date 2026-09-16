@@ -559,12 +559,16 @@ def process_apple_health(base_dir: Path, audit: DataAuditTracker) -> dict:
                             "Protein_g": float(r.get("Protein_g", 0.0) or 0.0),
                             "Carbs_g": float(r.get("Carbs_g", 0.0) or 0.0),
                             "Fat_g": float(r.get("Fat_g", 0.0) or 0.0),
+                            "Fiber_g": float(r.get("Fiber_g", 0.0) or 0.0),
                         })
     raw_nut.sort(key=lambda x: x["Date"])
 
     avg_prot = round(sum(r["Protein_g"] for r in raw_nut) / len(raw_nut), 1) if raw_nut else 0.0
     prot_per_kg = round(avg_prot / curr_weight, 2) if curr_weight > 0 else 0.0
     avg_cals = round(sum(r["Calories_kcal"] for r in raw_nut) / len(raw_nut)) if raw_nut else 0
+    avg_carbs = round(sum(r["Carbs_g"] for r in raw_nut) / len(raw_nut), 1) if raw_nut else 0.0
+    avg_fat = round(sum(r["Fat_g"] for r in raw_nut) / len(raw_nut), 1) if raw_nut else 0.0
+    avg_fiber = round(sum(r["Fiber_g"] for r in raw_nut) / len(raw_nut), 1) if raw_nut else 0.0
 
     # 2c. Sleep Architecture
     sleep_path = base_dir / "apple_sleep.csv"
@@ -736,6 +740,9 @@ def process_apple_health(base_dir: Path, audit: DataAuditTracker) -> dict:
             "avg_calories": avg_cals,
             "avg_protein_g": avg_prot,
             "protein_g_per_kg": prot_per_kg,
+            "avg_carbs_g": avg_carbs,
+            "avg_fat_g": avg_fat,
+            "avg_fiber_g": avg_fiber,
             "days_logged": len(raw_nut),
             "history": raw_nut
         },

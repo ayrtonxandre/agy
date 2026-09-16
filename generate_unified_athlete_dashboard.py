@@ -101,7 +101,16 @@ def main():
         lm_m = [r["Lean_Mass_kg"] for r in apple_data["body_comp"]["history"] if r["Date"].startswith(m) and r.get("Lean_Mass_kg")]
         cal_m = [r["Calories_kcal"] for r in apple_data["nutrition"]["history"] if r["Date"].startswith(m)]
         prot_m = [r["Protein_g"] for r in apple_data["nutrition"]["history"] if r["Date"].startswith(m)]
+        carbs_m = [r["Carbs_g"] for r in apple_data["nutrition"]["history"] if r["Date"].startswith(m) and "Carbs_g" in r]
+        fat_m = [r["Fat_g"] for r in apple_data["nutrition"]["history"] if r["Date"].startswith(m) and "Fat_g" in r]
+        fiber_m = [r["Fiber_g"] for r in apple_data["nutrition"]["history"] if r["Date"].startswith(m) and "Fiber_g" in r]
         act_m = [r["Steps"] for r in apple_data["activity"]["history"] if r["Date"].startswith(m)]
+
+        avg_c = round(sum(carbs_m) / len(carbs_m), 1) if carbs_m else None
+        avg_f = round(sum(fat_m) / len(fat_m), 1) if fat_m else None
+        avg_fib = round(sum(fiber_m) / len(fiber_m), 1) if fiber_m else None
+        avg_p = round(sum(prot_m) / len(prot_m), 1) if prot_m else None
+        ratio_cp = round(avg_c / avg_p, 2) if (avg_c is not None and avg_p and avg_p > 0) else None
 
         monthly_summary.append({
             "month": m,
@@ -109,7 +118,11 @@ def main():
             "avg_bf": round(sum(bf_m) / len(bf_m), 1) if bf_m else None,
             "avg_lean_mass": round(sum(lm_m) / len(lm_m), 1) if lm_m else None,
             "avg_calories": int(round(sum(cal_m) / len(cal_m))) if cal_m else None,
-            "avg_protein": round(sum(prot_m) / len(prot_m), 1) if prot_m else None,
+            "avg_protein": avg_p,
+            "avg_carbs": avg_c,
+            "avg_fat": avg_f,
+            "avg_fiber": avg_fib,
+            "carb_protein_ratio": ratio_cp,
             "avg_steps": int(round(sum(act_m) / len(act_m))) if act_m else None,
             "weigh_ins": len(b_m),
             "nutrition_logged_days": len(cal_m)
@@ -196,6 +209,44 @@ def build_html(payload_json: str, d: dict) -> str:
     target_w = cfg["bodyweight_target_kg"]
     rem_w = ap["body_comp"]["weight_remaining"]
     rem_w_str = f"+{rem_w} kg" if rem_w > 0 else f"{rem_w} kg"
+
+    # Nutrition & Macronutrient Calculations for Tab 2 KPIs
+    nut_hist = ap.get("nutrition", {}).get("history", [])
+    nut_last7 = nut_hist[-7:] if len(nut_hist) >= 7 else nut_hist
+
+    if nut_last7:
+        carb_kcal_7d = sum(r.get("Carbs_g", 0.0) * 4 for r in nut_last7)
+        prot_kcal_7d = sum(r.get("Protein_g", 0.0) * 4 for r in nut_last7)
+        fat_kcal_7d = sum(r.get("Fat_g", 0.0) * 9 for r in nut_last7)
+        tot_kcal_7d = carb_kcal_7d + prot_kcal_7d + fat_kcal_7d
+        if tot_kcal_7d > 0:
+            pct_c_7d = round((carb_kcal_7d / tot_kcal_7d) * 100)
+            pct_p_7d = round((prot_kcal_7d / tot_kcal_7d) * 100)
+            pct_f_7d = 100 - pct_c_7d - pct_p_7d
+        else:
+            pct_c_7d, pct_p_7d, pct_f_7d = 0, 0, 0
+        avg_fiber_7d = round(sum(r.get("Fiber_g", 0.0) for r in nut_last7) / len(nut_last7), 1)
+        avg_cals_7d = round(sum(r.get("Calories_kcal", 0.0) for r in nut_last7) / len(nut_last7))
+        var_cals_7d = avg_cals_7d - 3050
+        fiber_delta_7d = round(avg_fiber_7d - 30.0, 1)
+    else:
+        pct_c_7d, pct_p_7d, pct_f_7d = 0, 0, 0
+        avg_fiber_7d = 0.0
+        avg_cals_7d = 0
+        var_cals_7d = 0
+        fiber_delta_7d = -30.0
+
+    latest_nut = nut_hist[-1] if nut_hist else {}
+    latest_c = latest_nut.get("Carbs_g", 0.0)
+    latest_p = latest_nut.get("Protein_g", 0.0)
+    latest_cp_ratio = round(latest_c / latest_p, 2) if latest_p > 0 else 0.0
+    latest_cal_var = round(latest_nut.get("Calories_kcal", 0.0) - 3050)
+    latest_cal_var_str = f"+{latest_cal_var:,}" if latest_cal_var >= 0 else f"{latest_cal_var:,}"
+    cp_badge_cls = "badge-sweetspot" if latest_cp_ratio >= 1.5 else "badge-warning"
+    cp_badge_text = f"{latest_cp_ratio:.2f} (Target: 1.5–2.0)"
+    fiber_badge_cls = "badge-sweetspot" if avg_fiber_7d >= 30.0 else "badge-warning"
+    fiber_delta_str = f"+{fiber_delta_7d:.1f}g" if fiber_delta_7d >= 0 else f"{fiber_delta_7d:.1f}g"
+    var_cals_str = f"+{var_cals_7d:,}" if var_cals_7d >= 0 else f"{var_cals_7d:,}"
     
     comp_date_display = datetime.strptime(cfg["competition_date"], "%Y-%m-%d").strftime("%d %B %Y")
     as_of_date_display = datetime.strptime(st["as_of_date"], "%Y-%m-%d").strftime("%d %b %Y")
@@ -1094,6 +1145,71 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 0.72rem; color: var(--text-dim);">Target band: 1.6 &ndash; 2.2 g/kg bodyweight</span>
           </div>
         </div>
+
+        <!-- NEW MACRO NUTRITION KPI CARDS -->
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Macro Energy Split</span>
+            <span class="badge badge-athx">7-Day Rolling</span>
+          </div>
+          <div class="kpi-value" id="kpiMacroSplit" style="font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px;">
+            <span style="color: #38bdf8;">{pct_c_7d}% C</span> <span style="color: var(--text-dim); font-size: 0.95rem;">/</span> <span style="color: #34d399;">{pct_p_7d}% P</span> <span style="color: var(--text-dim); font-size: 0.95rem;">/</span> <span style="color: #facc15;">{pct_f_7d}% F</span>
+          </div>
+          <div class="kpi-subtext" id="kpiMacroSplitSubtext">
+            Energy balance: 4 kcal/g (C &bull; P) &bull; 9 kcal/g (Fat)<br>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">Rolling split: {pct_c_7d}% Carbs / {pct_p_7d}% Protein / {pct_f_7d}% Fat</span>
+          </div>
+          <div class="progress-bar-bg" style="display: flex; gap: 2px;">
+            <div id="splitBarCarb" style="width: {pct_c_7d}%; background: #38bdf8; height: 100%;"></div>
+            <div id="splitBarProt" style="width: {pct_p_7d}%; background: #34d399; height: 100%;"></div>
+            <div id="splitBarFat" style="width: {pct_f_7d}%; background: #facc15; height: 100%;"></div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Carb-to-Protein Fueling Ratio</span>
+            <span id="kpiCpBadge" class="badge {cp_badge_cls}">{cp_badge_text}</span>
+          </div>
+          <div class="kpi-value" id="kpiCpRatio">{latest_cp_ratio:.2f} <span>C:P</span></div>
+          <div class="kpi-subtext" id="kpiCpSub">
+            Target Band: <span class="highlight">1.5 &ndash; 2.0</span> (Glycogen Resynthesis)<br>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">Latest logged day: {latest_c:.1f}g C / {latest_p:.1f}g P</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="kpiCpBar" style="width: {min(100.0, (latest_cp_ratio / 2.0) * 100.0)}%; background: {'#34d399' if latest_cp_ratio >= 1.5 else '#f59e0b'};"></div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Fiber Target Compliance</span>
+            <span id="kpiFiberBadge" class="badge {fiber_badge_cls}">Target: 30g/day</span>
+          </div>
+          <div class="kpi-value" id="kpiFiberVal">{avg_fiber_7d:.1f} <span>g/day</span></div>
+          <div class="kpi-subtext" id="kpiFiberSub">
+            Target Line: <span class="highlight">30.0 g/day</span> (Gut Health & Satiety)<br>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">7-day rolling avg: {avg_fiber_7d:.1f}g ({fiber_delta_str} vs 30g target)</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="kpiFiberBar" style="width: {min(100.0, (avg_fiber_7d / 30.0) * 100.0)}%; background: {'#34d399' if avg_fiber_7d >= 30.0 else '#f59e0b'};"></div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">Calorie Target Variance</span>
+            <span class="badge badge-athx">Target: 3,050 kcal</span>
+          </div>
+          <div class="kpi-value" id="kpiCalVariance">{var_cals_str} <span>kcal</span></div>
+          <div class="kpi-subtext" id="kpiCalVarianceSub">
+            ATHX Bulking Target: <span class="highlight">3,050 kcal/day</span><br>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">7-day rolling avg: {avg_cals_7d:,} kcal/d (Latest: {latest_cal_var_str} kcal)</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="kpiCalVarBar" style="width: {min(100.0, (avg_cals_7d / 3050.0) * 100.0)}%; background: linear-gradient(90deg, #facc15, #34d399);"></div>
+          </div>
+        </div>
       </section>
 
       <div class="charts-grid">
@@ -1108,10 +1224,28 @@ def build_html(payload_json: str, d: dict) -> str:
 
         <div class="chart-card">
           <div class="chart-header">
-            <span class="chart-title">🥗 Calorie & Protein Adherence (Foodvisor)</span>
+            <span class="chart-title">⚡ Stacked Macro Energy & Bulking Target (Foodvisor)</span>
           </div>
           <div class="chart-container">
             <canvas id="nutritionChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">🥧 Macro Distribution Split (7-Day Rolling Avg)</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="macroDoughnutChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">🌾 Daily Fiber Intake & Target Compliance (30g/day)</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="fiberChart"></canvas>
           </div>
         </div>
       </div>
@@ -1130,6 +1264,10 @@ def build_html(payload_json: str, d: dict) -> str:
                 <th data-col="avg_lean_mass">Avg Lean Mass (kg)</th>
                 <th data-col="avg_calories">Avg Daily Cals</th>
                 <th data-col="avg_protein">Avg Protein (g)</th>
+                <th data-col="avg_carbs">Avg Carbs (g)</th>
+                <th data-col="avg_fat">Avg Fat (g)</th>
+                <th data-col="avg_fiber">Avg Fiber (g)</th>
+                <th data-col="carb_protein_ratio">Carb:Protein Ratio</th>
                 <th data-col="avg_steps">Avg Daily Steps</th>
                 <th data-col="weigh_ins">Weigh-ins</th>
                 <th data-col="nutrition_logged_days">Logged Days</th>
@@ -1440,12 +1578,16 @@ def build_html(payload_json: str, d: dict) -> str:
 
       tbody.innerHTML = items.map(r => `<tr>
         <td style="font-weight: 700;">${{r.month}}</td>
-        <td style="font-family: 'JetBrains Mono';">${{r.avg_weight || '-'}}</td>
-        <td style="font-family: 'JetBrains Mono';">${{r.avg_bf ? r.avg_bf + '%' : '-'}}</td>
-        <td style="font-family: 'JetBrains Mono';">${{r.avg_lean_mass || '-'}}</td>
-        <td style="font-family: 'JetBrains Mono';">${{r.avg_calories ? r.avg_calories.toLocaleString() : '-'}}</td>
-        <td style="font-family: 'JetBrains Mono'; font-weight: 600; color: var(--primary);">${{r.avg_protein || '-'}}</td>
-        <td style="font-family: 'JetBrains Mono';">${{r.avg_steps ? r.avg_steps.toLocaleString() : '-'}}</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.avg_weight != null ? r.avg_weight : '-'}}</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.avg_bf != null ? r.avg_bf + '%' : '-'}}</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.avg_lean_mass != null ? r.avg_lean_mass : '-'}}</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.avg_calories != null ? r.avg_calories.toLocaleString() : '-'}}</td>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 600; color: #34d399;">${{r.avg_protein != null ? r.avg_protein : '-'}}</td>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 600; color: #38bdf8;">${{r.avg_carbs != null ? r.avg_carbs : '-'}}</td>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 600; color: #facc15;">${{r.avg_fat != null ? r.avg_fat : '-'}}</td>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 600; color: #a78bfa;">${{r.avg_fiber != null ? r.avg_fiber : '-'}}</td>
+        <td style="font-family: 'JetBrains Mono'; font-weight: 600; color: ${{r.carb_protein_ratio != null && r.carb_protein_ratio >= 1.5 ? '#34d399' : '#f59e0b'}};">${{r.carb_protein_ratio != null ? r.carb_protein_ratio.toFixed(2) : '-'}}</td>
+        <td style="font-family: 'JetBrains Mono';">${{r.avg_steps != null ? r.avg_steps.toLocaleString() : '-'}}</td>
         <td><span class="badge badge-sweetspot">${{r.weigh_ins}} days</span></td>
         <td><span class="badge badge-neutral">${{r.nutrition_logged_days}} days</span></td>
       </tr>`).join("");
@@ -1745,43 +1887,217 @@ def build_html(payload_json: str, d: dict) -> str:
         }});
       }}
 
+      // 1. STACKED MACRO ENERGY CHART (REPLACES nutritionChart)
       const ctxNut = document.getElementById("nutritionChart");
       if (ctxNut) {{
         const nut = ATHX_DATA.apple.nutrition.history;
         new Chart(ctxNut, {{
-          type: "line",
+          type: "bar",
           data: {{
             labels: nut.map(n => n.Date.slice(5)),
             datasets: [
               {{
-                label: "Daily Calories (kcal)",
-                data: nut.map(n => n.Calories_kcal),
-                borderColor: "#facc15",
-                backgroundColor: "rgba(250, 204, 21, 0.15)",
-                fill: true,
-                tension: 0.2,
-                yAxisID: "y"
+                type: "bar",
+                label: "Protein Calories",
+                data: nut.map(n => Math.round((n.Protein_g || 0) * 4)),
+                backgroundColor: "rgba(52, 211, 153, 0.8)",
+                borderColor: "#34d399",
+                borderWidth: 1,
+                stack: "macros"
               }},
               {{
-                label: "Protein Intake (g)",
-                data: nut.map(n => n.Protein_g),
+                type: "bar",
+                label: "Carb Calories",
+                data: nut.map(n => Math.round((n.Carbs_g || 0) * 4)),
+                backgroundColor: "rgba(56, 189, 248, 0.8)",
                 borderColor: "#38bdf8",
+                borderWidth: 1,
+                stack: "macros"
+              }},
+              {{
+                type: "bar",
+                label: "Fat Calories",
+                data: nut.map(n => Math.round((n.Fat_g || 0) * 9)),
+                backgroundColor: "rgba(250, 204, 21, 0.8)",
+                borderColor: "#facc15",
+                borderWidth: 1,
+                stack: "macros"
+              }},
+              {{
+                type: "line",
+                label: "3,050 kcal ATHX Bulking Target",
+                data: nut.map(() => 3050),
+                borderColor: "#facc15",
                 borderWidth: 2,
-                tension: 0.2,
-                yAxisID: "y1"
+                borderDash: [6, 6],
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                fill: false,
+                tension: 0
               }}
             ]
           }},
           options: {{
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {{ mode: "index", intersect: false }},
             scales: {{
-              x: {{ grid: {{ display: false }}, ticks: {{ color: "#94a3b8", maxTicksLimit: 8 }} }},
-              y: {{ type: "linear", position: "left", grid: {{ color: "rgba(255,255,255,0.06)" }}, ticks: {{ color: "#94a3b8" }} }},
-              y1: {{ type: "linear", position: "right", grid: {{ display: false }}, ticks: {{ color: "#38bdf8" }} }}
+              x: {{
+                stacked: true,
+                grid: {{ display: false }},
+                ticks: {{ color: "#94a3b8", maxTicksLimit: 12 }}
+              }},
+              y: {{
+                stacked: true,
+                grid: {{ color: "rgba(255,255,255,0.06)" }},
+                ticks: {{ color: "#94a3b8" }},
+                title: {{ display: true, text: "Energy (kcal)", color: "#94a3b8", font: {{ size: 10 }} }}
+              }}
             }},
             plugins: {{
-              legend: {{ labels: {{ color: "#cbd5e1", font: {{ size: 10 }} }} }}
+              legend: {{
+                position: "bottom",
+                labels: {{ color: "#cbd5e1", font: {{ size: 10 }}, boxWidth: 12, padding: 8 }}
+              }},
+              tooltip: {{
+                callbacks: {{
+                  footer: function(tooltipItems) {{
+                    let sum = 0;
+                    tooltipItems.forEach(function(item) {{
+                      if (item.dataset.type === "bar") sum += item.raw;
+                    }});
+                    const diff = sum - 3050;
+                    return "Total Macro Kcal: " + sum.toLocaleString() + " kcal (" + (diff >= 0 ? "+" : "") + diff + " vs target)";
+                  }}
+                }}
+              }}
+            }}
+          }}
+        }});
+      }}
+
+      // 2. MACRO DISTRIBUTION DOUGHNUT CHART (7-Day Rolling Split)
+      const ctxDoughnut = document.getElementById("macroDoughnutChart");
+      if (ctxDoughnut) {{
+        const nut = ATHX_DATA.apple.nutrition.history;
+        const last7 = nut.slice(-7);
+        const carbKcal7d = last7.reduce((acc, cur) => acc + Math.round((cur.Carbs_g || 0) * 4), 0);
+        const protKcal7d = last7.reduce((acc, cur) => acc + Math.round((cur.Protein_g || 0) * 4), 0);
+        const fatKcal7d = last7.reduce((acc, cur) => acc + Math.round((cur.Fat_g || 0) * 9), 0);
+        const totKcal7d = carbKcal7d + protKcal7d + fatKcal7d;
+
+        const pctC = totKcal7d > 0 ? Math.round((carbKcal7d / totKcal7d) * 100) : 0;
+        const pctP = totKcal7d > 0 ? Math.round((protKcal7d / totKcal7d) * 100) : 0;
+        const pctF = totKcal7d > 0 ? (100 - pctC - pctP) : 0;
+
+        new Chart(ctxDoughnut, {{
+          type: "doughnut",
+          data: {{
+            labels: [
+              `Carbohydrates (${{pctC}}%)`,
+              `Protein (${{pctP}}%)`,
+              `Fat (${{pctF}}%)`
+            ],
+            datasets: [
+              {{
+                data: [carbKcal7d, protKcal7d, fatKcal7d],
+                backgroundColor: [
+                  "rgba(56, 189, 248, 0.85)",
+                  "rgba(52, 211, 153, 0.85)",
+                  "rgba(250, 204, 21, 0.85)"
+                ],
+                borderColor: ["#38bdf8", "#34d399", "#facc15"],
+                borderWidth: 2,
+                hoverOffset: 6
+              }}
+            ]
+          }},
+          options: {{
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "68%",
+            plugins: {{
+              legend: {{
+                position: "bottom",
+                labels: {{ color: "#cbd5e1", font: {{ size: 10 }}, boxWidth: 12, padding: 12 }}
+              }},
+              tooltip: {{
+                callbacks: {{
+                  label: function(context) {{
+                    const val = context.raw || 0;
+                    const pct = totKcal7d > 0 ? Math.round((val / totKcal7d) * 100) : 0;
+                    const dailyAvg = Math.round(val / last7.length);
+                    return ` ${{context.label}}: ${{dailyAvg.toLocaleString()}} kcal/d (${{pct}}% of energy)`;
+                  }}
+                }}
+              }}
+            }}
+          }}
+        }});
+      }}
+
+      // 3. DAILY FIBER INTAKE BAR CHART (With 30g Threshold Line)
+      const ctxFiber = document.getElementById("fiberChart");
+      if (ctxFiber) {{
+        const nut = ATHX_DATA.apple.nutrition.history;
+        new Chart(ctxFiber, {{
+          type: "bar",
+          data: {{
+            labels: nut.map(n => n.Date.slice(5)),
+            datasets: [
+              {{
+                type: "bar",
+                label: "Daily Fiber (g)",
+                data: nut.map(n => n.Fiber_g || 0),
+                backgroundColor: nut.map(n => (n.Fiber_g || 0) >= 30 ? "rgba(52, 211, 153, 0.8)" : "rgba(167, 139, 250, 0.75)"),
+                borderColor: nut.map(n => (n.Fiber_g || 0) >= 30 ? "#34d399" : "#a78bfa"),
+                borderWidth: 1,
+                borderRadius: 4
+              }},
+              {{
+                type: "line",
+                label: "30g Minimum Target",
+                data: nut.map(() => 30),
+                borderColor: "rgba(244, 63, 94, 0.95)",
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                fill: false,
+                tension: 0
+              }}
+            ]
+          }},
+          options: {{
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {{ mode: "index", intersect: false }},
+            scales: {{
+              x: {{
+                grid: {{ display: false }},
+                ticks: {{ color: "#94a3b8", maxTicksLimit: 12 }}
+              }},
+              y: {{
+                min: 0,
+                grid: {{ color: "rgba(255, 255, 255, 0.06)" }},
+                ticks: {{ color: "#94a3b8" }},
+                title: {{ display: true, text: "Fiber (g)", color: "#94a3b8", font: {{ size: 10 }} }}
+              }}
+            }},
+            plugins: {{
+              legend: {{
+                position: "bottom",
+                labels: {{ color: "#cbd5e1", font: {{ size: 10 }}, boxWidth: 12, padding: 10 }}
+              }},
+              tooltip: {{
+                callbacks: {{
+                  afterBody: function(tooltipItems) {{
+                    const val = tooltipItems[0].raw || 0;
+                    const delta = (val - 30).toFixed(1);
+                    return "Variance vs 30g Target: " + (delta >= 0 ? "+" : "") + delta + "g";
+                  }}
+                }}
+              }}
             }}
           }}
         }});
@@ -1862,7 +2178,127 @@ def build_html(payload_json: str, d: dict) -> str:
       renderWorkoutsTable();
       renderAuditTable();
       initCharts();
+      initNutritionMetrics();
     }});
+
+    function initNutritionMetrics() {{
+      const nut = ATHX_DATA.apple?.nutrition?.history || [];
+      if (!nut.length) return;
+
+      // 1. Dynamic Macro Calculations:
+      // - Calorie contributions: Carb Kcal = Carbs_g * 4, Protein Kcal = Protein_g * 4, Fat Kcal = Fat_g * 9
+      // - Daily Carb-to-Protein Ratio: Carbs_g / Protein_g
+      const enriched = nut.map(d => {{
+        const carbs = d.Carbs_g || 0;
+        const protein = d.Protein_g || 0;
+        const fat = d.Fat_g || 0;
+        const fiber = d.Fiber_g || 0;
+        const carbKcal = Math.round(carbs * 4);
+        const proteinKcal = Math.round(protein * 4);
+        const fatKcal = Math.round(fat * 9);
+        const totalMacroKcal = carbKcal + proteinKcal + fatKcal;
+        const cpRatio = protein > 0 ? (carbs / protein) : 0;
+        return {{
+          ...d,
+          carbs,
+          protein,
+          fat,
+          fiber,
+          carbKcal,
+          proteinKcal,
+          fatKcal,
+          totalMacroKcal,
+          cpRatio
+        }};
+      }});
+
+      // - 7-day rolling average Macro Percentage Split (% Carbs, % Protein, % Fat)
+      const last7 = enriched.slice(-7);
+      const sumCarbKcal7d = last7.reduce((acc, cur) => acc + cur.carbKcal, 0);
+      const sumProtKcal7d = last7.reduce((acc, cur) => acc + cur.proteinKcal, 0);
+      const sumFatKcal7d = last7.reduce((acc, cur) => acc + cur.fatKcal, 0);
+      const totalMacroKcal7d = sumCarbKcal7d + sumProtKcal7d + sumFatKcal7d;
+
+      const pctCarbs7d = totalMacroKcal7d > 0 ? Math.round((sumCarbKcal7d / totalMacroKcal7d) * 100) : 0;
+      const pctProtein7d = totalMacroKcal7d > 0 ? Math.round((sumProtKcal7d / totalMacroKcal7d) * 100) : 0;
+      const pctFat7d = totalMacroKcal7d > 0 ? (100 - pctCarbs7d - pctProtein7d) : 0;
+
+      // Update KPI: Macro Energy Split
+      const splitEl = document.getElementById("kpiMacroSplit");
+      if (splitEl) {{
+        splitEl.innerHTML = `<span style="color: #38bdf8;">${{pctCarbs7d}}% C</span> <span style="color: var(--text-dim); font-size: 0.95rem;">/</span> <span style="color: #34d399;">${{pctProtein7d}}% P</span> <span style="color: var(--text-dim); font-size: 0.95rem;">/</span> <span style="color: #facc15;">${{pctFat7d}}% F</span>`;
+      }}
+      const splitSub = document.getElementById("kpiMacroSplitSubtext");
+      if (splitSub) {{
+        const dailyMacroAvg = Math.round(totalMacroKcal7d / last7.length);
+        splitSub.innerHTML = `Energy balance: 4 kcal/g (C &bull; P) &bull; 9 kcal/g (Fat)<br><span style="font-size: 0.72rem; color: var(--text-dim);">Rolling split: ${{pctCarbs7d}}% Carbs / ${{pctProtein7d}}% Protein / ${{pctFat7d}}% Fat &bull; ${{dailyMacroAvg.toLocaleString()}} kcal/d</span>`;
+      }}
+      const barC = document.getElementById("splitBarCarb");
+      const barP = document.getElementById("splitBarProt");
+      const barF = document.getElementById("splitBarFat");
+      if (barC) barC.style.width = pctCarbs7d + "%";
+      if (barP) barP.style.width = pctProtein7d + "%";
+      if (barF) barF.style.width = pctFat7d + "%";
+
+      // Update KPI: Carb-to-Protein Fueling Ratio (Target: 1.5 - 2.0; Green: >=1.5, Orange: <1.5)
+      const latest = enriched[enriched.length - 1];
+      const latestCp = latest.cpRatio;
+      const sumCarbs7d = last7.reduce((acc, cur) => acc + cur.carbs, 0);
+      const sumProt7d = last7.reduce((acc, cur) => acc + cur.protein, 0);
+      const avgCp7d = sumProt7d > 0 ? (sumCarbs7d / sumProt7d) : 0;
+
+      const cpEl = document.getElementById("kpiCpRatio");
+      if (cpEl) cpEl.innerHTML = `${{latestCp.toFixed(2)}} <span>C:P</span>`;
+      const cpBadge = document.getElementById("kpiCpBadge");
+      if (cpBadge) {{
+        cpBadge.className = "badge " + (latestCp >= 1.5 ? "badge-sweetspot" : "badge-warning");
+        cpBadge.textContent = `${{latestCp.toFixed(2)}} (${{latestCp >= 1.5 ? "Optimal >=1.5" : "Suboptimal <1.5"}})`;
+      }}
+      const cpSub = document.getElementById("kpiCpSub");
+      if (cpSub) {{
+        cpSub.innerHTML = `Target Band: <span class="highlight">1.5 &ndash; 2.0</span> (Glycogen Resynthesis)<br><span style="font-size: 0.72rem; color: var(--text-dim);">Latest day: ${{latest.carbs.toFixed(1)}}g C / ${{latest.protein.toFixed(1)}}g P &bull; 7d avg: ${{avgCp7d.toFixed(2)}}</span>`;
+      }}
+      const cpBar = document.getElementById("kpiCpBar");
+      if (cpBar) {{
+        cpBar.style.width = Math.min(100, (latestCp / 2.0) * 100) + "%";
+        cpBar.style.background = latestCp >= 1.5 ? "#34d399" : "#f59e0b";
+      }}
+
+      // Update KPI: Fiber Target Compliance (7-day avg vs 30g/day)
+      const avgFiber7d = last7.reduce((acc, cur) => acc + cur.fiber, 0) / last7.length;
+      const fiberDelta = (avgFiber7d - 30.0).toFixed(1);
+      const fiberEl = document.getElementById("kpiFiberVal");
+      if (fiberEl) fiberEl.innerHTML = `${{avgFiber7d.toFixed(1)}} <span>g/day</span>`;
+      const fiberBadge = document.getElementById("kpiFiberBadge");
+      if (fiberBadge) {{
+        fiberBadge.className = "badge " + (avgFiber7d >= 30.0 ? "badge-sweetspot" : "badge-warning");
+        fiberBadge.textContent = avgFiber7d >= 30.0 ? "Target Met" : "Target: 30g/d";
+      }}
+      const fiberSub = document.getElementById("kpiFiberSub");
+      if (fiberSub) {{
+        fiberSub.innerHTML = `Minimum Target: <span class="highlight">30.0 g/day</span> (Gut Health & Satiety)<br><span style="font-size: 0.72rem; color: var(--text-dim);">7-day rolling avg: ${{avgFiber7d.toFixed(1)}}g (${{fiberDelta >= 0 ? '+' : ''}}${{fiberDelta}}g vs target)</span>`;
+      }}
+      const fiberBar = document.getElementById("kpiFiberBar");
+      if (fiberBar) {{
+        fiberBar.style.width = Math.min(100, (avgFiber7d / 30.0) * 100) + "%";
+        fiberBar.style.background = avgFiber7d >= 30.0 ? "#34d399" : "#f59e0b";
+      }}
+
+      // Update KPI: Calorie Target Variance (+/- kcal relative to 3,050 kcal bulking target)
+      const avgCals7d = Math.round(last7.reduce((acc, cur) => acc + (cur.Calories_kcal || 0), 0) / last7.length);
+      const var7d = avgCals7d - 3050;
+      const latestVar = Math.round((latest.Calories_kcal || 0) - 3050);
+      const calVarEl = document.getElementById("kpiCalVariance");
+      if (calVarEl) calVarEl.innerHTML = `${{var7d >= 0 ? '+' : ''}}${{var7d.toLocaleString()}} <span>kcal</span>`;
+      const calVarSub = document.getElementById("kpiCalVarianceSub");
+      if (calVarSub) {{
+        calVarSub.innerHTML = `ATHX Bulking Target: <span class="highlight">3,050 kcal/day</span><br><span style="font-size: 0.72rem; color: var(--text-dim);">7-day rolling avg: ${{avgCals7d.toLocaleString()}} kcal/d (Latest: ${{latestVar >= 0 ? '+' : ''}}${{latestVar}} kcal)</span>`;
+      }}
+      const calVarBar = document.getElementById("kpiCalVarBar");
+      if (calVarBar) {{
+        calVarBar.style.width = Math.min(100, (avgCals7d / 3050.0) * 100) + "%";
+      }}
+    }}
   </script>
 </body>
 </html>
