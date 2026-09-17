@@ -1,5 +1,33 @@
 [
   {
+    "Activity_ID": 24391806619,
+    "Date": "2026-09-17",
+    "Start_Time": "2026-09-17 07:15:12",
+    "Activity_Name": "Cardio",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 32.9,
+    "Distance_km": 0.0,
+    "Calories_kcal": 266,
+    "Average_HR": 116.0,
+    "Max_HR": 163.0,
+    "Training_Effect": "ANAEROBIC_CAPACITY"
+  },
+  {
+    "Activity_ID": 24387056282,
+    "Date": "2026-09-16",
+    "Start_Time": "2026-09-16 19:07:30",
+    "Activity_Name": "CrossFit ",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 47.3,
+    "Distance_km": 0.0,
+    "Calories_kcal": 483,
+    "Average_HR": 133.0,
+    "Max_HR": 171.0,
+    "Training_Effect": "SPEED"
+  },
+  {
     "Activity_ID": 24379065525,
     "Date": "2026-09-16",
     "Start_Time": "2026-09-16 06:18:00",
