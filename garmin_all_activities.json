@@ -1,5 +1,47 @@
 [
   {
+    "Activity_ID": 24464848450,
+    "Date": "2026-09-23",
+    "Start_Time": "2026-09-23 06:30:00",
+    "Activity_Name": "ATHX 2027: Upper Body Hypertrophy & Strict OHP",
+    "Activity_Type": "strength_training",
+    "Primary_Category": "Strength",
+    "Duration_min": 53.7,
+    "Distance_km": 0.0,
+    "Calories_kcal": 374,
+    "Average_HR": 113.0,
+    "Max_HR": 157.0,
+    "Training_Effect": "AEROBIC_BASE"
+  },
+  {
+    "Activity_ID": 24451660589,
+    "Date": "2026-09-22",
+    "Start_Time": "2026-09-22 06:40:00",
+    "Activity_Name": "Lower Body A (Squat Focus) & Vertical Push Press",
+    "Activity_Type": "strength_training",
+    "Primary_Category": "Strength",
+    "Duration_min": 62.0,
+    "Distance_km": 0.0,
+    "Calories_kcal": 349,
+    "Average_HR": 109.0,
+    "Max_HR": 165.0,
+    "Training_Effect": "ANAEROBIC_CAPACITY"
+  },
+  {
+    "Activity_ID": 24447489780,
+    "Date": "2026-09-21",
+    "Start_Time": "2026-09-21 20:28:41",
+    "Activity_Name": "Cardio",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 20.6,
+    "Distance_km": 0.0,
+    "Calories_kcal": 137,
+    "Average_HR": 106.0,
+    "Max_HR": 149.0,
+    "Training_Effect": "RECOVERY"
+  },
+  {
     "Activity_ID": 24391806619,
     "Date": "2026-09-17",
     "Start_Time": "2026-09-17 07:15:12",
