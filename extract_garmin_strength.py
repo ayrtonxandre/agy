@@ -42,6 +42,7 @@ except ImportError:
     sys.exit(1)
 
 import athx_config
+import garmin_note_parser
 
 
 # ==============================================================================
@@ -297,6 +298,8 @@ def extract_all_garmin_activities(garmin: Garmin, limit: int = 250) -> dict[str,
         elif "cardio" in type_key or "training" in type_key:
             master_category = "Cardio / Cross-Training"
 
+        desc = (act.get("description") or "").strip()
+
         master_entry = {
             "Activity_ID": act_id,
             "Date": date_str,
@@ -311,6 +314,8 @@ def extract_all_garmin_activities(garmin: Garmin, limit: int = 250) -> dict[str,
             "Max_HR": max_hr,
             "Training_Effect": act.get("trainingEffectLabel", ""),
         }
+        if desc:
+            master_entry["Notes"] = desc
         all_master_activities.append(master_entry)
 
         # ----------------------------------------------------------------------
@@ -388,6 +393,17 @@ def extract_all_garmin_activities(garmin: Garmin, limit: int = 250) -> dict[str,
             ]
 
             if not active_sets:
+                # If no sets recorded on watch, check if user wrote exercises in note/description
+                if desc:
+                    note_sets, parsed_info = garmin_note_parser.convert_note_to_strength_records(
+                        act_id, date_str, act_name, desc
+                    )
+                    if note_sets:
+                        all_strength_sets.extend(note_sets)
+                        cached_sets_by_id[act_id] = note_sets
+                        print(f"   🏋️ [{idx}/{len(activities)}] [WOD Note Deciphered ({parsed_info.get('parser_used', 'LLM')})]: {len(note_sets)} sets from '{act_name}' — {parsed_info.get('summary', '')}")
+                        continue
+
                 w_cat = clean_workout_category(type_key, act_name)
                 w_entry = {
                     "Activity_ID": act_id,
@@ -406,6 +422,8 @@ def extract_all_garmin_activities(garmin: Garmin, limit: int = 250) -> dict[str,
                     "Steps": act.get("steps", 0),
                     "Distance_km": dist_km,
                 }
+                if desc:
+                    w_entry["Notes"] = desc
                 all_workout_records.append(w_entry)
                 continue
 
@@ -477,6 +495,21 @@ def extract_all_garmin_activities(garmin: Garmin, limit: int = 250) -> dict[str,
         # ----------------------------------------------------------------------
         # Case C: OTHER WORKOUTS (Cardio, Cross-Training, Hiking, Bouldering, Walking)
         # ----------------------------------------------------------------------
+        # Check if activity note contains strength exercises (e.g. CrossFit WOD)
+        if desc:
+            if act_id in cached_sets_by_id:
+                all_strength_sets.extend(cached_sets_by_id[act_id])
+            else:
+                note_sets, parsed_info = garmin_note_parser.convert_note_to_strength_records(
+                    act_id, date_str, act_name, desc
+                )
+                if note_sets:
+                    all_strength_sets.extend(note_sets)
+                    cached_sets_by_id[act_id] = note_sets
+                    print(f"   🏋️ [{idx}/{len(activities)}] [WOD Note Deciphered ({parsed_info.get('parser_used', 'LLM')})]: {len(note_sets)} sets from '{act_name}' — {parsed_info.get('summary', '')}")
+        elif act_id in cached_sets_by_id:
+            all_strength_sets.extend(cached_sets_by_id[act_id])
+
         if act_id in cached_workouts_by_id:
             all_workout_records.append(cached_workouts_by_id[act_id])
             continue
@@ -499,6 +532,8 @@ def extract_all_garmin_activities(garmin: Garmin, limit: int = 250) -> dict[str,
             "Vigorous_Intensity_Min": act.get("vigorousIntensityMinutes", 0),
             "Steps": act.get("steps", 0),
         }
+        if desc:
+            workout_entry["Notes"] = desc
         all_workout_records.append(workout_entry)
         print(f"⚡ [{idx}/{len(activities)}] Workout: '{act_name}' ({category}) on {date_str} — {dur_min} min, {calories} kcal, HR: {avg_hr}")
 

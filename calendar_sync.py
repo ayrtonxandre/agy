@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import re
 import ssl
@@ -8,6 +9,7 @@ from zoneinfo import ZoneInfo
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_ICS_PATH = os.path.join(BASE_DIR, "calendar_data", "[ARTEFACT]_ayrton.andre@artefact.com.ics")
 REMOTE_ICS_URL = "https://calendar.google.com/calendar/ical/ayrton.andre%40artefact.com/public/basic.ics"
+LOCAL_TZ = ZoneInfo("Europe/Paris")
 
 def unfold_ical_lines(raw_text: str) -> list[str]:
     """Unfolds iCal lines wrapped by CRLF/LF followed by whitespace according to RFC 5545."""

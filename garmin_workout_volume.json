@@ -24217,5 +24217,57 @@
     "e1RM_kg": 69.7,
     "Duration_s": 130.4,
     "Session_Type": "Push"
+  },
+  {
+    "Activity_ID": 24477635769,
+    "Date": "2026-09-24",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Front Squat",
+    "Set": 1,
+    "Reps": 15,
+    "Weight_kg": 60.0,
+    "Total_Volume_kg": 900.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24477635769,
+    "Date": "2026-09-24",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Front Squat",
+    "Set": 2,
+    "Reps": 15,
+    "Weight_kg": 60.0,
+    "Total_Volume_kg": 900.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24477635769,
+    "Date": "2026-09-24",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Front Squat",
+    "Set": 3,
+    "Reps": 15,
+    "Weight_kg": 60.0,
+    "Total_Volume_kg": 900.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24477635769,
+    "Date": "2026-09-24",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Front Squat",
+    "Set": 4,
+    "Reps": 15,
+    "Weight_kg": 60.0,
+    "Total_Volume_kg": 900.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
   }
 ]

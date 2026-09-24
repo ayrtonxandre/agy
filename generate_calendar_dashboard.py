@@ -792,9 +792,9 @@ def build_dashboard():
                 <div class="timeline-container">
                     <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color: #ffffff;">🎯 ATHX 2027 Training Recommendations</h3>
                     <div style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.85rem;">
-                        <p>• <strong>Optimal Gym Session Duration:</strong> 75 to 90 minutes.</p>
-                        <p>• <strong>Today's Pick:</strong> Block <strong>16:00 – 19:00</strong> is completely clear before your 19:00 Cross-training.</p>
-                        <p>• <strong>Saturday Target:</strong> Slot <strong>07:00 – 11:30</strong> provides a 270-min window before Saturday Cross-training at 11:30.</p>
+                        <p>• <strong>Optimal Gym Session Duration:</strong> 45 to 50 minutes (4 days/week: Mon Push, Tue Pull & Forearms, Thu Legs A, Fri Legs B).</p>
+                        <p>• <strong>CrossFit & Conditioning:</strong> Mon & Wed (19:00), Sat (11:30). Wednesday morning is reserved for 15–20 min Light Cardio & Core.</p>
+                        <p>• <strong>Recovery & Rest:</strong> Sunday is 100% Full Rest & Recovery to protect sleep and support the 85 kg mass target.</p>
                         <div style="margin-top: 1rem; padding: 1rem; background: rgba(255, 0, 102, 0.08); border-left: 3px solid var(--artefact-pink); border-radius: 6px;">
                             <strong>Multi-Calendar Guard:</strong> This radar checks across Google Calendar, Clariane Outlook, and iCloud CalDAV simultaneously to ensure zero double-booking.
                         </div>

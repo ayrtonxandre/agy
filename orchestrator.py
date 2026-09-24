@@ -102,15 +102,21 @@ def git_auto_commit_and_push(reason: str = "apple health webhook sync"):
     finally:
         GIT_LOCK.release()
 
-# Athletic Routine Constraints
+# Athletic Routine Constraints (Option 1: 4 Gym + 3 CrossFit + Wednesday Light Cardio/Core + Sunday Rest)
 ATHLETIC_SCHEDULE = {
-    "Monday": {"type": "Gym", "time": "06:30", "duration_min": 90, "split": "Push / Strength"},
-    "Tuesday": {"type": "Crossfit", "time": "19:00", "duration_min": 60, "split": "Cross-training"},
-    "Wednesday": {"type": "Gym", "time": "06:30", "duration_min": 90, "split": "Legs / Strength"},
-    "Thursday": {"type": "Crossfit", "time": "19:00", "duration_min": 60, "split": "Cross-training"},
-    "Friday": {"type": "Gym", "time": "06:30", "duration_min": 90, "split": "Pull / Strength"},
+    "Monday": [
+        {"type": "Gym", "time": "06:30", "duration_min": 45, "split": "Push & Shoulders (S2O)"},
+        {"type": "Crossfit", "time": "19:00", "duration_min": 60, "split": "Cross-training"}
+    ],
+    "Tuesday": {"type": "Gym", "time": "06:30", "duration_min": 48, "split": "Pull & Forearms"},
+    "Wednesday": [
+        {"type": "Cardio/Core", "time": "06:30", "duration_min": 20, "split": "Light Cardio & Core"},
+        {"type": "Crossfit", "time": "19:00", "duration_min": 60, "split": "Cross-training"}
+    ],
+    "Thursday": {"type": "Gym", "time": "06:30", "duration_min": 50, "split": "Legs A (Squat & Quads)"},
+    "Friday": {"type": "Gym", "time": "06:30", "duration_min": 45, "split": "Legs B (Deadlift & Carry)"},
     "Saturday": {"type": "Crossfit", "time": "11:30", "duration_min": 60, "split": "Cross-training"},
-    "Sunday": {"type": "Rest", "time": None, "duration_min": 0, "split": "Active Recovery"}
+    "Sunday": {"type": "Rest", "time": None, "duration_min": 0, "split": "Full Rest & Recovery"}
 }
 
 def process_health_auto_export_payload(payload: dict) -> dict:
@@ -590,9 +596,15 @@ if __name__ == "__main__":
     if mode == "serve":
         run_server()
     elif mode == "plan":
-        print("ATHX 2027 Schedule:")
-        for d, s in ATHLETIC_SCHEDULE.items():
-            print(f"  • {d}: {s['type']} ({s.get('time', 'Rest')})")
+        print("ATHX 2027 Schedule (Option 1 - 4 Gym / 3 CrossFit / Sunday Rest):")
+        for d, sessions in ATHLETIC_SCHEDULE.items():
+            if isinstance(sessions, list):
+                sched_str = " + ".join(f"{s['type']} at {s['time']} ({s['split']}, {s['duration_min']}m)" for s in sessions)
+                print(f"  • {d:9}: {sched_str}")
+            else:
+                t = sessions.get('time')
+                time_str = f"at {t} ({sessions.get('duration_min', 0)}m)" if t else "OFF"
+                print(f"  • {d:9}: {sessions['type']} {time_str} - {sessions['split']}")
     elif mode == "sync-garmin":
         subprocess.run([sys.executable, str(BASE_DIR / "extract_garmin_strength.py")])
     else:

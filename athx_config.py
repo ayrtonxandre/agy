@@ -73,7 +73,7 @@ COMPETITION_BENCHMARKS: dict[str, dict] = {
         "name": "Sandbag Carry / Grip",
         "unit": "kg",
         "standard": 60.0,
-        "exercise_matches": ["Carry", "Farmer's Walk", "Trap Bar Carry", "Deadlift Hold", "Shrug"],
+        "exercise_matches": ["Carry", "Farmer's Walk", "Farmers Carry", "Sandbag Carry", "Trap Bar Carry", "Deadlift Hold", "Plate Pinch", "Dead Hang", "Shrug"],
         "description": "Loaded carry grip and core endurance standard"
     }
 }
@@ -91,6 +91,7 @@ MEV_MRV_BANDS: dict[str, dict[str, float]] = {
     "Shoulders": {"mev": 8.0, "mav_min": 12.0, "mav_max": 18.0, "mrv": 22.0},
     "Triceps": {"mev": 6.0, "mav_min": 10.0, "mav_max": 16.0, "mrv": 20.0},
     "Biceps": {"mev": 6.0, "mav_min": 10.0, "mav_max": 16.0, "mrv": 20.0},
+    "Forearms": {"mev": 4.0, "mav_min": 6.0, "mav_max": 12.0, "mrv": 16.0},
     "Core": {"mev": 0.0, "mav_min": 6.0, "mav_max": 12.0, "mrv": 16.0},
 }
 
@@ -210,9 +211,16 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     "Preacher Curl": "Biceps",
     "Cable Curl": "Biceps",
     "Concentration Curl": "Biceps",
-    "Barbell Reverse Wrist Curl": "Biceps",
-    "Dumbbell Reverse Wrist Curl": "Biceps",
-    "Dumbbell Wrist Curl": "Biceps",
+    # Forearms & Grip (ATHX Sandbag & Floor Pull Prep)
+    "Barbell Wrist Curl": "Forearms",
+    "Wrist Curl": "Forearms",
+    "Dumbbell Wrist Curl": "Forearms",
+    "Barbell Reverse Wrist Curl": "Forearms",
+    "Dumbbell Reverse Wrist Curl": "Forearms",
+    "Dead Hang": "Forearms",
+    "Plate Pinch": "Forearms",
+    "Farmers Carry": "Forearms",
+    "Farmer's Walk": "Forearms",
 
     # Core
     "Sit Up": "Core",
@@ -228,6 +236,14 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
 
     # Cardio & Warmup
     "Snatch": "Full Body",
+    "Clean": "Full Body",
+    "Power Clean": "Full Body",
+    "Clean and Jerk": "Full Body",
+    "Thruster": "Shoulders",
+    "Wall Ball": "Quads",
+    "Box Jump": "Quads",
+    "Toes to Bar": "Core",
+    "Toes To Bar": "Core",
     "Burpee": "Full Body",
     "Jump Rope": "Full Body",
     "Jumping Jacks": "Full Body",
@@ -244,6 +260,7 @@ MUSCLE_TO_SPLIT_MAP: dict[str, str] = {
     "Triceps": "Push",
     "Lats/Back": "Pull",
     "Biceps": "Pull",
+    "Forearms": "Pull",
     "Quads": "Legs",
     "Hamstrings/Glutes": "Legs",
     "Core": "Core",
@@ -283,6 +300,12 @@ PLAUSIBLE_LOAD_RANGES: dict[str, tuple[float, float]] = {
     "Back Squat": (20.0, 200.0),
     "Barbell Back Squat": (20.0, 200.0),
     "Squat": (20.0, 200.0),
+    "Front Squat": (20.0, 180.0),
+    "Thruster": (15.0, 100.0),
+    "Clean": (20.0, 150.0),
+    "Power Clean": (20.0, 150.0),
+    "Clean and Jerk": (20.0, 150.0),
+    "Wall Ball": (4.0, 20.0),
     "Deadlift": (40.0, 240.0),
     "Barbell Deadlift": (40.0, 240.0),
     "Straight Leg Deadlift": (20.0, 180.0),
@@ -297,6 +320,15 @@ PLAUSIBLE_LOAD_RANGES: dict[str, tuple[float, float]] = {
     "Barbell Push Press": (20.0, 110.0),
     "Dumbbell Shoulder Press": (8.0, 45.0),
     "Sit Up": (0.0, 40.0),
+    "Barbell Wrist Curl": (5.0, 70.0),
+    "Wrist Curl": (2.0, 60.0),
+    "Dumbbell Wrist Curl": (2.0, 35.0),
+    "Barbell Reverse Wrist Curl": (5.0, 50.0),
+    "Dumbbell Reverse Wrist Curl": (2.0, 30.0),
+    "Dead Hang": (0.0, 50.0),
+    "Plate Pinch": (2.5, 40.0),
+    "Farmers Carry": (10.0, 100.0),
+    "Farmer's Walk": (10.0, 100.0),
 }
 
 # Genuine Bodyweight Movements (if weight == 0 and reps > 0, calculate volume using bodyweight)
@@ -311,6 +343,7 @@ BODYWEIGHT_EXERCISES: set[str] = {
     "Hanging Leg Raise",
     "Plank",
     "Bodyweight Squat",
+    "Dead Hang",
 }
 
 # ------------------------------------------------------------------------------

@@ -1763,8 +1763,9 @@ def build_html(payload_json: str, d: dict) -> str:
           {{ label: "Hamstrings/Glutes", data: ms["Hamstrings/Glutes"].history, backgroundColor: "#f59e0b" }},
           {{ label: "Shoulders", data: ms.Shoulders.history, backgroundColor: "#ec4899" }},
           {{ label: "Triceps", data: ms.Triceps.history, backgroundColor: "#06b6d4" }},
-          {{ label: "Biceps", data: ms.Biceps.history, backgroundColor: "#8b5cf6" }},
-          {{ label: "Core", data: ms.Core.history, backgroundColor: "#64748b" }},
+          {{ label: "Biceps", data: ms.Biceps ? ms.Biceps.history : [], backgroundColor: "#8b5cf6" }},
+          {{ label: "Forearms", data: ms.Forearms ? ms.Forearms.history : [], backgroundColor: "#fb7185" }},
+          {{ label: "Core", data: ms.Core ? ms.Core.history : [], backgroundColor: "#64748b" }},
         ];
 
         new Chart(ctxMuscle, {{
