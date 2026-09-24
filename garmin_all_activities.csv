@@ -2,12 +2,18 @@ Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duratio
 24477635769,2026-09-24,2026-09-24 06:38:00,CrossFit,indoor_cardio,Cardio / Cross-Training,49.9,0.0,604,147.0,198.0,SPEED,"4 rounds
 15 Front Squats : 60Kg
 500m rowing"
-24471892604,2026-09-23,2026-09-23 18:04:39,Cardio,indoor_cardio,Cardio / Cross-Training,51.8,0.0,366,113.0,179.0,ANAEROBIC_CAPACITY,
+24471892604,2026-09-23,2026-09-23 18:04:39,CrossFit,indoor_cardio,Cardio / Cross-Training,51.8,0.0,366,113.0,179.0,ANAEROBIC_CAPACITY,"Practice 8'
+Handstand Walk
+Puis:
+6 ROUNDS:
+8 Pike Push-Ups
+6 Pull Ups"
 24464848450,2026-09-23,2026-09-23 06:30:00,ATHX 2027: Upper Body Hypertrophy & Strict OHP,strength_training,Strength,53.7,0.0,374,113.0,157.0,AEROBIC_BASE,
 24451660589,2026-09-22,2026-09-22 06:40:00,Lower Body A (Squat Focus) & Vertical Push Press,strength_training,Strength,62.0,0.0,349,109.0,165.0,ANAEROBIC_CAPACITY,
 24447489780,2026-09-21,2026-09-21 20:28:41,Cardio,indoor_cardio,Cardio / Cross-Training,20.6,0.0,137,106.0,149.0,RECOVERY,
 24391806619,2026-09-17,2026-09-17 07:15:12,Cardio,indoor_cardio,Cardio / Cross-Training,32.9,0.0,266,116.0,163.0,ANAEROBIC_CAPACITY,
-24387056282,2026-09-16,2026-09-16 19:07:30,CrossFit ,indoor_cardio,Cardio / Cross-Training,47.3,0.0,483,133.0,171.0,SPEED,
+24387056282,2026-09-16,2026-09-16 19:07:30,CrossFit ,indoor_cardio,Cardio / Cross-Training,47.3,0.0,483,133.0,171.0,SPEED,"5 round 
+5 snatch barbell 20Kg"
 24379065525,2026-09-16,2026-09-16 06:18:00,Upper-Body,strength_training,Strength,60.0,0.0,430,113.0,160.0,ANAEROBIC_CAPACITY,
 24365724397,2026-09-15,2026-09-15 07:00:57,Treadmill Running,treadmill_running,Running,27.8,5.0,271,126.0,137.0,RECOVERY,
 24353113405,2026-09-14,2026-09-14 06:28:38,Strength,strength_training,Strength,42.0,0.0,264,107.0,153.0,ANAEROBIC_CAPACITY,

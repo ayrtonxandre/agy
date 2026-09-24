@@ -23309,6 +23309,19 @@
     "Session_Type": "Legs"
   },
   {
+    "Activity_ID": 24387056282,
+    "Date": "2026-09-16",
+    "Activity_Name": "CrossFit ",
+    "Exercise": "Snatch Barbell",
+    "Set": 1,
+    "Reps": 5,
+    "Weight_kg": 20.0,
+    "Total_Volume_kg": 100.0,
+    "e1RM_kg": 23.3,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
+  },
+  {
     "Activity_ID": 24379065525,
     "Date": "2026-09-16",
     "Activity_Name": "Upper-Body",
@@ -23907,6 +23920,19 @@
     "Session_Type": "Push"
   },
   {
+    "Activity_ID": 24471892604,
+    "Date": "2026-09-23",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Pull Up",
+    "Set": 1,
+    "Reps": 6,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Pull"
+  },
+  {
     "Activity_ID": 24464848450,
     "Date": "2026-09-23",
     "Activity_Name": "ATHX 2027: Upper Body Hypertrophy & Strict OHP",
@@ -23996,6 +24022,19 @@
     "e1RM_kg": 95.0,
     "Duration_s": 27.8,
     "Session_Type": "Push"
+  },
+  {
+    "Activity_ID": 24471892604,
+    "Date": "2026-09-23",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Pull Up",
+    "Set": 2,
+    "Reps": 6,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Pull"
   },
   {
     "Activity_ID": 24464848450,
@@ -24089,6 +24128,19 @@
     "Session_Type": "Push"
   },
   {
+    "Activity_ID": 24471892604,
+    "Date": "2026-09-23",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Pull Up",
+    "Set": 3,
+    "Reps": 6,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Pull"
+  },
+  {
     "Activity_ID": 24464848450,
     "Date": "2026-09-23",
     "Activity_Name": "ATHX 2027: Upper Body Hypertrophy & Strict OHP",
@@ -24180,6 +24232,19 @@
     "Session_Type": "Push"
   },
   {
+    "Activity_ID": 24471892604,
+    "Date": "2026-09-23",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Pull Up",
+    "Set": 4,
+    "Reps": 6,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Pull"
+  },
+  {
     "Activity_ID": 24464848450,
     "Date": "2026-09-23",
     "Activity_Name": "ATHX 2027: Upper Body Hypertrophy & Strict OHP",
@@ -24217,6 +24282,32 @@
     "e1RM_kg": 69.7,
     "Duration_s": 130.4,
     "Session_Type": "Push"
+  },
+  {
+    "Activity_ID": 24471892604,
+    "Date": "2026-09-23",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Pull Up",
+    "Set": 5,
+    "Reps": 6,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Pull"
+  },
+  {
+    "Activity_ID": 24471892604,
+    "Date": "2026-09-23",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Pull Up",
+    "Set": 6,
+    "Reps": 6,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Pull"
   },
   {
     "Activity_ID": 24477635769,
