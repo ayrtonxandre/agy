@@ -114,12 +114,26 @@ EXERCISE_ALIASES: dict[str, str] = {
     "db row": "Dumbbell Row",
     "lat pulldown": "Lat Pulldown",
 
+    "pike push-ups": "Push Up",
+    "pike push-up": "Push Up",
+    "pike push ups": "Push Up",
+    "pike pushups": "Push Up",
+
     # Olympic & Core
     "snatch": "Snatch",
+    "snatches": "Snatch",
     "power snatch": "Snatch",
     "clean": "Clean",
+    "cleans": "Clean",
     "power clean": "Clean",
+    "power cleans": "Clean",
     "clean and jerk": "Clean and Jerk",
+    "clean and jerks": "Clean and Jerk",
+    "cleans and jerk": "Clean and Jerk",
+    "cleans and jerks": "Clean and Jerk",
+    "clean & jerk": "Clean and Jerk",
+    "cleans & jerks": "Clean and Jerk",
+    "c&j": "Clean and Jerk",
     "burpees": "Burpee",
     "burpee": "Burpee",
     "toes to bar": "Toes to Bar",
@@ -134,6 +148,7 @@ def normalize_exercise_name(raw_name: str) -> str:
     
     cleaned = raw_name.strip().lower()
     cleaned = re.sub(r"^(barbell|dumbbell|db|bb)\s+", "", cleaned)
+    cleaned = re.sub(r"\s+(barbell|dumbbell|db|bb)$", "", cleaned)
     
     if cleaned in EXERCISE_ALIASES:
         return EXERCISE_ALIASES[cleaned]
@@ -145,6 +160,20 @@ def normalize_exercise_name(raw_name: str) -> str:
     return raw_name.strip().title()
 
 
+def is_exercise_name(text: str) -> str | None:
+    """Checks if a line represents a pure exercise header (e.g. 'Deadlifts')."""
+    t = text.strip()
+    if not t:
+        return None
+    low = t.lower()
+    if any(h in low for h in ["strength", "wod", "warmup", "warm up", "then", "puis", "practice", "rounds", "tours", "circuit"]):
+        return None
+    norm = normalize_exercise_name(t)
+    if norm in athx_config.EXERCISE_MUSCLE_MAP or low in EXERCISE_ALIASES:
+        return norm
+    return None
+
+
 # ==============================================================================
 # 2. LOCAL RULE-BASED FALLBACK PARSER
 # ==============================================================================
@@ -152,23 +181,72 @@ def parse_note_rules(text: str) -> dict[str, Any]:
     """Smart regex and heuristic parser for workout notes when LLM is offline."""
     lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
     
-    rounds = 1
-    # Check if a line specifies rounds (e.g. '4 rounds', '5 sets', '3 rds', '4 tours')
-    for line in lines:
-        m_rounds = re.match(r"^(\d+)\s*(?:rounds|sets|rds|tours|series)", line, re.IGNORECASE)
-        if m_rounds:
-            rounds = int(m_rounds.group(1))
-            break
-            
     exercises: list[dict[str, Any]] = []
     conditioning: list[dict[str, Any]] = []
     
-    for line in lines:
-        # Skip pure rounds declarations
-        if re.match(r"^(\d+)\s*(?:rounds|sets|rds|tours|series)\b", line, re.IGNORECASE):
+    current_exercise: str | None = None
+    current_rounds = 1
+    
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        
+        # Check section headers
+        if re.match(r"^(strength\s*(?:part)?|force|partie\s*1)\b", line, re.IGNORECASE):
+            current_exercise = None
+            current_rounds = 1
+            i += 1
             continue
             
-        # Pattern 1: Conditioning (e.g. "500m rowing", "400m run", "20 cal bike")
+        if re.match(r"^(wod|metcon|part\s*b|circuit)\b", line, re.IGNORECASE):
+            current_exercise = None
+            current_rounds = 1
+            i += 1
+            continue
+            
+        if re.match(r"^(warmup|warm\s*up|échauffement)\b", line, re.IGNORECASE):
+            current_exercise = None
+            current_rounds = 1
+            i += 1
+            continue
+            
+        # Check rounds declaration: "4 Rounds", "6 ROUNDS:", "Then 4 Rounds", "5 round", etc.
+        m_rds = re.search(r"(\d+)\s*(?:rounds?|sets?|rds|tours?|series)\b", line, re.IGNORECASE)
+        if m_rds and not re.search(r"(?:squat|press|deadlift|bench|curl|clean|snatch|row|pull|push)", line, re.IGNORECASE):
+            current_rounds = int(m_rds.group(1))
+            current_exercise = None
+            i += 1
+            continue
+            
+        if re.match(r"^(then|puis|after)\b", line, re.IGNORECASE):
+            current_exercise = None
+            i += 1
+            continue
+            
+        # Check if line is just an exercise name, e.g. "Deadlifts"
+        ex_cand = is_exercise_name(line)
+        if ex_cand and not re.search(r"\d", line):
+            current_exercise = ex_cand
+            i += 1
+            continue
+            
+        # Check multi-set notation under current_exercise:
+        # e.g. "5*60", "5x70", "5 * 80kg", "5 @ 90", "5 reps 100kg"
+        m_set = re.match(r"^(\d+)\s*(?:[\*xX@]|reps\s*(?:@|x|\*)?)\s*(\d+(?:\.\d+)?)\s*(?:kg|kilos|lbs)?$", line, re.IGNORECASE)
+        if m_set and current_exercise:
+            reps = int(m_set.group(1))
+            weight = float(m_set.group(2))
+            exercises.append({
+                "exercise": current_exercise,
+                "sets": 1,
+                "reps": reps,
+                "weight_kg": weight,
+                "notes": f"1 set of {reps} @ {weight}kg"
+            })
+            i += 1
+            continue
+            
+        # Check conditioning: "400m rowing", "500m row", "20 cal bike"
         m_dist = re.match(r"^(\d+(?:\.\d+)?)\s*(m|km|meters|miles)\s+([a-zA-Z\s]+)", line, re.IGNORECASE)
         if m_dist:
             val = float(m_dist.group(1))
@@ -177,10 +255,11 @@ def parse_note_rules(text: str) -> dict[str, Any]:
             movement = m_dist.group(3).strip().title()
             conditioning.append({
                 "movement": movement,
-                "distance_m": dist_m * rounds,
+                "distance_m": dist_m * current_rounds,
                 "calories": None,
-                "notes": f"{rounds}x {m_dist.group(1)}{unit}"
+                "notes": f"{current_rounds}x {m_dist.group(1)}{unit}"
             })
+            i += 1
             continue
 
         m_cal = re.match(r"^(\d+)\s*(?:cal|calories)\s+([a-zA-Z\s]+)", line, re.IGNORECASE)
@@ -190,13 +269,13 @@ def parse_note_rules(text: str) -> dict[str, Any]:
             conditioning.append({
                 "movement": movement,
                 "distance_m": None,
-                "calories": cals * rounds,
-                "notes": f"{rounds}x {cals} cal"
+                "calories": cals * current_rounds,
+                "notes": f"{current_rounds}x {cals} cal"
             })
+            i += 1
             continue
-            
-        # Pattern 2: Strength with reps, name, and weight:
-        # e.g. "15 Front Squats : 60Kg", "10 reps Thrusters @ 42.5kg", "8 Back Squat 100kg"
+
+        # Check full strength line: "9 Cleans and Jerks 45Kg", "15 Front Squats : 60Kg", "5 snatch barbell 20Kg"
         m_ex = re.match(
             r"^(?:(\d+)\s*(?:reps|x)?\s+)?([A-Za-z\s]+?)\s*[:@\-_]\s*(\d+(?:\.\d+)?)\s*(?:kg|kilos|lbs)?$",
             line, re.IGNORECASE
@@ -214,30 +293,32 @@ def parse_note_rules(text: str) -> dict[str, Any]:
             ex_name = normalize_exercise_name(raw_ex)
             exercises.append({
                 "exercise": ex_name,
-                "sets": rounds,
+                "sets": current_rounds,
                 "reps": reps,
                 "weight_kg": weight,
-                "notes": f"{rounds} rounds of {reps} @ {weight}kg"
+                "notes": f"{current_rounds} rounds of {reps} @ {weight}kg"
             })
+            i += 1
             continue
 
-        # Pattern 3: Bodyweight or rep-only strength:
-        # e.g. "15 Pull Ups", "20 Push Ups", "10 Burpees"
-        m_bw = re.match(r"^(\d+)\s*(?:reps|x)?\s+([A-Za-z\s]+)$", line, re.IGNORECASE)
+        # Check bodyweight strength: "8 Pike Push-Ups", "6 Pull Ups"
+        m_bw = re.match(r"^(\d+)\s*(?:reps|x)?\s+([A-Za-z\s\-]+)$", line, re.IGNORECASE)
         if m_bw:
             reps = int(m_bw.group(1))
             raw_ex = m_bw.group(2).strip()
             ex_name = normalize_exercise_name(raw_ex)
-            # Only attribute if recognized
             if ex_name in athx_config.EXERCISE_MUSCLE_MAP or raw_ex.lower() in EXERCISE_ALIASES:
                 exercises.append({
                     "exercise": ex_name,
-                    "sets": rounds,
+                    "sets": current_rounds,
                     "reps": reps,
                     "weight_kg": 0.0,
-                    "notes": f"{rounds} rounds of {reps} reps (Bodyweight)"
+                    "notes": f"{current_rounds} rounds of {reps} reps (Bodyweight)"
                 })
+                i += 1
                 continue
+                
+        i += 1
 
     summary_parts = []
     if exercises:
@@ -249,7 +330,7 @@ def parse_note_rules(text: str) -> dict[str, Any]:
 
     return {
         "is_workout": len(exercises) > 0 or len(conditioning) > 0,
-        "rounds": rounds,
+        "rounds": current_rounds,
         "exercises": exercises,
         "conditioning": conditioning,
         "summary": " | ".join(summary_parts) if summary_parts else text.strip(),
@@ -471,7 +552,7 @@ def convert_note_to_strength_records(
     # Determine dominant session split
     dominant_split = parsed.get("session_type")
     if not dominant_split:
-        exercise_names = [e.get("exercise", "") for e in extracted_exercises]
+        exercise_names = [normalize_exercise_name(e.get("exercise", "")) for e in extracted_exercises]
         dominant_split = "Full Body"
         for ex in exercise_names:
             muscle = athx_config.EXERCISE_MUSCLE_MAP.get(ex)
@@ -481,6 +562,7 @@ def convert_note_to_strength_records(
                     dominant_split = split
                     break
 
+    exercise_set_counter: dict[str, int] = {}
     records: list[dict[str, Any]] = []
     for item in extracted_exercises:
         ex_name = normalize_exercise_name(item.get("exercise", "Strength Exercise"))
@@ -501,13 +583,15 @@ def convert_note_to_strength_records(
         else:
             e1rm = 0.0
 
-        for set_idx in range(1, sets_count + 1):
+        for _ in range(sets_count):
+            exercise_set_counter[ex_name] = exercise_set_counter.get(ex_name, 0) + 1
+            set_num = exercise_set_counter[ex_name]
             records.append({
                 "Activity_ID": act_id,
                 "Date": date_str,
                 "Activity_Name": act_name,
                 "Exercise": ex_name,
-                "Set": set_idx,
+                "Set": set_num,
                 "Reps": reps,
                 "Weight_kg": weight_kg,
                 "Total_Volume_kg": round(reps * weight_kg, 1),

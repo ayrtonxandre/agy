@@ -1,5 +1,5 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect_Label,Moderate_Intensity_Min,Vigorous_Intensity_Min,Steps,Notes
-24503269582,2026-09-26,2026-09-26 11:42:19,Cardio,indoor_cardio,Cardio,41.3,0.0,604,164.0,196.0,VO2MAX,2,38,1318,"Strength part
+24503269582,2026-09-26,2026-09-26 11:42:19,CrossFit,indoor_cardio,Cross-Training,41.3,0.0,604,164.0,196.0,VO2MAX,2,38,1318,"Strength part
 Deadlifts
 5*60 
 5*70
