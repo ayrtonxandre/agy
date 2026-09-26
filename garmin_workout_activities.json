@@ -1,5 +1,23 @@
 [
   {
+    "Activity_ID": 24503269582,
+    "Date": "2026-09-26",
+    "Start_Time": "2026-09-26 11:42:19",
+    "Activity_Name": "Cardio",
+    "Activity_Type": "indoor_cardio",
+    "Category": "Cardio",
+    "Duration_min": 41.3,
+    "Distance_km": 0.0,
+    "Calories_kcal": 604,
+    "Average_HR": 164.0,
+    "Max_HR": 196.0,
+    "Training_Effect_Label": "VO2MAX",
+    "Moderate_Intensity_Min": 2,
+    "Vigorous_Intensity_Min": 38,
+    "Steps": 1318,
+    "Notes": "Strength part\nDeadlifts\n5*60 \n5*70\n5*80\n5*90\n5*100\n\nWOD\nWarmup \n9 Cleans and Jerks 45Kg\nThen\n4 Rounds\n400m rowing\n9 Cleans and Jerks 45Kg"
+  },
+  {
     "Activity_ID": 24477635769,
     "Date": "2026-09-24",
     "Start_Time": "2026-09-24 06:38:00",
