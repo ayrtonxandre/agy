@@ -20,9 +20,12 @@ Health Auto Export Model Context Protocol (MCP) server running on iOS:
 from __future__ import annotations
 import os
 import sys
+import ssl
 import json
 import argparse
 import socket
+import subprocess
+import http.client
 import urllib.request
 import urllib.error
 from datetime import datetime, timedelta
@@ -49,6 +52,9 @@ class McpHttpClient:
         self.token = token
         self.session_id = None
         self.request_id = 1
+        self.ssl_context = ssl.create_default_context()
+        self.ssl_context.check_hostname = False
+        self.ssl_context.verify_mode = ssl.CERT_NONE
 
     def initialize(self):
         """Performs MCP protocol handshake and obtains Mcp-Session-Id."""
@@ -82,7 +88,10 @@ class McpHttpClient:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            kwargs = {"timeout": 30}
+            if self.endpoint_url.startswith("https://"):
+                kwargs["context"] = self.ssl_context
+            with urllib.request.urlopen(req, **kwargs) as resp:
                 self.session_id = resp.headers.get("Mcp-Session-Id")
                 resp_data = json.loads(resp.read().decode("utf-8"))
                 server_info = resp_data.get("result", {}).get("serverInfo", {})
@@ -133,8 +142,15 @@ class McpHttpClient:
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=45) as resp:
-                resp_json = json.loads(resp.read().decode("utf-8"))
+            kwargs = {"timeout": 45}
+            if self.endpoint_url.startswith("https://"):
+                kwargs["context"] = self.ssl_context
+            with urllib.request.urlopen(req, **kwargs) as resp:
+                try:
+                    raw_bytes = resp.read()
+                except http.client.IncompleteRead as e:
+                    raw_bytes = e.partial
+                resp_json = json.loads(raw_bytes.decode("utf-8"))
                 if "error" in resp_json:
                     raise RuntimeError(f"MCP Tool Error: {resp_json['error']}")
                 result = resp_json.get("result", {})
@@ -475,17 +491,27 @@ def update_nutrition(metrics_dict: dict):
 
 
 def discover_mcp_url(default_url: str) -> str:
-    """Probes candidate IPs on port 9000 if default_url is not reachable."""
+    """Probes candidate IPs on port 9000 supporting both HTTPS and HTTP."""
     candidates = []
+    if default_url:
+        candidates.append(default_url)
     if "HAE_IP" in os.environ:
-        candidates.append(f"http://{os.environ['HAE_IP']}:9000/mcp")
+        candidates.extend([
+            f"https://{os.environ['HAE_IP']}:9000/mcp",
+            f"http://{os.environ['HAE_IP']}:9000/mcp",
+        ])
     candidates.extend([
+        "https://192.168.1.163:9000/mcp",
         "http://192.168.1.163:9000/mcp",
+        "https://10.10.251.25:9000/mcp",
         "http://10.10.251.25:9000/mcp",
+        "https://127.0.0.1:9000/mcp",
         "http://127.0.0.1:9000/mcp",
     ])
-    if default_url not in candidates:
-        candidates.insert(0, default_url)
+
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
 
     for curl in candidates:
         try:
@@ -496,10 +522,22 @@ def discover_mcp_url(default_url: str) -> str:
             res = s.connect_ex((host, port))
             s.close()
             if res == 0:
-                return curl
+                # Port is open; test if endpoint responds to HTTP(S)
+                test_req = urllib.request.Request(curl, method="GET")
+                try:
+                    kwargs = {"timeout": 1.5}
+                    if curl.startswith("https://"):
+                        kwargs["context"] = ctx
+                    with urllib.request.urlopen(test_req, **kwargs) as resp:
+                        return curl
+                except urllib.error.HTTPError:
+                    # 404, 401, 405 etc. means web server is actively responding on this scheme
+                    return curl
+                except Exception:
+                    continue
         except Exception:
             pass
-    return default_url
+    return default_url or "https://192.168.1.163:9000/mcp"
 
 
 def main():
@@ -522,7 +560,7 @@ def main():
     # Save valid token
     TOKEN_FILE.write_text(token)
 
-    endpoint_url = discover_mcp_url(args.url or "http://10.10.251.25:9000/mcp")
+    endpoint_url = discover_mcp_url(args.url)
 
     end_dt = datetime.now(LOCAL_TZ)
     start_dt = end_dt - timedelta(days=args.days)
@@ -554,12 +592,12 @@ def main():
     update_mobility(metrics_dict)
     update_nutrition(metrics_dict)
 
-    # 2. Fetch Workouts
+    # 2. Fetch Workouts (includeMetadata=False avoids iOS buffer exhaustion/truncation)
     print("🏋️ Fetching workout history...")
     workouts_raw = client.call_tool("get_workouts", {
         "start": start_str,
         "end": end_str,
-        "includeMetadata": True,
+        "includeMetadata": False,
         "includeRoutes": False,
     })
     update_workouts(workouts_raw)

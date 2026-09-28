@@ -341,7 +341,7 @@ def run_git_push(agy_dir: Path) -> tuple[str, str]:
 
 
 def run_health_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
-    """Syncs Apple Health biometrics via live MCP or validates Drive sync."""
+    """Syncs Apple Health biometrics via live MCP or validates local datasets."""
     mcp_script = agy_dir / "sync_health_mcp.py"
     token_file = agy_dir / "hae_token.txt"
     token = os.getenv("HAE_MCP_TOKEN", "")
@@ -367,24 +367,33 @@ def run_health_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
         except Exception:
             pass
 
+    last_err = ""
     if active_ip and token and mcp_script.exists():
-        try:
-            res = subprocess.run(
-                [str(venv_py), str(mcp_script), "--url", f"http://{active_ip}:9000/mcp", "--token", token],
-                cwd=str(agy_dir),
-                capture_output=True,
-                text=True,
-                timeout=25
-            )
-            if res.returncode == 0:
-                return "success", f"Apple Health: Live metrics ingested from iPhone ({active_ip})"
-        except Exception:
-            pass
+        # Try HTTPS first (standard for HAE MCP), then HTTP fallback
+        for proto in ["https", "http"]:
+            endpoint_url = f"{proto}://{active_ip}:9000/mcp"
+            try:
+                res = subprocess.run(
+                    [str(venv_py), str(mcp_script), "--url", endpoint_url, "--token", token],
+                    cwd=str(agy_dir),
+                    capture_output=True,
+                    text=True,
+                    timeout=35
+                )
+                if res.returncode == 0:
+                    return "success", f"Apple Health: Live metrics ingested from iPhone ({endpoint_url})"
+                else:
+                    err_lines = [l for l in (res.stderr or res.stdout).splitlines() if l.strip()]
+                    last_err = err_lines[-1] if err_lines else ""
+            except Exception as e:
+                last_err = str(e)
 
     # If iPhone MCP server is not active, verify local CSVs
     body_csv = agy_dir / "apple_body_composition.csv"
     sleep_csv = agy_dir / "apple_sleep.csv"
     if body_csv.exists() and sleep_csv.exists():
+        if active_ip:
+            return "warning", f"Apple Health: Port 9000 reachable but sync failed ({last_err[:40] or 'ensure app is active'})"
         return "success", "Apple Health: Biometrics up to date (Cloud Hub & Webhook)"
     return "warning", "Apple Health: iPhone MCP offline (using local cache)"
 

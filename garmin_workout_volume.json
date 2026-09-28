@@ -24789,5 +24789,57 @@
     "e1RM_kg": 58.5,
     "Duration_s": 0.0,
     "Session_Type": "Pull"
+  },
+  {
+    "Activity_ID": 24533322405,
+    "Date": "2026-09-28",
+    "Activity_Name": "CrossFit ",
+    "Exercise": "Wall Ball",
+    "Set": 1,
+    "Reps": 30,
+    "Weight_kg": 12.0,
+    "Total_Volume_kg": 360.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24533322405,
+    "Date": "2026-09-28",
+    "Activity_Name": "CrossFit ",
+    "Exercise": "Wall Ball",
+    "Set": 2,
+    "Reps": 30,
+    "Weight_kg": 12.0,
+    "Total_Volume_kg": 360.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24533322405,
+    "Date": "2026-09-28",
+    "Activity_Name": "CrossFit ",
+    "Exercise": "Wall Ball",
+    "Set": 3,
+    "Reps": 30,
+    "Weight_kg": 12.0,
+    "Total_Volume_kg": 360.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24533322405,
+    "Date": "2026-09-28",
+    "Activity_Name": "CrossFit ",
+    "Exercise": "Wall Ball",
+    "Set": 4,
+    "Reps": 30,
+    "Weight_kg": 12.0,
+    "Total_Volume_kg": 360.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
   }
 ]

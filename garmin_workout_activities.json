@@ -1,5 +1,23 @@
 [
   {
+    "Activity_ID": 24533322405,
+    "Date": "2026-09-28",
+    "Start_Time": "2026-09-28 20:40:26",
+    "Activity_Name": "CrossFit ",
+    "Activity_Type": "indoor_cardio",
+    "Category": "Cross-Training",
+    "Duration_min": 43.2,
+    "Distance_km": 0.0,
+    "Calories_kcal": 478,
+    "Average_HR": 137.0,
+    "Max_HR": 182.0,
+    "Training_Effect_Label": "SPEED",
+    "Moderate_Intensity_Min": 15,
+    "Vigorous_Intensity_Min": 26,
+    "Steps": 1010,
+    "Notes": "4 rounds :\n450m rowing\n30 wall balls - 12kg\n20 ring row"
+  },
+  {
     "Activity_ID": 24503269582,
     "Date": "2026-09-26",
     "Start_Time": "2026-09-26 11:42:19",
