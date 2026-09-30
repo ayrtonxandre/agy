@@ -132,6 +132,8 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     "Straight Arm Pulldown": "Lats/Back",
     "Shrug": "Lats/Back",
     "Face Pull": "Lats/Back",
+    "Ring Row": "Lats/Back",
+    "Inverted Row": "Lats/Back",
 
     # Shoulders
     "Barbell Shoulder Press": "Shoulders",
@@ -333,6 +335,8 @@ PLAUSIBLE_LOAD_RANGES: dict[str, tuple[float, float]] = {
     "Plate Pinch": (2.5, 40.0),
     "Farmers Carry": (10.0, 100.0),
     "Farmer's Walk": (10.0, 100.0),
+    "Ring Row": (0.0, 50.0),
+    "Inverted Row": (0.0, 50.0),
 }
 
 # Genuine Bodyweight Movements (if weight == 0 and reps > 0, calculate volume using bodyweight)
@@ -348,6 +352,8 @@ BODYWEIGHT_EXERCISES: set[str] = {
     "Plank",
     "Bodyweight Squat",
     "Dead Hang",
+    "Ring Row",
+    "Inverted Row",
 }
 
 # ------------------------------------------------------------------------------

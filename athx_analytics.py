@@ -241,11 +241,12 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
         if tot_classified == 0:
             session_split = "Full Body"
         else:
-            top_split, count = max(split_votes.items(), key=lambda x: x[1])
-            if count / tot_classified >= 0.45:
-                session_split = top_split
-            else:
+            sorted_votes = sorted(split_votes.values(), reverse=True)
+            if sorted_votes[0] == sorted_votes[1] or (sorted_votes[0] / tot_classified < 0.60):
                 session_split = "Full Body"
+            else:
+                top_split, _ = max(split_votes.items(), key=lambda x: x[1])
+                session_split = top_split
 
         session_split_counts[session_split] += 1
         for s in sets:

@@ -178,10 +178,12 @@ def infer_session_type(activity_name: str, exercises: list[str]) -> str:
     if total == 0:
         return "Full Body"
 
+    sorted_tallies = sorted(tallies.values(), reverse=True)
+    if sorted_tallies[0] == sorted_tallies[1] or (sorted_tallies[0] / total < 0.60):
+        return "Full Body"
+
     top_split, count = max(tallies.items(), key=lambda x: x[1])
-    if count / total >= 0.45:
-        return top_split
-    return "Full Body"
+    return top_split
 
 
 

@@ -113,6 +113,10 @@ EXERCISE_ALIASES: dict[str, str] = {
     "dumbbell row": "Dumbbell Row",
     "db row": "Dumbbell Row",
     "lat pulldown": "Lat Pulldown",
+    "ring rows": "Ring Row",
+    "ring row": "Ring Row",
+    "inverted rows": "Ring Row",
+    "inverted row": "Ring Row",
 
     "pike push-ups": "Push Up",
     "pike push-up": "Push Up",
@@ -348,7 +352,7 @@ Canonical ATHX Exercises list:
 Front Squat, Back Squat, Goblet Squat, Split Squat, Bulgarian Split Squat, Lunge, Leg Press, Hack Squat, Leg Extension,
 Deadlift, Romanian Deadlift, Straight Leg Deadlift, Hip Thrust, Kettlebell Swing,
 Bench Press, Incline Bench Press, Dumbbell Bench Press, Overhead Press, Barbell Push Press, Shoulder Press, Military Press, Push Up, Dip, Thruster,
-Pull Up, Chin Up, Row, Barbell Row, Bent Over Row, Dumbbell Row, Lat Pulldown, Shrug, Face Pull,
+Pull Up, Chin Up, Row, Barbell Row, Bent Over Row, Dumbbell Row, Lat Pulldown, Shrug, Face Pull, Ring Row,
 Biceps Curl, Hammer Curl, Triceps Extension, Triceps Pushdown, Close Grip Bench Press,
 Clean, Clean and Jerk, Snatch, Burpee, Toes to Bar, Wall Ball.
 
@@ -552,15 +556,25 @@ def convert_note_to_strength_records(
     # Determine dominant session split
     dominant_split = parsed.get("session_type")
     if not dominant_split:
-        exercise_names = [normalize_exercise_name(e.get("exercise", "")) for e in extracted_exercises]
-        dominant_split = "Full Body"
-        for ex in exercise_names:
-            muscle = athx_config.EXERCISE_MUSCLE_MAP.get(ex)
-            if muscle:
-                split = athx_config.MUSCLE_TO_SPLIT_MAP.get(muscle)
-                if split in ["Push", "Pull", "Legs"]:
-                    dominant_split = split
-                    break
+        tallies = {"Push": 0, "Pull": 0, "Legs": 0}
+        for item in extracted_exercises:
+            ex_name = normalize_exercise_name(item.get("exercise", ""))
+            s_count = int(item.get("sets", 1))
+            m = athx_config.EXERCISE_MUSCLE_MAP.get(ex_name)
+            if m:
+                sp = athx_config.MUSCLE_TO_SPLIT_MAP.get(m)
+                if sp in tallies:
+                    tallies[sp] += s_count
+        tot = sum(tallies.values())
+        if tot > 0:
+            sorted_tallies = sorted(tallies.values(), reverse=True)
+            if sorted_tallies[0] == sorted_tallies[1] or (sorted_tallies[0] / tot < 0.60):
+                dominant_split = "Full Body"
+            else:
+                top_split, _ = max(tallies.items(), key=lambda x: x[1])
+                dominant_split = top_split
+        else:
+            dominant_split = "Full Body"
 
     exercise_set_counter: dict[str, int] = {}
     records: list[dict[str, Any]] = []

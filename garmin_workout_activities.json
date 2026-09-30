@@ -1,5 +1,22 @@
 [
   {
+    "Activity_ID": 24543703107,
+    "Date": "2026-09-29",
+    "Start_Time": "2026-09-29 16:42:48",
+    "Activity_Name": "Le Lude Padel",
+    "Activity_Type": "paddelball",
+    "Category": "Paddelball",
+    "Duration_min": 108.8,
+    "Distance_km": 2.92,
+    "Calories_kcal": 753,
+    "Average_HR": 119.0,
+    "Max_HR": 168.0,
+    "Training_Effect_Label": "AEROBIC_BASE",
+    "Moderate_Intensity_Min": 59,
+    "Vigorous_Intensity_Min": 20,
+    "Steps": 4308
+  },
+  {
     "Activity_ID": 24533322405,
     "Date": "2026-09-28",
     "Start_Time": "2026-09-28 20:40:26",
