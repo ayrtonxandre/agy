@@ -1,4 +1,5 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect
+24586876296,2026-10-03,2026-10-03 10:00:21,Paris Running,running,Running,51.4,9.75,708,147.0,167.0,TEMPO
 24543703107,2026-09-29,2026-09-29 16:42:48,Le Lude Padel,paddelball,Workout,108.8,2.92,753,119.0,168.0,AEROBIC_BASE
 24536647696,2026-09-29,2026-09-29 06:27:23,Strength,strength_training,Strength,33.7,0.0,202,104.0,148.0,AEROBIC_BASE
 24533322405,2026-09-28,2026-09-28 20:40:26,CrossFit ,indoor_cardio,Cardio / Cross-Training,43.2,0.0,478,137.0,182.0,SPEED

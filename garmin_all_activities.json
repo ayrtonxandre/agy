@@ -1,5 +1,19 @@
 [
   {
+    "Activity_ID": 24586876296,
+    "Date": "2026-10-03",
+    "Start_Time": "2026-10-03 10:00:21",
+    "Activity_Name": "Paris Running",
+    "Activity_Type": "running",
+    "Primary_Category": "Running",
+    "Duration_min": 51.4,
+    "Distance_km": 9.75,
+    "Calories_kcal": 708,
+    "Average_HR": 147.0,
+    "Max_HR": 167.0,
+    "Training_Effect": "TEMPO"
+  },
+  {
     "Activity_ID": 24543703107,
     "Date": "2026-09-29",
     "Start_Time": "2026-09-29 16:42:48",
