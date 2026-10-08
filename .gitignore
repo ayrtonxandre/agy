@@ -20,6 +20,7 @@ hae_token.txt
 *.pem
 *.key
 *.env
+.env
 
 # Local Daemon Logs & Raw Payloads
 server_access.log

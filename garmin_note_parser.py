@@ -72,6 +72,10 @@ EXERCISE_ALIASES: dict[str, str] = {
     "kb swings": "Kettlebell Swing",
     "kettlebell swings": "Kettlebell Swing",
     "kettlebell swing": "Kettlebell Swing",
+    "kettle bell swings": "Kettlebell Swing",
+    "kettle bell swing": "Kettlebell Swing",
+    "kettle bell": "Kettlebell Swing",
+    "kettlebell": "Kettlebell Swing",
 
     # Upper Push
     "bench press": "Bench Press",
@@ -131,6 +135,10 @@ EXERCISE_ALIASES: dict[str, str] = {
     "cleans": "Clean",
     "power clean": "Clean",
     "power cleans": "Clean",
+    "hang clean": "Clean",
+    "hang cleans": "Clean",
+    "hang power clean": "Clean",
+    "hang power cleans": "Clean",
     "clean and jerk": "Clean and Jerk",
     "clean and jerks": "Clean and Jerk",
     "cleans and jerk": "Clean and Jerk",
@@ -195,7 +203,16 @@ def parse_note_rules(text: str) -> dict[str, Any]:
     while i < len(lines):
         line = lines[i]
         
-        # Check section headers
+        # Check rounds declaration first or within section header:
+        # e.g. "Strengh - 5 rounds", "WOD - 4 rounds", "4 Rounds", "6 ROUNDS:", "5 round"
+        m_rds = re.search(r"(\d+)\s*(?:rounds?|sets?|rds|tours?|series)\b", line, re.IGNORECASE)
+        if m_rds and not re.search(r"(?:squat|press|deadlift|bench|curl|clean|snatch|row|pull|push)", line, re.IGNORECASE):
+            current_rounds = int(m_rds.group(1))
+            current_exercise = None
+            i += 1
+            continue
+
+        # Check other section headers without rounds
         if re.match(r"^(strength\s*(?:part)?|force|partie\s*1)\b", line, re.IGNORECASE):
             current_exercise = None
             current_rounds = 1
@@ -214,14 +231,6 @@ def parse_note_rules(text: str) -> dict[str, Any]:
             i += 1
             continue
             
-        # Check rounds declaration: "4 Rounds", "6 ROUNDS:", "Then 4 Rounds", "5 round", etc.
-        m_rds = re.search(r"(\d+)\s*(?:rounds?|sets?|rds|tours?|series)\b", line, re.IGNORECASE)
-        if m_rds and not re.search(r"(?:squat|press|deadlift|bench|curl|clean|snatch|row|pull|push)", line, re.IGNORECASE):
-            current_rounds = int(m_rds.group(1))
-            current_exercise = None
-            i += 1
-            continue
-            
         if re.match(r"^(then|puis|after)\b", line, re.IGNORECASE):
             current_exercise = None
             i += 1
@@ -235,28 +244,28 @@ def parse_note_rules(text: str) -> dict[str, Any]:
             continue
             
         # Check multi-set notation under current_exercise:
-        # e.g. "5*60", "5x70", "5 * 80kg", "5 @ 90", "5 reps 100kg"
-        m_set = re.match(r"^(\d+)\s*(?:[\*xX@]|reps\s*(?:@|x|\*)?)\s*(\d+(?:\.\d+)?)\s*(?:kg|kilos|lbs)?$", line, re.IGNORECASE)
+        # e.g. "5*60", "5x70", "5 * 80kg", "5 @ 90", "5 reps 100kg", "5 reps at 106,5Kg"
+        m_set = re.match(r"^(\d+)\s*(?:[\*xX@]|reps\s*(?:@|x|\*|at)?)\s*(\d+(?:[.,]\d+)?)\s*(?:kg|kilos|lbs)?$", line, re.IGNORECASE)
         if m_set and current_exercise:
             reps = int(m_set.group(1))
-            weight = float(m_set.group(2))
+            weight = float(m_set.group(2).replace(",", "."))
             exercises.append({
                 "exercise": current_exercise,
-                "sets": 1,
+                "sets": current_rounds if current_rounds > 1 else 1,
                 "reps": reps,
                 "weight_kg": weight,
-                "notes": f"1 set of {reps} @ {weight}kg"
+                "notes": f"{current_rounds} sets of {reps} @ {weight}kg" if current_rounds > 1 else f"1 set of {reps} @ {weight}kg"
             })
             i += 1
             continue
             
-        # Check conditioning: "400m rowing", "500m row", "20 cal bike"
-        m_dist = re.match(r"^(\d+(?:\.\d+)?)\s*(m|km|meters|miles)\s+([a-zA-Z\s]+)", line, re.IGNORECASE)
+        # Check conditioning: "400m rowing", "500m row", "20 cal bike", or standalone "400m"
+        m_dist = re.match(r"^(\d+(?:\.\d+)?)\s*(m|km|meters|miles)(?:\s+([a-zA-Z\s]+))?$", line, re.IGNORECASE)
         if m_dist:
             val = float(m_dist.group(1))
             unit = m_dist.group(2).lower()
             dist_m = val if unit in ["m", "meters"] else val * 1000.0
-            movement = m_dist.group(3).strip().title()
+            movement = (m_dist.group(3) or "Running").strip().title()
             conditioning.append({
                 "movement": movement,
                 "distance_m": dist_m * current_rounds,
@@ -279,21 +288,21 @@ def parse_note_rules(text: str) -> dict[str, Any]:
             i += 1
             continue
 
-        # Check full strength line: "9 Cleans and Jerks 45Kg", "15 Front Squats : 60Kg", "5 snatch barbell 20Kg"
+        # Check full strength line: "9 Cleans and Jerks 45Kg", "15 Front Squats : 60Kg", "20 Kettle Bell Swings at 16Kg"
         m_ex = re.match(
-            r"^(?:(\d+)\s*(?:reps|x)?\s+)?([A-Za-z\s]+?)\s*[:@\-_]\s*(\d+(?:\.\d+)?)\s*(?:kg|kilos|lbs)?$",
+            r"^(?:(\d+)\s*(?:reps|x)?\s+)?([A-Za-z\s\-]+?)\s*(?:[:@\-_]|at\s+)\s*(\d+(?:[.,]\d+)?)\s*(?:kg|kilos|lbs)?$",
             line, re.IGNORECASE
         )
         if not m_ex:
             m_ex = re.match(
-                r"^(\d+)\s+([A-Za-z\s]+?)\s+(\d+(?:\.\d+)?)\s*(?:kg|kilos|lbs)?$",
+                r"^(\d+)\s+([A-Za-z\s\-]+?)\s+(\d+(?:[.,]\d+)?)\s*(?:kg|kilos|lbs)?$",
                 line, re.IGNORECASE
             )
             
         if m_ex:
             reps = int(m_ex.group(1) or 10)
-            raw_ex = m_ex.group(2).strip()
-            weight = float(m_ex.group(3))
+            raw_ex = re.sub(r"\s+at$", "", m_ex.group(2).strip(), flags=re.IGNORECASE).strip()
+            weight = float(m_ex.group(3).replace(",", "."))
             ex_name = normalize_exercise_name(raw_ex)
             exercises.append({
                 "exercise": ex_name,
@@ -400,7 +409,7 @@ Respond ONLY with valid JSON conforming to this schema:
 def call_gemini(note_text: str, api_key: str) -> dict[str, Any] | None:
     """Invokes Google Gemini via REST API."""
     import requests
-    models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+    models = ["gemini-2.5-flash", "gemini-3.8-flash"]
     for model in models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
         payload = {
@@ -417,11 +426,13 @@ def call_gemini(note_text: str, api_key: str) -> dict[str, Any] | None:
             }
         }
         try:
-            res = requests.post(url, json=payload, timeout=12)
+            res = requests.post(url, json=payload, timeout=30)
             if res.status_code == 200:
                 data = res.json()
                 raw_text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                parsed = json.loads(raw_text)
+                m = re.search(r"```json\s*(.*?)\s*```", raw_text, re.DOTALL)
+                json_str = m.group(1) if m else raw_text.strip()
+                parsed = json.loads(json_str)
                 parsed["parser_used"] = f"gemini ({model})"
                 return parsed
         except Exception as e:
