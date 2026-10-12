@@ -34,6 +34,12 @@ FOLDER_NAME = "AGY - Intelligence Hub"
 
 # Target files to synchronize
 SYNC_TARGETS = [
+    # Documentation & Presentations
+    "README.md",
+    "ATHX_Garmin_Dashboard_Presentation.pptx",
+    # AI Coach Briefings
+    "athlete_coach_briefing.md",
+    "athlete_coach_briefing.json",
     # Biometrics & Health Datasets
     "apple_body_composition.csv",
     "apple_daily_activity.csv",
@@ -52,6 +58,7 @@ SYNC_TARGETS = [
     "garmin_all_activities.csv",
     "garmin_all_activities.json",
     # Live Dashboards
+    "index.html",
     "garmin_workout.html",
     "calendar_dashboard.html"
 ]
@@ -60,7 +67,9 @@ MIME_MAP = {
     ".csv": "text/csv",
     ".json": "application/json",
     ".html": "text/html",
-    ".txt": "text/plain"
+    ".txt": "text/plain",
+    ".md": "text/markdown",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
 }
 
 def get_drive_service():

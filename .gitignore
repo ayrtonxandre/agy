@@ -26,6 +26,8 @@ hae_token.txt
 server_access.log
 last_payload.json
 *.log
+*.err
+orchestrator.err
 
 # Large Apple Health raw exports (hosted on Google Drive)
 export.zip

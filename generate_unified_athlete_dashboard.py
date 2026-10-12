@@ -33,6 +33,7 @@ sys.path.insert(0, str(BASE_DIR))
 
 import athx_config
 import athx_analytics
+import athx_ai_coach
 
 def main():
     print("================================================================================")
@@ -87,6 +88,13 @@ def main():
 
     comp_data = athx_analytics.evaluate_competition_readiness(strength_data, apple_data, running_data)
     print(f"✅ ATHX 2027 Competition Evaluation: {comp_data['weeks_remaining']} weeks to {comp_data['competition_date']}")
+
+    # Generate audited telemetry digest & invoke AI Performance Coach
+    telemetry_digest = athx_analytics.generate_telemetry_digest(
+        strength_data, apple_data, running_data, workout_data, comp_data, audit
+    )
+    coach_briefing = athx_ai_coach.get_or_generate_coach_briefing(telemetry_digest, base_dir=BASE_DIR)
+    print(f"✅ ATHX AI Performance Coach: Verdict [{coach_briefing['executive_verdict']['rating']}] via {coach_briefing['provider_used']}")
 
     months_set = set()
     for r in apple_data["body_comp"]["history"] + apple_data["nutrition"]["history"] + apple_data["activity"]["history"]:
@@ -175,6 +183,7 @@ def main():
         "running": running_data,
         "workouts": workout_data,
         "competition": comp_data,
+        "coach_briefing": coach_briefing,
         "monthly_summary": monthly_summary,
         "freshness": freshness_info
     }
@@ -204,6 +213,7 @@ def build_html(payload_json: str, d: dict) -> str:
     cp = d["competition"]
     fr = d["freshness"]
     au = d["audit"]
+    coach_card_html = athx_ai_coach.format_briefing_as_html_card(d.get("coach_briefing", {}))
 
     curr_w = ap["body_comp"]["current_weight"]
     target_w = cfg["bodyweight_target_kg"]

@@ -1069,3 +1069,125 @@ def evaluate_competition_readiness(strength_res: dict, apple_res: dict, running_
             "display_benchmarks": [f"{e['current']} (std: {e['standard']})" for e in events]
         }
     }
+
+
+# ------------------------------------------------------------------------------
+# 5. ATHX AI COACH TELEMETRY DIGEST SERIALIZER
+# ------------------------------------------------------------------------------
+def generate_telemetry_digest(
+    strength_data: dict,
+    apple_data: dict,
+    running_data: dict,
+    workout_data: dict,
+    comp_data: dict,
+    audit: DataAuditTracker
+) -> dict:
+    """
+    Serializes an audited, high-density domain digest (~2-3k tokens) optimized
+    for direct ingestion by the ATHX AI Performance Coach LLM.
+    """
+    body_comp = apple_data.get("body_comp", {})
+    sleep = apple_data.get("sleep", {})
+    mobility = apple_data.get("mobility", {})
+    readiness = apple_data.get("readiness_composite", {})
+
+    # Muscle volume deficits
+    muscle_summary = strength_data.get("muscle_summary", {})
+    volume_analysis = {}
+    deficit_alerts = []
+    for m, info in muscle_summary.items():
+        if m == "Unattributed":
+            continue
+        avg_wk = info.get("avg_weekly_sets", 0.0)
+        mev = info.get("mev", 0.0)
+        mav_min = info.get("mav_min", 0.0)
+        mav_max = info.get("mav_max", 0.0)
+        mrv = info.get("mrv", 0.0)
+        status = info.get("status", "")
+        volume_analysis[m] = {
+            "avg_weekly_sets": avg_wk,
+            "mev": mev,
+            "mav_range": f"{mav_min}-{mav_max}",
+            "mrv": mrv,
+            "status": status
+        }
+        if avg_wk < mev:
+            deficit_alerts.append(f"{m}: {avg_wk} sets/wk (Deficit vs MEV {mev})")
+
+    # Recent workouts summary (last 5 sessions)
+    processed_sets = strength_data.get("processed_sets", [])
+    recent_sessions_map = defaultdict(list)
+    for s in processed_sets:
+        recent_sessions_map[(s["Date"], s.get("Activity_Name", "Workout"), s.get("Session_Type", "Strength"))].append(s)
+    
+    sorted_sessions = sorted(recent_sessions_map.keys(), key=lambda x: x[0], reverse=True)[:5]
+    recent_highlights = []
+    for dt, act_name, split in sorted_sessions:
+        s_list = recent_sessions_map[(dt, act_name, split)]
+        top_set = max(s_list, key=lambda x: x.get("e1RM_kg") or 0.0) if s_list else None
+        tot_vol = sum(x.get("Total_Volume_kg", 0.0) for x in s_list)
+        top_str = f"{top_set['Exercise']} {top_set['Reps']} reps @ {top_set['Weight_kg']}kg (e1RM: {top_set.get('e1RM_kg')}kg)" if top_set else "N/A"
+        recent_highlights.append({
+            "date": dt,
+            "name": act_name,
+            "split": split,
+            "sets_count": len(s_list),
+            "session_volume_kg": round(tot_vol, 1),
+            "top_performance": top_str
+        })
+
+    digest = {
+        "as_of_date": strength_data.get("as_of_date", datetime.now().date().isoformat()),
+        "athlete": {
+            "competition": "ATHX Games 2027",
+            "competition_date": athx_config.COMPETITION_DATE,
+            "weeks_remaining": comp_data.get("weeks_remaining", 33),
+            "height_m": athx_config.ATHLETE_HEIGHT_M,
+            "current_weight_kg": body_comp.get("current_weight", athx_config.DEFAULT_BODYWEIGHT_KG),
+            "target_weight_kg": athx_config.BODYWEIGHT_TARGET_KG,
+            "weight_delta_kg": body_comp.get("weight_remaining", 0.0),
+            "body_fat_pct": body_comp.get("current_body_fat"),
+            "weight_7d_trend_kg": body_comp.get("smoothed_7d_weight")
+        },
+        "competition_benchmarks": comp_data.get("events", []),
+        "hypertrophy_volume_bands": volume_analysis,
+        "hypertrophy_deficit_alerts": deficit_alerts,
+        "main_lifts_e1rm": {
+            lift: {
+                "current_28d_best_kg": data.get("current_28d_best"),
+                "relative_bw_ratio": data.get("relative_strength"),
+                "slope_4w_kg": data.get("slope_4w"),
+                "projected_comp_e1rm_kg": data.get("projected_e1rm")
+            }
+            for lift, data in strength_data.get("lift_progressions", {}).items()
+        },
+        "workload_and_fatigue": {
+            "acwr": strength_data.get("acwr", {}).get("value"),
+            "acwr_status": strength_data.get("acwr", {}).get("status"),
+            "acute_load_kg": strength_data.get("acwr", {}).get("acute_load_kg"),
+            "chronic_load_kg": strength_data.get("acwr", {}).get("chronic_load_kg"),
+            "foster_monotony": strength_data.get("foster_workload", {}).get("monotony"),
+            "foster_strain": strength_data.get("foster_workload", {}).get("strain_k"),
+            "split_distribution": strength_data.get("session_split_counts", {})
+        },
+        "recovery_and_biometrics": {
+            "avg_sleep_hrs_7d": sleep.get("avg_sleep_hrs"),
+            "usable_efficiency_pct": sleep.get("usable_efficiency_pct"),
+            "sleep_coverage_pct": sleep.get("coverage_pct"),
+            "resting_heart_rate_bpm": mobility.get("current_rhr"),
+            "readiness_composite_score_pct": readiness.get("score"),
+            "readiness_verdict": readiness.get("status")
+        },
+        "running_and_conditioning": {
+            "total_runs": running_data.get("total_runs", 0),
+            "total_distance_km": running_data.get("total_distance_km", 0.0),
+            "best_5k_pace": running_data.get("best_5k_pace_formatted", "N/A"),
+            "latest_vo2max": running_data.get("latest_vo2max", "N/A"),
+            "other_workout_sessions": workout_data.get("total_sessions", 0)
+        },
+        "recent_workout_highlights": recent_highlights,
+        "audit_quality_summary": audit.summary
+    }
+
+    return digest
+
