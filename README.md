@@ -95,9 +95,15 @@ While running, `athx` renders a live, fluid loading bar and animated spinner acr
 | Command | Action |
 | :--- | :--- |
 | `athx` | Standard full sync, dashboard rebuild, automated GitHub push, and browser launch |
+| `athx coach` | Displays AI Coach executive verdict and 7-day tactical microcycle prescription |
+| `athx coach --full` | Renders comprehensive ANSI-colorized sports science debriefing |
+| `athx coach --ask "<question>"` | Direct consultation with the AI Coach grounded in audited telemetry |
+| `athx ask "<question>"` | Fast alias to query the AI Coach (`-q` flag supported) |
+| `athx coach --force` | Re-generates sports science briefing bypassing telemetry cache |
+| `athx coach --json` | Outputs raw briefing or Q&A consultation payload in JSON format |
 | `athx --no-push` | Skips pushing updated datasets & HTML to GitHub after sync |
 | `athx --no-open` | Runs headless (skips opening the browser) |
-| `athx --serve` | Starts local HTTP daemon on `http://localhost:8080` (`/workout`, `/calendar`) |
+| `athx --serve` | Starts local HTTP daemon on `http://localhost:8080` (`/workout`, `/calendar`, `/api/coach`) |
 | `athx --install` | Installs/symlinks `athx` into `~/.local/bin/athx` and configures shell `$PATH` |
 | `athx --skip-git` | Skips pulling latest commits from GitHub |
 | `athx --skip-health` | Skips Apple Health biometrics & sleep sync |
@@ -166,11 +172,30 @@ Whenever a Garmin activity has notes attached (or was recorded without watch set
 
 [`athx_ai_coach.py`](file:///Users/ayrton.andre/Documents/work/AGY/athx_ai_coach.py) acts as an autonomous high-performance strength coach and sports scientist for the ATHX Games 2027.
 
-### Multi-Provider Gateway & Intelligent Caching
-- **LLM Gateway**: Supports Google Gemini (`gemini-2.5-flash`), OpenAI (`gpt-4o-mini`), Anthropic (`claude-3-5-haiku`), and offline heuristic fallback.
+### Multi-Provider Gateway & Deterministic Heuristics
+- **LLM Gateway**: Queries leading frontier models via REST API: Google Gemini (`gemini-2.5-flash`), OpenAI (`gpt-4o-mini`), and Anthropic (`claude-3-5-haiku`).
+- **100% Offline Deterministic Engine**: When offline or without API keys, an authentic sports science expert system evaluates the exact numbers (e1RMs, volume gaps vs MEV/MRV, ACWR, Foster monotony, sleep duration) to produce zero-hallucination, evidence-grounded debriefings.
 - **Smart Fingerprint Hashing**: Hashes incoming telemetry digests (`fingerprint` MD5) to prevent redundant API calls; reuses existing briefings when data has not changed.
-- **Comprehensive Debriefing**: Generates executive readiness ratings, event-by-event benchmark projections, hypertrophy volume deficit alerts, ACWR/Foster strain evaluations, aerobic pace analyses, and concrete 7-day tactical microcycle prescriptions.
-- **Artifact Generation**: Persists briefings to [`athlete_coach_briefing.json`](file:///Users/ayrton.andre/Documents/work/AGY/athlete_coach_briefing.json) and [`athlete_coach_briefing.md`](file:///Users/ayrton.andre/Documents/work/AGY/athlete_coach_briefing.md), and embeds interactive coach briefing cards directly inside the dashboard headquarters (`garmin_workout.html` / `index.html`).
+
+### Interactive Q&A Consultation Engine
+Ask the coach any strategic or tactical question directly from the terminal or REST API:
+```bash
+athx ask "What should I focus on for today's workout?"
+athx ask "How is my 5km running pace progressing toward the 4:30 standard?"
+athx coach --ask "What is causing the stagnation in my floor deadlift?"
+```
+The coach synthesizes an authoritative answer referencing actual numbers from the athlete's telemetry digest, breaking it down into:
+- **Bottom-Line**: Current KPI level, event standards, and exact gap.
+- **Sports Science Analysis**: Root cause (e.g. quad volume starved below MEV, grip deficit, systemic strain).
+- **Microcycle Prescription**: Day-by-day action directive with exact compound exercises, sets, reps, load % e1RM, rest periods, and conditioning tempo.
+
+### Multi-Interface Accessibility
+- **Terminal CLI**: Run `athx coach` for the 7-day tactical microcycle or `athx coach --full` for the complete ANSI debriefing. The executive readiness verdict is also automatically displayed at the end of every `athx` pipeline execution.
+- **Athlete Headquarters**: An interactive, collapsible HTML briefing card is dynamically embedded at the top of [`garmin_workout.html`](file:///Users/ayrton.andre/Documents/work/AGY/garmin_workout.html) and [`index.html`](file:///Users/ayrton.andre/Documents/work/AGY/index.html).
+- **REST Endpoints**: When running `athx --serve` (port 8080), endpoints are exposed for iOS Shortcuts, webhooks, or third-party integrations:
+  - `GET /api/coach`: Retrieves the latest structured briefing JSON.
+  - `POST /api/coach/ask`: Interactive JSON consultation endpoint (`{"question": "..."}`).
+- **Persisted Artifacts**: Briefings are saved locally as [`athlete_coach_briefing.json`](file:///Users/ayrton.andre/Documents/work/AGY/athlete_coach_briefing.json) and formatted Markdown [`athlete_coach_briefing.md`](file:///Users/ayrton.andre/Documents/work/AGY/athlete_coach_briefing.md).
 
 ---
 

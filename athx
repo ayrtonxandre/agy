@@ -544,9 +544,21 @@ exec "{venv_py}" "{script_path}" "$@"
 # 5. MAIN ORCHESTRATION PIPELINE
 # ==============================================================================
 def main():
+    # Fast path for coach subcommand: `athx coach [...]` or `athx ask [...]`
+    if len(sys.argv) > 1 and sys.argv[1] in ["coach", "ask"]:
+        ensure_correct_python(AGY_DIR)
+        import athx_ai_coach
+        sub_args = sys.argv[2:]
+        if sys.argv[1] == "ask":
+            sub_args = ["--ask"] + sub_args
+        athx_ai_coach.run_coach_cli(sub_args)
+        return
+
     parser = argparse.ArgumentParser(
         description="ATHX 2027 Master Athlete & Intelligence Orchestrator"
     )
+    parser.add_argument("--coach", action="store_true", help="Display ATHX AI Coach briefing and recommendations")
+    parser.add_argument("--ask", "-q", type=str, help="Ask the ATHX AI Coach a specific training or recovery question")
     parser.add_argument("--no-push", action="store_true", help="Skip automatically pushing updated datasets & dashboards to GitHub after sync")
     parser.add_argument("--push", action="store_true", help="Deprecated alias (auto-push to GitHub is enabled by default)")
     parser.add_argument("--no-open", action="store_true", help="Do not open the dashboard in browser when done")
@@ -558,6 +570,15 @@ def main():
     parser.add_argument("--install", action="store_true", help="Install `athx` globally into ~/.local/bin")
     parser.add_argument("--serve", action="store_true", help="Run local orchestrator HTTP daemon on port 8080")
     args = parser.parse_args()
+
+    if args.coach or args.ask:
+        ensure_correct_python(AGY_DIR)
+        import athx_ai_coach
+        if args.ask:
+            athx_ai_coach.run_coach_cli(["--ask", args.ask])
+        else:
+            athx_ai_coach.run_coach_cli([])
+        return
 
     if args.install:
         install_athx_cli()
@@ -618,6 +639,18 @@ def main():
     print(f"  🏆 Athlete Dashboard  : {TerminalUI.BOLD}{workout_html.as_uri()}{reset}")
     print(f"  📅 Calendar Dashboard : {TerminalUI.GRAY}{cal_html.as_uri()}{reset}")
     print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+
+    # Display AI Coach Executive Verdict
+    briefing_file = AGY_DIR / "athlete_coach_briefing.json"
+    if briefing_file.exists():
+        try:
+            with open(briefing_file, "r", encoding="utf-8") as f:
+                briefing_data = json.load(f)
+            import athx_ai_coach
+            print(athx_ai_coach.format_executive_verdict_terminal(briefing_data))
+            print(f"\n{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+        except Exception:
+            pass
 
     if not args.no_open:
         print("🚀 Opening ATHX Dashboard in your default browser...\n")

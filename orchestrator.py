@@ -450,6 +450,8 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     "athlete_headquarters": "/",
                     "workout_dashboard": "/workout",
                     "calendar_dashboard": "/calendar",
+                    "coach_briefing": "GET /api/coach",
+                    "coach_consultation": "POST /api/coach/ask",
                     "webhook": "POST /api/health",
                     "healthcheck": "GET /health"
                 }
@@ -486,6 +488,27 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                 self.wfile.write(content)
             else:
                 self.send_error(404, "Calendar dashboard not found")
+
+        # AI Coach Briefing API
+        elif clean_path in ("/api/coach", "/api/coach/briefing"):
+            briefing_file = DATA_DIR / "athlete_coach_briefing.json"
+            if not briefing_file.exists():
+                briefing_file = BASE_DIR / "athlete_coach_briefing.json"
+
+            if briefing_file.exists():
+                try:
+                    data = json.loads(briefing_file.read_text(encoding="utf-8"))
+                    content = json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Content-Length", str(len(content)))
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(content)
+                except Exception as e:
+                    self.send_error(500, f"Error loading briefing: {e}")
+            else:
+                self.send_error(404, "Coach briefing not found. Generate dashboard or run 'athx coach' first.")
 
         else:
             self.send_error(404, f"Path not found: {clean_path}")
@@ -547,6 +570,34 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     "status": "success" if res.returncode == 0 else "error",
                     "output": res.stdout.strip() if res.returncode == 0 else res.stderr.strip()
                 }).encode("utf-8"))
+
+            # AI Coach interactive Q&A consultation endpoint
+            elif clean_path in ("/api/coach/ask", "/api/coach"):
+                question = payload.get("question", "").strip()
+                if not question:
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Missing 'question' parameter in JSON payload"}).encode("utf-8"))
+                else:
+                    try:
+                        import athx_ai_coach
+                        digest = athx_ai_coach.load_telemetry_digest(BASE_DIR)
+                        qa_result = athx_ai_coach.ask_coach(question, digest=digest, base_dir=BASE_DIR)
+                        content = json.dumps(qa_result, indent=2, ensure_ascii=False).encode("utf-8")
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.send_header("Content-Length", str(len(content)))
+                        self.send_cors_headers()
+                        self.end_headers()
+                        self.wfile.write(content)
+                    except Exception as e:
+                        self.send_response(500)
+                        self.send_header("Content-Type", "application/json")
+                        self.send_cors_headers()
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"error": f"Coach consultation error: {e}"}).encode("utf-8"))
 
             else:
                 self.send_error(404, f"API endpoint not found: {clean_path}")

@@ -1,5 +1,23 @@
 [
   {
+    "Activity_ID": 24701028462,
+    "Date": "2026-10-12",
+    "Start_Time": "2026-10-12 20:04:43",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Category": "Cross-Training",
+    "Duration_min": 48.5,
+    "Distance_km": 0.0,
+    "Calories_kcal": 547,
+    "Average_HR": 135.0,
+    "Max_HR": 176.0,
+    "Training_Effect_Label": "SPEED",
+    "Moderate_Intensity_Min": 10,
+    "Vigorous_Intensity_Min": 36,
+    "Steps": 894,
+    "Notes": "Round 1: 15 burpees - 15 squat cleans, 25 kg (55 Lbs)\n Round 2: 15 burpees - 12 squat cleans, 38.5 kg (85 Lbs)\n Round 3: 15 burpees - 9 squat cleans, 43 kg (95 Lbs)\n Round 4: 15 burpees - 6 squat cleans, 43 kg (95 Lbs)"
+  },
+  {
     "Activity_ID": 24699090559,
     "Date": "2026-10-10",
     "Start_Time": "2026-10-10 14:19:48",
