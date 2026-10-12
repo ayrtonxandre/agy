@@ -240,6 +240,7 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     # Cardio & Warmup
     "Snatch": "Full Body",
     "Clean": "Full Body",
+    "Squat Clean": "Full Body",
     "Power Clean": "Full Body",
     "Clean and Jerk": "Full Body",
     "Thruster": "Shoulders",
@@ -308,6 +309,7 @@ PLAUSIBLE_LOAD_RANGES: dict[str, tuple[float, float]] = {
     "Front Squat": (20.0, 180.0),
     "Thruster": (15.0, 100.0),
     "Clean": (20.0, 150.0),
+    "Squat Clean": (20.0, 150.0),
     "Power Clean": (20.0, 150.0),
     "Clean and Jerk": (20.0, 150.0),
     "Wall Ball": (4.0, 20.0),

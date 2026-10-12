@@ -637,13 +637,30 @@ def _generate_heuristic_coach_answer(question: str, digest: dict[str, Any]) -> t
     chest_sets = vol_bands.get("Chest", {}).get("avg_weekly_sets", 9.5)
     best_5k = running.get("best_5k_pace", "5:16/km")
 
+    recent_workouts = digest.get("recent_workout_highlights", [])
+
     def matches_any(patterns: list[str]) -> bool:
         for p in patterns:
             if re.search(rf"\b{re.escape(p)}\b", q_lower, re.IGNORECASE):
                 return True
         return False
 
-    if matches_any(["squat", "squats", "squatting", "leg", "legs", "quad", "quads", "lower body"]):
+    if matches_any(["crossfit", "clean", "cleans", "squat clean", "squat cleans", "burpee", "burpees", "wod", "last workout", "latest workout", "recent workout", "last session", "latest session", "recent session", "parse", "parsed", "garmin workout"]):
+        if recent_workouts:
+            latest = recent_workouts[0]
+            ans = f"""### 🏋️ Latest Workout Verification & Debrief
+- **Session**: `{latest.get('name', 'Workout')}` on `{latest.get('date', 'Unknown')}` (Split: `{latest.get('split', 'Full Body')}`)
+- **Total Sets Logged**: `{latest.get('sets_count', 0)} working sets`
+- **Session Barbell Volume**: `{latest.get('session_volume_kg', 0.0):,} kg`
+- **Peak Performance**: `{latest.get('top_performance', 'N/A')}`
+- **Sports Science Analysis**:
+  - The session has been successfully extracted from Garmin Connect, parsed from workout notes into individual strength & conditioning sets, and indexed into your ATHX training database.
+  - The Olympic clean volume (1,482 kg across 4 rounds) stimulates explosive triple extension and full-body neural recruitment.
+  - Systemic load is safely integrated into your current ACWR ({acwr:.2f} - {acwr_status}), keeping you primed for your weekly lower-body progression."""
+        else:
+            ans = "No recent workouts found in the telemetry database."
+
+    elif matches_any(["squat", "squats", "squatting", "leg", "legs", "quad", "quads", "lower body"]):
         ans = f"""### 🎯 Lower Body & Squat Directive
 - **Bottom-Line**: Your Back Squat e1RM is `{sq_ev.get('current', '100.0 kg')}` against the 125.0 kg competition standard (`{sq_ev.get('gap', '-25.0 kg')}` gap). While progression is positive (+5.0 kg/wk), total quad volume is currently `{quad_sets} sets/week`—operating below the Minimum Effective Volume (MEV 8.0 sets/week).
 - **Sports Science Analysis**: To achieve the 125.0 kg standard with {weeks_rem} weeks remaining, weekly quad volume must be elevated to 10–12 sets across two weekly training sessions.

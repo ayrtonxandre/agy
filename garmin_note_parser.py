@@ -135,10 +135,16 @@ EXERCISE_ALIASES: dict[str, str] = {
     "cleans": "Clean",
     "power clean": "Clean",
     "power cleans": "Clean",
+    "squat clean": "Clean",
+    "squat cleans": "Clean",
+    "squat-clean": "Clean",
+    "squat-cleans": "Clean",
     "hang clean": "Clean",
     "hang cleans": "Clean",
     "hang power clean": "Clean",
     "hang power cleans": "Clean",
+    "hang squat clean": "Clean",
+    "hang squat cleans": "Clean",
     "clean and jerk": "Clean and Jerk",
     "clean and jerks": "Clean and Jerk",
     "cleans and jerk": "Clean and Jerk",
@@ -150,6 +156,10 @@ EXERCISE_ALIASES: dict[str, str] = {
     "burpee": "Burpee",
     "toes to bar": "Toes to Bar",
     "t2b": "Toes to Bar",
+    "box jumps": "Box Jump",
+    "box jump": "Box Jump",
+    "jumping jack": "Jumping Jacks",
+    "jumping jacks": "Jumping Jacks",
 }
 
 
@@ -189,164 +199,249 @@ def is_exercise_name(text: str) -> str | None:
 # ==============================================================================
 # 2. LOCAL RULE-BASED FALLBACK PARSER
 # ==============================================================================
+def parse_single_movement(sm: str, default_sets: int = 1) -> dict[str, Any] | None:
+    """Parses a single movement snippet like '15 squat cleans, 25 kg (55 Lbs)', '15 burpees', or '500m rowing'."""
+    sm = sm.strip()
+    if not sm:
+        return None
+
+    # 1. Conditioning distance: e.g. "500m rowing", "400m row", "400m", "5km run"
+    m_dist = re.match(r"^(\d+(?:\.\d+)?)\s*(m|km|meters|miles)(?:\s+([a-zA-Z\s]+))?$", sm, re.IGNORECASE)
+    if m_dist:
+        val = float(m_dist.group(1))
+        unit = m_dist.group(2).lower()
+        dist_m = val if unit in ["m", "meters"] else val * 1000.0
+        mov = (m_dist.group(3) or "Running").strip().title()
+        return {
+            "type": "conditioning",
+            "movement": mov,
+            "distance_m": dist_m * default_sets,
+            "calories": None,
+            "notes": f"{default_sets}x {m_dist.group(1)}{unit}" if default_sets > 1 else sm
+        }
+
+    # 2. Conditioning calories: e.g. "20 cal bike", "15 cals assault bike"
+    m_cal = re.match(r"^(\d+)\s*(?:cal|calories)\s+([a-zA-Z\s]+)", sm, re.IGNORECASE)
+    if m_cal:
+        cals = int(m_cal.group(1))
+        mov = m_cal.group(2).strip().title()
+        return {
+            "type": "conditioning",
+            "movement": mov,
+            "distance_m": None,
+            "calories": cals * default_sets,
+            "notes": f"{default_sets}x {cals} cal" if default_sets > 1 else sm
+        }
+
+    # 3. Extract Weight
+    weight_kg = 0.0
+    rem = sm
+
+    # Match kg first (with optional lbs in parentheses: "25 kg (55 Lbs)")
+    m_kg = re.search(r"(?:[:@\-_]|at\s+|,)?\s*(\d+(?:[.,]\d+)?)\s*(?:kg|kilos?)\b(?:\s*\([^)]*\))?", sm, re.IGNORECASE)
+    if m_kg:
+        weight_kg = float(m_kg.group(1).replace(",", "."))
+        rem = sm[:m_kg.start()] + " " + sm[m_kg.end():]
+    else:
+        # Match lbs if kg was not present
+        m_lbs = re.search(r"(?:[:@\-_]|at\s+|,)?\s*(\d+(?:[.,]\d+)?)\s*(?:lbs?|pounds?)\b(?:\s*\([^)]*\))?", sm, re.IGNORECASE)
+        if m_lbs:
+            weight_kg = round(float(m_lbs.group(1).replace(",", ".")) * 0.45359237, 1)
+            rem = sm[:m_lbs.start()] + " " + sm[m_lbs.end():]
+        else:
+            # Match @ <num> or : <num> without explicit unit
+            m_at = re.search(r"[@:]\s*(\d+(?:[.,]\d+)?)\b", sm, re.IGNORECASE)
+            if m_at:
+                weight_kg = float(m_at.group(1).replace(",", "."))
+                rem = sm[:m_at.start()] + " " + sm[m_at.end():]
+
+    rem = rem.strip(" ,-:@_")
+
+    # Reps extraction: "15 squat cleans" or "15 burpees"
+    m_rep = re.match(r"^(\d+)\s*(?:reps?|x)?\s+(.*)$", rem, re.IGNORECASE)
+    if m_rep:
+        reps = int(m_rep.group(1))
+        raw_name = m_rep.group(2).strip()
+    else:
+        m_rev = re.match(r"^(.*?)\s+(\d+)\s*(?:reps?|x)?$", rem, re.IGNORECASE)
+        if m_rev:
+            reps = int(m_rev.group(2))
+            raw_name = m_rev.group(1).strip()
+        else:
+            reps = 10
+            raw_name = rem
+
+    if not raw_name:
+        return None
+
+    ex_name = normalize_exercise_name(raw_name)
+    is_recog = (
+        ex_name in athx_config.EXERCISE_MUSCLE_MAP or
+        raw_name.lower() in EXERCISE_ALIASES or
+        weight_kg > 0 or
+        reps > 0
+    )
+    if not is_recog:
+        return None
+
+    return {
+        "type": "exercise",
+        "exercise": ex_name,
+        "sets": default_sets,
+        "reps": reps,
+        "weight_kg": weight_kg,
+        "notes": f"{default_sets}x{reps} {ex_name} @ {weight_kg}kg" if weight_kg > 0 else f"{default_sets}x{reps} {ex_name} (Bodyweight)"
+    }
+
+
+def format_workout_summary(exercises: list[dict], conditioning: list[dict], total_rounds: int) -> str:
+    """Produces a clean, human-readable summary of parsed workout items."""
+    parts = []
+    from collections import OrderedDict
+    ex_grouped = OrderedDict()
+    for e in exercises:
+        ex_name = e["exercise"]
+        ex_grouped.setdefault(ex_name, []).append(e)
+
+    for ex_name, items in ex_grouped.items():
+        total_sets = sum(it.get("sets", 1) for it in items)
+        weights = [it["weight_kg"] for it in items if it.get("weight_kg", 0) > 0]
+        reps_list = [str(it["reps"]) for it in items]
+
+        if not weights or all(w == 0 for w in weights):
+            if len(set(reps_list)) == 1:
+                parts.append(f"{total_sets}x{reps_list[0]} {ex_name}")
+            else:
+                parts.append(f"{total_sets} sets {ex_name} ({'/'.join(reps_list)} reps)")
+        else:
+            min_w = min(weights)
+            max_w = max(weights)
+            w_str = f"{min_w:g}kg" if min_w == max_w else f"{min_w:g}-{max_w:g}kg"
+            if len(set(reps_list)) == 1 and len(set(weights)) == 1:
+                parts.append(f"{total_sets}x{reps_list[0]} {ex_name} @ {w_str}")
+            else:
+                parts.append(f"{total_sets} sets {ex_name} ({'/'.join(reps_list)} reps @ {w_str})")
+
+    for c in conditioning:
+        mov = c["movement"]
+        if c.get("distance_m"):
+            parts.append(f"{mov} ({c['distance_m']:g}m)")
+        elif c.get("calories"):
+            parts.append(f"{mov} ({c['calories']}cal)")
+
+    prefix = f"{total_rounds} rounds: " if total_rounds > 1 else ""
+    return prefix + ", ".join(parts)
+
+
 def parse_note_rules(text: str) -> dict[str, Any]:
     """Smart regex and heuristic parser for workout notes when LLM is offline."""
     lines = [line.strip() for line in text.strip().splitlines() if line.strip()]
-    
+
     exercises: list[dict[str, Any]] = []
     conditioning: list[dict[str, Any]] = []
-    
+
     current_exercise: str | None = None
     current_rounds = 1
-    
+    max_round_seen = 1
+
     i = 0
     while i < len(lines):
         line = lines[i]
-        
-        # Check rounds declaration first or within section header:
-        # e.g. "Strengh - 5 rounds", "WOD - 4 rounds", "4 Rounds", "6 ROUNDS:", "5 round"
+
+        # 1. Round-by-round prefix: e.g. "Round 1: 15 burpees - 15 squat cleans, 25 kg (55 Lbs)"
+        m_round_line = re.match(r"^(?:round|tour|série|serie|set|r)\s*(\d+)\s*[:\-]\s*(.*)$", line, re.IGNORECASE)
+        if m_round_line:
+            r_num = int(m_round_line.group(1))
+            if r_num > max_round_seen:
+                max_round_seen = r_num
+            content = m_round_line.group(2).strip()
+            # Split movements by '-' or '+' or '/' or ';'
+            segs = [s.strip() for s in re.split(r"\s+[-+/|;]\s+", content) if s.strip()]
+            for s in segs:
+                parsed_seg = parse_single_movement(s, default_sets=1)
+                if parsed_seg:
+                    if parsed_seg["type"] == "exercise":
+                        exercises.append(parsed_seg)
+                    elif parsed_seg["type"] == "conditioning":
+                        conditioning.append(parsed_seg)
+            i += 1
+            continue
+
+        # 2. Section header with rounds: e.g. "Strengh - 5 rounds", "WOD - 4 rounds", "4 Rounds:"
         m_rds = re.search(r"(\d+)\s*(?:rounds?|sets?|rds|tours?|series)\b", line, re.IGNORECASE)
-        if m_rds and not re.search(r"(?:squat|press|deadlift|bench|curl|clean|snatch|row|pull|push)", line, re.IGNORECASE):
+        if m_rds and not re.search(r"(?:squat|press|deadlift|bench|curl|clean|snatch|row|pull|push|burpee)", line, re.IGNORECASE):
             current_rounds = int(m_rds.group(1))
+            if current_rounds > max_round_seen:
+                max_round_seen = current_rounds
             current_exercise = None
             i += 1
             continue
 
-        # Check other section headers without rounds
-        if re.match(r"^(strength\s*(?:part)?|force|partie\s*1)\b", line, re.IGNORECASE):
-            current_exercise = None
-            current_rounds = 1
-            i += 1
-            continue
-            
-        if re.match(r"^(wod|metcon|part\s*b|circuit)\b", line, re.IGNORECASE):
-            current_exercise = None
-            current_rounds = 1
-            i += 1
-            continue
-            
-        if re.match(r"^(warmup|warm\s*up|échauffement)\b", line, re.IGNORECASE):
-            current_exercise = None
-            current_rounds = 1
-            i += 1
-            continue
-            
-        if re.match(r"^(then|puis|after)\b", line, re.IGNORECASE):
+        # 3. Section headers without rounds
+        if re.match(r"^(strength\s*(?:part)?|force|partie\s*1|wod|metcon|part\s*b|circuit|warmup|warm\s*up|échauffement|then|puis|after)\b", line, re.IGNORECASE):
             current_exercise = None
             i += 1
             continue
-            
-        # Check if line is just an exercise name, e.g. "Deadlifts"
+
+        # 4. Check if line is just an exercise name, e.g. "Deadlifts"
         ex_cand = is_exercise_name(line)
         if ex_cand and not re.search(r"\d", line):
             current_exercise = ex_cand
             i += 1
             continue
-            
-        # Check multi-set notation under current_exercise:
-        # e.g. "5*60", "5x70", "5 * 80kg", "5 @ 90", "5 reps 100kg", "5 reps at 106,5Kg"
+
+        # 5. Check multi-set notation under current_exercise: e.g. "5*60", "5x70", "5 reps at 106,5Kg"
         m_set = re.match(r"^(\d+)\s*(?:[\*xX@]|reps\s*(?:@|x|\*|at)?)\s*(\d+(?:[.,]\d+)?)\s*(?:kg|kilos|lbs)?$", line, re.IGNORECASE)
         if m_set and current_exercise:
             reps = int(m_set.group(1))
             weight = float(m_set.group(2).replace(",", "."))
             exercises.append({
                 "exercise": current_exercise,
-                "sets": current_rounds if current_rounds > 1 else 1,
+                "sets": 1,
                 "reps": reps,
                 "weight_kg": weight,
-                "notes": f"{current_rounds} sets of {reps} @ {weight}kg" if current_rounds > 1 else f"1 set of {reps} @ {weight}kg"
-            })
-            i += 1
-            continue
-            
-        # Check conditioning: "400m rowing", "500m row", "20 cal bike", or standalone "400m"
-        m_dist = re.match(r"^(\d+(?:\.\d+)?)\s*(m|km|meters|miles)(?:\s+([a-zA-Z\s]+))?$", line, re.IGNORECASE)
-        if m_dist:
-            val = float(m_dist.group(1))
-            unit = m_dist.group(2).lower()
-            dist_m = val if unit in ["m", "meters"] else val * 1000.0
-            movement = (m_dist.group(3) or "Running").strip().title()
-            conditioning.append({
-                "movement": movement,
-                "distance_m": dist_m * current_rounds,
-                "calories": None,
-                "notes": f"{current_rounds}x {m_dist.group(1)}{unit}"
+                "notes": f"1 set of {reps} @ {weight}kg"
             })
             i += 1
             continue
 
-        m_cal = re.match(r"^(\d+)\s*(?:cal|calories)\s+([a-zA-Z\s]+)", line, re.IGNORECASE)
-        if m_cal:
-            cals = int(m_cal.group(1))
-            movement = m_cal.group(2).strip().title()
-            conditioning.append({
-                "movement": movement,
-                "distance_m": None,
-                "calories": cals * current_rounds,
-                "notes": f"{current_rounds}x {cals} cal"
-            })
-            i += 1
-            continue
-
-        # Check full strength line: "9 Cleans and Jerks 45Kg", "15 Front Squats : 60Kg", "20 Kettle Bell Swings at 16Kg"
-        m_ex = re.match(
-            r"^(?:(\d+)\s*(?:reps|x)?\s+)?([A-Za-z\s\-]+?)\s*(?:[:@\-_]|at\s+)\s*(\d+(?:[.,]\d+)?)\s*(?:kg|kilos|lbs)?$",
-            line, re.IGNORECASE
-        )
-        if not m_ex:
-            m_ex = re.match(
-                r"^(\d+)\s+([A-Za-z\s\-]+?)\s+(\d+(?:[.,]\d+)?)\s*(?:kg|kilos|lbs)?$",
-                line, re.IGNORECASE
-            )
-            
-        if m_ex:
-            reps = int(m_ex.group(1) or 10)
-            raw_ex = re.sub(r"\s+at$", "", m_ex.group(2).strip(), flags=re.IGNORECASE).strip()
-            weight = float(m_ex.group(3).replace(",", "."))
-            ex_name = normalize_exercise_name(raw_ex)
-            exercises.append({
-                "exercise": ex_name,
-                "sets": current_rounds,
-                "reps": reps,
-                "weight_kg": weight,
-                "notes": f"{current_rounds} rounds of {reps} @ {weight}kg"
-            })
-            i += 1
-            continue
-
-        # Check bodyweight strength: "8 Pike Push-Ups", "6 Pull Ups"
-        m_bw = re.match(r"^(\d+)\s*(?:reps|x)?\s+([A-Za-z\s\-]+)$", line, re.IGNORECASE)
-        if m_bw:
-            reps = int(m_bw.group(1))
-            raw_ex = m_bw.group(2).strip()
-            ex_name = normalize_exercise_name(raw_ex)
-            if ex_name in athx_config.EXERCISE_MUSCLE_MAP or raw_ex.lower() in EXERCISE_ALIASES:
-                exercises.append({
-                    "exercise": ex_name,
-                    "sets": current_rounds,
-                    "reps": reps,
-                    "weight_kg": 0.0,
-                    "notes": f"{current_rounds} rounds of {reps} reps (Bodyweight)"
-                })
+        # 6. Check if line has multiple segments: "15 burpees - 15 squat cleans, 25 kg"
+        if re.search(r"\s+[-+/|;]\s+", line):
+            segs = [s.strip() for s in re.split(r"\s+[-+/|;]\s+", line) if s.strip()]
+            line_parsed = False
+            for s in segs:
+                parsed_seg = parse_single_movement(s, default_sets=current_rounds)
+                if parsed_seg:
+                    line_parsed = True
+                    if parsed_seg["type"] == "exercise":
+                        exercises.append(parsed_seg)
+                    elif parsed_seg["type"] == "conditioning":
+                        conditioning.append(parsed_seg)
+            if line_parsed:
                 i += 1
                 continue
-                
+
+        # 7. Otherwise parse single movement line
+        parsed_single = parse_single_movement(line, default_sets=current_rounds)
+        if parsed_single:
+            if parsed_single["type"] == "exercise":
+                exercises.append(parsed_single)
+            elif parsed_single["type"] == "conditioning":
+                conditioning.append(parsed_single)
+            i += 1
+            continue
+
         i += 1
 
-    summary_parts = []
-    if exercises:
-        ex_strs = [f"{e['sets']}x{e['reps']} {e['exercise']} ({e['weight_kg']}kg)" for e in exercises]
-        summary_parts.append(", ".join(ex_strs))
-    if conditioning:
-        cond_strs = [f"{c['movement']} ({c.get('distance_m')}m)" if c.get('distance_m') else f"{c['movement']} ({c.get('calories')}cal)" for c in conditioning]
-        summary_parts.append(", ".join(cond_strs))
+    total_rounds = max(max_round_seen, current_rounds)
+    summary = format_workout_summary(exercises, conditioning, total_rounds)
 
     return {
         "is_workout": len(exercises) > 0 or len(conditioning) > 0,
-        "rounds": current_rounds,
+        "rounds": total_rounds,
         "exercises": exercises,
         "conditioning": conditioning,
-        "summary": " | ".join(summary_parts) if summary_parts else text.strip(),
+        "summary": summary if summary else text.strip(),
         "parser_used": "rule_based_fallback"
     }
 

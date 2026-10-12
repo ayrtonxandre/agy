@@ -662,15 +662,78 @@ def save_all_results(data: dict[str, list[dict]]):
     print("=" * 80)
 
 
+def reprocess_local_notes() -> dict[str, list[dict]]:
+    """Reprocesses workout notes from cached local activity files without querying Garmin."""
+    print("🔄 Reprocessing notes from local activity files...")
+    all_strength_sets: list[dict] = []
+    cached_sets_by_id: dict[int, list[dict]] = {}
+    if OUTPUT_JSON.exists():
+        with open(OUTPUT_JSON, "r", encoding="utf-8") as f:
+            all_strength_sets = json.load(f)
+        for r in all_strength_sets:
+            aid = r.get("Activity_ID")
+            if aid:
+                cached_sets_by_id.setdefault(aid, []).append(r)
+
+    workout_records: list[dict] = []
+    if OUTPUT_WORKOUTS_JSON.exists():
+        with open(OUTPUT_WORKOUTS_JSON, "r", encoding="utf-8") as f:
+            workout_records = json.load(f)
+
+    running_records: list[dict] = []
+    if OUTPUT_RUNNING_JSON.exists():
+        with open(OUTPUT_RUNNING_JSON, "r", encoding="utf-8") as f:
+            running_records = json.load(f)
+
+    all_activities: list[dict] = []
+    if OUTPUT_ALL_JSON.exists():
+        with open(OUTPUT_ALL_JSON, "r", encoding="utf-8") as f:
+            all_activities = json.load(f)
+
+    new_sets_added = 0
+    for w in workout_records:
+        act_id = w.get("Activity_ID")
+        notes = (w.get("Notes") or "").strip()
+        date_str = w.get("Date") or ""
+        act_name = w.get("Activity_Name") or "Workout"
+        if notes and act_id not in cached_sets_by_id:
+            note_sets, parsed_info = garmin_note_parser.convert_note_to_strength_records(
+                act_id, date_str, act_name, notes
+            )
+            if note_sets:
+                all_strength_sets.extend(note_sets)
+                cached_sets_by_id[act_id] = note_sets
+                new_sets_added += len(note_sets)
+                print(f"   🏋️ [WOD Note Deciphered ({parsed_info.get('parser_used', 'LLM')})]: {len(note_sets)} sets from '{act_name}' (ID: {act_id}) — {parsed_info.get('summary', '')}")
+
+    print(f"✅ Local note reprocessing complete: {new_sets_added} new sets deciphered.")
+    return {
+        "strength_sets": all_strength_sets,
+        "running_activities": running_records,
+        "workout_activities": workout_records,
+        "all_activities": all_activities,
+    }
+
+
 # ==============================================================================
 # MAIN ENTRYPOINT
 # ==============================================================================
 if __name__ == "__main__":
+    import sys
     print("================================================================================")
     print("🚀 GARMIN CONNECT UNIFIED TRAINING EXTRACTOR (STRENGTH, RUNNING & WORKOUTS)")
     print("================================================================================")
     
-    garmin_client = authenticate_garmin(GARMIN_EMAIL, GARMIN_PASSWORD, TOKEN_DIR)
-    extracted_data = extract_all_garmin_activities(garmin_client, limit=ACTIVITIES_LIMIT)
+    if "--reprocess-local" in sys.argv or "--offline" in sys.argv:
+        extracted_data = reprocess_local_notes()
+    else:
+        try:
+            garmin_client = authenticate_garmin(GARMIN_EMAIL, GARMIN_PASSWORD, TOKEN_DIR)
+            extracted_data = extract_all_garmin_activities(garmin_client, limit=ACTIVITIES_LIMIT)
+        except Exception as e:
+            print(f"⚠️ Garmin Connect online extraction encountered an issue: {e}")
+            print("🔄 Falling back to local reprocessing...")
+            extracted_data = reprocess_local_notes()
+
     save_all_results(extracted_data)
 
