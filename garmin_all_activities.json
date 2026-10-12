@@ -1,5 +1,76 @@
 [
   {
+    "Activity_ID": 24699090559,
+    "Date": "2026-10-10",
+    "Start_Time": "2026-10-10 14:19:48",
+    "Activity_Name": "Triathlon #4 - Rowing",
+    "Activity_Type": "rowing_v2",
+    "Primary_Category": "Workout",
+    "Duration_min": 34.3,
+    "Distance_km": 2.34,
+    "Calories_kcal": 282,
+    "Average_HR": 116.0,
+    "Max_HR": 145.0,
+    "Training_Effect": "RECOVERY"
+  },
+  {
+    "Activity_ID": 24699090129,
+    "Date": "2026-10-10",
+    "Start_Time": "2026-10-10 10:56:10",
+    "Activity_Name": "Triathlon #3 - Running",
+    "Activity_Type": "running",
+    "Primary_Category": "Running",
+    "Duration_min": 9.3,
+    "Distance_km": 1.84,
+    "Calories_kcal": 144,
+    "Average_HR": 156.0,
+    "Max_HR": 163.0,
+    "Training_Effect": "TEMPO"
+  },
+  {
+    "Activity_ID": 24699089763,
+    "Date": "2026-10-10",
+    "Start_Time": "2026-10-10 10:30:19",
+    "Activity_Name": "Triathlon #2 - Running",
+    "Activity_Type": "running",
+    "Primary_Category": "Running",
+    "Duration_min": 17.1,
+    "Distance_km": 3.37,
+    "Calories_kcal": 264,
+    "Average_HR": 159.0,
+    "Max_HR": 177.0,
+    "Training_Effect": "TEMPO"
+  },
+  {
+    "Activity_ID": 24699089373,
+    "Date": "2026-10-10",
+    "Start_Time": "2026-10-10 09:56:26",
+    "Activity_Name": "Triathlon #1 - Running",
+    "Activity_Type": "running",
+    "Primary_Category": "Running",
+    "Duration_min": 26.4,
+    "Distance_km": 5.16,
+    "Calories_kcal": 384,
+    "Average_HR": 147.0,
+    "Max_HR": 163.0,
+    "Training_Effect": "AEROBIC_BASE"
+  },
+  {
+    "Activity_ID": 24659045766,
+    "Date": "2026-10-09",
+    "Start_Time": "2026-10-09 06:36:32",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 45.8,
+    "Distance_km": 0.0,
+    "Calories_kcal": 474,
+    "Average_HR": 129.0,
+    "Max_HR": 175.0,
+    "Training_Effect": "AEROBIC_BASE",
+    "Notes": "Alternated single dumbbell snatch overhead\n40 reps - 25kg\n30 reps - 30kg\n20 reps - 30kg\n10 reps - 30kg\n\nWall Walks - 4 rounds\n4 reps\n\nJumping cords\n20 reps\n40 reps\n60 reps\n80 reps"
+  },
+  {
     "Activity_ID": 24647765263,
     "Date": "2026-10-08",
     "Start_Time": "2026-10-08 07:10:49",
@@ -158,6 +229,20 @@
     "Average_HR": 113.0,
     "Max_HR": 157.0,
     "Training_Effect": "AEROBIC_BASE"
+  },
+  {
+    "Activity_ID": 24699087804,
+    "Date": "2026-09-22",
+    "Start_Time": "2026-09-22 13:09:12",
+    "Activity_Name": "Strength",
+    "Activity_Type": "strength_training",
+    "Primary_Category": "Strength",
+    "Duration_min": 0.4,
+    "Distance_km": 0.0,
+    "Calories_kcal": 2,
+    "Average_HR": 95.0,
+    "Max_HR": 107.0,
+    "Training_Effect": "UNKNOWN"
   },
   {
     "Activity_ID": 24451660589,
@@ -593,6 +678,20 @@
     "Average_HR": 128.0,
     "Max_HR": 165.0,
     "Training_Effect": "AEROBIC_BASE"
+  },
+  {
+    "Activity_ID": 24699090920,
+    "Date": "2026-08-03",
+    "Start_Time": "2026-08-03 18:50:22",
+    "Activity_Name": "Stopwatch",
+    "Activity_Type": "stop_watch",
+    "Primary_Category": "Workout",
+    "Duration_min": 0.5,
+    "Distance_km": 0.0,
+    "Calories_kcal": 0,
+    "Average_HR": null,
+    "Max_HR": null,
+    "Training_Effect": ""
   },
   {
     "Activity_ID": 23837062961,
