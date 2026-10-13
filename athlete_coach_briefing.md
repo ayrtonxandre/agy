@@ -1,28 +1,28 @@
 ## 1. 🎖️ Executive Readiness Verdict
 - **Overall Readiness Rating**: `76% • Moderate Risk (Volume Asymmetry & Lower Body Deficits)`
-- **Macro Assessment**: Athlete demonstrates strong upper-body pushing and pulling hypertrophy volume, but total lower body stimulus (quads and posterior chain) is operating below Minimum Effective Volume (MEV). With 32 weeks until the ATHX Games 2027, the primary qualification risk lies in barbell squat and deadlift capacity alongside the 5km running pace gap. Rebalancing weekly volume toward lower-body compounds while protecting current systemic ACWR (0.98) is the mandatory training priority.
+- **Macro Assessment**: Athlete demonstrates strong upper-body pushing and pulling hypertrophy volume, but total lower body stimulus (quads and posterior chain) is operating below Minimum Effective Volume (MEV). With 32 weeks until the ATHX Games 2027, the primary qualification risk lies in barbell squat and deadlift capacity alongside the 5km running pace gap. Rebalancing weekly volume toward lower-body compounds while protecting current systemic ACWR (1.19) is the mandatory training priority.
 
 ---
 
 ## 2. 🎯 Event-by-Event Benchmark Status (ATHX 2027)
 | Event | 2027 Target | Current Level | Gap | Trend & Projected Date |
 | :--- | :--- | :--- | :--- | :--- |
-| Shoulder-to-Overhead (S2O) | 65.0 kg | 46.7 kg | -18.3 kg | 🟡 +0.56 kg/wk (In Progress) |
-| Barbell Back Squat | 125.0 kg | 100.0 kg | -25.0 kg | 🟡 +0.77 kg/wk (In Progress) |
-| Deadlift Floor Pull | 160.0 kg | 124.3 kg | -35.7 kg | 🟡 +1.1 kg/wk (In Progress) |
+| Shoulder-to-Overhead (S2O) | 65.0 kg | 46.7 kg | -18.3 kg | 🟡 +0.57 kg/wk (In Progress) |
+| Barbell Back Squat | 125.0 kg | 93.3 kg | -31.7 kg | 🟡 +0.98 kg/wk (In Progress) |
+| Deadlift Floor Pull | 160.0 kg | 124.3 kg | -35.7 kg | 🟡 +1.11 kg/wk (In Progress) |
 | 5km Running Pace | 4:30/km | 5:07/km | +37s/km | 🟡 -1.15s/wk (In Progress) |
 | Sandbag Carry / Grip | 60.0 kg | 55.0 kg | -5.0 kg | 🟡 +0.15 kg/wk (In Progress) |
 
 ---
 
 ## 3. ⚠️ Critical Deficit & Fatigue Alerts
-- **Volume Starvation**: Chest: 9.4 sets/wk (Deficit vs MEV 10.0)
+- **Volume Starvation**: Chest: 9.5 sets/wk (Deficit vs MEV 10.0)
 - **Volume Starvation**: Quads: 4.1 sets/wk (Deficit vs MEV 8.0)
 - **Volume Starvation**: Hamstrings/Glutes: 1.9 sets/wk (Deficit vs MEV 6.0)
-- **Volume Starvation**: Shoulders: 5.0 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Biceps: 5.0 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Shoulders: 5.3 sets/wk (Deficit vs MEV 8.0)
+- **Volume Starvation**: Biceps: 5.1 sets/wk (Deficit vs MEV 6.0)
 - **Volume Starvation**: Forearms: 0.9 sets/wk (Deficit vs MEV 4.0)
-- **Acute:Chronic Workload Ratio (ACWR)**: `0.98` (Sweet Spot (Optimal)). Acute load is 2,798.8 kg vs chronic baseline 2,853.3 kg. Foster training monotony is `0.67`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
+- **Acute:Chronic Workload Ratio (ACWR)**: `1.19` (Sweet Spot (Optimal)). Acute load is 3,664.6 kg vs chronic baseline 3,069.8 kg. Foster training monotony is `0.88`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
 - **Sleep & Recovery**: 7-day average sleep duration is `7.0 hrs` with a composite readiness score of `95.2%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
 ---
