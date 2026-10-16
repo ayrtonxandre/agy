@@ -53,6 +53,14 @@ EXERCISE_ALIASES: dict[str, str] = {
     "bulgarian split squats": "Bulgarian Split Squat",
     "lunges": "Lunge",
     "lunge": "Lunge",
+    "overhead lunge": "Overhead Lunge",
+    "overhead lunges": "Overhead Lunge",
+    "overheads lunge": "Overhead Lunge",
+    "overheads lunges": "Overhead Lunge",
+    "overhead walking lunge": "Overhead Lunge",
+    "overhead walking lunges": "Overhead Lunge",
+    "walking lunge": "Lunge",
+    "walking lunges": "Lunge",
     "leg press": "Leg Press",
     "hack squat": "Hack Squat",
     "leg extension": "Leg Extension",
@@ -152,13 +160,16 @@ EXERCISE_ALIASES: dict[str, str] = {
     "snatch": "Snatch",
     "snatches": "Snatch",
     "power snatch": "Snatch",
+    "power snatches": "Snatch",
     "dumbbell snatch": "Snatch",
     "db snatch": "Snatch",
     "single dumbbell snatch": "Snatch",
     "alternated single dumbbell snatch overhead": "Snatch",
     "dumbbell snatch overhead": "Snatch",
-    "hang snatch": "Snatch",
-    "hang power snatch": "Snatch",
+    "hang snatch": "Hang Snatch",
+    "hang snatches": "Hang Snatch",
+    "hang power snatch": "Hang Snatch",
+    "hang power snatches": "Hang Snatch",
     "clean": "Clean",
     "cleans": "Clean",
     "power clean": "Clean",
@@ -611,12 +622,12 @@ SYSTEM_PROMPT = """You are an expert sports physiologist and athletic data analy
 Your task is to parse an athlete's unstructured free-text Garmin activity note (from CrossFit, HIIT, circuit training, or gym workouts) into structured JSON.
 
 Canonical ATHX Exercises list:
-Front Squat, Back Squat, Goblet Squat, Split Squat, Bulgarian Split Squat, Lunge, Leg Press, Hack Squat, Leg Extension,
+Front Squat, Back Squat, Goblet Squat, Split Squat, Bulgarian Split Squat, Lunge, Overhead Lunge, Leg Press, Hack Squat, Leg Extension,
 Deadlift, Romanian Deadlift, Straight Leg Deadlift, Hip Thrust, Kettlebell Swing,
 Bench Press, Incline Bench Press, Dumbbell Bench Press, Overhead Press, Barbell Push Press, Shoulder Press, Military Press, Push Up, Dip, Thruster,
 Pull Up, Chin Up, Row, Barbell Row, Bent Over Row, Dumbbell Row, Lat Pulldown, Shrug, Face Pull, Ring Row,
 Biceps Curl, Hammer Curl, Triceps Extension, Triceps Pushdown, Close Grip Bench Press,
-Clean, Clean and Jerk, Snatch, Burpee, Toes to Bar, Wall Ball.
+Clean, Clean and Jerk, Snatch, Hang Snatch, Burpee, Toes to Bar, Wall Ball.
 
 Instructions:
 1. Detect total rounds/sets (e.g. '4 rounds', 'EMOM 10', '3 sets', default 1).
@@ -820,7 +831,7 @@ def convert_note_to_strength_records(
     # Determine dominant session split
     dominant_split = parsed.get("session_type")
     if not dominant_split:
-        tallies = {"Push": 0, "Pull": 0, "Legs": 0}
+        tallies = {"Push": 0, "Pull": 0, "Legs": 0, "Full Body": 0}
         for item in extracted_exercises:
             ex_name = normalize_exercise_name(item.get("exercise", ""))
             s_count = int(item.get("sets", 1))

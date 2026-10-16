@@ -245,7 +245,7 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
 
     session_split_counts = defaultdict(int)
     for act_id, sets in activity_groups.items():
-        split_votes = {"Push": 0, "Pull": 0, "Legs": 0}
+        split_votes = {"Push": 0, "Pull": 0, "Legs": 0, "Full Body": 0}
         for s in sets:
             m = s["Muscle_Group"]
             split = athx_config.MUSCLE_TO_SPLIT_MAP.get(m)
