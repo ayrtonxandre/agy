@@ -14,7 +14,7 @@ An autonomous agentic intelligence platform engineered for the **ATHX Games 2027
 - [⚙️ Environment Variables & Configuration](#️-environment-variables--configuration)
 - [🐳 Docker & SWAG Remote Server Deployment](#-docker--swag-remote-server-deployment)
 - [💻 Cross-Machine Setup Guide](#-cross-machine-setup-guide)
-- [📲 Live Health Auto Export MCP Ingestion](#-live-health-auto-export-mcp-ingestion)
+- [📲 Health Auto Export Automated REST Webhook Setup](#-health-auto-export-automated-rest-webhook-setup)
 - [📊 Executive Reporting & Slide Decks](#-executive-reporting--slide-decks)
 - [🔐 Security & Secrets](#-security--secrets)
 
@@ -32,8 +32,8 @@ An autonomous agentic intelligence platform engineered for the **ATHX Games 2027
                                                 │
  📱 iPhone / Apple Watch                        ▼
     (Health Auto Export) ────┐    ┌───────────────────────────┐    ┌───────────────────────────┐
-    • Live MCP :9000/mcp     ├───►│     ATHX Orchestrator     ├───►│     GitHub Repository     │
-    • Webhook :8080/api      │    │  (Python :8080 / launchd) │    │  • Single Source of Truth │
+    • Automated REST Webhook ├───►│     ATHX Orchestrator     ├───►│     GitHub Repository     │
+    • :8080/api/health       │    │  (Python :8080 / launchd) │    │  • Single Source of Truth │
                              │    └─────────────┬─────────────┘    │  • Auto-Sync & History    │
  ⌚ Garmin Cloud             │                  │                  │  • GitHub Pages Hosting   │
     (Garth OAuth / MFA) ─────┤                  ▼                  └───────────────────────────┘
@@ -91,10 +91,18 @@ While running, `athx` renders a live, fluid loading bar and animated spinner acr
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### 🎛️ CLI Options & Flags
+### 🎛️ CLI Commands & Flags
 | Command | Action |
 | :--- | :--- |
 | `athx` | Standard full sync, dashboard rebuild, automated GitHub push, and browser launch |
+| `athx sync` | Explicit command to run the 5-step athlete synchronization pipeline |
+| `athx serve` | Starts or inspects local HTTP server on `http://localhost:8080` (`/workout`, `/calendar`, `/api/health`, `/api/coach`) |
+| `athx serve -d` | Launches the orchestrator webhook server in background daemon mode with PID tracking (`server.pid`) |
+| `athx serve --stop` / `athx stop` | Terminates any running ATHX background webhook daemon |
+| `athx serve --restart` / `athx restart` | Restarts the background webhook server cleanly |
+| `athx status` | Comprehensive ecosystem diagnostics (Webhook daemon, 6 Apple Health CSVs, Garmin tokens & activities, Dashboards, Git) |
+| `athx health` | Step-by-step iOS Health Auto Export setup guide, target URLs (`.local` & LAN IP), metrics checklist, and payload inspector |
+| `athx health -r` / `--reingest` | Re-ingests the latest cached payload (`last_payload.json`) across all 6 Apple Health CSV datasets |
 | `athx coach` | Displays AI Coach executive verdict and 7-day tactical microcycle prescription |
 | `athx coach --full` | Renders comprehensive ANSI-colorized sports science debriefing |
 | `athx coach --ask "<question>"` | Direct consultation with the AI Coach grounded in audited telemetry |
@@ -103,8 +111,7 @@ While running, `athx` renders a live, fluid loading bar and animated spinner acr
 | `athx coach --json` | Outputs raw briefing or Q&A consultation payload in JSON format |
 | `athx --no-push` | Skips pushing updated datasets & HTML to GitHub after sync |
 | `athx --no-open` | Runs headless (skips opening the browser) |
-| `athx --serve` | Starts local HTTP daemon on `http://localhost:8080` (`/workout`, `/calendar`, `/api/coach`) |
-| `athx --install` | Installs/symlinks `athx` into `~/.local/bin/athx` and configures shell `$PATH` |
+| `athx install` / `athx --install` | Installs/symlinks `athx` into `~/.local/bin/athx` and configures shell `$PATH` |
 | `athx --skip-git` | Skips pulling latest commits from GitHub |
 | `athx --skip-health` | Skips Apple Health biometrics & sleep sync |
 | `athx --skip-garmin` | Skips Garmin Connect API extraction |
@@ -210,8 +217,8 @@ The coach synthesizes an authoritative answer referencing actual numbers from th
 | **`athx_analytics.py`** | Core analytical telemetry engine: data cleaning, unknown imputation, e1RM restrictions, ACWR, Foster strain, and recovery composite. |
 | **`extract_garmin_strength.py`** | Unofficial Garmin Connect extractor via `garth` OAuth; handles strength sets, running telemetry, and workout notes. |
 | **`generate_unified_athlete_dashboard.py`** | Zero-hardcoded dashboard generator outputting `garmin_workout.html` and `index.html` (for GitHub Pages). |
-| **`orchestrator.py`** | Local HTTP daemon (port 8080) with webhook endpoints (`POST /api/health`) and debounced GitHub auto-push. |
-| **`sync_health_mcp.py`** | Client querying Apple Health biometrics and workouts over local Wi-Fi from the Health Auto Export iOS MCP server. |
+| **`orchestrator.py`** | Local HTTP daemon (port 8080) with automated Apple Health REST webhook ingestion (`POST /api/health`), multi-day historical upsert into 6 CSVs, mDNS discovery, and debounced GitHub auto-push. |
+| **`sync_health_mcp.py`** | Ad-hoc MCP client for querying Apple Health directly from Health Auto Export's built-in MCP server. |
 | **`unified_calendar.py` & `generate_calendar_dashboard.py`** | Tri-calendar sync (Artefact Google Cal, iCloud CalDAV, Client M365) injecting structured workout schedules. |
 | **`drive_sync.py`** | Manual cold-archive and recovery utility synchronizing datasets, dashboards, briefings, and decks with Google Drive Hub. |
 | **`excalidraw_tool.py`** | Generates hand-drawn system architecture diagrams using GCP Discovery Engine and Excalidraw MCP. |
@@ -309,20 +316,52 @@ docker compose -f docker-compose.prod.yml up -d
 
 ---
 
-## 📲 Live Health Auto Export MCP Ingestion
+## 📲 Health Auto Export Automated REST Webhook Setup
 
-Query live Apple Health metrics and workouts directly from your iPhone over local Wi-Fi via the built-in MCP server in the **Health Auto Export** app:
+Apple Health telemetry (biometrics, sleep stages, activity, nutrition, and mobility) is automatically pushed in the background from your iPhone/Apple Watch to your Mac via the **Health Auto Export** app's **Automated REST API** integration.
 
+### Why Automated REST Webhook over Local MCP Server?
+* **Zero iPhone Battery Drain**: The iPhone does not need to run a persistent server in the foreground/background listening for socket queries.
+* **Continuous Background Sync**: Health Auto Export automatically triggers an HTTP POST export whenever Apple Health records new workouts, sleep, or weight entries.
+* **Zero IP Drift Friction**: By using the Mac's Multicast DNS hostname (`http://Ayrtons-MacBook-Air.local:8080/api/health`), the iPhone seamlessly delivers data on your home or office Wi-Fi even if the Mac's LAN IP changes dynamically via DHCP.
+
+### 📱 Step-by-Step iPhone Configuration
 1. Open **Health Auto Export** on your iPhone.
-2. Navigate to **Automations** (or sidebar) $\rightarrow$ **Server**.
-3. Choose **HTTP** (recommended) or **TCP** and tap **Start Server**.
-4. Copy the **Bearer Token** displayed under the server URL (e.g. `http://192.168.1.163:9000/mcp`).
-5. Run the live sync:
-   ```bash
-   # Using environment variable
-   export HAE_MCP_TOKEN="<YOUR_BEARER_TOKEN>"
-   python sync_health_mcp.py --push
-   ```
+2. Tap **Automations** (in the bottom navigation or sidebar) $\rightarrow$ Tap **Add Automation** $\rightarrow$ select **REST API**.
+3. In the automation settings, configure:
+   - **URL**: `http://Ayrtons-MacBook-Air.local:8080/api/health`
+     *(Fallback if your router blocks mDNS / .local domains: `http://10.40.3.213:8080/api/health`)*
+   - **Method**: `POST`
+   - **Payload Type**: `JSON`
+   - **Sync Cadence**: Background / Hourly / On Activity Complete (recommended)
+4. Under **Metrics & Datasets**, select the ATHX required telemetry:
+   - ✅ **Workouts & Exercise Sessions** (duration, heart rate, distance, calories)
+   - ✅ **Active Energy & Resting Heart Rate (RHR)**
+   - ✅ **Step Count & Walking/Running Distance**
+   - ✅ **Body Mass (Weight) & Body Fat Percentage**
+   - ✅ **Sleep Analysis** (In Bed, Core, Deep, REM sleep stages)
+   - ✅ **Dietary Energy & Macronutrients** (Protein, Carbs, Fat)
+   - ✅ **Mobility & Biomechanics** (Walking Speed, Step Length, Double Support Percentage)
+5. Tap **Save**.
+6. Tap **Test Connection** or **Export Now** to dispatch an initial payload to your Mac.
+
+### 💻 Managing the Daemon on Your Mac
+```bash
+# Start webhook server in background daemon mode
+athx serve -d
+
+# Check ecosystem status, active port, and ingested CSV rows
+athx status
+
+# View setup guide, exact target URLs, and inspect latest received payload
+athx health
+
+# Re-ingest the last cached payload into CSVs
+athx health --reingest
+
+# Stop background server daemon
+athx stop
+```
 
 ---
 

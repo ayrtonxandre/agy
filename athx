@@ -20,8 +20,10 @@ import os
 import sys
 import time
 import json
+import csv
 import shutil
 import socket
+import signal
 import argparse
 import threading
 import subprocess
@@ -238,7 +240,189 @@ class TerminalUI:
 
 
 # ==============================================================================
-# 3. INDIVIDUAL ORCHESTRATION TASKS
+# 3. DAEMON & NETWORK ENGINE (REST Webhook Server)
+# ==============================================================================
+def is_port_in_use(port: int = 8080) -> bool:
+    """Checks if a TCP port is in use on localhost."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(("", port))
+            return False
+        except OSError:
+            return True
+
+
+def is_pid_alive(pid: int) -> bool:
+    """Checks if a process with given PID exists."""
+    try:
+        os.kill(pid, 0)
+        return True
+    except PermissionError:
+        return True
+    except (ProcessLookupError, OSError):
+        return False
+
+
+def find_port_pids(port: int = 8080) -> list[int]:
+    """Finds all PIDs listening on the specified port via lsof."""
+    try:
+        res = subprocess.run(
+            ["lsof", "-t", f"-i:{port}"],
+            capture_output=True,
+            text=True,
+            timeout=4
+        )
+        if res.returncode == 0:
+            return [int(p.strip()) for p in res.stdout.splitlines() if p.strip().isdigit()]
+    except Exception:
+        pass
+    return []
+
+
+def get_server_pid(agy_dir: Path, port: int = 8080) -> int | None:
+    """Reads PID from server.pid or falls back to port inspection."""
+    pid_file = agy_dir / "server.pid"
+    if pid_file.exists():
+        try:
+            pid = int(pid_file.read_text().strip())
+            if is_pid_alive(pid):
+                return pid
+            else:
+                pid_file.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+    pids = find_port_pids(port)
+    if pids:
+        try:
+            pid_file.write_text(str(pids[0]))
+        except Exception:
+            pass
+        return pids[0]
+    return None
+
+
+def get_network_endpoints(port: int = 8080) -> dict[str, str]:
+    """Resolves local mDNS and LAN IP endpoints for Apple Health webhook."""
+    try:
+        from orchestrator import get_network_endpoints as _orch_endpoints
+        return _orch_endpoints(port)
+    except Exception:
+        pass
+
+    mdns_host = "Ayrtons-MacBook-Air.local"
+    try:
+        cmd = subprocess.run(["scutil", "--get", "LocalHostName"], capture_output=True, text=True, timeout=2)
+        if cmd.returncode == 0 and cmd.stdout.strip():
+            mdns_host = f"{cmd.stdout.strip()}.local"
+    except Exception:
+        pass
+
+    lan_ip = "127.0.0.1"
+    try:
+        cmd = subprocess.run(["ipconfig", "getifaddr", "en0"], capture_output=True, text=True, timeout=2)
+        if cmd.returncode == 0 and cmd.stdout.strip():
+            lan_ip = cmd.stdout.strip()
+    except Exception:
+        pass
+
+    return {
+        "webhook_mdns": f"http://{mdns_host}:{port}/api/health",
+        "webhook_lan": f"http://{lan_ip}:{port}/api/health",
+        "dashboard_local": f"http://localhost:{port}/",
+        "healthcheck": f"http://{lan_ip}:{port}/health"
+    }
+
+
+def stop_server_daemon(agy_dir: Path, port: int = 8080) -> tuple[bool, str]:
+    """Stops the running orchestrator daemon cleanly."""
+    pids = []
+    pid_file = agy_dir / "server.pid"
+    if pid_file.exists():
+        try:
+            p = int(pid_file.read_text().strip())
+            if p > 0:
+                pids.append(p)
+        except Exception:
+            pass
+
+    for p in find_port_pids(port):
+        if p not in pids:
+            pids.append(p)
+
+    if not pids and not is_port_in_use(port):
+        return False, f"ATHX Orchestrator is not running (port {port} is free)."
+
+    stopped = False
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGTERM)
+            stopped = True
+        except Exception:
+            pass
+
+    time.sleep(0.6)
+    for pid in pids:
+        if is_pid_alive(pid):
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except Exception:
+                pass
+
+    pid_file.unlink(missing_ok=True)
+    if not is_port_in_use(port):
+        pid_list = ", ".join(map(str, pids)) or f"port {port}"
+        return True, f"ATHX Orchestrator stopped successfully (terminated PID: {pid_list})."
+    return True, f"Sent stop signal to ATHX Orchestrator (PID: {', '.join(map(str, pids))})."
+
+
+def start_server_daemon(agy_dir: Path, venv_py: Path, port: int = 8080):
+    """Spawns the orchestrator HTTP daemon in the background."""
+    orch_py = agy_dir / "orchestrator.py"
+    log_file_path = agy_dir / "server_access.log"
+    pid_file = agy_dir / "server.pid"
+
+    if is_port_in_use(port):
+        existing_pid = get_server_pid(agy_dir, port)
+        pid_str = f" (PID: {existing_pid})" if existing_pid else ""
+        print(f"\n{TerminalUI.GOLD}⚡ ATHX Orchestrator is already active on port {port}{pid_str}.{TerminalUI.RESET}")
+        net = get_network_endpoints(port)
+        print(f"  • Webhook (iPhone) : {TerminalUI.CYAN}{net['webhook_mdns']}{TerminalUI.RESET}")
+        print(f"  • Webhook (LAN IP) : {TerminalUI.CYAN}{net['webhook_lan']}{TerminalUI.RESET}")
+        print(f"  • Local Dashboard  : {TerminalUI.CYAN}{net['dashboard_local']}{TerminalUI.RESET}")
+        print(f"  {TerminalUI.GRAY}To stop:    athx stop (or athx serve --stop){TerminalUI.RESET}\n")
+        return
+
+    net = get_network_endpoints(port)
+    env = dict(os.environ, PORT=str(port), AGY_PORT=str(port))
+
+    with open(log_file_path, "a", encoding="utf-8") as log_f:
+        proc = subprocess.Popen(
+            [str(venv_py), str(orch_py), "serve"],
+            cwd=str(agy_dir),
+            env=env,
+            stdout=log_f,
+            stderr=subprocess.STDOUT,
+            start_new_session=True
+        )
+
+    pid_file.write_text(str(proc.pid))
+    time.sleep(0.6)
+
+    if is_port_in_use(port) or is_pid_alive(proc.pid):
+        print(f"\n{TerminalUI.GREEN}✔ ATHX Orchestrator daemon started in background (PID: {proc.pid}){TerminalUI.RESET}")
+        print(f"  • Webhook (iPhone) : {TerminalUI.CYAN}{net['webhook_mdns']}{TerminalUI.RESET}")
+        print(f"  • Webhook (LAN IP) : {TerminalUI.CYAN}{net['webhook_lan']}{TerminalUI.RESET}")
+        print(f"  • Local Dashboard  : {TerminalUI.CYAN}{net['dashboard_local']}{TerminalUI.RESET}")
+        print(f"  • Access Log       : {TerminalUI.GRAY}{log_file_path}{TerminalUI.RESET}")
+        print(f"  {TerminalUI.GRAY}To monitor logs: tail -f {log_file_path}{TerminalUI.RESET}")
+        print(f"  {TerminalUI.GRAY}To stop daemon:  athx stop (or athx serve --stop){TerminalUI.RESET}\n")
+    else:
+        print(f"\n{TerminalUI.RED}✖ Failed to start orchestrator daemon. Check logs at: {log_file_path}{TerminalUI.RESET}\n")
+
+
+# ==============================================================================
+# 4. INDIVIDUAL ORCHESTRATION TASKS
 # ==============================================================================
 def run_git_pull(agy_dir: Path) -> tuple[str, str]:
     """Pulls latest changes from GitHub."""
@@ -341,61 +525,54 @@ def run_git_push(agy_dir: Path) -> tuple[str, str]:
 
 
 def run_health_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
-    """Syncs Apple Health biometrics via live MCP or validates local datasets."""
-    mcp_script = agy_dir / "sync_health_mcp.py"
-    token_file = agy_dir / "hae_token.txt"
-    token = os.getenv("HAE_MCP_TOKEN", "")
-    if not token and token_file.exists():
-        token = token_file.read_text().strip()
+    """Syncs Apple Health biometrics via Automated Webhook and verifies local datasets."""
+    last_payload = agy_dir / "last_payload.json"
+    body_csv = agy_dir / "apple_body_composition.csv"
+    activity_csv = agy_dir / "apple_daily_activity.csv"
+    sleep_csv = agy_dir / "apple_sleep.csv"
+    orch_py = agy_dir / "orchestrator.py"
 
-    # Test iPhone MCP connectivity with dynamic candidate probe
-    active_ip = None
-    candidates = []
-    if "HAE_IP" in os.environ:
-        candidates.append(os.environ["HAE_IP"])
-    candidates.extend(["192.168.1.163", "10.10.251.25"])
-
-    for cip in candidates:
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(0.8)
-            if s.connect_ex((cip, 9000)) == 0:
-                active_ip = cip
-                s.close()
-                break
-            s.close()
-        except Exception:
-            pass
-
-    last_err = ""
-    if active_ip and token and mcp_script.exists():
-        # Try HTTPS first (standard for HAE MCP), then HTTP fallback
-        for proto in ["https", "http"]:
-            endpoint_url = f"{proto}://{active_ip}:9000/mcp"
+    # If payload is newer than CSVs (e.g. manual copy or recovery), ingest it
+    if last_payload.exists() and orch_py.exists():
+        payload_mtime = last_payload.stat().st_mtime
+        csv_mtime = body_csv.stat().st_mtime if body_csv.exists() else 0
+        if not body_csv.exists() or payload_mtime > (csv_mtime + 2):
             try:
-                res = subprocess.run(
-                    [str(venv_py), str(mcp_script), "--url", endpoint_url, "--token", token],
+                subprocess.run(
+                    [str(venv_py), str(orch_py), "ingest", str(last_payload)],
                     cwd=str(agy_dir),
                     capture_output=True,
-                    text=True,
-                    timeout=35
+                    timeout=20
                 )
-                if res.returncode == 0:
-                    return "success", f"Apple Health: Live metrics ingested from iPhone ({endpoint_url})"
-                else:
-                    err_lines = [l for l in (res.stderr or res.stdout).splitlines() if l.strip()]
-                    last_err = err_lines[-1] if err_lines else ""
-            except Exception as e:
-                last_err = str(e)
+            except Exception:
+                pass
 
-    # If iPhone MCP server is not active, verify local CSVs
-    body_csv = agy_dir / "apple_body_composition.csv"
-    sleep_csv = agy_dir / "apple_sleep.csv"
-    if body_csv.exists() and sleep_csv.exists():
-        if active_ip:
-            return "warning", f"Apple Health: Port 9000 reachable but sync failed ({last_err[:40] or 'ensure app is active'})"
-        return "success", "Apple Health: Biometrics up to date (Cloud Hub & Webhook)"
-    return "warning", "Apple Health: iPhone MCP offline (using local cache)"
+    # Check local CSVs for newest date
+    latest_date = None
+    row_count = 0
+    for cand in [activity_csv, body_csv, sleep_csv]:
+        if cand.exists():
+            try:
+                with open(cand, "r", encoding="utf-8", errors="ignore") as f:
+                    lines = [l.strip() for l in f if l.strip()]
+                    if len(lines) > 1:
+                        row_count += len(lines) - 1
+                        d = lines[-1].split(",")[0].strip()
+                        if d and (not latest_date or d > latest_date):
+                            latest_date = d
+            except Exception:
+                pass
+
+    server_up = is_port_in_use(8080)
+    if latest_date:
+        if server_up:
+            return "success", f"Apple Health: Automated Webhook active (:8080) | Biometrics up to date ({latest_date})"
+        else:
+            return "success", f"Apple Health: Biometrics up to date ({latest_date}) | Webhook daemon offline (run 'athx serve')"
+
+    if server_up:
+        return "warning", "Apple Health: Webhook active on :8080, awaiting first iPhone sync (run 'athx health')"
+    return "warning", "Apple Health: No biometrics found (configure iPhone webhook: run 'athx health')"
 
 
 def run_garmin_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
@@ -541,18 +718,352 @@ exec "{venv_py}" "{script_path}" "$@"
 
 
 # ==============================================================================
-# 5. MAIN ORCHESTRATION PIPELINE
+# 5. CLI SUBCOMMAND HANDLERS (serve, status, health)
+# ==============================================================================
+def handle_serve_command(agy_dir: Path, venv_py: Path, sub_args: list[str]):
+    """Handles `athx serve` to manage background daemon or foreground server."""
+    parser = argparse.ArgumentParser(prog="athx serve", description="Manage the ATHX Orchestrator REST Webhook daemon")
+    parser.add_argument("-d", "--daemon", action="store_true", help="Run orchestrator as a detached background daemon")
+    parser.add_argument("-f", "--foreground", action="store_true", help="Run orchestrator attached in the foreground")
+    parser.add_argument("--stop", action="store_true", help="Stop the running orchestrator daemon")
+    parser.add_argument("--restart", action="store_true", help="Restart the orchestrator daemon")
+    parser.add_argument("--status", action="store_true", help="Check orchestrator server status")
+    parser.add_argument("-p", "--port", type=int, default=8080, help="Port to listen on (default: 8080)")
+    args = parser.parse_args(sub_args)
+
+    port = args.port
+    pid = get_server_pid(agy_dir, port)
+    in_use = is_port_in_use(port)
+    net = get_network_endpoints(port)
+
+    # 1. Stop
+    if args.stop:
+        success, msg = stop_server_daemon(agy_dir, port)
+        badge = f"{TerminalUI.GREEN}✔{TerminalUI.RESET}" if success else f"{TerminalUI.YELLOW}⚠️{TerminalUI.RESET}"
+        print(f"\n  {badge} {msg}\n")
+        return
+
+    # 2. Status
+    if args.status:
+        print(f"\n{TerminalUI.GOLD}⚡ ATHX Orchestrator Server Status{TerminalUI.RESET}")
+        if in_use:
+            pid_str = f" (PID: {pid})" if pid else ""
+            print(f"  • Status           : {TerminalUI.GREEN}● ONLINE{TerminalUI.RESET}{pid_str}")
+        else:
+            print(f"  • Status           : {TerminalUI.YELLOW}○ OFFLINE{TerminalUI.RESET}")
+        print(f"  • Webhook (iPhone) : {TerminalUI.CYAN}{net['webhook_mdns']}{TerminalUI.RESET}")
+        print(f"  • Webhook (LAN IP) : {TerminalUI.CYAN}{net['webhook_lan']}{TerminalUI.RESET}")
+        print(f"  • Local Dashboard  : {TerminalUI.CYAN}{net['dashboard_local']}{TerminalUI.RESET}")
+        print(f"  • Healthcheck      : {TerminalUI.GRAY}{net['healthcheck']}{TerminalUI.RESET}\n")
+        return
+
+    # 3. Restart
+    if args.restart:
+        print(f"\n🔄 Restarting ATHX Orchestrator on port {port}...")
+        stop_server_daemon(agy_dir, port)
+        time.sleep(1)
+        start_server_daemon(agy_dir, venv_py, port)
+        return
+
+    # 4. If already running
+    if in_use:
+        pid_str = f" (PID: {pid})" if pid else ""
+        print(f"\n{TerminalUI.GOLD}⚡ ATHX Orchestrator is ALREADY running on port {port}{pid_str}{TerminalUI.RESET}")
+        print(f"  • Webhook (iPhone) : {TerminalUI.CYAN}{net['webhook_mdns']}{TerminalUI.RESET}")
+        print(f"  • Webhook (LAN IP) : {TerminalUI.CYAN}{net['webhook_lan']}{TerminalUI.RESET}")
+        print(f"  • Local Dashboard  : {TerminalUI.CYAN}{net['dashboard_local']}{TerminalUI.RESET}")
+        print(f"  {TerminalUI.GRAY}To stop:    athx stop (or athx serve --stop){TerminalUI.RESET}")
+        print(f"  {TerminalUI.GRAY}To restart: athx restart (or athx serve --restart){TerminalUI.RESET}\n")
+        return
+
+    # 5. Start daemon (-d) or foreground
+    if args.daemon:
+        start_server_daemon(agy_dir, venv_py, port)
+    else:
+        orch_py = agy_dir / "orchestrator.py"
+        print(f"\n{TerminalUI.GOLD}🚀 Starting ATHX Orchestrator on port {port}...{TerminalUI.RESET}")
+        print(f"  • Webhook (iPhone) : {TerminalUI.CYAN}{net['webhook_mdns']}{TerminalUI.RESET}")
+        print(f"  • Webhook (LAN IP) : {TerminalUI.CYAN}{net['webhook_lan']}{TerminalUI.RESET}")
+        print(f"  • Local Dashboard  : {TerminalUI.CYAN}{net['dashboard_local']}{TerminalUI.RESET}")
+        print(f"  {TerminalUI.GRAY}Press Ctrl+C to stop the server (or use -d for background daemon).{TerminalUI.RESET}\n")
+        try:
+            env = dict(os.environ, PORT=str(port), AGY_PORT=str(port))
+            subprocess.run([str(venv_py), str(orch_py), "serve"], cwd=str(agy_dir), env=env)
+        except KeyboardInterrupt:
+            print("\n👋 ATHX Orchestrator stopped.")
+
+
+def handle_status_command(agy_dir: Path, venv_py: Path):
+    """Displays comprehensive ATHX ecosystem status."""
+    gold = TerminalUI.GOLD
+    cyan = TerminalUI.CYAN
+    green = TerminalUI.GREEN
+    yellow = TerminalUI.YELLOW
+    gray = TerminalUI.GRAY
+    bold = TerminalUI.BOLD
+    reset = TerminalUI.RESET
+
+    port = 8080
+    net = get_network_endpoints(port)
+    in_use = is_port_in_use(port)
+    pid = get_server_pid(agy_dir, port)
+
+    print(f"\n{gold}{bold}⚡ ATHX 2027 • Ecosystem Diagnostic & Status{reset}")
+    print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}")
+    print(f"  📁 Hub Location : {gray}{agy_dir}{reset}")
+    print(f"  🐍 Environment  : {gray}{venv_py}{reset}")
+    print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+
+    # 1. Orchestrator Server & Webhook
+    print(f"  {bold}🌐 Orchestrator & Automated Webhook (:8080){reset}")
+    if in_use:
+        pid_str = f"(PID: {pid})" if pid else ""
+        print(f"  • Server Status    : {green}● ONLINE{reset} {gray}{pid_str}{reset}")
+    else:
+        print(f"  • Server Status    : {yellow}○ OFFLINE{reset} {gray}(start with: athx serve -d){reset}")
+    print(f"  • iPhone Webhook   : {cyan}{net['webhook_mdns']}{reset}")
+    print(f"  • LAN IP Webhook   : {cyan}{net['webhook_lan']}{reset}")
+    print(f"  • Local Dashboard  : {gray}{net['dashboard_local']}{reset}")
+
+    # Last payload info
+    last_payload = agy_dir / "last_payload.json"
+    if last_payload.exists():
+        mtime = datetime.fromtimestamp(last_payload.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+        sz_kb = last_payload.stat().st_size / 1024
+        print(f"  • Last Webhook Sync: {green}{mtime}{reset} {gray}({sz_kb:.1f} KB payload){reset}")
+    else:
+        print(f"  • Last Webhook Sync: {gray}None received yet{reset}")
+    print()
+
+    # 2. Apple Health Datasets
+    print(f"  {bold}🍏 Apple Health Datasets{reset}")
+    datasets = [
+        ("Body Composition", agy_dir / "apple_body_composition.csv"),
+        ("Daily Activity", agy_dir / "apple_daily_activity.csv"),
+        ("Sleep Analysis", agy_dir / "apple_sleep.csv"),
+        ("Nutrition & Macros", agy_dir / "apple_nutrition_macros.csv"),
+        ("Mobility & Biomechanics", agy_dir / "apple_mobility_biomechanics.csv"),
+        ("Workouts History", agy_dir / "apple_workouts_history.csv"),
+    ]
+    for name, path in datasets:
+        if path.exists():
+            try:
+                with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                    rows = [l.strip() for l in f if l.strip()]
+                row_count = max(0, len(rows) - 1)
+                latest_d = rows[-1].split(",")[0].strip() if row_count > 0 else "empty"
+                print(f"  • {name:24}: {green}✔ {row_count:>3} rows{reset}  {gray}(latest: {latest_d}){reset}")
+            except Exception:
+                print(f"  • {name:24}: {yellow}error reading file{reset}")
+        else:
+            print(f"  • {name:24}: {gray}○ not generated yet{reset}")
+    print()
+
+    # 3. Garmin Connect
+    print(f"  {bold}⏱ Garmin Connect{reset}")
+    garmin_tokens = agy_dir / "garmin_tokens"
+    garmin_csv = agy_dir / "garmin_extracted_workouts.csv"
+    if garmin_tokens.exists():
+        print(f"  • Tokens Session   : {green}✔ Active{reset} {gray}(in garmin_tokens/){reset}")
+    else:
+        print(f"  • Tokens Session   : {yellow}⚠️ Missing{reset} {gray}(run extract_garmin_strength.py to authenticate){reset}")
+    if garmin_csv.exists():
+        try:
+            with open(garmin_csv, "r", encoding="utf-8", errors="ignore") as f:
+                rows = [l.strip() for l in f if l.strip()]
+            count = max(0, len(rows) - 1)
+            latest_w = rows[-1].split(",")[0].strip() if count > 0 else "empty"
+            print(f"  • Extracted History: {green}✔ {count} workouts{reset} {gray}(latest: {latest_w}){reset}")
+        except Exception:
+            pass
+    print()
+
+    # 4. Multi-Calendar & Dashboards
+    print(f"  {bold}📅 Multi-Calendar & Dashboards{reset}")
+    cal_html = agy_dir / "calendar_dashboard.html"
+    workout_html = agy_dir / "garmin_workout.html"
+    for name, path in [("Athlete Headquarters", workout_html), ("Tri-Calendar Dashboard", cal_html)]:
+        if path.exists():
+            mtime = datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+            print(f"  • {name:22}: {green}✔ Ready{reset} {gray}(built {mtime}){reset}")
+        else:
+            print(f"  • {name:22}: {gray}○ Not built{reset}")
+    print()
+
+    # 5. Git Status
+    print(f"  {bold}🐙 Git Repository{reset}")
+    try:
+        res = subprocess.run(["git", "-C", str(agy_dir), "status", "-s"], capture_output=True, text=True, timeout=5)
+        changed = len([l for l in res.stdout.splitlines() if l.strip()])
+        branch_res = subprocess.run(["git", "-C", str(agy_dir), "branch", "--show-current"], capture_output=True, text=True, timeout=5)
+        branch = branch_res.stdout.strip() or "main"
+        if changed == 0:
+            print(f"  • Branch {bold}{branch}{reset}: {green}✔ Clean (all synced to GitHub){reset}")
+        else:
+            print(f"  • Branch {bold}{branch}{reset}: {yellow}● {changed} uncommitted changes{reset} {gray}(will auto-push on next sync){reset}")
+    except Exception:
+        pass
+
+    print(f"\n{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+
+
+def handle_health_command(agy_dir: Path, venv_py: Path, sub_args: list[str]):
+    """Apple Health setup guide and payload inspector."""
+    gold = TerminalUI.GOLD
+    cyan = TerminalUI.CYAN
+    green = TerminalUI.GREEN
+    yellow = TerminalUI.YELLOW
+    gray = TerminalUI.GRAY
+    bold = TerminalUI.BOLD
+    reset = TerminalUI.RESET
+
+    parser = argparse.ArgumentParser(prog="athx health", description="Apple Health setup guide and payload inspector")
+    parser.add_argument("-r", "--reingest", action="store_true", help="Re-ingest last_payload.json and rebuild datasets")
+    parser.add_argument("--json", action="store_true", help="Print raw last_payload.json")
+    args = parser.parse_args(sub_args)
+
+    orch_py = agy_dir / "orchestrator.py"
+    last_payload = agy_dir / "last_payload.json"
+
+    # Re-ingest flag
+    if args.reingest:
+        if not last_payload.exists():
+            print(f"\n{yellow}⚠️ No last_payload.json found to re-ingest.{reset}\n")
+            return
+        print(f"\n🔄 Re-ingesting {last_payload.name} through ATHX Orchestrator...")
+        subprocess.run([str(venv_py), str(orch_py), "ingest", str(last_payload)], cwd=str(agy_dir))
+        return
+
+    # Raw JSON dump
+    if args.json:
+        if last_payload.exists():
+            print(last_payload.read_text(encoding="utf-8"))
+        else:
+            print("{}\n# No payload received yet")
+        return
+
+    port = 8080
+    net = get_network_endpoints(port)
+    in_use = is_port_in_use(port)
+
+    print(f"\n{gold}{bold}🍏 ATHX 2027 • Apple Health Automated Webhook Setup{reset}")
+    print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+
+    print(f"  {bold}1. Health Auto Export App Configuration on iPhone:{reset}")
+    print(f"     • App to install   : {bold}Health Auto Export{reset} (by Healthy Apps)")
+    print(f"     • Mode             : {bold}Automated Exports / REST API{reset}")
+    print(f"     • HTTP Method      : {cyan}POST{reset}")
+    print(f"     • Primary Endpoint : {cyan}{bold}{net['webhook_mdns']}{reset}")
+    print(f"     • LAN IP Endpoint  : {cyan}{net['webhook_lan']}{reset}")
+    print(f"     • HTTP Headers     : {bold}Content-Type: application/json{reset}")
+    print(f"     • Export Cadence   : {bold}Every 15-30 min{reset} + On Background App Refresh")
+    print(f"     • Export Format    : {bold}JSON{reset}")
+    print()
+
+    print(f"  {bold}2. Required Metrics Checklist in Health Auto Export:{reset}")
+    print(f"     {green}✔{reset} {bold}Activity{reset}   : Active Energy, Resting Energy, Steps, Walking+Running Distance, Flights")
+    print(f"     {green}✔{reset} {bold}Heart{reset}      : Heart Rate, Resting Heart Rate, Heart Rate Variability (SDNN), VO2 Max")
+    print(f"     {green}✔{reset} {bold}Body Comp{reset}  : Weight (Body Mass), Body Fat %, Lean Body Mass, BMI")
+    print(f"     {green}✔{reset} {bold}Sleep{reset}      : Sleep Analysis (Core, Deep, REM, Awake, In Bed)")
+    print(f"     {green}✔{reset} {bold}Nutrition{reset}  : Dietary Energy, Protein, Carbohydrates, Total Fat, Water")
+    print(f"     {green}✔{reset} {bold}Mobility{reset}   : Walking Speed, Step Length, Double Support %, Walking Asymmetry")
+    print(f"     {green}✔{reset} {bold}Workouts{reset}   : All Workouts (Export Workouts toggle enabled)")
+    print()
+
+    print(f"  {bold}3. Webhook Daemon Status:{reset}")
+    if in_use:
+        print(f"     • Server Status    : {green}● ACTIVE & LISTENING on port {port}{reset}")
+    else:
+        print(f"     • Server Status    : {yellow}○ OFFLINE{reset} {gray}(start it with: athx serve -d){reset}")
+    print()
+
+    # Payload summary
+    print(f"  {bold}4. Latest Received Webhook Payload:{reset}")
+    if last_payload.exists():
+        try:
+            mtime = datetime.fromtimestamp(last_payload.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+            data = json.loads(last_payload.read_text(encoding="utf-8"))
+            raw_metrics = data.get("data", data).get("metrics", [])
+            metric_names = []
+            if isinstance(raw_metrics, list):
+                for m in raw_metrics:
+                    name = m.get("name")
+                    if name:
+                        metric_names.append(name)
+            elif isinstance(raw_metrics, dict):
+                metric_names = list(raw_metrics.keys())
+
+            print(f"     • Received at      : {green}{mtime}{reset}")
+            print(f"     • File Size        : {last_payload.stat().st_size / 1024:.1f} KB")
+            print(f"     • Metrics Count    : {len(metric_names)} metrics ({', '.join(metric_names[:5])}...)")
+            print(f"     • Re-ingest        : run {cyan}athx health --reingest{reset} to reprocess")
+        except Exception as e:
+            print(f"     • Error reading payload: {e}")
+    else:
+        print(f"     • No payload received yet. Send a manual test export from Health Auto Export!")
+
+    print(f"\n{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+
+
+# ==============================================================================
+# 6. MAIN ORCHESTRATION PIPELINE
 # ==============================================================================
 def main():
-    # Fast path for coach subcommand: `athx coach [...]` or `athx ask [...]`
-    if len(sys.argv) > 1 and sys.argv[1] in ["coach", "ask"]:
+    # Detect subcommand (ignore flags like -h or --coach)
+    raw_sub = sys.argv[1].lower() if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
+
+    # Coach commands: `athx coach [...]` or `athx ask [...]`
+    if raw_sub in ["coach", "ask"] or (len(sys.argv) > 1 and sys.argv[1] in ["coach", "ask"]):
         ensure_correct_python(AGY_DIR)
         import athx_ai_coach
         sub_args = sys.argv[2:]
-        if sys.argv[1] == "ask":
+        if raw_sub == "ask":
             sub_args = ["--ask"] + sub_args
         athx_ai_coach.run_coach_cli(sub_args)
         return
+
+    # Serve command: `athx serve [...]`
+    if raw_sub == "serve":
+        ensure_correct_python(AGY_DIR)
+        venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+        handle_serve_command(AGY_DIR, venv_py, sys.argv[2:])
+        return
+
+    # Stop command alias: `athx stop`
+    if raw_sub == "stop":
+        success, msg = stop_server_daemon(AGY_DIR, 8080)
+        badge = f"{TerminalUI.GREEN}✔{TerminalUI.RESET}" if success else f"{TerminalUI.YELLOW}⚠️{TerminalUI.RESET}"
+        print(f"\n  {badge} {msg}\n")
+        return
+
+    # Restart command alias: `athx restart`
+    if raw_sub == "restart":
+        ensure_correct_python(AGY_DIR)
+        venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+        handle_serve_command(AGY_DIR, venv_py, ["--restart"])
+        return
+
+    # Status command: `athx status`
+    if raw_sub == "status":
+        ensure_correct_python(AGY_DIR)
+        venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+        handle_status_command(AGY_DIR, venv_py)
+        return
+
+    # Health command: `athx health [...]`
+    if raw_sub == "health":
+        ensure_correct_python(AGY_DIR)
+        venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+        handle_health_command(AGY_DIR, venv_py, sys.argv[2:])
+        return
+
+    # Install command: `athx install`
+    if raw_sub == "install":
+        install_athx_cli()
+        return
+
+    # Parse standard pipeline arguments
+    cli_args = sys.argv[2:] if raw_sub == "sync" else sys.argv[1:]
 
     parser = argparse.ArgumentParser(
         description="ATHX 2027 Master Athlete & Intelligence Orchestrator"
@@ -569,7 +1080,9 @@ def main():
     parser.add_argument("--skip-cal", action="store_true", help="Skip multi-calendar sync")
     parser.add_argument("--install", action="store_true", help="Install `athx` globally into ~/.local/bin")
     parser.add_argument("--serve", action="store_true", help="Run local orchestrator HTTP daemon on port 8080")
-    args = parser.parse_args()
+    parser.add_argument("--status", action="store_true", help="Show system and webhook status")
+    parser.add_argument("--health", action="store_true", help="Show Apple Health setup and webhook guide")
+    args = parser.parse_args(cli_args)
 
     if args.coach or args.ask:
         ensure_correct_python(AGY_DIR)
@@ -584,16 +1097,19 @@ def main():
         install_athx_cli()
         return
 
-    # Ensure correct virtual environment
     ensure_correct_python(AGY_DIR)
-
-    # Locate Python binary to invoke sub-scripts
     venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
 
     if args.serve:
-        orch_py = AGY_DIR / "orchestrator.py"
-        print(f"🚀 Starting ATHX Orchestrator server from {AGY_DIR}...")
-        subprocess.run([str(venv_py), str(orch_py), "serve"])
+        handle_serve_command(AGY_DIR, venv_py, [])
+        return
+
+    if args.status:
+        handle_status_command(AGY_DIR, venv_py)
+        return
+
+    if args.health:
+        handle_health_command(AGY_DIR, venv_py, [])
         return
 
     # Print ATHX Banner
@@ -659,3 +1175,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

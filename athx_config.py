@@ -59,7 +59,7 @@ COMPETITION_BENCHMARKS: dict[str, dict] = {
         "name": "Deadlift",
         "unit": "kg",
         "standard": 160.0,
-        "exercise_matches": ["Deadlift", "Barbell Deadlift", "Straight Leg Deadlift", "Romanian Deadlift"],
+        "exercise_matches": ["Deadlift", "Barbell Deadlift", "Straight Leg Deadlift", "Romanian Deadlift", "Sumo Deadlift", "Sumo Deadlift High Pull"],
         "description": "Conventional or sumo barbell floor pull standard"
     },
     "run_5k": {
@@ -182,6 +182,10 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     "Standing Calf Raise": "Hamstrings/Glutes",
     "Seated Calf Raise": "Hamstrings/Glutes",
     "Kettlebell Swing": "Hamstrings/Glutes",
+    "Sumo Deadlift": "Hamstrings/Glutes",
+    "Sumo Deadlift High Pull": "Hamstrings/Glutes",
+    "Dumbbell Sumo Deadlift": "Hamstrings/Glutes",
+    "Dumbbell Sumo Deadlift High Pull": "Hamstrings/Glutes",
 
     # Triceps
     "Triceps Pressdown": "Triceps",
@@ -315,6 +319,10 @@ PLAUSIBLE_LOAD_RANGES: dict[str, tuple[float, float]] = {
     "Wall Ball": (4.0, 20.0),
     "Deadlift": (40.0, 240.0),
     "Barbell Deadlift": (40.0, 240.0),
+    "Sumo Deadlift": (15.0, 240.0),
+    "Sumo Deadlift High Pull": (10.0, 140.0),
+    "Dumbbell Sumo Deadlift": (5.0, 100.0),
+    "Dumbbell Sumo Deadlift High Pull": (5.0, 80.0),
     "Straight Leg Deadlift": (20.0, 180.0),
     "Romanian Deadlift": (20.0, 180.0),
     "Leg Press": (40.0, 450.0),

@@ -662,7 +662,7 @@ def save_all_results(data: dict[str, list[dict]]):
     print("=" * 80)
 
 
-def reprocess_local_notes() -> dict[str, list[dict]]:
+def reprocess_local_notes(target_activity_id: int | None = None, force_all: bool = False) -> dict[str, list[dict]]:
     """Reprocesses workout notes from cached local activity files without querying Garmin."""
     print("🔄 Reprocessing notes from local activity files...")
     all_strength_sets: list[dict] = []
@@ -690,13 +690,32 @@ def reprocess_local_notes() -> dict[str, list[dict]]:
         with open(OUTPUT_ALL_JSON, "r", encoding="utf-8") as f:
             all_activities = json.load(f)
 
+    # Purge sets for targeted activities before reprocessing
+    if target_activity_id is not None:
+        print(f"🎯 Reprocessing target activity ID: {target_activity_id}")
+        all_strength_sets = [r for r in all_strength_sets if r.get("Activity_ID") != target_activity_id]
+        cached_sets_by_id.pop(target_activity_id, None)
+    elif force_all:
+        print("🎯 Force reprocessing notes across all workout activities...")
+        wod_ids_with_notes = {w.get("Activity_ID") for w in workout_records if (w.get("Notes") or "").strip()}
+        all_strength_sets = [r for r in all_strength_sets if r.get("Activity_ID") not in wod_ids_with_notes]
+        for wid in wod_ids_with_notes:
+            cached_sets_by_id.pop(wid, None)
+
     new_sets_added = 0
     for w in workout_records:
         act_id = w.get("Activity_ID")
         notes = (w.get("Notes") or "").strip()
         date_str = w.get("Date") or ""
         act_name = w.get("Activity_Name") or "Workout"
-        if notes and act_id not in cached_sets_by_id:
+
+        should_reprocess = (
+            (target_activity_id is not None and act_id == target_activity_id) or
+            (force_all and bool(notes)) or
+            (bool(notes) and act_id not in cached_sets_by_id)
+        )
+
+        if notes and should_reprocess:
             note_sets, parsed_info = garmin_note_parser.convert_note_to_strength_records(
                 act_id, date_str, act_name, notes
             )
@@ -706,7 +725,7 @@ def reprocess_local_notes() -> dict[str, list[dict]]:
                 new_sets_added += len(note_sets)
                 print(f"   🏋️ [WOD Note Deciphered ({parsed_info.get('parser_used', 'LLM')})]: {len(note_sets)} sets from '{act_name}' (ID: {act_id}) — {parsed_info.get('summary', '')}")
 
-    print(f"✅ Local note reprocessing complete: {new_sets_added} new sets deciphered.")
+    print(f"✅ Local note reprocessing complete: {new_sets_added} sets deciphered.")
     return {
         "strength_sets": all_strength_sets,
         "running_activities": running_records,
@@ -724,8 +743,20 @@ if __name__ == "__main__":
     print("🚀 GARMIN CONNECT UNIFIED TRAINING EXTRACTOR (STRENGTH, RUNNING & WORKOUTS)")
     print("================================================================================")
     
-    if "--reprocess-local" in sys.argv or "--offline" in sys.argv:
-        extracted_data = reprocess_local_notes()
+    target_aid = None
+    if "--activity" in sys.argv:
+        idx = sys.argv.index("--activity")
+        if idx + 1 < len(sys.argv):
+            target_aid = int(sys.argv[idx + 1])
+    elif "--reprocess-activity" in sys.argv:
+        idx = sys.argv.index("--reprocess-activity")
+        if idx + 1 < len(sys.argv):
+            target_aid = int(sys.argv[idx + 1])
+
+    force_all = "--reprocess-all-notes" in sys.argv
+
+    if "--reprocess-local" in sys.argv or "--offline" in sys.argv or target_aid or force_all:
+        extracted_data = reprocess_local_notes(target_activity_id=target_aid, force_all=force_all)
     else:
         try:
             garmin_client = authenticate_garmin(GARMIN_EMAIL, GARMIN_PASSWORD, TOKEN_DIR)

@@ -59,8 +59,21 @@ class DataAuditTracker:
         }
 
 
-def parse_date(date_str: str) -> date:
-    return datetime.strptime(date_str[:10], "%Y-%m-%d").date()
+def is_valid_date(date_str: any) -> bool:
+    if not date_str:
+        return False
+    try:
+        datetime.strptime(str(date_str).strip()[:10], "%Y-%m-%d")
+        return True
+    except (ValueError, TypeError, IndexError):
+        return False
+
+
+def parse_date(date_str: str, default: Optional[date] = None) -> date:
+    try:
+        return datetime.strptime(str(date_str).strip()[:10], "%Y-%m-%d").date()
+    except (ValueError, TypeError, IndexError):
+        return default or date(1970, 1, 1)
 
 
 # ------------------------------------------------------------------------------
@@ -88,6 +101,8 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
     pre_may_sets = []
     active_sets = []
     for r in raw_records:
+        if not is_valid_date(r.get("Date")):
+            continue
         d = parse_date(r["Date"])
         if d < data_start:
             pre_may_sets.append(r)
@@ -335,9 +350,9 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
     # 1h. Trailing 28-Day Best e1RM, Relative Strength & Projections
     main_lifts = {
         "Bench Press": ["Bench Press", "Barbell Bench Press"],
-        "Back Squat": ["Back Squat", "Barbell Back Squat", "Squat"],
+        "Back Squat": ["Back Squat", "Barbell Back Squat", "Barbell Squat", "Squat"],
         "Deadlift": ["Deadlift", "Barbell Deadlift"],
-        "Overhead Press": ["Overhead Press", "Barbell Shoulder Press", "Shoulder Press", "Military Press"]
+        "Overhead Press": ["Overhead Press", "Barbell Shoulder Press", "Shoulder Press", "Military Press", "Barbell Push Press", "Push Press"]
     }
 
     comp_date = parse_date(athx_config.COMPETITION_DATE)
@@ -353,6 +368,7 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
                 "best_set_load": "No data",
                 "slope_4w": 0.0,
                 "projected_e1rm": None,
+                "daily_peaks": [],
                 "history": []
             }
             continue
@@ -360,6 +376,20 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
         # Sort chronological for trajectory
         lift_sets_chrono = sorted(lift_sets, key=lambda x: x["Date"])
         
+        # Aggregate daily peak e1RM (best working set e1RM per date)
+        daily_peaks_dict = {}
+        for s in lift_sets_chrono:
+            d = s["Date"]
+            if d not in daily_peaks_dict or s["e1RM_kg"] > daily_peaks_dict[d]["e1rm"]:
+                daily_peaks_dict[d] = {
+                    "date": d,
+                    "e1rm": s["e1RM_kg"],
+                    "weight": s["Weight_kg"],
+                    "reps": s["Reps"],
+                    "best_set": f"{s['Weight_kg']} kg × {s['Reps']} reps"
+                }
+        lift_daily_peaks = sorted(daily_peaks_dict.values(), key=lambda x: x["date"])
+
         # 28-day trailing best for current date
         cutoff_28d = max_d - timedelta(days=28)
         trailing_28d_sets = [s for s in lift_sets if parse_date(s["Date"]) >= cutoff_28d]
@@ -384,9 +414,10 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
         slope_4w = round(best_rec - best_prev, 1)
 
         # Projected e1RM at competition date (extrapolation)
-        # Cap weekly progression conservatively at +0.5 kg/week max to avoid absurd projections
-        weekly_rate = min(0.5, max(-0.5, slope_4w / 4.0)) if slope_4w != 0.0 else 0.2
-        projected = round(best_28d_val + (weekly_rate * weeks_to_comp), 1)
+        # Cap weekly progression conservatively: floor at 0.0 kg/week during fatigue/volume blocks,
+        # default to +0.2 kg/week maintenance/re-peaking, and cap at +0.5 kg/week max.
+        weekly_rate = min(0.5, max(0.0, slope_4w / 4.0)) if slope_4w > 0.0 else 0.2
+        projected = round(max(best_28d_val, best_28d_val + (weekly_rate * weeks_to_comp)), 1)
 
         rel_strength = round(best_28d_val / bodyweight_kg, 2)
 
@@ -397,6 +428,7 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
             "best_date": best_28d_set["Date"],
             "slope_4w": slope_4w,
             "projected_e1rm": projected,
+            "daily_peaks": lift_daily_peaks,
             "history": [{"date": s["Date"], "e1rm": s["e1RM_kg"], "weight": s["Weight_kg"], "reps": s["Reps"]} for s in lift_sets_chrono]
         }
 

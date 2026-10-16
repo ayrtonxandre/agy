@@ -495,6 +495,12 @@ def build_html(payload_json: str, d: dict) -> str:
       font-family: inherit;
     }}
 
+    .btn-group {{
+      display: inline-flex;
+      gap: 0.35rem;
+      align-items: center;
+    }}
+
     .btn-filter {{
       background: var(--card-sub-bg);
       border: 1px solid var(--card-border);
@@ -928,8 +934,14 @@ def build_html(payload_json: str, d: dict) -> str:
       <div class="charts-grid">
         <div class="chart-card">
           <div class="chart-header">
-            <span class="chart-title">📈 Main Lifts 28-Day e1RM Trajectories & Projections</span>
-            <span style="font-size: 0.75rem; color: var(--text-muted);">Reps &le; 10 Plausible Loads</span>
+            <div>
+              <span class="chart-title">📈 Main Lifts e1RM Trajectories & Projections</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 2px;">Session Peak e1RM (Reps &le; 10 Plausible Loads)</span>
+            </div>
+            <div class="btn-group" id="e1rmRangeFilters">
+              <button class="btn-filter active" data-range="all">All-Time</button>
+              <button class="btn-filter" data-range="28d">Trailing 28 Days</button>
+            </div>
           </div>
           <div class="chart-container">
             <canvas id="e1rmTrajectoryChart"></canvas>
@@ -1799,34 +1811,138 @@ def build_html(payload_json: str, d: dict) -> str:
       if (ctxE1rm) {{
         const lp = ATHX_DATA.strength.lift_progressions;
         const lifts = ["Bench Press", "Back Squat", "Deadlift", "Overhead Press"];
-        const colors = {{ "Bench Press": "#38bdf8", "Back Squat": "#34d399", "Deadlift": "#facc15", "Overhead Press": "#a78bfa" }};
-        
-        const datasets = lifts.map(lift => {{
-          const hist = lp[lift].history || [];
-          return {{
-            label: lift,
-            data: hist.map(h => ({{ x: h.date, y: h.e1rm }})),
-            borderColor: colors[lift],
-            backgroundColor: colors[lift],
-            tension: 0.2,
-            pointRadius: 3
-          }};
+        const colors = {{
+          "Bench Press": "#38bdf8",
+          "Back Squat": "#34d399",
+          "Deadlift": "#facc15",
+          "Overhead Press": "#a78bfa"
+        }};
+
+        // Build daily peak lookup maps for each lift & collect all distinct training dates
+        const liftPeakMaps = {{}};
+        const allDatesSet = new Set();
+        lifts.forEach(lift => {{
+          liftPeakMaps[lift] = {{}};
+          const peaks = (lp[lift] && lp[lift].daily_peaks) ? lp[lift].daily_peaks : ((lp[lift] && lp[lift].history) || []);
+          peaks.forEach(p => {{
+            const existing = liftPeakMaps[lift][p.date];
+            if (!existing || p.e1rm > existing.e1rm) {{
+              liftPeakMaps[lift][p.date] = p;
+            }}
+            allDatesSet.add(p.date);
+          }});
         }});
 
-        new Chart(ctxE1rm, {{
+        // Strictly chronological category labels
+        const allDates = Array.from(allDatesSet).sort();
+
+        // Trailing 28-day window based on latest recorded session date
+        const maxDateStr = allDates.length > 0 ? allDates[allDates.length - 1] : "2026-10-15";
+        const parts = maxDateStr.split("-").map(Number);
+        const maxDateUtc = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+        const cutoff28dUtc = new Date(maxDateUtc.getTime() - 28 * 24 * 60 * 60 * 1000);
+        const cutoff28dStr = cutoff28dUtc.toISOString().slice(0, 10);
+        const dates28d = allDates.filter(d => d >= cutoff28dStr);
+
+        function buildE1rmDatasets(dateList) {{
+          return lifts.map(lift => {{
+            const map = liftPeakMaps[lift] || {{}};
+            const data = dateList.map(d => (map[d] ? map[d].e1rm : null));
+            return {{
+              label: lift,
+              data: data,
+              borderColor: colors[lift],
+              backgroundColor: colors[lift],
+              tension: 0.25,
+              spanGaps: true,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: colors[lift],
+              borderWidth: 2
+            }};
+          }});
+        }}
+
+        const e1rmChart = new Chart(ctxE1rm, {{
           type: "line",
-          data: {{ datasets }},
+          data: {{
+            labels: allDates,
+            datasets: buildE1rmDatasets(allDates)
+          }},
           options: {{
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {{
+              mode: "nearest",
+              intersect: true
+            }},
             scales: {{
-              x: {{ type: "category", grid: {{ display: false }}, ticks: {{ color: "#94a3b8", maxTicksLimit: 8 }} }},
-              y: {{ grid: {{ color: "rgba(255,255,255,0.06)" }}, ticks: {{ color: "#94a3b8" }}, title: {{ display: true, text: "e1RM (kg)", color: "#94a3b8" }} }}
+              x: {{
+                type: "category",
+                grid: {{ display: false }},
+                ticks: {{
+                  color: "#94a3b8",
+                  maxRotation: 45,
+                  callback: function(val, index) {{
+                    const label = this.getLabelForValue(val);
+                    return label ? label.slice(5) : "";
+                  }}
+                }}
+              }},
+              y: {{
+                grid: {{ color: "rgba(255,255,255,0.06)" }},
+                ticks: {{ color: "#94a3b8" }},
+                title: {{ display: true, text: "Peak e1RM (kg)", color: "#94a3b8" }}
+              }}
             }},
             plugins: {{
-              legend: {{ position: "bottom", labels: {{ color: "#cbd5e1", boxWidth: 12, font: {{ size: 10 }} }} }}
+              legend: {{
+                position: "bottom",
+                labels: {{
+                  color: "#cbd5e1",
+                  boxWidth: 12,
+                  font: {{ size: 11 }},
+                  usePointStyle: true,
+                  pointStyle: "circle"
+                }}
+              }},
+              tooltip: {{
+                backgroundColor: "rgba(15, 23, 42, 0.95)",
+                titleColor: "#f8fafc",
+                bodyColor: "#cbd5e1",
+                borderColor: "#334155",
+                borderWidth: 1,
+                padding: 10,
+                callbacks: {{
+                  title: function(items) {{
+                    return items.length ? items[0].label : "";
+                  }},
+                  label: function(context) {{
+                    const lift = context.dataset.label;
+                    const date = context.label;
+                    const peak = liftPeakMaps[lift]?.[date];
+                    if (peak && peak.best_set) {{
+                      return `${{lift}}: ${{peak.e1rm}} kg e1RM (${{peak.best_set}})`;
+                    }}
+                    return `${{lift}}: ${{context.parsed.y}} kg e1RM`;
+                  }}
+                }}
+              }}
             }}
           }}
+        }});
+
+        const rangeBtns = document.querySelectorAll("#e1rmRangeFilters .btn-filter");
+        rangeBtns.forEach(btn => {{
+          btn.addEventListener("click", function() {{
+            rangeBtns.forEach(b => b.classList.remove("active"));
+            this.classList.add("active");
+            const range = this.getAttribute("data-range");
+            const activeDates = range === "28d" ? dates28d : allDates;
+            e1rmChart.data.labels = activeDates;
+            e1rmChart.data.datasets = buildE1rmDatasets(activeDates);
+            e1rmChart.update();
+          }});
         }});
       }}
 

@@ -28,6 +28,8 @@ last_payload.json
 *.log
 *.err
 orchestrator.err
+*.pid
+server.pid
 
 # Large Apple Health raw exports (hosted on Google Drive)
 export.zip
