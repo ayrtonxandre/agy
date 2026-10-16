@@ -17,19 +17,19 @@
 
 ## 3. ⚠️ Critical Deficit & Fatigue Alerts
 - **Volume Starvation**: Chest: 9.3 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Quads: 4.0 sets/wk (Deficit vs MEV 8.0)
+- **Volume Starvation**: Quads: 4.1 sets/wk (Deficit vs MEV 8.0)
 - **Volume Starvation**: Hamstrings/Glutes: 2.1 sets/wk (Deficit vs MEV 6.0)
 - **Volume Starvation**: Shoulders: 5.5 sets/wk (Deficit vs MEV 8.0)
 - **Volume Starvation**: Biceps: 5.2 sets/wk (Deficit vs MEV 6.0)
 - **Volume Starvation**: Forearms: 0.9 sets/wk (Deficit vs MEV 4.0)
 - **Acute:Chronic Workload Ratio (ACWR)**: `0.91` (Sweet Spot (Optimal)). Acute load is 2,905.6 kg vs chronic baseline 3,193.7 kg. Foster training monotony is `1.02`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
-- **Sleep & Recovery**: 7-day average sleep duration is `7.0 hrs` with a composite readiness score of `93.7%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
+- **Sleep & Recovery**: 7-day average sleep duration is `7.0 hrs` with a composite readiness score of `90.7%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
 ---
 
 ## 4. 🧬 Hypertrophy & Workload Engineering
 - **Volume Distribution**: Upper body pressing and pulling maintain consistent sets within or near Maximum Adaptive Volume (MAV). Conversely, quad and hamstring sets require an immediate 4–6 set weekly infusion to cross the MEV threshold and trigger structural hypertrophy.
-- **Recomposition & Mass Velocity**: Current mass is `79.8 kg` against the competition standard of `85.0 kg` (+5.2 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
+- **Recomposition & Mass Velocity**: Current mass is `79.9 kg` against the competition standard of `85.0 kg` (+5.1 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
 
 ---
 
@@ -41,7 +41,7 @@
 ## 6. 📋 7-Day Tactical Microcycle Prescription
 - **Priority 1 (Mandatory Lower Body Volume)**:
   - Inject 2 weekly squat/hinge sessions: Session A (Back Squat 4×6 @ 75–80% e1RM, followed by Bulgarian Split Squats 3×8/leg) and Session B (Deadlift floor pull 4×5 followed by Romanian Deadlifts 3×8).
-  - *Target*: Elevate weekly quad volume from 4.0 sets to 10+ sets, and hamstrings from 2.1 sets to 8+ sets.
+  - *Target*: Elevate weekly quad volume from 4.1 sets to 10+ sets, and hamstrings from 2.1 sets to 8+ sets.
 - **Priority 2 (Conditioning Session)**:
   - 1× 35-minute polarized Zone 2 aerobic base run (pace 5:45–6:00/km, HR capped at 142 bpm) + 1× ATHX simulation interval (5 rounds of 400m row + 12 sandbag/DB thrusters).
 - **Priority 3 (Recovery & Fueling Directive)**:
