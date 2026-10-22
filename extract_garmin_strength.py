@@ -640,17 +640,17 @@ def save_all_results(data: dict[str, list[dict]]):
     # --------------------------------------------------------------------------
     # Console Summary Table
     # --------------------------------------------------------------------------
-    total_vol = sum(r.get("Total_Volume_kg", 0.0) for r in strength_records)
-    total_reps = sum(r.get("Reps", 0) for r in strength_records)
+    total_vol = sum(float(r.get("Total_Volume_kg") or 0.0) for r in strength_records)
+    total_reps = sum(int(r.get("Reps") or 0) for r in strength_records)
     strength_sessions = len(set(r.get("Activity_ID") for r in strength_records))
     
-    total_run_dist = sum(r.get("Distance_km", 0.0) for r in running_records)
-    total_run_time = sum(r.get("Duration_min", 0.0) for r in running_records)
+    total_run_dist = sum(float(r.get("Distance_km") or 0.0) for r in running_records)
+    total_run_time = sum(float(r.get("Duration_min") or 0.0) for r in running_records)
     best_pace_str = min((r.get("Pace_formatted") for r in running_records if r.get("Pace_formatted") and r.get("Pace_formatted") != "N/A"), default="N/A")
     latest_vo2 = next((r.get("VO2Max") for r in running_records if r.get("VO2Max")), "N/A")
 
-    total_workout_time = sum(r.get("Duration_min", 0.0) for r in workout_records)
-    total_workout_cals = sum(r.get("Calories_kcal", 0) for r in workout_records)
+    total_workout_time = sum(float(r.get("Duration_min") or 0.0) for r in workout_records)
+    total_workout_cals = sum(float(r.get("Calories_kcal") or 0) for r in workout_records)
 
     print("\n" + "=" * 80)
     print("📊 UNIFIED GARMIN CONNECT EXTRACTION SUMMARY")

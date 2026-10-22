@@ -659,10 +659,25 @@ def open_dashboard(html_path: Path):
         print(f"⚠️ Dashboard file not found at: {html_path}")
         return
 
-    file_uri = html_path.resolve().as_uri()
+    # Prefer localhost:8080 if background server is active
+    target_url = html_path.resolve().as_uri()
+    try:
+        import socket
+        with socket.create_connection(("127.0.0.1", 8080), timeout=0.2):
+            target_url = "http://localhost:8080/workout"
+    except Exception:
+        pass
+
+    try:
+        if sys.platform == "darwin":
+            subprocess.run(["open", target_url], check=False)
+            return
+    except Exception:
+        pass
+
     try:
         # Use python webbrowser
-        webbrowser.open(file_uri)
+        webbrowser.open(target_url)
     except Exception:
         # Fallback to OS commands
         if sys.platform == "darwin":

@@ -864,11 +864,11 @@ def process_running_data(running_input: Path | list[dict] | None = None, audit: 
             "history": []
         }
 
-    total_dist = round(sum(r.get("Distance_km", 0.0) for r in valid_runs), 2)
-    total_dur = round(sum(r.get("Duration_min", 0.0) for r in valid_runs), 1)
+    total_dist = round(sum(float(r.get("Distance_km") or 0.0) for r in valid_runs), 2)
+    total_dur = round(sum(float(r.get("Duration_min") or 0.0) for r in valid_runs), 1)
 
     # Consider runs of ~5k (>= 4.5km) for the 5k benchmark
-    runs_5k = [r for r in valid_runs if r.get("Distance_km", 0.0) >= 4.5]
+    runs_5k = [r for r in valid_runs if (r.get("Distance_km") or 0.0) >= 4.5]
     candidate_runs = runs_5k if runs_5k else valid_runs
 
     best_pace_run = min(candidate_runs, key=lambda x: x.get("Pace_s_per_km") or 99999.0, default=valid_runs[-1])
@@ -878,7 +878,7 @@ def process_running_data(running_input: Path | list[dict] | None = None, audit: 
     # Trailing 28-day best pace
     today = date.today()
     t28_cutoff = (today - timedelta(days=athx_config.CHRONIC_LOOKBACK_DAYS)).strftime("%Y-%m-%d")
-    t28_runs = [r for r in candidate_runs if r.get("Date", "") >= t28_cutoff and r.get("Pace_s_per_km") and r.get("Pace_s_per_km") > 0]
+    t28_runs = [r for r in candidate_runs if r.get("Date", "") >= t28_cutoff and r.get("Pace_s_per_km") and (r.get("Pace_s_per_km") or 0) > 0]
     if t28_runs:
         t28_best_run = min(t28_runs, key=lambda x: x.get("Pace_s_per_km"))
         curr_28d_pace_s = t28_best_run.get("Pace_s_per_km")
@@ -890,7 +890,7 @@ def process_running_data(running_input: Path | list[dict] | None = None, audit: 
     latest_run = valid_runs[-1]
     latest_vo2 = next((r.get("VO2Max") for r in reversed(valid_runs) if r.get("VO2Max")), None)
 
-    cadences = [r.get("Cadence_spm") for r in valid_runs if r.get("Cadence_spm", 0) > 0]
+    cadences = [r.get("Cadence_spm") for r in valid_runs if (r.get("Cadence_spm") or 0) > 0]
     avg_cadence = round(sum(cadences) / len(cadences), 1) if cadences else None
 
     hrs = [r.get("Average_HR") for r in valid_runs if r.get("Average_HR")]
