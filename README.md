@@ -8,6 +8,7 @@ An autonomous agentic intelligence platform engineered for the **ATHX Games 2027
 - [🏗️ Architecture Overview](#️-architecture-overview)
 - [⚡ One-Word Master Command: `athx`](#-one-word-master-command-athx)
 - [🧠 ATHX 2027 Core Intelligence & Analytics](#-athx-2027-core-intelligence--analytics)
+- [🧬 Advanced Sports-Science Engines & KPIs](#-advanced-sports-science-engines--kpis)
 - [🤖 LLM Activity Note & WOD Parser](#-llm-activity-note--wod-parser)
 - [🦾 ATHX AI Performance Coach & Sports Scientist](#-athx-ai-performance-coach--sports-scientist)
 - [🚀 Key Modules](#-key-modules)
@@ -38,12 +39,21 @@ An autonomous agentic intelligence platform engineered for the **ATHX Games 2027
  ⌚ Garmin Cloud             │                  │                  │  • GitHub Pages Hosting   │
     (Garth OAuth / MFA) ─────┤                  ▼                  └───────────────────────────┘
     • Strength & Running Sets │    ┌───────────────────────────┐
-    • Multi-Provider LLM     │    │   ATHX Analytics Engine   │
-      WOD & Note Decipherer  │    │   • MEV / MAV / MRV Bands │
-                             │    │   • e1RM (Reps <= 10)     │
-                             │    │   • ACWR & Foster Monotony│
-                             │    │   • Sleep & Recovery Comp │
+    • Overnight HRV Telemetry│    │   ATHX Analytics Engine   │
+    • Shoe & Gear Lifecycle  │    │   • MEV / MAV / MRV Bands │
+    • Multi-Provider LLM     │    │   • e1RM (Reps <= 10)     │
+      WOD & Note Decipherer  │    │   • ACWR & Foster Monotony│
                              │    │   • Full Data Audit Trail │
+                             │    └─────────────┬─────────────┘
+                             │                  │
+                             │                  ▼
+                             │    ┌───────────────────────────┐
+                             │    │   Sports-Science Engine   │
+                             │    │   • Critical Speed (CS/D')│
+                             │    │   • CrossFit Durability   │
+                             │    │   • Sleep Debt & Plews HRV│
+                             │    │   • AI Coach Decision Log │
+                             │    │   • Anatomic Muscle HUD   │
                              │    └─────────────┬─────────────┘
                              │                  │
                              │                  ▼
@@ -103,6 +113,8 @@ While running, `athx` renders a live, fluid loading bar and animated spinner acr
 | `athx status` | Comprehensive ecosystem diagnostics (Webhook daemon, 6 Apple Health CSVs, Garmin tokens & activities, Dashboards, Git) |
 | `athx health` | Step-by-step iOS Health Auto Export setup guide, target URLs (`.local` & LAN IP), metrics checklist, and payload inspector |
 | `athx health -r` / `--reingest` | Re-ingests the latest cached payload (`last_payload.json`) across all 6 Apple Health CSV datasets |
+| `athx sleep` | Inspects recent sleep records, stage distribution, and 7-day rolling cumulative sleep debt |
+| `athx sleep <hours>` | Manually logs sleep duration and stages directly into `apple_sleep.csv` (e.g. `athx sleep 7.5 --deep 1.5 --rem 1.8`) |
 | `athx coach` | Displays AI Coach executive verdict and 7-day tactical microcycle prescription |
 | `athx coach --full` | Renders comprehensive ANSI-colorized sports science debriefing |
 | `athx coach --ask "<question>"` | Direct consultation with the AI Coach grounded in audited telemetry |
@@ -152,6 +164,72 @@ Target Date: **`2027-05-27`** | Athlete Mass Target: **`85.0 kg`** (Gain/Recomp 
 - Enforces an analysis floor at **`2026-05-01`** (excluding pre-cycle test records from active KPIs while maintaining baseline chronic lookback).
 - Imputes "Unknown" watch sets within a session when load/rep signatures match preceding sets.
 - Interactive audit panel on the dashboard with exportable JSON audit reports.
+
+---
+
+## 🧬 Advanced Sports-Science Engines & KPIs
+
+Implemented in [`athx_durability_cs_gear.py`](file:///Users/ayrton.andre/Documents/work/AGY/athx_durability_cs_gear.py) and seamlessly integrated into [`generate_unified_athlete_dashboard.py`](file:///Users/ayrton.andre/Documents/work/AGY/generate_unified_athlete_dashboard.py), these sports-science models provide rigorous, evidence-grounded athletic intelligence:
+
+### 1. Critical Speed (CS) & $D'$ Anaerobic Capacity Hyperbolic Model
+Fitted against Pareto-maximal running efforts across the severe domain (180s to 3,600s) using the classical **Monod & Scherrer 2-parameter hyperbolic model**:
+
+$$d = CS \cdot t + D'$$
+
+* **Critical Speed ($CS$)** *(m/s & min/km)*: The mathematical asymptote of sustainable aerobic velocity (e.g. `3.24 m/s` / `5:09/km`). Running below $CS$ preserves glycogen and minimizes neuromuscular fatigue; exceeding $CS$ depletes the finite anaerobic battery ($D'$).
+* **Supra-Critical Reserve ($D'$)** *(meters)*: Finite anaerobic work capacity (e.g. `62.9 m`), quantifying available reserve energy above $CS$ before severe metabolic acidosis and failure occur.
+* **Goodness of Fit ($R^2$) & SEE**: Statistical precision validation ($R^2 \approx 0.9999$, Standard Error of Estimate in meters).
+* **Deterministic ATHX Target Splits**: Derived algorithmically ($t = \frac{d - D'}{CS}$) to establish pacing anchors:
+  * **1,000m Split**: High-velocity glycolytic repeats.
+  * **2,000m Split**: $\text{VO}_2\text{max}$ aerobic capacity.
+  * **5,000m Split**: Continuous aerobic threshold anchor.
+
+### 2. CrossFit Work-Rate Durability Engine (3-Tier Fade Model)
+Adapts Marco Mornati’s durability framework to quantify work-rate maintenance across multi-set functional fitness and CrossFit workouts:
+* **3-Tier Volume Density Partition**: Working sets in a session are partitioned chronologically into **Tier 1** (initial 33%), **Tier 2** (transition 33%), and **Tier 3** (climax 33%).
+* **Work Fade %**:
+  $$\text{Work Fade} = \frac{\text{Tier 1 kg/set} - \text{Tier 3 kg/set}}{\text{Tier 1 kg/set}} \times 100\%$$
+* **Durability Index (%)**: Composite pacing health score across all evaluated sessions (e.g. `87.5%`).
+* **Pacing Classifications**:
+  * **Elite Stamina ($\le 3.0\%$ fade)**: Negative-split or sustained round density.
+  * **Controlled Degradation ($3.0\% - 10.0\%$ fade)**: Expected metabolic decay.
+  * **Late-Round Breakdown ($> 10.0\%$ fade)**: Flagged for pacing correction (opening too fast in Tier 1).
+
+### 3. Evidence-Based Sleep Debt & Plews–Buchheit Autonomic HRV Model
+Grounded in sports science research (Plews, Buchheit, et al., 2013) and Marco Mornati's `arc_metrics`:
+* **7-Day Rolling Sleep Debt**:
+  * Calculates nightly deficit against an 8.0h baseline: $\max(0, 8.0 - \text{Actual Sleep})$.
+  * Surplus sleep is floored at 0h (cellular recovery cannot be pre-banked).
+  * **Severity Tiers**: `< 3.0h` (Restored / Low Debt), `3.0h - 7.0h` (Moderate Debt / Watch), `> 7.0h` (Material Fatigue Alert / 20% Volume Reduction).
+* **Garmin Connect Overnight HRV Baseline**:
+  * Ingests authentic overnight rMSSD telemetry from `garmin_hrv_summary.json`.
+  * **Natural Logarithm Normalization**: Computes $\ln(\text{rMSSD})$ and 28-day baseline mean/SD.
+  * **Smallest Worthwhile Change (SWC) Corridor**: $\text{Baseline Mean} \pm 0.5 \times \text{SD}$ (e.g. `43.1 – 59.7 ms`).
+  * **7-Day Rolling Mean & CV %**: Rolling 7-day vagal stability ($\text{CV} = \frac{\text{SD}_{\ln}}{\text{Mean}_{\ln}} \times 100\%$).
+  * **Autonomic Tone Diagnostics**:
+    * **Balanced Homeostasis**: Inside SWC corridor (optimal vagal modulation; cleared for maximal loading).
+    * **Sympathetic Dominance / Vagal Withdrawal**: Below SWC corridor (autonomic strain; prioritize active deload).
+    * **Parasympathetic Hyperactivation**: Above SWC corridor (fatigue rebound / vagal saturation).
+
+### 4. ATHX Anatomic Muscle Target HUD & Compound Factors
+* **Interactive Dual-View SVG Anatomy**: Embedded in the **Strength** tab, featuring real-time anterior and posterior heatmaps.
+* **Primary vs. Secondary Muscular Stimulus**: Visually distinguishes prime movers (`#00f2fe`) from secondary synergists/stabilizers (`#c084fc`).
+* **Session Tonnage Breakdown**: Real-time metric tonnage ($t$) and working sets per targeted muscle group for any selected workout, synchronized bidirectionally with strength table rows.
+* **Renaissance Periodization Multi-Muscle Multipliers**: Configured in [`athx_config.py`](file:///Users/ayrton.andre/Documents/work/AGY/athx_config.py), multi-joint exercises distribute proportional volume across muscle groups (e.g. Thrusters allocate 1.0 to Quads and 1.0 to Shoulders; Deadlifts allocate 1.0 to Hamstrings/Glutes and 0.75 to Lats/Back).
+
+### 5. Audited AI Coach Decision Log & Impact Verification
+Embedded on the **Today** tab, this ledger audits autonomous coach interventions:
+* **Trigger**: Quantitative biomarker alerting the system (e.g. *Garmin overnight HRV dip to 28 ms*, *Quad volume starvation below 8.0 MEV*).
+* **Action & Classification**: Volume Infusion, Active Deload, Threshold Architecture, or Pacing Stabilization.
+* **Physiological "Why"**: Biological mechanism (e.g. preventing mTOR blunting, protecting $D'$ tank, managing ACWR).
+* **Pre- vs. Post-Metric Impact**: Empirical audit verifying outcome against Garmin overnight HRV (e.g. +171% vagal rebound to 76 ms).
+
+### 6. Garmin Shoe & Gear Lifecycle Tracking
+* **Odometer Tracking**: Live distance tracking against maximum manufacturer wear limits (e.g. New Balance 740 at `61.8 / 650.0 km`, 9.5% wear).
+* **Foam Compression Health**: Categorized as *Optimal Cushioning* (<50%), *Moderate Foam Compression* (50–80%), or *Retirement Warning* (>80%).
+* **Equipment Rotation Strategy**: Specific shoe assignment rules (e.g. daily road trainer vs. zero-drop flat lifters for heavy squats and Olympic lifts).
+
+---
 
 ---
 
@@ -211,13 +289,15 @@ The coach synthesizes an authoritative answer referencing actual numbers from th
 | Module | Description |
 | :--- | :--- |
 | **`athx`** | Single-word master CLI orchestrator with fluid progress display, cross-machine path resolution, and argument parsing. |
+| **`athx_durability_cs_gear.py`** | Advanced sports-science engine: Critical Speed ($CS$/$D'$), CrossFit 3-tier durability, sleep debt, Plews & Buchheit overnight HRV, coach decision audits, and Garmin gear tracking. |
 | **`athx_ai_coach.py`** | Autonomous Sports Science AI briefing generator synthesizing telemetry into elite coaching debriefs and microcycle prescriptions. |
 | **`garmin_note_parser.py`** | Multi-provider LLM parser extracting structured exercise sets and splits from free-text workout notes and CrossFit WODs. |
-| **`athx_config.py`** | Single source of truth: 2027 benchmarks, 62 exercise mappings, MEV/MAV/MRV bands, and plausible load boundaries. |
+| **`athx_config.py`** | Single source of truth: 2027 benchmarks, 62 exercise mappings, MEV/MAV/MRV bands, compound stimulus volume factors, and plausible load boundaries. |
 | **`athx_analytics.py`** | Core analytical telemetry engine: data cleaning, unknown imputation, e1RM restrictions, ACWR, Foster strain, and recovery composite. |
 | **`extract_garmin_strength.py`** | Unofficial Garmin Connect extractor via `garth` OAuth; handles strength sets, running telemetry, and workout notes. |
-| **`generate_unified_athlete_dashboard.py`** | Zero-hardcoded dashboard generator outputting `garmin_workout.html` and `index.html` (for GitHub Pages). |
+| **`generate_unified_athlete_dashboard.py`** | Zero-hardcoded dashboard generator outputting `garmin_workout.html` and `index.html` (with interactive Anatomic Target HUD, Critical Speed, and Durability cards). |
 | **`orchestrator.py`** | Local HTTP daemon (port 8080) with automated Apple Health REST webhook ingestion (`POST /api/health`), multi-day historical upsert into 6 CSVs, mDNS discovery, and debounced GitHub auto-push. |
+| **`create_drawio_architecture.py`** | Generates the official XML Draw.io architecture diagram (`athx_architecture.drawio`) and interactive HTML preview. |
 | **`sync_health_mcp.py`** | Ad-hoc MCP client for querying Apple Health directly from Health Auto Export's built-in MCP server. |
 | **`unified_calendar.py` & `generate_calendar_dashboard.py`** | Tri-calendar sync (Artefact Google Cal, iCloud CalDAV, Client M365) injecting structured workout schedules. |
 | **`drive_sync.py`** | Manual cold-archive and recovery utility synchronizing datasets, dashboards, briefings, and decks with Google Drive Hub. |
@@ -227,7 +307,8 @@ The coach synthesizes an authoritative answer referencing actual numbers from th
 ### 📈 Current Dataset Footprint
 * **Garmin Total Activities**: 158 activities (98 strength sessions, 10 running sessions, 57 cardio/hiking/other).
 * **Extracted Strength Sets**: 1,953 individual sets with reps, loads, and volumes.
-* **Biometrics Coverage**: 7+ months of continuous weight, body fat %, sleep stages, and daily steps.
+* **Garmin Telemetry**: Authentic overnight HRV summaries (`garmin_hrv_summary.json`) and shoe odometers (`garmin_gear.json`).
+* **Apple Health Coverage**: 6 automated continuous CSV datasets (weight, body fat %, sleep stages, daily steps, nutrition macros, and mobility/gait biomechanics).
 
 ---
 
