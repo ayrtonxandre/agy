@@ -767,8 +767,8 @@
     <!-- Embedded Dynamic JSON Data -->
     <script>
         const RAW_EVENTS = [];
-        const FREE_SLOTS = {"2026-10-13": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-14": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-15": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-16": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-17": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-18": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-19": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-20": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-21": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-22": [{"start": "07:00", "end": "21:00", "durationMin": 840}]};
-        let currentDate = "2026-10-15";
+        const FREE_SLOTS = {"2026-10-20": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-21": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-22": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-23": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-24": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-25": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-26": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-27": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-28": [{"start": "07:00", "end": "21:00", "durationMin": 840}], "2026-10-29": [{"start": "07:00", "end": "21:00", "durationMin": 840}]};
+        let currentDate = "2026-10-22";
         let currentView = "day";
         let searchQuery = "";
         
@@ -925,7 +925,7 @@
                 d.setDate(monday.getDate() + i);
                 const dStr = d.toISOString().split('T')[0];
 
-                const isToday = dStr === "2026-10-15";
+                const isToday = dStr === "2026-10-22";
                 const col = document.createElement('div');
                 col.className = `week-col ${isToday ? 'is-today' : ''}`;
 
@@ -1036,7 +1036,7 @@
         }
 
         function goToToday() {
-            currentDate = "2026-10-15";
+            currentDate = "2026-10-22";
             updateUI();
         }
 
