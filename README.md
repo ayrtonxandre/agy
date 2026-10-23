@@ -231,8 +231,6 @@ Embedded on the **Today** tab, this ledger audits autonomous coach interventions
 
 ---
 
----
-
 ## 🤖 LLM Activity Note & WOD Parser
 
 [`garmin_note_parser.py`](file:///Users/ayrton.andre/Documents/work/AGY/garmin_note_parser.py) deciphers free-text Garmin activity notes, CrossFit WODs, EMOMs, AMRAPs, and custom gym notes into structured ATHX exercise sets and volume metrics.
@@ -450,6 +448,7 @@ athx stop
 
 - **[`ATHX_Garmin_Dashboard_Presentation.pptx`](file:///Users/ayrton.andre/Documents/work/AGY/ATHX_Garmin_Dashboard_Presentation.pptx)**: High-level executive presentation covering the Garmin athletic telemetry, hypertrophy progression, and ATHX 2027 roadmap.
 - **Interactive Headquarters**: Hosted live on GitHub Pages at [`https://ayrtonxandre.github.io/agy/`](https://ayrtonxandre.github.io/agy/).
+- **Official Draw.io Architecture Schema**: Complete platform system architecture diagrams in [`athx_architecture.drawio`](file:///Users/ayrton.andre/Documents/work/AGY/athx_architecture.drawio) and standalone HTML viewer in [`athx_architecture_preview.html`](file:///Users/ayrton.andre/Documents/work/AGY/athx_architecture_preview.html).
 
 ---
 
