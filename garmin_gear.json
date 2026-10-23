@@ -1,0 +1,15 @@
+[
+  {
+    "gearPk": 49774613,
+    "uuid": "5369090ce33a4937a2cc253d5bbf5b17",
+    "name": "New Balance 740",
+    "type": "Shoes",
+    "status": "active",
+    "max_meters": 650000.0,
+    "max_km": 650.0,
+    "total_meters": 0.0,
+    "total_km": 0.0,
+    "total_activities": 3,
+    "date_begin": "2026-05-12T00:00:00.0"
+  }
+]

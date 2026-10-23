@@ -42,6 +42,7 @@ sys.path.insert(0, str(BASE_DIR))
 import athx_config
 import athx_analytics
 import athx_ai_coach
+import athx_durability_cs_gear as adcg
 
 
 def safe_float(val, default: float = 0.0) -> float:
@@ -562,6 +563,18 @@ def build_html(payload_json: str, d: dict) -> str:
     str_sess_json = json.dumps(strength_sessions, ensure_ascii=False)
     eng_acts_json = json.dumps(engine_activities, ensure_ascii=False)
     audit_json = json.dumps(au, ensure_ascii=False)
+
+    # Advanced Sports-Science Pillars: Critical Speed, CrossFit Durability, Recovery Model & Decisions
+    cs_data = d.get("critical_speed", {})
+    dur_data = d.get("crossfit_durability", {})
+    coach_dec_data = d.get("coach_decisions", [])
+    sleep_debt_data = d.get("sleep_debt", {})
+    plews_hrv_data = d.get("plews_hrv", {})
+
+    critical_speed_html = adcg.render_critical_speed_html(cs_data)
+    crossfit_durability_html = adcg.render_crossfit_durability_html(dur_data)
+    coach_decisions_html = adcg.render_coach_decisions_html(coach_dec_data)
+    recovery_autonomic_html = adcg.render_recovery_autonomic_model_html(sleep_debt_data, plews_hrv_data)
 
     return f"""<!DOCTYPE html>
 <html lang="en" class="dark">
@@ -1452,6 +1465,8 @@ def build_html(payload_json: str, d: dict) -> str:
             </div>
           </div>
         </div>
+
+        {coach_decisions_html}
       </section>
 
       <!-- ============================================================== -->
@@ -1904,6 +1919,10 @@ def build_html(payload_json: str, d: dict) -> str:
           </div>
         </div>
 
+        {critical_speed_html}
+
+        {crossfit_durability_html}
+
         <div class="card" style="overflow: hidden;">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px 24px;">
             <div style="display: flex; align-items: baseline; gap: 10px;">
@@ -2130,6 +2149,8 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">+0.0 bpm vs 28-day baseline. Full autonomic recovery.</span>
           </div>
         </div>
+
+        {recovery_autonomic_html}
 
         <!-- Sleep stages chart -->
         <div class="card" style="padding: 20px;">
@@ -3395,6 +3416,24 @@ def main():
         "mobility": {"date": latest_mob_date, "status": get_staleness(latest_mob_date)[0], "badge": get_staleness(latest_mob_date)[1]},
     }
 
+    # Sports Science Analytics: Critical Speed, CrossFit Durability, Recovery Model & Coach Decisions
+    critical_speed_data = adcg.compute_critical_speed(running_activities)
+    crossfit_durability_data = adcg.compute_crossfit_durability(garmin_raw)
+    garmin_hrv_data = adcg.load_garmin_hrv(BASE_DIR)
+    sleep_debt_data = adcg.compute_sleep_debt_model(apple_data["sleep"]["history"])
+    plews_hrv_data = adcg.compute_plews_buchheit_hrv(BASE_DIR)
+    coach_decisions_data = adcg.build_coach_decision_log(
+        strength_data=strength_data,
+        comp_data=comp_data,
+        garmin_hrv=garmin_hrv_data,
+        durability=crossfit_durability_data
+    )
+    print(f"✅ Critical Speed Model: {critical_speed_data['cs_pace_formatted']} ({critical_speed_data['cs_ms']} m/s), D' = {critical_speed_data['d_prime_m']}m, R² = {critical_speed_data['r2']}")
+    print(f"✅ CrossFit Durability Engine: Index {crossfit_durability_data['durability_index']}% across {crossfit_durability_data['total_evaluated_sessions']} audited sessions.")
+    print(f"✅ Sleep Debt Model (Part C): {sleep_debt_data['total_debt_hrs']}h deficit over {sleep_debt_data['nights_counted']} nights ({sleep_debt_data['status_text']}).")
+    print(f"✅ Plews & Buchheit HRV (Part C): Latest {plews_hrv_data['latest_night_ms']} ms ({plews_hrv_data['status_text']}), SWC: {plews_hrv_data['band_lower_ms']}–{plews_hrv_data['band_upper_ms']} ms.")
+    print(f"✅ AI Coach Decision Log: {len(coach_decisions_data)} interventions audited against Garmin overnight HRV.")
+
     dashboard_payload = {
         "config": {
             "data_start": athx_config.DATA_START,
@@ -3416,7 +3455,13 @@ def main():
         "engine_activities": engine_activities,
         "microcycle_days": microcycle_days,
         "volume_gauges": volume_gauges,
-        "fueling_targets": fueling_targets
+        "fueling_targets": fueling_targets,
+        "critical_speed": critical_speed_data,
+        "crossfit_durability": crossfit_durability_data,
+        "sleep_debt": sleep_debt_data,
+        "plews_hrv": plews_hrv_data,
+        "garmin_hrv": garmin_hrv_data,
+        "coach_decisions": coach_decisions_data,
     }
 
     payload_json = json.dumps(dashboard_payload, ensure_ascii=False)
