@@ -74,6 +74,20 @@ def build_strength_sessions(processed_sets: list[dict], all_activities: list[dic
         if aid:
             sess_map.setdefault(aid, []).append(s)
 
+    MUSCLE_TO_SVG = {
+        'Chest': ['chest'],
+        'Lats/Back': ['lats', 'traps', 'lowerback'],
+        'Shoulders': ['shoulders'],
+        'Quads': ['quads'],
+        'Hamstrings/Glutes': ['hamstrings', 'glutes'],
+        'Triceps': ['triceps'],
+        'Biceps': ['biceps'],
+        'Core': ['core'],
+        'Forearms': ['forearms'],
+        'Calves': ['calves'],
+        'Full Body': ['quads', 'shoulders', 'core', 'lats', 'hamstrings', 'glutes']
+    }
+
     sessions = []
     for aid, s_list in sess_map.items():
         cnt: dict[str, int] = {}
@@ -98,16 +112,83 @@ def build_strength_sessions(processed_sets: list[dict], all_activities: list[dic
         act = act_by_id.get(aid, {})
         total_tonnage = round(sum(safe_float(s.get("Total_Volume_kg", 0.0)) for s in s_list) / 1000.0, 1)
 
+        prim_counts: dict[str, dict] = {}
+        sec_counts: dict[str, dict] = {}
+        ex_meta: dict[str, dict] = {}
+
         detail = []
         for ex_name, xs in ex_map.items():
             reps_str = "/".join(str(safe_int(x.get("Reps", 0))) for x in xs)
             weights = [safe_float(x.get("Weight_kg", 0.0)) for x in xs]
             lo, hi = min(weights), max(weights)
             load_str = "BW" if hi == 0 else f"{hi:.1f} kg" if lo == hi else f"{lo:.1f}–{hi:.1f} kg"
+            ex_vol = sum(safe_float(x.get("Total_Volume_kg", 0.0)) for x in xs) / 1000.0
+            n_sets = len(xs)
+
+            pm = athx_config.EXERCISE_MUSCLE_MAP.get(ex_name)
+            if not pm:
+                pm = "Core" if any(k in ex_name.lower() for k in ["sit up", "twist", "raise", "carry"]) else "Other"
+
+            comp = athx_config.EXERCISE_COMPOUND_VOLUME.get(ex_name, {})
+
+            if pm not in ("Other", "Unattributed", "Warmup"):
+                if pm not in prim_counts:
+                    prim_counts[pm] = {"sets": 0, "ton": 0.0, "exercises": []}
+                prim_counts[pm]["sets"] += n_sets
+                prim_counts[pm]["ton"] = round(prim_counts[pm]["ton"] + ex_vol, 1)
+                if ex_name not in prim_counts[pm]["exercises"]:
+                    prim_counts[pm]["exercises"].append(ex_name)
+
+            sec_muscles = []
+            for sm, factor in comp.items():
+                if sm != pm and sm not in ("Other", "Unattributed", "Warmup"):
+                    sec_muscles.append(sm)
+                    if sm not in sec_counts:
+                        sec_counts[sm] = {"sets": 0, "ton": 0.0}
+                    sec_counts[sm]["sets"] += round(n_sets * factor)
+                    sec_counts[sm]["ton"] = round(sec_counts[sm]["ton"] + ex_vol * factor, 1)
+
+            ex_svg_prim = list(MUSCLE_TO_SVG.get(pm, []))
+            ex_svg_sec = []
+            for sm in sec_muscles:
+                for svg_id in MUSCLE_TO_SVG.get(sm, []):
+                    if svg_id not in ex_svg_prim and svg_id not in ex_svg_sec:
+                        ex_svg_sec.append(svg_id)
+
+            ex_meta[ex_name] = {
+                "primary": pm,
+                "secondary": sec_muscles,
+                "svg_primary": ex_svg_prim,
+                "svg_secondary": ex_svg_sec,
+                "sets": n_sets,
+                "ton": round(ex_vol, 1)
+            }
+
             detail.append({
                 "a": ex_name,
-                "b": f"{len(xs)} {'set' if len(xs) == 1 else 'sets'} · {reps_str} reps · {load_str}"
+                "b": f"{len(xs)} {'set' if len(xs) == 1 else 'sets'} · {reps_str} reps · {load_str}",
+                "muscle": pm,
+                "svg_primary": ex_svg_prim,
+                "svg_secondary": ex_svg_sec
             })
+
+        session_svg_prim = set()
+        for pm in prim_counts:
+            for s in MUSCLE_TO_SVG.get(pm, []):
+                session_svg_prim.add(s)
+
+        session_svg_sec = set()
+        for sm in sec_counts:
+            for s in MUSCLE_TO_SVG.get(sm, []):
+                if s not in session_svg_prim:
+                    session_svg_sec.add(s)
+
+        chips = []
+        for m, info in sorted(prim_counts.items(), key=lambda x: -x[1]["sets"]):
+            chips.append({"name": m, "sets": info["sets"], "ton": info["ton"], "role": "primary"})
+        for m, info in sorted(sec_counts.items(), key=lambda x: -x[1]["sets"]):
+            if m not in prim_counts:
+                chips.append({"name": m, "sets": info["sets"], "ton": info["ton"], "role": "secondary"})
 
         dur_val = safe_float(act.get("Duration_min")) if act.get("Duration_min") is not None else None
         sessions.append({
@@ -120,7 +201,15 @@ def build_strength_sessions(processed_sets: list[dict], all_activities: list[dic
             "ton": total_tonnage,
             "top": top_e1rm,
             "dur": round(dur_val, 1) if dur_val is not None and dur_val > 0 else None,
-            "detail": detail
+            "detail": detail,
+            "muscles": {
+                "primary": prim_counts,
+                "secondary": sec_counts,
+                "svg_primary": list(session_svg_prim),
+                "svg_secondary": list(session_svg_sec),
+                "chips": chips,
+                "ex_meta": ex_meta
+            }
         })
 
     sessions.sort(key=lambda x: x["date"], reverse=True)
@@ -879,6 +968,275 @@ def build_html(payload_json: str, d: dict) -> str:
     .search-box:focus {{
       border-color: var(--ring);
     }}
+
+    /* ==================================================================== */
+    /* ATHX ANATOMIC MUSCLE TARGET HUD                                      */
+    /* ==================================================================== */
+    .athx-anatomic-card {{
+      position: relative;
+      background: radial-gradient(circle at 65% 25%, oklch(0.24 0.05 230 / 18%), transparent 70%), var(--card);
+      border: 1px solid oklch(0.45 0.12 230 / 30%);
+      box-shadow: 0 10px 30px oklch(0 0 0 / 40%), 0 0 20px oklch(0.5 0.15 230 / 8%) inset;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      margin-top: 4px;
+      transition: border-color 0.3s ease;
+    }}
+
+    .athx-anatomic-card::before {{
+      content: "";
+      position: absolute;
+      top: 8px; left: 8px;
+      width: 14px; height: 14px;
+      border-top: 2px solid #00f2fe;
+      border-left: 2px solid #00f2fe;
+      pointer-events: none;
+      opacity: 0.85;
+    }}
+
+    .athx-anatomic-card::after {{
+      content: "";
+      position: absolute;
+      bottom: 8px; right: 8px;
+      width: 14px; height: 14px;
+      border-bottom: 2px solid #00f2fe;
+      border-right: 2px solid #00f2fe;
+      pointer-events: none;
+      opacity: 0.85;
+    }}
+
+    .hud-header-bar {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 16px 24px;
+      border-bottom: 1px solid oklch(1 0 0 / 8%);
+      background: oklch(0.16 0.03 260 / 50%);
+    }}
+
+    .hud-title-tag {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font: 700 11px/1 var(--font-mono);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #00f2fe;
+      background: rgba(0, 242, 254, 0.12);
+      border: 1px solid rgba(0, 242, 254, 0.35);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+    }}
+
+    .hud-session-title {{
+      font: 600 16px/1.3 var(--font-sans);
+      color: var(--foreground);
+    }}
+
+    .hud-session-meta {{
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }}
+
+    .hud-main-grid {{
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) auto;
+      gap: 24px;
+      padding: 20px 24px;
+    }}
+
+    @media (max-width: 900px) {{
+      .hud-main-grid {{
+        grid-template-columns: 1fr;
+      }}
+      .hud-anatomy-stage {{
+        order: -1;
+      }}
+    }}
+
+    @media (max-width: 480px) {{
+      .hud-anatomy-stage {{
+        gap: 12px;
+        padding: 12px 6px;
+      }}
+      .athx-body-svg {{
+        width: 135px;
+        height: 260px;
+      }}
+    }}
+
+    .hud-exercises-pane {{
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }}
+
+    .hud-ex-item {{
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 14px;
+      background: oklch(1 0 0 / 3%);
+      border: 1px solid oklch(1 0 0 / 7%);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }}
+
+    .hud-ex-item:hover, .hud-ex-item.active {{
+      background: oklch(0.3 0.06 230 / 25%);
+      border-color: #00f2fe;
+      transform: translateX(4px);
+    }}
+
+    .hud-anatomy-stage {{
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 28px;
+      background: oklch(0.14 0.02 260 / 60%);
+      border: 1px solid oklch(1 0 0 / 6%);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      position: relative;
+    }}
+
+    .hud-view-unit {{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }}
+
+    .hud-view-badge {{
+      font: 600 10px/1 var(--font-mono);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      padding: 3px 8px;
+      background: oklch(1 0 0 / 5%);
+      border-radius: var(--radius-full);
+      border: 1px solid oklch(1 0 0 / 8%);
+    }}
+
+    .athx-body-svg {{
+      width: 155px;
+      height: 300px;
+      filter: drop-shadow(0 8px 20px rgba(0,0,0,0.6));
+    }}
+
+    /* SVG Muscle Path Styling */
+    .athx-body-svg .body-base path,
+    .athx-body-svg .body-base ellipse,
+    .athx-body-svg .muscle-group path,
+    .athx-body-svg .muscle-group ellipse {{
+      fill: oklch(0.24 0.015 260 / 65%);
+      stroke: oklch(0.38 0.02 260 / 40%);
+      stroke-width: 1;
+      stroke-linejoin: round;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }}
+
+    /* Target Primary highlight */
+    .athx-body-svg .muscle-group.target-primary path,
+    .athx-body-svg .muscle-group.target-primary ellipse {{
+      fill: #0284c7;
+      fill: url(#athxTargetPrimary) !important;
+      stroke: #38bdf8 !important;
+      stroke-width: 1.5 !important;
+      filter: url(#athxNeonGlow);
+    }}
+
+    /* Target Secondary highlight */
+    .athx-body-svg .muscle-group.target-secondary path,
+    .athx-body-svg .muscle-group.target-secondary ellipse {{
+      fill: #7c3aed;
+      fill: url(#athxTargetSecondary) !important;
+      stroke: #c084fc !important;
+      stroke-width: 1.2 !important;
+      filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.55));
+    }}
+
+    /* Hover highlight */
+    .athx-body-svg .muscle-group.target-hover path,
+    .athx-body-svg .muscle-group.target-hover ellipse {{
+      fill: #38bdf8 !important;
+      stroke: #ffffff !important;
+      stroke-width: 2 !important;
+      filter: drop-shadow(0 0 10px #38bdf8) !important;
+    }}
+
+    .athx-body-svg .muscle-group:hover path,
+    .athx-body-svg .muscle-group:hover ellipse {{
+      stroke: #ffffff !important;
+      cursor: pointer;
+    }}
+
+    .hud-chip-strip {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 24px 16px;
+      border-top: 1px solid oklch(1 0 0 / 8%);
+      background: oklch(0.16 0.02 260 / 30%);
+    }}
+
+    .hud-target-chip {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      transition: transform 0.15s ease;
+    }}
+
+    .hud-target-chip.chip-prim {{
+      background: rgba(0, 242, 254, 0.12);
+      border: 1px solid rgba(0, 242, 254, 0.4);
+      color: #e0f2fe;
+    }}
+
+    .hud-target-chip.chip-sec {{
+      background: rgba(168, 85, 247, 0.12);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      color: #fae8ff;
+    }}
+
+    .hud-target-chip .dot {{
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }}
+    .hud-target-chip.chip-prim .dot {{
+      background: #00f2fe;
+      box-shadow: 0 0 6px #00f2fe;
+    }}
+    .hud-target-chip.chip-sec .dot {{
+      background: #a855f7;
+      box-shadow: 0 0 6px #a855f7;
+    }}
+
+    .hud-tooltip {{
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      background: oklch(0.14 0.02 260 / 92%);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0, 242, 254, 0.4);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      font-size: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 10px rgba(0, 242, 254, 0.2);
+    }}
+
+    /* Table Selected Row indicator */
+    tr.selected-row {{
+      background: oklch(0.28 0.05 230 / 30%) !important;
+      border-left: 3px solid #00f2fe !important;
+    }}
   </style>
 </head>
 <body>
@@ -1212,6 +1570,240 @@ def build_html(payload_json: str, d: dict) -> str:
             </div>
           </div>
         </div>
+
+        <!-- ANATOMIC MUSCLE TARGET HUD CARD -->
+        <div class="card athx-anatomic-card" id="anatomicHudCard" style="overflow: hidden; margin-top: 16px; margin-bottom: 16px;">
+          <div class="hud-header-bar">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <span class="hud-title-tag">● ATHX ANATOMIC TARGET HUD</span>
+              <div style="display: flex; flex-direction: column;">
+                <span class="hud-session-title" id="hudSessionTitle">Strength Session</span>
+                <span class="hud-session-meta" id="hudSessionMeta">Select a session below to inspect targeted muscle anatomy</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px; font-size: 11px; font-family: var(--font-mono);">
+                <span style="display: inline-flex; align-items: center; gap: 5px; color: #00f2fe;">
+                  <span style="width: 7px; height: 7px; border-radius: 50%; background: #00f2fe; box-shadow: 0 0 6px #00f2fe;"></span> PRIMARY
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 5px; color: #c084fc;">
+                  <span style="width: 7px; height: 7px; border-radius: 50%; background: #c084fc; box-shadow: 0 0 6px #c084fc;"></span> SECONDARY
+                </span>
+              </div>
+              <span class="badge" id="hudSplitBadge">Split</span>
+              <div style="display: flex; gap: 4px;">
+                <button class="filter-btn" id="hudPrevBtn" onclick="navigateSession(1)" title="Previous Session">◀</button>
+                <button class="filter-btn" id="hudNextBtn" onclick="navigateSession(-1)" title="Next Session">▶</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="hud-main-grid">
+            <!-- Left Pane: Exercises & Sets in Selected Session -->
+            <div class="hud-exercises-pane">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                <span style="font: 600 12px/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted-foreground);">Targeted Exercises &amp; Load</span>
+                <span style="font-size: 11px; color: var(--muted-foreground);">Hover exercise to isolate</span>
+              </div>
+              <div id="hudExercisesList" style="display: flex; flex-direction: column; gap: 8px; max-height: 330px; overflow-y: auto; padding-right: 4px;">
+                <!-- Injected dynamically -->
+              </div>
+            </div>
+
+            <!-- Right Stage: Side-by-Side Front and Back Vector Anatomical Figures -->
+            <div class="hud-anatomy-stage">
+              <!-- Anterior (Front View) -->
+              <div class="hud-view-unit">
+                <span class="hud-view-badge">Anterior · Front</span>
+                <svg viewBox="0 0 160 310" class="athx-body-svg" id="svgAnterior" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="athxTargetPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#00f2fe" />
+                      <stop offset="100%" stop-color="#0284c7" />
+                    </linearGradient>
+                    <linearGradient id="athxTargetSecondary" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#c084fc" />
+                      <stop offset="100%" stop-color="#7c3aed" />
+                    </linearGradient>
+                    <filter id="athxNeonGlow" x="-40%" y="-40%" width="180%" height="180%">
+                      <feGaussianBlur stdDeviation="3" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+
+                  <!-- Grid HUD accents -->
+                  <g opacity="0.12">
+                    <line x1="80" y1="6" x2="80" y2="304" stroke="#00f2fe" stroke-width="0.5" stroke-dasharray="2 4" />
+                    <circle cx="80" cy="24" r="16" fill="none" stroke="#00f2fe" stroke-width="0.5" stroke-dasharray="2 2" />
+                    <line x1="15" y1="80" x2="145" y2="80" stroke="#00f2fe" stroke-width="0.5" stroke-dasharray="1 6" />
+                    <line x1="15" y1="148" x2="145" y2="148" stroke="#00f2fe" stroke-width="0.5" stroke-dasharray="1 6" />
+                    <line x1="15" y1="222" x2="145" y2="222" stroke="#00f2fe" stroke-width="0.5" stroke-dasharray="1 6" />
+                  </g>
+
+                  <!-- Base Skeleton Elements -->
+                  <g class="body-base">
+                    <path d="M 80,10 C 72,10 67,16 67,25 C 67,33 72,39 80,39 C 88,39 93,33 93,25 C 93,16 88,10 80,10 Z" />
+                    <path d="M 75,38 L 75,47 C 75,49 77,50 80,50 C 83,50 85,49 85,47 L 85,38 Z" />
+                    <path d="M 39,170 C 37,174 35,181 36,188 C 37,192 41,193 43,189 C 44,184 46,177 47,170 Z" />
+                    <path d="M 121,170 C 123,174 125,181 124,188 C 123,192 119,193 117,189 C 116,184 114,177 113,170 Z" />
+                    <ellipse cx="71" cy="225" rx="4.5" ry="5" />
+                    <ellipse cx="89" cy="225" rx="4.5" ry="5" />
+                    <path d="M 68,288 L 65,299 C 64,302 67,304 72,304 C 76,304 77,301 76,298 L 74,288 Z" />
+                    <path d="M 92,288 L 95,299 C 96,302 93,304 88,304 C 84,304 83,301 84,298 L 86,288 Z" />
+                  </g>
+
+                  <!-- Shoulders -->
+                  <g class="muscle-group" data-muscle="shoulders" data-name="Deltoids (Shoulders)">
+                    <path d="M 73,48 C 66,48 57,52 51,59 C 45,66 44,75 46,84 C 47,87 50,88 52,85 C 55,79 57,72 61,67 C 64,62 68,57 73,52 Z" />
+                    <path d="M 87,48 C 94,48 103,52 109,59 C 115,66 116,75 114,84 C 113,87 110,88 108,85 C 105,79 103,72 99,67 C 96,62 92,57 87,52 Z" />
+                  </g>
+
+                  <!-- Chest -->
+                  <g class="muscle-group" data-muscle="chest" data-name="Pectorals (Chest)">
+                    <path d="M 78,53 L 66,55 C 60,59 57,66 56,74 C 55,80 58,84 66,84 C 72,84 76,82 78,80 Z" />
+                    <path d="M 82,53 L 94,55 C 100,59 103,66 104,74 C 105,80 102,84 94,84 C 88,84 84,82 82,80 Z" />
+                  </g>
+
+                  <!-- Biceps -->
+                  <g class="muscle-group" data-muscle="biceps" data-name="Biceps">
+                    <path d="M 49,87 C 46,92 45,101 45,110 C 45,117 48,121 52,121 C 55,121 57,115 57,106 C 57,98 54,91 51,87 Z" />
+                    <path d="M 111,87 C 114,92 115,101 115,110 C 115,117 112,121 108,121 C 105,121 103,115 103,106 C 103,98 106,91 109,87 Z" />
+                  </g>
+
+                  <!-- Forearms -->
+                  <g class="muscle-group" data-muscle="forearms" data-name="Forearms">
+                    <path d="M 51,123 C 46,124 41,130 40,140 C 39,149 42,159 44,169 L 48,169 C 51,158 54,146 55,136 C 56,129 54,124 51,123 Z" />
+                    <path d="M 109,123 C 114,124 119,130 120,140 C 121,149 118,159 116,169 L 112,169 C 109,158 106,146 105,136 C 104,129 106,124 109,123 Z" />
+                  </g>
+
+                  <!-- Core / Abdominals -->
+                  <g class="muscle-group" data-muscle="core" data-name="Core / Abdominals">
+                    <path d="M 78,83 L 70,85 C 69,91 69,97 70,101 L 78,100 Z" />
+                    <path d="M 82,83 L 90,85 C 91,91 91,97 90,101 L 82,100 Z" />
+                    <path d="M 78,103 L 69,104 C 69,111 70,117 71,121 L 78,121 Z" />
+                    <path d="M 82,103 L 91,104 C 91,111 90,117 89,121 L 82,121 Z" />
+                    <path d="M 78,124 L 71,124 C 72,132 75,140 78,145 Z" />
+                    <path d="M 82,124 L 89,124 C 88,132 85,140 82,145 Z" />
+                    <path d="M 68,87 C 62,94 59,105 60,118 C 61,127 63,136 67,143 C 69,135 68,123 68,114 C 68,103 68,94 68,87 Z" />
+                    <path d="M 92,87 C 98,94 101,105 100,118 C 99,127 97,136 93,143 C 91,135 92,123 92,114 C 92,103 92,94 92,87 Z" />
+                  </g>
+
+                  <!-- Quads -->
+                  <g class="muscle-group" data-muscle="quads" data-name="Quadriceps">
+                    <path d="M 78,150 C 74,150 67,155 64,166 C 60,178 59,193 62,208 C 64,217 67,222 71,222 C 75,222 77,215 77,203 C 78,188 78,172 78,158 Z" />
+                    <path d="M 82,150 C 86,150 93,155 96,166 C 100,178 101,193 98,208 C 96,217 93,222 89,222 C 85,222 83,215 83,203 C 82,188 82,172 82,158 Z" />
+                  </g>
+
+                  <!-- Calves (Front) -->
+                  <g class="muscle-group" data-muscle="calves" data-name="Calves / Tibialis">
+                    <path d="M 70,231 C 66,236 63,246 64,258 C 65,268 68,277 69,286 L 73,286 C 75,278 76,268 76,257 C 76,246 74,236 71,231 Z" />
+                    <path d="M 90,231 C 94,236 97,246 96,258 C 95,268 92,277 91,286 L 87,286 C 85,278 84,268 84,257 C 84,246 86,236 89,231 Z" />
+                  </g>
+                </svg>
+              </div>
+
+              <!-- Posterior (Back View) -->
+              <div class="hud-view-unit">
+                <span class="hud-view-badge">Posterior · Back</span>
+                <svg viewBox="0 0 160 310" class="athx-body-svg" id="svgPosterior" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="athxTargetPrimaryPost" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#00f2fe" />
+                      <stop offset="100%" stop-color="#0284c7" />
+                    </linearGradient>
+                    <linearGradient id="athxTargetSecondaryPost" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#c084fc" />
+                      <stop offset="100%" stop-color="#7c3aed" />
+                    </linearGradient>
+                  </defs>
+
+                  <!-- Grid HUD accents -->
+                  <g opacity="0.12">
+                    <line x1="80" y1="6" x2="80" y2="304" stroke="#00f2fe" stroke-width="0.5" stroke-dasharray="2 4" />
+                    <circle cx="80" cy="24" r="16" fill="none" stroke="#00f2fe" stroke-width="0.5" stroke-dasharray="2 2" />
+                    <line x1="15" y1="80" x2="145" y2="80" stroke="#00f2fe" stroke-width="0.5" stroke-dasharray="1 6" />
+                    <line x1="15" y1="148" x2="145" y2="148" stroke="#00f2fe" stroke-width="0.5" stroke-dasharray="1 6" />
+                    <line x1="15" y1="222" x2="145" y2="222" stroke="#00f2fe" stroke-width="0.5" stroke-dasharray="1 6" />
+                  </g>
+
+                  <!-- Base Skeleton Elements -->
+                  <g class="body-base">
+                    <path d="M 80,10 C 72,10 67,16 67,25 C 67,33 72,39 80,39 C 88,39 93,33 93,25 C 93,16 88,10 80,10 Z" />
+                    <path d="M 76,38 L 76,46 C 76,48 78,49 80,49 C 82,49 84,48 84,46 L 84,38 Z" />
+                    <path d="M 39,170 C 37,174 35,181 36,188 C 37,192 41,193 43,189 C 44,184 46,177 47,170 Z" />
+                    <path d="M 121,170 C 123,174 125,181 124,188 C 123,192 119,193 117,189 C 116,184 114,177 113,170 Z" />
+                    <ellipse cx="71" cy="227" rx="3.5" ry="4" opacity="0.4" />
+                    <ellipse cx="89" cy="227" rx="3.5" ry="4" opacity="0.4" />
+                    <path d="M 68,288 L 66,298 C 65,301 68,303 72,303 C 76,303 77,301 76,298 L 74,288 Z" />
+                    <path d="M 92,288 L 94,298 C 95,301 92,303 88,303 C 84,303 83,301 84,298 L 86,288 Z" />
+                  </g>
+
+                  <!-- Traps -->
+                  <g class="muscle-group" data-muscle="traps" data-name="Trapezius (Upper Back)">
+                    <path d="M 80,44 L 73,48 C 67,52 61,56 58,62 C 64,66 72,70 78,74 L 80,95 L 82,74 C 88,70 96,66 102,62 C 99,56 93,52 87,48 Z" />
+                  </g>
+
+                  <!-- Rear Delts -->
+                  <g class="muscle-group" data-muscle="shoulders" data-name="Rear Deltoids">
+                    <path d="M 57,63 C 51,68 46,75 46,84 C 47,87 50,88 52,85 C 55,79 57,74 60,70 Z" />
+                    <path d="M 103,63 C 109,68 114,75 114,84 C 113,87 110,88 108,85 C 105,79 103,74 100,70 Z" />
+                  </g>
+
+                  <!-- Triceps -->
+                  <g class="muscle-group" data-muscle="triceps" data-name="Triceps">
+                    <path d="M 48,87 C 45,92 44,101 44,110 C 44,118 47,121 51,121 C 55,121 57,115 57,105 C 57,97 54,91 51,87 Z" />
+                    <path d="M 112,87 C 115,92 116,101 116,110 C 116,118 113,121 109,121 C 105,121 103,115 103,105 C 103,97 106,91 109,87 Z" />
+                  </g>
+
+                  <!-- Lats -->
+                  <g class="muscle-group" data-muscle="lats" data-name="Lats (Latissimus Dorsi)">
+                    <path d="M 78,76 C 71,78 64,84 60,94 C 57,104 58,118 64,132 C 69,134 75,134 78,132 Z" />
+                    <path d="M 82,76 C 89,78 96,84 100,94 C 103,104 102,118 96,132 C 91,134 85,134 82,132 Z" />
+                  </g>
+
+                  <!-- Lower Back -->
+                  <g class="muscle-group" data-muscle="lowerback" data-name="Lower Back (Erector Spinae)">
+                    <path d="M 78,133 L 72,134 C 71,140 72,148 78,150 Z" />
+                    <path d="M 82,133 L 88,134 C 89,140 88,148 82,150 Z" />
+                  </g>
+
+                  <!-- Forearms (Back) -->
+                  <g class="muscle-group" data-muscle="forearms" data-name="Forearms">
+                    <path d="M 51,123 C 46,124 41,130 40,140 C 39,149 42,159 44,169 L 48,169 C 51,158 54,146 55,136 C 56,129 54,124 51,123 Z" />
+                    <path d="M 109,123 C 114,124 119,130 120,140 C 121,149 118,159 116,169 L 112,169 C 109,158 106,146 105,136 C 104,129 106,124 109,123 Z" />
+                  </g>
+
+                  <!-- Glutes -->
+                  <g class="muscle-group" data-muscle="glutes" data-name="Gluteus Maximus">
+                    <path d="M 78,151 C 70,151 63,158 63,169 C 63,180 69,188 78,188 Z" />
+                    <path d="M 82,151 C 90,151 97,158 97,169 C 97,180 91,188 82,188 Z" />
+                  </g>
+
+                  <!-- Hamstrings -->
+                  <g class="muscle-group" data-muscle="hamstrings" data-name="Hamstrings">
+                    <path d="M 78,190 C 70,190 64,196 63,205 C 62,214 65,223 71,225 C 75,225 77,218 78,206 Z" />
+                    <path d="M 82,190 C 90,190 96,196 97,205 C 98,214 95,223 89,225 C 85,225 83,218 82,206 Z" />
+                  </g>
+
+                  <!-- Calves (Back) -->
+                  <g class="muscle-group" data-muscle="calves" data-name="Calves (Gastrocnemius)">
+                    <path d="M 71,230 C 66,234 63,243 64,254 C 65,265 69,274 71,286 L 74,286 C 76,275 77,265 77,253 C 77,243 75,234 71,230 Z" />
+                    <path d="M 89,230 C 94,234 97,243 96,254 C 95,265 91,274 89,286 L 86,286 C 84,275 83,265 83,253 C 83,243 85,234 89,230 Z" />
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Chip Strip -->
+          <div class="hud-chip-strip" id="hudChipStrip">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+        <div id="hudMuscleTooltip" class="hud-tooltip" style="display: none;"></div>
 
         <!-- Strength Sessions Table with Filter & Accordion -->
         <div class="card" style="overflow: hidden;">
@@ -1696,6 +2288,7 @@ def build_html(payload_json: str, d: dict) -> str:
 
   // State
   let activeTabId = 'todayTab';
+  let selectedStrengthSessionId = (STRENGTH_SESSIONS && STRENGTH_SESSIONS.length > 0) ? STRENGTH_SESSIONS[0].id : null;
   const todayMicroIdx = MICROCYCLE_DATA.findIndex(d => d.today);
   let selectedMicroDay = todayMicroIdx >= 0 ? todayMicroIdx : 0;
   let strengthLimit = 25;
@@ -1867,6 +2460,217 @@ def build_html(payload_json: str, d: dict) -> str:
     }}).join('');
   }}
 
+  // ====================================================================
+  // ATHX ANATOMIC TARGET HUD ENGINE
+  // ====================================================================
+  const SVG_TO_MUSCLES = {{
+    chest: ['Chest'],
+    lats: ['Lats/Back'],
+    traps: ['Lats/Back'],
+    lowerback: ['Lats/Back'],
+    shoulders: ['Shoulders'],
+    quads: ['Quads'],
+    hamstrings: ['Hamstrings/Glutes'],
+    glutes: ['Hamstrings/Glutes'],
+    triceps: ['Triceps'],
+    biceps: ['Biceps'],
+    core: ['Core'],
+    forearms: ['Forearms'],
+    calves: ['Calves']
+  }};
+
+  function selectStrengthSession(sessionId, scrollIntoView = false) {{
+    const sess = STRENGTH_SESSIONS.find(s => s.id === sessionId) || STRENGTH_SESSIONS[0];
+    if (!sess) return;
+    selectedStrengthSessionId = sess.id;
+
+    // 1. Update Session Header
+    const titleEl = document.getElementById('hudSessionTitle');
+    if (titleEl) titleEl.textContent = `${{sess.name}} · ${{sess.date}}`;
+
+    const metaEl = document.getElementById('hudSessionMeta');
+    if (metaEl) {{
+      const durText = sess.dur ? ` · ${{Math.round(sess.dur)}} min` : '';
+      metaEl.textContent = `${{sess.nEx}} exercises · ${{sess.nSets}} sets · ${{sess.ton.toFixed(1)}} tons total volume${{durText}}`;
+    }}
+
+    const splitBadge = document.getElementById('hudSplitBadge');
+    if (splitBadge) {{
+      const splitColor = sess.split === 'Push' ? 'var(--chart-3)' : sess.split === 'Pull' ? 'var(--chart-2)' : sess.split === 'Legs' ? 'var(--chart-9)' : 'var(--chart-4)';
+      splitBadge.textContent = sess.split;
+      splitBadge.style.background = `color-mix(in oklch, ${{splitColor}} 20%, transparent)`;
+      splitBadge.style.color = splitColor;
+      splitBadge.style.borderColor = splitColor;
+    }}
+
+    // Nav buttons state
+    const currentIdx = STRENGTH_SESSIONS.findIndex(s => s.id === sess.id);
+    const prevBtn = document.getElementById('hudPrevBtn');
+    const nextBtn = document.getElementById('hudNextBtn');
+    if (prevBtn) prevBtn.disabled = (currentIdx >= STRENGTH_SESSIONS.length - 1);
+    if (nextBtn) nextBtn.disabled = (currentIdx <= 0);
+
+    // 2. Render Left Pane: Exercise List
+    const exListEl = document.getElementById('hudExercisesList');
+    if (exListEl && sess.detail) {{
+      exListEl.innerHTML = sess.detail.map((ex, idx) => {{
+        return `
+          <div class="hud-ex-item" id="hudEx_${{idx}}"
+               onmouseenter="highlightExerciseMusclesByIndex(${{idx}})"
+               onmouseleave="resetSessionMuscles()">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+              <span style="font-weight: 600; font-size: 13px; color: var(--foreground);">${{ex.a}}</span>
+              <span style="font-size: 11px; font-family: var(--font-mono); color: var(--atf-pink-400); white-space: nowrap;">${{ex.muscle || ''}}</span>
+            </div>
+            <div style="font-size: 11px; color: var(--muted-foreground); font-family: var(--font-mono);">
+              ${{ex.b}}
+            </div>
+          </div>
+        `;
+      }}).join('');
+    }}
+
+    // 3. Highlight SVG Anatomy
+    applySessionMuscleHighlights(sess);
+
+    // 4. Render Bottom Muscle Chips
+    const chipsStrip = document.getElementById('hudChipStrip');
+    if (chipsStrip) {{
+      const chips = (sess.muscles && sess.muscles.chips) || [];
+      if (chips.length > 0) {{
+        chipsStrip.innerHTML = chips.map(c => `
+          <span class="hud-target-chip ${{c.role === 'primary' ? 'chip-prim' : 'chip-sec'}}">
+            <span class="dot"></span>
+            <span>${{c.name}}</span>
+            <span style="font-family: var(--font-mono); font-size: 11px; opacity: 0.85;">${{c.sets}} sets · ${{c.ton.toFixed(1)}}t</span>
+            <span style="font-size: 9px; opacity: 0.6; text-transform: uppercase;">(${{c.role}})</span>
+          </span>
+        `).join('');
+      }} else {{
+        chipsStrip.innerHTML = `<span style="color: var(--muted-foreground); font-size: 12px; font-style: italic;">No specific targeted muscle group detected for this session.</span>`;
+      }}
+    }}
+
+    // 5. Update Table Highlight
+    document.querySelectorAll('#strengthTableBody tr.expandable-row').forEach(tr => {{
+      tr.classList.toggle('selected-row', tr.getAttribute('data-session-id') === sess.id);
+    }});
+
+    if (scrollIntoView) {{
+      document.getElementById('anatomicHudCard')?.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+    }}
+  }}
+
+  function navigateSession(delta) {{
+    if (!STRENGTH_SESSIONS || STRENGTH_SESSIONS.length === 0) return;
+    const currentIdx = STRENGTH_SESSIONS.findIndex(s => s.id === selectedStrengthSessionId);
+    const nextIdx = Math.max(0, Math.min(STRENGTH_SESSIONS.length - 1, (currentIdx === -1 ? 0 : currentIdx) + delta));
+    selectStrengthSession(STRENGTH_SESSIONS[nextIdx].id);
+  }}
+
+  function applySessionMuscleHighlights(sess) {{
+    const primList = (sess.muscles && sess.muscles.svg_primary) || [];
+    const secList = (sess.muscles && sess.muscles.svg_secondary) || [];
+
+    document.querySelectorAll('#anatomicHudCard .muscle-group').forEach(m => {{
+      const mId = m.getAttribute('data-muscle');
+      m.classList.remove('target-primary', 'target-secondary', 'target-hover');
+      if (primList.includes(mId)) {{
+        m.classList.add('target-primary');
+      }} else if (secList.includes(mId)) {{
+        m.classList.add('target-secondary');
+      }}
+    }});
+  }}
+
+  function highlightExerciseMusclesByIndex(idx) {{
+    const sess = STRENGTH_SESSIONS.find(s => s.id === selectedStrengthSessionId);
+    if (!sess || !sess.detail || !sess.detail[idx]) return;
+    const ex = sess.detail[idx];
+    const prim = ex.svg_primary || [];
+    const sec = ex.svg_secondary || [];
+
+    document.querySelectorAll('#anatomicHudCard .muscle-group').forEach(m => {{
+      const mId = m.getAttribute('data-muscle');
+      m.classList.remove('target-primary', 'target-secondary', 'target-hover');
+      if (prim.includes(mId)) {{
+        m.classList.add('target-hover');
+      }} else if (secList.includes(mId)) {{
+        m.classList.add('target-secondary');
+      }}
+    }});
+
+    document.querySelectorAll('.hud-ex-item').forEach((item, i) => {{
+      item.classList.toggle('active', i === idx);
+    }});
+  }}
+
+  function resetSessionMuscles() {{
+    const sess = STRENGTH_SESSIONS.find(s => s.id === selectedStrengthSessionId);
+    if (sess) applySessionMuscleHighlights(sess);
+    document.querySelectorAll('.hud-ex-item').forEach(item => item.classList.remove('active'));
+  }}
+
+  function initAnatomyTooltips() {{
+    const tooltip = document.getElementById('hudMuscleTooltip');
+    if (!tooltip) return;
+
+    document.querySelectorAll('#anatomicHudCard .muscle-group').forEach(m => {{
+      m.addEventListener('mouseenter', (e) => {{
+        const sess = STRENGTH_SESSIONS.find(s => s.id === selectedStrengthSessionId);
+        const mId = m.getAttribute('data-muscle');
+        const mName = m.getAttribute('data-name') || mId;
+
+        let statusText = 'Not targeted in this session';
+        let tagColor = 'var(--muted-foreground)';
+
+        if (sess && sess.muscles) {{
+          const groupNames = SVG_TO_MUSCLES[mId] || [];
+          let matchPrim = null;
+          let matchSec = null;
+          for (const gn of groupNames) {{
+            if (sess.muscles.primary && sess.muscles.primary[gn]) {{
+              matchPrim = Object.assign({{ name: gn }}, sess.muscles.primary[gn]);
+              break;
+            }}
+            if (sess.muscles.secondary && sess.muscles.secondary[gn]) {{
+              matchSec = Object.assign({{ name: gn }}, sess.muscles.secondary[gn]);
+              break;
+            }}
+          }}
+
+          if (matchPrim) {{
+            statusText = `PRIMARY TARGET · ${{matchPrim.sets}} sets (${{matchPrim.ton.toFixed(1)}}t)`;
+            tagColor = '#00f2fe';
+          }} else if (matchSec) {{
+            statusText = `SECONDARY STIMULUS · ${{matchSec.sets}} sets (${{matchSec.ton.toFixed(1)}}t)`;
+            tagColor = '#c084fc';
+          }}
+        }}
+
+        tooltip.innerHTML = `
+          <div style="font-weight: 600; color: #fff; margin-bottom: 2px;">${{mName}}</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: ${{tagColor}};">${{statusText}}</div>
+        `;
+        tooltip.style.display = 'block';
+      }});
+
+      m.addEventListener('mousemove', (e) => {{
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top = (e.clientY + 14) + 'px';
+      }});
+
+      m.addEventListener('mouseleave', () => {{
+        tooltip.style.display = 'none';
+      }});
+    }});
+  }}
+
+  function handleStrengthRowClick(sessionId, rowId) {{
+    selectStrengthSession(sessionId);
+    toggleRow(rowId);
+  }}
+
   // Strength Sessions Table with Accordion
   function filterStrength(split) {{
     if (split) {{
@@ -1901,6 +2705,7 @@ def build_html(payload_json: str, d: dict) -> str:
     tbody.innerHTML = slice.map((s, idx) => {{
       const rowId = `str_${{s.id}}_${{idx}}`;
       const isExpanded = expandedRows.has(rowId);
+      const isSelected = (s.id === selectedStrengthSessionId);
       const splitColor = s.split === 'Push' ? 'var(--chart-3)' : s.split === 'Pull' ? 'var(--chart-2)' : s.split === 'Legs' ? 'var(--chart-9)' : 'var(--chart-4)';
       const topStr = s.top ? `${{s.top.n}} · ${{s.top.e}} kg` : '—';
       const durStr = s.dur ? `${{Math.round(s.dur)}}′` : '—';
@@ -1924,7 +2729,7 @@ def build_html(payload_json: str, d: dict) -> str:
       }}
 
       return `
-        <tr class="expandable-row ${{isExpanded ? 'expanded' : ''}}" onclick="toggleRow('${{rowId}}')">
+        <tr class="expandable-row ${{isExpanded ? 'expanded' : ''}} ${{isSelected ? 'selected-row' : ''}}" data-session-id="${{s.id}}" onclick="handleStrengthRowClick('${{s.id}}', '${{rowId}}')">
           <td style="color: var(--muted-foreground); font-family: var(--font-mono); font-size: 12px;">${{s.date}}</td>
           <td style="font-weight: 500;">${{s.name}}</td>
           <td><span class="badge" style="background: color-mix(in oklch, ${{splitColor}} 20%, transparent); color: ${{splitColor}}; border: 1px solid ${{splitColor}};">${{s.split}}</span></td>
@@ -2450,6 +3255,10 @@ def build_html(payload_json: str, d: dict) -> str:
     renderFuelingTargets();
     renderReadinessRows();
     renderStrengthTable();
+    if (STRENGTH_SESSIONS && STRENGTH_SESSIONS.length > 0) {{
+      selectStrengthSession(STRENGTH_SESSIONS[0].id);
+    }}
+    initAnatomyTooltips();
     renderEngineTable();
     renderBodyTable();
     renderSleepTable();
