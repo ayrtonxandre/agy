@@ -284,24 +284,31 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
         curr_w_start += timedelta(days=7)
 
     # Group sets by week index
-    weekly_matrix = {m: [0] * len(week_keys) for m in athx_config.MEV_MRV_BANDS}
-    weekly_matrix["Unattributed"] = [0] * len(week_keys)
+    weekly_matrix = {m: [0.0] * len(week_keys) for m in athx_config.MEV_MRV_BANDS}
+    weekly_matrix["Unattributed"] = [0.0] * len(week_keys)
 
     curr_w_start = data_start - timedelta(days=data_start.weekday())
     for s in processed_sets:
         d = parse_date(s["Date"])
         w_idx = (d - curr_w_start).days // 7
         if 0 <= w_idx < len(week_keys):
-            m = s["Muscle_Group"]
-            if m in weekly_matrix:
-                weekly_matrix[m][w_idx] += 1
+            ex = s["Exercise"]
+            compound_dist = getattr(athx_config, "EXERCISE_COMPOUND_VOLUME", {}).get(ex)
+            if compound_dist:
+                for target_m, factor in compound_dist.items():
+                    if target_m in weekly_matrix:
+                        weekly_matrix[target_m][w_idx] += factor
             else:
-                weekly_matrix["Unattributed"][w_idx] += 1
+                m = s["Muscle_Group"]
+                if m in weekly_matrix:
+                    weekly_matrix[m][w_idx] += 1.0
+                else:
+                    weekly_matrix["Unattributed"][w_idx] += 1.0
 
     # Muscle group summary averages & status
     muscle_summary = {}
     for m, band in athx_config.MEV_MRV_BANDS.items():
-        tot_sets = sum(weekly_matrix[m])
+        tot_sets = round(sum(weekly_matrix[m]), 1)
         avg_wk = round(tot_sets / weeks_count, 1)
         mev = band["mev"]
         mav_min = band["mav_min"]
@@ -337,14 +344,14 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
         }
 
     # Add Unattributed to summary
-    unattr_total = sum(weekly_matrix["Unattributed"])
+    unattr_total = round(sum(weekly_matrix["Unattributed"]), 1)
     muscle_summary["Unattributed"] = {
         "total_sets": unattr_total,
         "avg_weekly_sets": round(unattr_total / weeks_count, 1),
         "mev": 0, "mav_min": 0, "mav_max": 0, "mrv": 0,
         "status": "Unattributed Sets",
         "badge_class": "badge-neutral",
-        "history": weekly_matrix["Unattributed"]
+        "history": [round(x, 1) for x in weekly_matrix["Unattributed"]]
     }
 
     # 1h. Trailing 28-Day Best e1RM, Relative Strength & Projections
@@ -384,6 +391,7 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
                 daily_peaks_dict[d] = {
                     "date": d,
                     "e1rm": s["e1RM_kg"],
+                    "e1RM_kg": s["e1RM_kg"],
                     "weight": s["Weight_kg"],
                     "reps": s["Reps"],
                     "best_set": f"{s['Weight_kg']} kg × {s['Reps']} reps"
@@ -429,8 +437,13 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
             "slope_4w": slope_4w,
             "projected_e1rm": projected,
             "daily_peaks": lift_daily_peaks,
-            "history": [{"date": s["Date"], "e1rm": s["e1RM_kg"], "weight": s["Weight_kg"], "reps": s["Reps"]} for s in lift_sets_chrono]
+            "history": [{"date": s["Date"], "e1rm": s["e1RM_kg"], "e1RM_kg": s["e1RM_kg"], "weight": s["Weight_kg"], "reps": s["Reps"]} for s in lift_sets_chrono]
         }
+
+    if "Back Squat" in lift_progressions and "Squat" not in lift_progressions:
+        lift_progressions["Squat"] = lift_progressions["Back Squat"]
+    elif "Squat" in lift_progressions and "Back Squat" not in lift_progressions:
+        lift_progressions["Back Squat"] = lift_progressions["Squat"]
 
     # 1i. Foster Training Monotony & Strain + Dynamic ACWR
     # Build complete daily load timeline from (DATA_START - 28d) to max_d

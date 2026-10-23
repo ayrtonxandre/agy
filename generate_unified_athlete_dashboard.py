@@ -896,7 +896,7 @@ def build_html(payload_json: str, d: dict) -> str:
 
     <nav class="nav-section">
       <div class="nav-group-title">Plan</div>
-      <div class="nav-item active" onclick="switchTab('todayTab', 'Today', 'Wednesday {datetime.now().strftime('%d %B')}')">
+      <div class="nav-item active" onclick="switchTab('todayTab', 'Today', '{as_of_display}')">
         <span class="nav-icon">📅</span>
         <span>Today</span>
       </div>
@@ -1696,7 +1696,8 @@ def build_html(payload_json: str, d: dict) -> str:
 
   // State
   let activeTabId = 'todayTab';
-  let selectedMicroDay = 2; // Default Wednesday
+  const todayMicroIdx = MICROCYCLE_DATA.findIndex(d => d.today);
+  let selectedMicroDay = todayMicroIdx >= 0 ? todayMicroIdx : 0;
   let strengthLimit = 25;
   let strengthSplitFilter = 'All';
   let engineLimit = 25;
@@ -2220,14 +2221,35 @@ def build_html(payload_json: str, d: dict) -> str:
     }}
 
     const ctxE1rm = document.getElementById('e1rmProgressionChart')?.getContext('2d');
-    if (ctxE1rm && ATHX_DATA.strength.lift_progressions) {{
-      const bp = ATHX_DATA.strength.lift_progressions['Bench Press']?.history || [];
-      const sq = ATHX_DATA.strength.lift_progressions['Squat']?.history || [];
-      const dl = ATHX_DATA.strength.lift_progressions['Deadlift']?.history || [];
-      const allDates = [...new Set([...bp.map(x => x.date), ...sq.map(x => x.date), ...dl.map(x => x.date)])].sort();
-      const bpMap = Object.fromEntries(bp.map(x => [x.date, x.e1RM_kg]));
-      const sqMap = Object.fromEntries(sq.map(x => [x.date, x.e1RM_kg]));
-      const dlMap = Object.fromEntries(dl.map(x => [x.date, x.e1RM_kg]));
+    if (ctxE1rm && ATHX_DATA.strength?.lift_progressions) {{
+      const lp = ATHX_DATA.strength.lift_progressions;
+      const bp = lp['Bench Press']?.daily_peaks || lp['Bench Press']?.history || [];
+      const sq = lp['Back Squat']?.daily_peaks || lp['Squat']?.daily_peaks || lp['Back Squat']?.history || [];
+      const dl = lp['Deadlift']?.daily_peaks || lp['Deadlift']?.history || [];
+      const ohp = lp['Overhead Press']?.daily_peaks || lp['Overhead Press']?.history || [];
+
+      const allDates = [...new Set([
+        ...bp.map(x => x.date),
+        ...sq.map(x => x.date),
+        ...dl.map(x => x.date),
+        ...ohp.map(x => x.date)
+      ])].filter(Boolean).sort();
+
+      const getVal = (list) => {{
+        const map = {{}};
+        for (const item of list) {{
+          const val = item.e1rm ?? item.e1RM_kg;
+          if (val != null) {{
+            map[item.date] = {{ val: Number(val), set: item.best_set || `${{item.weight}} kg × ${{item.reps}} reps` }};
+          }}
+        }}
+        return map;
+      }};
+
+      const bpMap = getVal(bp);
+      const sqMap = getVal(sq);
+      const dlMap = getVal(dl);
+      const ohpMap = getVal(ohp);
 
       new Chart(ctxE1rm, {{
         type: 'line',
@@ -2235,24 +2257,47 @@ def build_html(payload_json: str, d: dict) -> str:
           labels: allDates,
           datasets: [
             {{
-              label: 'Bench Press',
-              data: allDates.map(d => bpMap[d] || null),
-              borderColor: '#38bdf8',
-              tension: 0.2,
+              label: 'Deadlift',
+              data: allDates.map(d => dlMap[d]?.val ?? null),
+              borderColor: '#ec4899',
+              backgroundColor: 'rgba(236, 72, 153, 0.1)',
+              pointBackgroundColor: '#ec4899',
+              pointRadius: 3,
+              pointHoverRadius: 6,
+              tension: 0.25,
               spanGaps: true
             }},
             {{
               label: 'Back Squat',
-              data: allDates.map(d => sqMap[d] || null),
+              data: allDates.map(d => sqMap[d]?.val ?? null),
               borderColor: '#34d399',
-              tension: 0.2,
+              backgroundColor: 'rgba(52, 211, 153, 0.1)',
+              pointBackgroundColor: '#34d399',
+              pointRadius: 3,
+              pointHoverRadius: 6,
+              tension: 0.25,
               spanGaps: true
             }},
             {{
-              label: 'Deadlift',
-              data: allDates.map(d => dlMap[d] || null),
-              borderColor: '#ec4899',
-              tension: 0.2,
+              label: 'Bench Press',
+              data: allDates.map(d => bpMap[d]?.val ?? null),
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              pointBackgroundColor: '#38bdf8',
+              pointRadius: 3,
+              pointHoverRadius: 6,
+              tension: 0.25,
+              spanGaps: true
+            }},
+            {{
+              label: 'Overhead Press',
+              data: allDates.map(d => ohpMap[d]?.val ?? null),
+              borderColor: '#fbbf24',
+              backgroundColor: 'rgba(251, 191, 36, 0.1)',
+              pointBackgroundColor: '#fbbf24',
+              pointRadius: 3,
+              pointHoverRadius: 6,
+              tension: 0.25,
               spanGaps: true
             }}
           ]
@@ -2260,12 +2305,51 @@ def build_html(payload_json: str, d: dict) -> str:
         options: {{
           responsive: true,
           maintainAspectRatio: false,
+          interaction: {{
+            mode: 'index',
+            intersect: false
+          }},
           scales: {{
-            x: {{ grid: {{ color: 'rgba(255, 255, 255, 0.05)' }}, ticks: {{ color: 'oklch(0.704 0.04 256.788)' }} }},
-            y: {{ grid: {{ color: 'rgba(255, 255, 255, 0.05)' }}, ticks: {{ color: 'oklch(0.704 0.04 256.788)' }} }}
+            x: {{
+              grid: {{ color: 'rgba(255, 255, 255, 0.05)' }},
+              ticks: {{
+                color: 'oklch(0.704 0.04 256.788)',
+                maxRotation: 45
+              }}
+            }},
+            y: {{
+              grid: {{ color: 'rgba(255, 255, 255, 0.05)' }},
+              ticks: {{
+                color: 'oklch(0.704 0.04 256.788)',
+                callback: (v) => v + ' kg'
+              }}
+            }}
           }},
           plugins: {{
-            legend: {{ labels: {{ color: '#fff', font: {{ family: 'Jost' }} }} }}
+            legend: {{
+              labels: {{
+                color: '#fff',
+                font: {{ family: 'Jost', size: 12 }},
+                usePointStyle: true,
+                boxWidth: 8
+              }}
+            }},
+            tooltip: {{
+              callbacks: {{
+                label: function(context) {{
+                  const label = context.dataset.label || '';
+                  const val = context.raw;
+                  if (val == null) return null;
+                  const date = context.label;
+                  let setDetail = '';
+                  if (label === 'Deadlift') setDetail = dlMap[date]?.set;
+                  else if (label === 'Back Squat') setDetail = sqMap[date]?.set;
+                  else if (label === 'Bench Press') setDetail = bpMap[date]?.set;
+                  else if (label === 'Overhead Press') setDetail = ohpMap[date]?.set;
+                  return ` ${{label}}: ${{val}} kg e1RM ${{setDetail ? `(${{setDetail}})` : ''}}`;
+                }}
+              }}
+            }}
           }}
         }}
       }});

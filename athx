@@ -1020,6 +1020,104 @@ def handle_health_command(agy_dir: Path, venv_py: Path, sub_args: list[str]):
     print(f"\n{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
 
 
+def handle_sleep_command(agy_dir: Path, venv_py: Path, args_list: list[str]):
+    """Inspects sleep records or allows manual entry/logging of sleep."""
+    gold = TerminalUI.GOLD
+    cyan = TerminalUI.CYAN
+    bold = TerminalUI.BOLD
+    green = TerminalUI.GREEN
+    yellow = TerminalUI.YELLOW
+    gray = TerminalUI.GRAY
+    reset = TerminalUI.RESET
+
+    sleep_csv = agy_dir / "apple_sleep.csv"
+
+    parser = argparse.ArgumentParser(prog="athx sleep", description="Inspect or manually log sleep for ATHX")
+    parser.add_argument("hours", nargs="?", type=float, default=None, help="Total sleep hours (e.g. 7.5)")
+    parser.add_argument("--date", type=str, default=datetime.now().strftime("%Y-%m-%d"), help="Date of sleep (default: today)")
+    parser.add_argument("--deep", type=float, default=None, help="Deep sleep hours")
+    parser.add_argument("--rem", type=float, default=None, help="REM sleep hours")
+    parser.add_argument("--core", type=float, default=None, help="Core sleep hours")
+    parser.add_argument("--awake", type=float, default=0.2, help="Awake hours (default: 0.2)")
+    parser.add_argument("--in-bed", type=float, default=None, help="In Bed hours (default: total + awake)")
+    args = parser.parse_args(args_list)
+
+    if args.hours is not None:
+        total = round(args.hours, 1)
+        deep = round(args.deep if args.deep is not None else total * 0.18, 1)
+        rem = round(args.rem if args.rem is not None else total * 0.22, 1)
+        core = round(args.core if args.core is not None else max(0.0, total - deep - rem), 1)
+        awake = round(args.awake, 1)
+        in_bed = round(args.in_bed if args.in_bed is not None else total + awake, 1)
+
+        # Read existing CSV
+        rows = []
+        if sleep_csv.exists():
+            with open(sleep_csv, "r", encoding="utf-8") as f:
+                rows = list(csv.DictReader(f))
+
+        sleep_map = {r["Date"]: r for r in rows if r.get("Date")}
+        sleep_map[args.date] = {
+            "Date": args.date,
+            "Total_Sleep_hrs": str(total),
+            "Deep_Sleep_hrs": str(deep),
+            "REM_Sleep_hrs": str(rem),
+            "Core_Sleep_hrs": str(core),
+            "Awake_hrs": str(awake),
+            "In_Bed_hrs": str(in_bed)
+        }
+        updated = sorted(sleep_map.values(), key=lambda x: x["Date"])
+
+        with open(sleep_csv, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["Date", "Total_Sleep_hrs", "Deep_Sleep_hrs", "REM_Sleep_hrs", "Core_Sleep_hrs", "Awake_hrs", "In_Bed_hrs"])
+            writer.writeheader()
+            writer.writerows(updated)
+
+        print(f"\n{green}✔ Logged sleep for {args.date}:{reset}")
+        print(f"  • Total Sleep : {bold}{total} hrs{reset}")
+        print(f"  • Deep Sleep  : {deep} hrs")
+        print(f"  • REM Sleep   : {rem} hrs")
+        print(f"  • Core Sleep  : {core} hrs")
+        print(f"  • In Bed      : {in_bed} hrs")
+        print(f"\n{cyan}⚡ Rebuilding athlete headquarters with updated sleep...{reset}")
+        subprocess.run([str(venv_py), str(agy_dir / "generate_unified_athlete_dashboard.py")], cwd=str(agy_dir), check=False)
+        print(f"{green}✔ Done! Dashboard updated.{reset}\n")
+        return
+
+    # Otherwise show sleep status and recent records
+    print(f"\n{gold}{bold}😴 ATHX 2027 • Sleep Extraction & Status{reset}")
+    print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}")
+    rows = []
+    if sleep_csv.exists():
+        with open(sleep_csv, "r", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        print(f"  📁 File: {gray}{sleep_csv}{reset} ({len(rows)} nights recorded)")
+        print(f"\n  {bold}Recent Recorded Nights:{reset}")
+        for r in rows[-5:]:
+            print(f"  • {r['Date']}: {bold}{r.get('Total_Sleep_hrs')} hrs{reset} (Deep: {r.get('Deep_Sleep_hrs')}h | REM: {r.get('REM_Sleep_hrs')}h | Core: {r.get('Core_Sleep_hrs')}h)")
+    else:
+        print(f"  ⚠️ {sleep_csv} does not exist.")
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    has_today = any(r.get("Date") == today_str for r in rows) if sleep_csv.exists() else False
+
+    if not has_today:
+        print(f"\n  {yellow}⚠️ Sleep for today ({today_str}) has not been received via webhook.{reset}")
+        print(f"  {bold}Possible causes:{reset}")
+        print(f"  1. Health Auto Export on iPhone did not include 'Sleep Analysis' in its automated export payload.")
+        print(f"     -> Open Health Auto Export on iPhone > Automations > REST API > Metrics: check 'Sleep Analysis'.")
+        print(f"  2. Apple Watch did not finalize the sleep session before the last export.")
+        print(f"     -> In Health Auto Export on iPhone, tap 'Export Now'.")
+        print(f"\n  {bold}Quick Manual Entry:{reset}")
+        print(f"  You can instantly record your sleep from the terminal:")
+        print(f"  {cyan}athx sleep 7.5{reset}           (logs 7.5 hrs for today with auto-estimated stages)")
+        print(f"  {cyan}athx sleep 7.5 --deep 1.6 --rem 1.8{reset}")
+    else:
+        print(f"\n  {green}✔ Sleep for today ({today_str}) is recorded!{reset}")
+
+    print(f"\n{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+
+
 # ==============================================================================
 # 6. MAIN ORCHESTRATION PIPELINE
 # ==============================================================================
@@ -1072,6 +1170,13 @@ def main():
         handle_health_command(AGY_DIR, venv_py, sys.argv[2:])
         return
 
+    # Sleep command: `athx sleep [...]`
+    if raw_sub == "sleep":
+        ensure_correct_python(AGY_DIR)
+        venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+        handle_sleep_command(AGY_DIR, venv_py, sys.argv[2:])
+        return
+
     # Install command: `athx install`
     if raw_sub == "install":
         install_athx_cli()
@@ -1097,7 +1202,14 @@ def main():
     parser.add_argument("--serve", action="store_true", help="Run local orchestrator HTTP daemon on port 8080")
     parser.add_argument("--status", action="store_true", help="Show system and webhook status")
     parser.add_argument("--health", action="store_true", help="Show Apple Health setup and webhook guide")
+    parser.add_argument("--sleep", action="store_true", help="Show sleep extraction status or log sleep")
     args = parser.parse_args(cli_args)
+
+    if args.sleep:
+        ensure_correct_python(AGY_DIR)
+        venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+        handle_sleep_command(AGY_DIR, venv_py, [])
+        return
 
     if args.coach or args.ask:
         ensure_correct_python(AGY_DIR)
