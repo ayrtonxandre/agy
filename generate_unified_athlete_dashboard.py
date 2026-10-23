@@ -570,11 +570,17 @@ def build_html(payload_json: str, d: dict) -> str:
     coach_dec_data = d.get("coach_decisions", [])
     sleep_debt_data = d.get("sleep_debt", {})
     plews_hrv_data = d.get("plews_hrv", {})
+    running_biomech_data = d.get("running_biomechanics", {})
+    allostatic_stress_data = d.get("allostatic_stress", {})
+    vbt_data = d.get("vbt_velocity_loss", {})
 
     critical_speed_html = adcg.render_critical_speed_html(cs_data)
     crossfit_durability_html = adcg.render_crossfit_durability_html(dur_data)
     coach_decisions_html = adcg.render_coach_decisions_html(coach_dec_data)
     recovery_autonomic_html = adcg.render_recovery_autonomic_model_html(sleep_debt_data, plews_hrv_data)
+    running_biomechanics_html = adcg.render_running_biomechanics_html(running_biomech_data)
+    allostatic_stress_html = adcg.render_allostatic_stress_html(allostatic_stress_data)
+    vbt_velocity_loss_html = adcg.render_vbt_velocity_loss_html(vbt_data)
 
     return f"""<!DOCTYPE html>
 <html lang="en" class="dark">
@@ -1586,6 +1592,8 @@ def build_html(payload_json: str, d: dict) -> str:
           </div>
         </div>
 
+        {vbt_velocity_loss_html}
+
         <!-- ANATOMIC MUSCLE TARGET HUD CARD -->
         <div class="card athx-anatomic-card" id="anatomicHudCard" style="overflow: hidden; margin-top: 16px; margin-bottom: 16px;">
           <div class="hud-header-bar">
@@ -1921,6 +1929,8 @@ def build_html(payload_json: str, d: dict) -> str:
 
         {critical_speed_html}
 
+        {running_biomechanics_html}
+
         {crossfit_durability_html}
 
         <div class="card" style="overflow: hidden;">
@@ -2151,6 +2161,8 @@ def build_html(payload_json: str, d: dict) -> str:
         </div>
 
         {recovery_autonomic_html}
+
+        {allostatic_stress_html}
 
         <!-- Sleep stages chart -->
         <div class="card" style="padding: 20px;">
@@ -3422,6 +3434,13 @@ def main():
     garmin_hrv_data = adcg.load_garmin_hrv(BASE_DIR)
     sleep_debt_data = adcg.compute_sleep_debt_model(apple_data["sleep"]["history"])
     plews_hrv_data = adcg.compute_plews_buchheit_hrv(BASE_DIR)
+    running_biomechanics_data = adcg.compute_running_biomechanics(running_activities)
+    allostatic_stress_data = adcg.compute_allostatic_stress_balance(BASE_DIR)
+    vbt_velocity_loss_data = adcg.compute_vbt_velocity_loss(strength_data.get("processed_sets", []))
+    perception_load_data = adcg.compute_perception_load_divergence(
+        workout_activities=workout_data.get("history", []),
+        strength_sets=strength_data.get("processed_sets", [])
+    )
     coach_decisions_data = adcg.build_coach_decision_log(
         strength_data=strength_data,
         comp_data=comp_data,
@@ -3432,6 +3451,9 @@ def main():
     print(f"✅ CrossFit Durability Engine: Index {crossfit_durability_data['durability_index']}% across {crossfit_durability_data['total_evaluated_sessions']} audited sessions.")
     print(f"✅ Sleep Debt Model (Part C): {sleep_debt_data['total_debt_hrs']}h deficit over {sleep_debt_data['nights_counted']} nights ({sleep_debt_data['status_text']}).")
     print(f"✅ Plews & Buchheit HRV (Part C): Latest {plews_hrv_data['latest_night_ms']} ms ({plews_hrv_data['status_text']}), SWC: {plews_hrv_data['band_lower_ms']}–{plews_hrv_data['band_upper_ms']} ms.")
+    print(f"✅ Running Biomechanics: GCT {running_biomechanics_data.get('avg_gct_ms', 0)} ms, VR {running_biomechanics_data.get('avg_vr_pct', 0)}% ({running_biomechanics_data.get('vr_status', 'N/A')}).")
+    print(f"✅ Allostatic Stress Balance: Net BB {allostatic_stress_data.get('net_bb_7d', 0)}, Autonomic Stress {allostatic_stress_data.get('avg_stress_7d', 0)}/100.")
+    print(f"✅ VBT Fatigue Drop-Off: {vbt_velocity_loss_data.get('avg_velocity_loss_pct', 0)}% VL across {vbt_velocity_loss_data.get('evaluated_sessions', 0)} sessions ({vbt_velocity_loss_data.get('vbt_zone', 'N/A')}).")
     print(f"✅ AI Coach Decision Log: {len(coach_decisions_data)} interventions audited against Garmin overnight HRV.")
 
     dashboard_payload = {
@@ -3461,6 +3483,10 @@ def main():
         "sleep_debt": sleep_debt_data,
         "plews_hrv": plews_hrv_data,
         "garmin_hrv": garmin_hrv_data,
+        "running_biomechanics": running_biomechanics_data,
+        "allostatic_stress": allostatic_stress_data,
+        "vbt_velocity_loss": vbt_velocity_loss_data,
+        "perception_load": perception_load_data,
         "coach_decisions": coach_decisions_data,
     }
 

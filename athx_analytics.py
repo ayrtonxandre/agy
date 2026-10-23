@@ -909,6 +909,19 @@ def process_running_data(running_input: Path | list[dict] | None = None, audit: 
     hrs = [r.get("Average_HR") for r in valid_runs if r.get("Average_HR")]
     avg_hr = round(sum(hrs) / len(hrs), 1) if hrs else None
 
+    # Biomechanical running dynamics (Garmin Personal API)
+    gct_list = [float(r["Ground_Contact_Time_ms"]) for r in valid_runs if r.get("Ground_Contact_Time_ms")]
+    avg_gct = round(sum(gct_list) / len(gct_list), 1) if gct_list else None
+
+    vr_list = [float(r["Vertical_Ratio_pct"]) for r in valid_runs if r.get("Vertical_Ratio_pct")]
+    avg_vr = round(sum(vr_list) / len(vr_list), 2) if vr_list else None
+
+    vo_list = [float(r["Vertical_Oscillation_cm"]) for r in valid_runs if r.get("Vertical_Oscillation_cm")]
+    avg_vo = round(sum(vo_list) / len(vo_list), 2) if vo_list else None
+
+    gas_list = [float(r["Grade_Adjusted_Speed_ms"]) for r in valid_runs if r.get("Grade_Adjusted_Speed_ms")]
+    avg_gas = round(sum(gas_list) / len(gas_list), 2) if gas_list else None
+
     return {
         "total_runs": len(valid_runs),
         "total_distance_km": total_dist,
@@ -921,6 +934,10 @@ def process_running_data(running_input: Path | list[dict] | None = None, audit: 
         "latest_vo2max": latest_vo2,
         "avg_cadence_spm": avg_cadence,
         "avg_hr": avg_hr,
+        "avg_gct_ms": avg_gct,
+        "avg_vertical_ratio_pct": avg_vr,
+        "avg_vertical_oscillation_cm": avg_vo,
+        "avg_grade_adjusted_speed_ms": avg_gas,
         "history": valid_runs
     }
 
@@ -1228,6 +1245,8 @@ def generate_telemetry_digest(
             "total_distance_km": running_data.get("total_distance_km", 0.0),
             "best_5k_pace": running_data.get("best_5k_pace_formatted", "N/A"),
             "latest_vo2max": running_data.get("latest_vo2max", "N/A"),
+            "avg_ground_contact_time_ms": running_data.get("avg_gct_ms"),
+            "avg_vertical_ratio_pct": running_data.get("avg_vertical_ratio_pct"),
             "other_workout_sessions": workout_data.get("total_sessions", 0)
         },
         "recent_workout_highlights": recent_highlights,

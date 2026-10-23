@@ -28,6 +28,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).resolve().parent / ".env"
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path)
+except ImportError:
+    pass
+
+try:
     import garth
     from garminconnect import (
         Garmin,
@@ -35,11 +43,9 @@ try:
         GarminConnectConnectionError,
         GarminConnectTooManyRequestsError,
     )
+    HAVE_GARMINCONNECT = True
 except ImportError:
-    print("Error: 'garminconnect' library is not installed.")
-    print("Please install it using: pip install garminconnect")
-    print("Or run using uv: uv run --with garminconnect python extract_garmin_strength.py")
-    sys.exit(1)
+    HAVE_GARMINCONNECT = False
 
 import athx_config
 import garmin_note_parser
@@ -757,8 +763,27 @@ if __name__ == "__main__":
 
     if "--reprocess-local" in sys.argv or "--offline" in sys.argv or target_aid or force_all:
         extracted_data = reprocess_local_notes(target_activity_id=target_aid, force_all=force_all)
+        save_all_results(extracted_data)
     else:
+        # 1. Prefer Official Garmin Connect Developer Program Personal API
+        personal_key = os.getenv("GARMIN_PERSONAL_API_KEY")
+        personal_token_cache = TOKEN_DIR / "personal_token.json"
+        if personal_key or personal_token_cache.exists():
+            print("🔑 Garmin Connect Developer Program Personal API detected.")
+            print("⚡ Initiating official headless synchronization...")
+            try:
+                import garmin_personal_sync
+                res = garmin_personal_sync.sync_garmin_personal()
+                print(f"✅ Garmin Personal API Synchronization completed successfully: {res['strength_sets']} sets, {res['running_activities']} runs.")
+                sys.exit(0)
+            except Exception as e:
+                print(f"⚠️ Garmin Personal API sync encountered an issue: {e}")
+                print("🔄 Falling back to standard extraction/reprocessing...")
+
+        # 2. Legacy / Unofficial Scraping Fallback
         try:
+            if not HAVE_GARMINCONNECT:
+                raise RuntimeError("'garminconnect' library is not available.")
             garmin_client = authenticate_garmin(GARMIN_EMAIL, GARMIN_PASSWORD, TOKEN_DIR)
             extracted_data = extract_all_garmin_activities(garmin_client, limit=ACTIVITIES_LIMIT)
         except Exception as e:
@@ -766,5 +791,5 @@ if __name__ == "__main__":
             print("🔄 Falling back to local reprocessing...")
             extracted_data = reprocess_local_notes()
 
-    save_all_results(extracted_data)
+        save_all_results(extracted_data)
 

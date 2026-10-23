@@ -129,7 +129,12 @@ def find_virtualenv_python(agy_dir: Path) -> Path | None:
 def ensure_correct_python(agy_dir: Path):
     """Ensures this script is running inside the virtualenv with dependencies."""
     can_import = True
-    for mod in ["pandas", "googleapiclient", "garminconnect"]:
+    required = ["pandas", "requests"]
+    has_personal_key = bool(os.environ.get("GARMIN_PERSONAL_API_KEY") or (agy_dir / ".env").exists())
+    if not has_personal_key:
+        required.append("garminconnect")
+
+    for mod in required:
         try:
             __import__(mod)
         except ImportError:
@@ -575,16 +580,72 @@ def run_health_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
     return "warning", "Apple Health: No biometrics found (configure iPhone webhook: run 'athx health')"
 
 
+def get_garmin_api_key(agy_dir: Path) -> str | None:
+    """Retrieves Garmin Personal API Key from environment or .env file."""
+    api_key = os.environ.get("GARMIN_PERSONAL_API_KEY")
+    if api_key:
+        return api_key.strip()
+    env_file = agy_dir / ".env"
+    if env_file.exists():
+        try:
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("GARMIN_PERSONAL_API_KEY="):
+                        val = line.split("=", 1)[1].strip().strip("'\"")
+                        if val:
+                            return val
+        except Exception:
+            pass
+    return None
+
+
+def get_garmin_token_status(agy_dir: Path) -> dict:
+    """Inspects cached personal API JWT Bearer token and TTL."""
+    tok_file = agy_dir / "garmin_tokens" / "personal_token.json"
+    if not tok_file.exists():
+        return {"exists": False, "valid": False, "message": "No token cached"}
+    try:
+        with open(tok_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        exp = data.get("expires_at", 0)
+        remaining = exp - time.time()
+        if remaining > 0:
+            hrs = remaining / 3600.0
+            return {
+                "exists": True,
+                "valid": True,
+                "expires_at": exp,
+                "remaining_hours": round(hrs, 1),
+                "scope": data.get("scope", "personal-api"),
+                "sub": data.get("sub", "athlete"),
+                "message": f"Valid ({hrs:.1f}h remaining)"
+            }
+        else:
+            return {
+                "exists": True,
+                "valid": False,
+                "expires_at": exp,
+                "remaining_hours": 0.0,
+                "scope": data.get("scope", "personal-api"),
+                "sub": data.get("sub", "athlete"),
+                "message": "Expired (auto-renews on sync)"
+            }
+    except Exception as e:
+        return {"exists": True, "valid": False, "message": f"Parse error: {e}"}
+
+
 def run_garmin_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
-    """Extracts Garmin Connect strength sets and volume."""
+    """Extracts Garmin Connect strength sets, running dynamics, HRV, sleep & daily wellness."""
     garmin_script = agy_dir / "extract_garmin_strength.py"
     tokens_dir = agy_dir / "garmin_tokens"
+    api_key = get_garmin_api_key(agy_dir)
 
     if not garmin_script.exists():
         return "warning", "extract_garmin_strength.py not found"
 
-    if not tokens_dir.exists():
-        return "warning", "Garmin: No cached tokens in garmin_tokens/ (skipped)"
+    if not tokens_dir.exists() and not api_key:
+        return "warning", "Garmin: No API key or cached tokens (skipped)"
 
     try:
         res = subprocess.run(
@@ -592,10 +653,10 @@ def run_garmin_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
             cwd=str(agy_dir),
             capture_output=True,
             text=True,
-            timeout=40
+            timeout=60
         )
         if res.returncode == 0:
-            msg = "Garmin Connect: Synchronized Strength, Running & Workouts"
+            msg = "Garmin Personal API: Synchronized Strength, Biomechanics, HRV & Sleep"
             return "success", msg
         else:
             return "warning", "Garmin Connect: Sync skipped (using cached session data)"
@@ -874,21 +935,65 @@ def handle_status_command(agy_dir: Path, venv_py: Path):
             print(f"  • {name:24}: {gray}○ not generated yet{reset}")
     print()
 
-    # 3. Garmin Connect
-    print(f"  {bold}⏱ Garmin Connect{reset}")
-    garmin_tokens = agy_dir / "garmin_tokens"
-    garmin_csv = agy_dir / "garmin_extracted_workouts.csv"
-    if garmin_tokens.exists():
-        print(f"  • Tokens Session   : {green}✔ Active{reset} {gray}(in garmin_tokens/){reset}")
+    # 3. Garmin Connect Developer Personal API
+    print(f"  {bold}⏱ Garmin Connect Developer Personal API{reset}")
+    api_key = get_garmin_api_key(agy_dir)
+    tok_status = get_garmin_token_status(agy_dir)
+
+    if api_key:
+        masked_key = api_key[:12] + "..." + api_key[-4:] if len(api_key) > 20 else "Configured"
+        print(f"  • Personal ApiKey  : {green}✔ Active{reset} {gray}({masked_key}){reset}")
     else:
-        print(f"  • Tokens Session   : {yellow}⚠️ Missing{reset} {gray}(run extract_garmin_strength.py to authenticate){reset}")
-    if garmin_csv.exists():
+        print(f"  • Personal ApiKey  : {yellow}⚠️ Not configured{reset} {gray}(set GARMIN_PERSONAL_API_KEY in .env){reset}")
+
+    if tok_status.get("valid"):
+        print(f"  • Bearer Token     : {green}✔ Active{reset} {gray}({tok_status['message']}){reset}")
+    elif tok_status.get("exists"):
+        print(f"  • Bearer Token     : {yellow}⚠️ {tok_status['message']}{reset}")
+    else:
+        print(f"  • Bearer Token     : {gray}○ None cached (runs on first sync){reset}")
+
+    strength_json = agy_dir / "garmin_extracted_workouts.json"
+    running_json = agy_dir / "garmin_running_activities.json"
+    workout_json = agy_dir / "garmin_workout_activities.json"
+    hrv_json = agy_dir / "garmin_hrv_summary.json"
+    sleep_json = agy_dir / "garmin_sleep_summary.json"
+    wellness_json = agy_dir / "garmin_daily_summaries.json"
+
+    if strength_json.exists():
         try:
-            with open(garmin_csv, "r", encoding="utf-8", errors="ignore") as f:
-                rows = [l.strip() for l in f if l.strip()]
-            count = max(0, len(rows) - 1)
-            latest_w = rows[-1].split(",")[0].strip() if count > 0 else "empty"
-            print(f"  • Extracted History: {green}✔ {count} workouts{reset} {gray}(latest: {latest_w}){reset}")
+            with open(strength_json, "r", encoding="utf-8") as f:
+                s_data = json.load(f)
+            print(f"  • Strength Sets    : {green}✔ {len(s_data):,} sets{reset} {gray}(primary compounds & accessories){reset}")
+        except Exception:
+            pass
+    if running_json.exists():
+        try:
+            with open(running_json, "r", encoding="utf-8") as f:
+                r_data = json.load(f)
+            print(f"  • Running Dynamics : {green}✔ {len(r_data)} runs{reset} {gray}(GCT, vertical ratio, GAP pace){reset}")
+        except Exception:
+            pass
+    if hrv_json.exists():
+        try:
+            with open(hrv_json, "r", encoding="utf-8") as f:
+                h_data = json.load(f)
+            print(f"  • Overnight HRV    : {green}✔ {len(h_data)} nights{reset} {gray}(Plews cv(lnRMSSD) baseline){reset}")
+        except Exception:
+            pass
+    if sleep_json.exists():
+        try:
+            with open(sleep_json, "r", encoding="utf-8") as f:
+                sl_data = json.load(f)
+            valid_nights = len([d for d in sl_data if d.get("sleepTimeSeconds")])
+            print(f"  • Sleep & SpO2     : {green}✔ {valid_nights} nights{reset} {gray}(dynamic sleep need & nadir SpO2){reset}")
+        except Exception:
+            pass
+    if wellness_json.exists():
+        try:
+            with open(wellness_json, "r", encoding="utf-8") as f:
+                w_data = json.load(f)
+            print(f"  • Allostatic Stress: {green}✔ {len(w_data)} days{reset} {gray}(Net Body Battery ΔBB & stress score){reset}")
         except Exception:
             pass
     print()
@@ -1118,6 +1223,228 @@ def handle_sleep_command(agy_dir: Path, venv_py: Path, args_list: list[str]):
     print(f"\n{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
 
 
+def handle_garmin_command(agy_dir: Path, venv_py: Path, sub_args: list[str]):
+    """Garmin Connect Personal API inspector & synchronization manager."""
+    gold = TerminalUI.GOLD
+    cyan = TerminalUI.CYAN
+    green = TerminalUI.GREEN
+    yellow = TerminalUI.YELLOW
+    gray = TerminalUI.GRAY
+    bold = TerminalUI.BOLD
+    reset = TerminalUI.RESET
+
+    parser = argparse.ArgumentParser(prog="athx garmin", description="Garmin Connect Developer Personal API manager")
+    parser.add_argument("-s", "--sync", action="store_true", help="Execute sync against Garmin Personal API")
+    args, unknown = parser.parse_known_args(sub_args)
+
+    do_sync = args.sync or (len(sub_args) > 0 and sub_args[0].lower() in ["sync", "-s", "--sync"])
+
+    if do_sync:
+        print(f"\n{gold}{bold}⚡ ATHX 2027 • Garmin Connect Developer Personal API Sync{reset}")
+        print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+        sync_script = agy_dir / "garmin_personal_sync.py"
+        if not sync_script.exists():
+            print(f"  {yellow}⚠️ garmin_personal_sync.py not found in {agy_dir}{reset}\n")
+            return
+        res = subprocess.run([str(venv_py), str(sync_script)], cwd=str(agy_dir))
+        if res.returncode == 0:
+            print(f"\n  {green}✔ Garmin Personal API Synchronization completed successfully.{reset}\n")
+        else:
+            print(f"\n  {yellow}⚠️ Sync exited with code {res.returncode}.{reset}\n")
+        return
+
+    # Status / inspection view
+    api_key = get_garmin_api_key(agy_dir)
+    tok_status = get_garmin_token_status(agy_dir)
+
+    print(f"\n{gold}{bold}⚡ ATHX 2027 • Garmin Connect Developer Program Personal API{reset}")
+    print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}")
+    print(f"  🌐 Endpoint        : {gray}https://personal.connectapi.garmin.com{reset}")
+    if api_key:
+        masked = api_key[:12] + "..." + api_key[-4:] if len(api_key) > 20 else "Configured"
+        print(f"  🔑 Personal ApiKey : {green}✔ Active{reset} {gray}({masked}){reset}")
+    else:
+        print(f"  🔑 Personal ApiKey : {yellow}⚠️ Not configured{reset} {gray}(set GARMIN_PERSONAL_API_KEY in .env){reset}")
+
+    if tok_status.get("valid"):
+        print(f"  🎟 Bearer Token    : {green}✔ Active{reset} {gray}({tok_status['message']}){reset}")
+        print(f"  👤 Subject ID      : {cyan}{tok_status.get('sub', 'athlete')}{reset}")
+        print(f"  🎯 Scope           : {cyan}{tok_status.get('scope', 'personal-api')}{reset}")
+    elif tok_status.get("exists"):
+        print(f"  🎟 Bearer Token    : {yellow}⚠️ {tok_status['message']}{reset}")
+    else:
+        print(f"  🎟 Bearer Token    : {gray}○ None cached (runs on first sync){reset}")
+    print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+
+    # Show dataset status
+    print(f"  {bold}📊 Extracted Datasets & Sports-Science Telemetry:{reset}")
+    strength_json = agy_dir / "garmin_extracted_workouts.json"
+    running_json = agy_dir / "garmin_running_activities.json"
+    workout_json = agy_dir / "garmin_workout_activities.json"
+    hrv_json = agy_dir / "garmin_hrv_summary.json"
+    sleep_json = agy_dir / "garmin_sleep_summary.json"
+    wellness_json = agy_dir / "garmin_daily_summaries.json"
+
+    datasets = [
+        ("Strength Sets (VBT)", strength_json, lambda d: f"{len(d):,} sets across movements"),
+        ("Running Dynamics", running_json, lambda d: f"{len(d)} runs (GCT, VR, GAP pace)"),
+        ("Cardio / CrossFit", workout_json, lambda d: f"{len(d)} sessions logged"),
+        ("Overnight HRV (Plews)", hrv_json, lambda d: f"{len(d)} nights baseline"),
+        ("Sleep Need & SpO2", sleep_json, lambda d: f"{len([x for x in d if x.get('sleepTimeSeconds')])} nights with dynamic need"),
+        ("Daily Allostatic Stress", wellness_json, lambda d: f"{len(d)} days (Net BB & stress)"),
+    ]
+
+    for label, path, formatter in datasets:
+        if path.exists():
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                info = formatter(data)
+                mtime = datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+                print(f"  • {label:24}: {green}✔ {info:36}{reset} {gray}({mtime}){reset}")
+            except Exception:
+                print(f"  • {label:24}: {yellow}error reading{reset}")
+        else:
+            print(f"  • {label:24}: {gray}○ Not extracted yet{reset}")
+
+    print(f"\n  {gray}💡 Commands:{reset}")
+    print(f"     athx garmin --sync      {gray}# Fetch latest activities, HRV, sleep & daily wellness{reset}")
+    print(f"     athx --garmin           {gray}# Display this inspection panel{reset}\n")
+
+
+def handle_doctor_command(agy_dir: Path, venv_py: Path):
+    """Executes full diagnostic suite across all ATHX ecosystem pillars."""
+    gold = TerminalUI.GOLD
+    cyan = TerminalUI.CYAN
+    green = TerminalUI.GREEN
+    yellow = TerminalUI.YELLOW
+    red = TerminalUI.RED
+    gray = TerminalUI.GRAY
+    bold = TerminalUI.BOLD
+    reset = TerminalUI.RESET
+
+    print(f"\n{gold}{bold}🩺 ATHX 2027 • System Diagnostic Doctor{reset}")
+    print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
+
+    checks = []
+
+    # 1. Python Runtime
+    py_ver = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    py_ok = sys.version_info >= (3, 9)
+    checks.append((
+        "Python Runtime",
+        "PASS" if py_ok else "FAIL",
+        f"v{py_ver} ({venv_py})"
+    ))
+
+    # 2. Garmin Personal API Key
+    api_key = get_garmin_api_key(agy_dir)
+    key_loc = "environment" if "GARMIN_PERSONAL_API_KEY" in os.environ else ".env file"
+    checks.append((
+        "Garmin Personal API Key",
+        "PASS" if api_key else "WARN",
+        f"Configured in {key_loc}" if api_key else "Not set (set GARMIN_PERSONAL_API_KEY)"
+    ))
+
+    # 3. Garmin Personal JWT Bearer Token
+    tok = get_garmin_token_status(agy_dir)
+    tok_status = "PASS" if tok.get("valid") else ("WARN" if tok.get("exists") else "FAIL")
+    checks.append((
+        "Garmin JWT Token",
+        tok_status,
+        tok.get("message", "No token cached")
+    ))
+
+    # 4. Garmin Datasets
+    g_sets = agy_dir / "garmin_extracted_workouts.json"
+    g_hrv = agy_dir / "garmin_hrv_summary.json"
+    g_sleep = agy_dir / "garmin_sleep_summary.json"
+    g_daily = agy_dir / "garmin_daily_summaries.json"
+    g_all_exist = all(p.exists() for p in [g_sets, g_hrv, g_sleep, g_daily])
+    checks.append((
+        "Garmin Data Pipeline",
+        "PASS" if g_all_exist else "WARN",
+        "Biometrics, HRV, sleep & wellness synced" if g_all_exist else "Some datasets missing (run: athx garmin --sync)"
+    ))
+
+    # 5. Apple Health Datasets
+    ap_sleep = agy_dir / "apple_sleep.csv"
+    ap_body = agy_dir / "apple_body_composition.csv"
+    ap_ok = ap_sleep.exists() and ap_body.exists()
+    checks.append((
+        "Apple Health Datasets",
+        "PASS" if ap_ok else "WARN",
+        "Sleep & body composition CSVs available" if ap_ok else "Incomplete CSVs (check iPhone webhook)"
+    ))
+
+    # 6. Webhook Server (:8080)
+    in_use = is_port_in_use(8080)
+    checks.append((
+        "Webhook Server (:8080)",
+        "PASS" if in_use else "INFO",
+        "Online and listening" if in_use else "Offline (start with: athx serve -d)"
+    ))
+
+    # 7. Tri-Calendar Integration
+    cal_html = agy_dir / "calendar_dashboard.html"
+    checks.append((
+        "Tri-Calendar Feed",
+        "PASS" if cal_html.exists() else "WARN",
+        "calendar_dashboard.html generated" if cal_html.exists() else "Not generated yet"
+    ))
+
+    # 8. Athlete Headquarters Dashboard
+    dash_html = agy_dir / "garmin_workout.html"
+    index_html = agy_dir / "index.html"
+    dash_ok = dash_html.exists() and index_html.exists()
+    if dash_ok:
+        sz_mb = dash_html.stat().st_size / (1024 * 1024)
+        dash_desc = f"Ready ({sz_mb:.2f} MB, garmin_workout.html & index.html)"
+    else:
+        dash_desc = "Missing dashboard files (run: athx)"
+    checks.append((
+        "Athlete Dashboard",
+        "PASS" if dash_ok else "FAIL",
+        dash_desc
+    ))
+
+    # 9. Git Cleanliness
+    try:
+        res = subprocess.run(["git", "-C", str(agy_dir), "status", "-s"], capture_output=True, text=True, timeout=5)
+        changed = len([l for l in res.stdout.splitlines() if l.strip()])
+        checks.append((
+            "Git Repository",
+            "PASS" if changed == 0 else "INFO",
+            "Working tree clean" if changed == 0 else f"{changed} uncommitted changes"
+        ))
+    except Exception:
+        checks.append(("Git Repository", "WARN", "Could not check git status"))
+
+    # Display results
+    total_pass = sum(1 for _, s, _ in checks if s == "PASS")
+    total_warn = sum(1 for _, s, _ in checks if s in ["WARN", "INFO"])
+    total_fail = sum(1 for _, s, _ in checks if s == "FAIL")
+
+    for name, status, desc in checks:
+        if status == "PASS":
+            badge = f"{green}✔ PASS{reset}"
+        elif status == "INFO":
+            badge = f"{cyan}ℹ INFO{reset}"
+        elif status == "WARN":
+            badge = f"{yellow}⚠️ WARN{reset}"
+        else:
+            badge = f"{red}✖ FAIL{reset}"
+        print(f"  {badge}  {name:26}: {desc}")
+
+    print(f"\n{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}")
+    if total_fail == 0 and total_warn == 0:
+        print(f"  {green}{bold}🎉 All systems operational! ATHX 2027 ecosystem in peak state.{reset}\n")
+    elif total_fail == 0:
+        print(f"  {green}{bold}✔ System healthy{reset} {gray}({total_pass} passed, {total_warn} advisories){reset}\n")
+    else:
+        print(f"  {yellow}{bold}⚠️ System attention required{reset} {gray}({total_fail} failures detected){reset}\n")
+
+
 # ==============================================================================
 # 6. MAIN ORCHESTRATION PIPELINE
 # ==============================================================================
@@ -1128,6 +1455,26 @@ def main():
     # Coach commands: `athx coach [...]` or `athx ask [...]`
     if raw_sub in ["coach", "ask"] or (len(sys.argv) > 1 and sys.argv[1] in ["coach", "ask"]):
         ensure_correct_python(AGY_DIR)
+        import athx_ai_coach
+        sub_args = sys.argv[2:]
+        if raw_sub == "ask":
+            sub_args = ["--ask"] + sub_args
+        athx_ai_coach.run_coach_cli(sub_args)
+        return
+
+    # Garmin command: `athx garmin [...]`
+    if raw_sub == "garmin":
+        ensure_correct_python(AGY_DIR)
+        venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+        handle_garmin_command(AGY_DIR, venv_py, sys.argv[2:])
+        return
+
+    # Doctor command: `athx doctor`
+    if raw_sub in ["doctor", "diag"]:
+        ensure_correct_python(AGY_DIR)
+        venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+        handle_doctor_command(AGY_DIR, venv_py)
+        return
         import athx_ai_coach
         sub_args = sys.argv[2:]
         if raw_sub == "ask":
