@@ -110,7 +110,10 @@ While running, `athx` renders a live, fluid loading bar and animated spinner acr
 | `athx serve -d` | Launches the orchestrator webhook server in background daemon mode with PID tracking (`server.pid`) |
 | `athx serve --stop` / `athx stop` | Terminates any running ATHX background webhook daemon |
 | `athx serve --restart` / `athx restart` | Restarts the background webhook server cleanly |
-| `athx status` | Comprehensive ecosystem diagnostics (Webhook daemon, 6 Apple Health CSVs, Garmin tokens & activities, Dashboards, Git) |
+| `athx status` | Comprehensive ecosystem diagnostics (Webhook daemon, 6 Apple Health CSVs, Garmin Developer API tokens & activities, Dashboards, Git) |
+| `athx doctor` | End-to-end 9-point system health diagnostic (Python runtime, Garmin API & JWT, Apple Health CSVs, Webhook server, Calendar, Dashboard, Git) |
+| `athx garmin` / `athx --garmin` | Inspects official Garmin Developer Personal API connection, 24h Bearer token TTL, and extracted biometric counts |
+| `athx garmin --sync` | Forces live sync of activities, strength sets, running biomechanics, overnight HRV, sleep need, and daily wellness from Garmin Personal API |
 | `athx health` | Step-by-step iOS Health Auto Export setup guide, target URLs (`.local` & LAN IP), metrics checklist, and payload inspector |
 | `athx health -r` / `--reingest` | Re-ingests the latest cached payload (`last_payload.json`) across all 6 Apple Health CSV datasets |
 | `athx sleep` | Inspects recent sleep records, stage distribution, and 7-day rolling cumulative sleep debt |
@@ -286,14 +289,16 @@ The coach synthesizes an authoritative answer referencing actual numbers from th
 
 | Module | Description |
 | :--- | :--- |
-| **`athx`** | Single-word master CLI orchestrator with fluid progress display, cross-machine path resolution, and argument parsing. |
-| **`athx_durability_cs_gear.py`** | Advanced sports-science engine: Critical Speed ($CS$/$D'$), CrossFit 3-tier durability, sleep debt, Plews & Buchheit overnight HRV, coach decision audits, and Garmin gear tracking. |
+| **`athx`** | Single-word master CLI orchestrator with fluid progress display, cross-machine path resolution, and full ecosystem diagnostics (`athx doctor`, `athx garmin`). |
+| **`garmin_personal_client.py`** | Official Garmin Connect Developer Program Personal API client exchanging `GARMIN_PERSONAL_API_KEY` for RS256 JWT Bearer token and querying activity, HRV, sleep, and wellness endpoints. |
+| **`garmin_personal_sync.py`** | High-throughput synchronization pipeline extracting strength sets, running biomechanics, overnight HRV, sleep summaries with dynamic need, and 90-day daily wellness. |
+| **`athx_durability_cs_gear.py`** | Advanced sports-science engine: Critical Speed ($CS$/$D'$/Grade-Adjusted Speed), CrossFit 3-tier durability, Dynamic Mornati Sleep Debt (actual load need & nap credits), Plews & Buchheit overnight HRV ($cv\text{lnRMSSD}$), Running Biomechanics ($VR\%$, $GCT$), Allostatic Stress Balance ($\Delta BB$), VBT Fatigue Drop-Off ($\%VL$), coach decision audits, and Garmin gear tracking. |
 | **`athx_ai_coach.py`** | Autonomous Sports Science AI briefing generator synthesizing telemetry into elite coaching debriefs and microcycle prescriptions. |
 | **`garmin_note_parser.py`** | Multi-provider LLM parser extracting structured exercise sets and splits from free-text workout notes and CrossFit WODs. |
 | **`athx_config.py`** | Single source of truth: 2027 benchmarks, 62 exercise mappings, MEV/MAV/MRV bands, compound stimulus volume factors, and plausible load boundaries. |
 | **`athx_analytics.py`** | Core analytical telemetry engine: data cleaning, unknown imputation, e1RM restrictions, ACWR, Foster strain, and recovery composite. |
-| **`extract_garmin_strength.py`** | Unofficial Garmin Connect extractor via `garth` OAuth; handles strength sets, running telemetry, and workout notes. |
-| **`generate_unified_athlete_dashboard.py`** | Zero-hardcoded dashboard generator outputting `garmin_workout.html` and `index.html` (with interactive Anatomic Target HUD, Critical Speed, and Durability cards). |
+| **`extract_garmin_strength.py`** | Headless Garmin Connect bridge auto-delegating to the official Developer Personal API (`garmin_personal_sync.py`) with legacy OAuth fallback. |
+| **`generate_unified_athlete_dashboard.py`** | Zero-hardcoded dashboard generator outputting `garmin_workout.html` and `index.html` (with interactive Anatomic Target HUD, Critical Speed, Biomechanics, Allostatic Stress, and VBT Fatigue cards). |
 | **`orchestrator.py`** | Local HTTP daemon (port 8080) with automated Apple Health REST webhook ingestion (`POST /api/health`), multi-day historical upsert into 6 CSVs, mDNS discovery, and debounced GitHub auto-push. |
 | **`create_drawio_architecture.py`** | Generates the official XML Draw.io architecture diagram (`athx_architecture.drawio`) and interactive HTML preview. |
 | **`sync_health_mcp.py`** | Ad-hoc MCP client for querying Apple Health directly from Health Auto Export's built-in MCP server. |
@@ -303,9 +308,9 @@ The coach synthesizes an authoritative answer referencing actual numbers from th
 | **`setup_athx.py`** | Automatic installer registering global `athx` command, shell `$PATH`, and Antigravity whitelist permissions. |
 
 ### 📈 Current Dataset Footprint
-* **Garmin Total Activities**: 158 activities (98 strength sessions, 10 running sessions, 57 cardio/hiking/other).
-* **Extracted Strength Sets**: 1,953 individual sets with reps, loads, and volumes.
-* **Garmin Telemetry**: Authentic overnight HRV summaries (`garmin_hrv_summary.json`) and shoe odometers (`garmin_gear.json`).
+* **Garmin Developer Personal API**: 100 master activities, 1,300 strength sets categorized by movement split, 6 running dynamics records (GCT, VO, VR), and 38 conditioning sessions.
+* **Overnight HRV Telemetry**: 43 nights authentic Garmin overnight HRV (`garmin_hrv_summary.json`) driving Plews & Buchheit $cv\text{lnRMSSD}$ rolling baselines.
+* **Sleep & Allostatic Stress**: 31 days with dynamic `sleepNeed`, nap credits, and nadir SpO2 (`garmin_sleep_summary.json`), plus 91 days of Body Battery and stress dynamics (`garmin_daily_summaries.json`).
 * **Apple Health Coverage**: 6 automated continuous CSV datasets (weight, body fat %, sleep stages, daily steps, nutrition macros, and mobility/gait biomechanics).
 
 ---
@@ -324,6 +329,9 @@ TZ=Europe/Paris
 
 # Local Daemon Port
 PORT=8080
+
+# Official Garmin Connect Developer Program Personal API
+GARMIN_PERSONAL_API_KEY=GCDC_your-personal-api-key-here
 
 # Optional: Health Auto Export MCP Token (for iOS automation webhook security)
 HAE_MCP_TOKEN=your_mcp_secret_token_here

@@ -1268,7 +1268,8 @@ def handle_garmin_command(agy_dir: Path, venv_py: Path, sub_args: list[str]):
 
     if tok_status.get("valid"):
         print(f"  🎟 Bearer Token    : {green}✔ Active{reset} {gray}({tok_status['message']}){reset}")
-        print(f"  👤 Subject ID      : {cyan}{tok_status.get('sub', 'athlete')}{reset}")
+        sub_display = tok_status.get('sub') or "Athlete Developer Key"
+        print(f"  👤 Subject ID      : {cyan}{sub_display}{reset}")
         print(f"  🎯 Scope           : {cyan}{tok_status.get('scope', 'personal-api')}{reset}")
     elif tok_status.get("exists"):
         print(f"  🎟 Bearer Token    : {yellow}⚠️ {tok_status['message']}{reset}")
@@ -1550,6 +1551,8 @@ def main():
     parser.add_argument("--status", action="store_true", help="Show system and webhook status")
     parser.add_argument("--health", action="store_true", help="Show Apple Health setup and webhook guide")
     parser.add_argument("--sleep", action="store_true", help="Show sleep extraction status or log sleep")
+    parser.add_argument("--garmin", action="store_true", help="Inspect Garmin Connect Developer Personal API and telemetry")
+    parser.add_argument("--doctor", action="store_true", help="Run system diagnostics across all integrations")
     args = parser.parse_args(cli_args)
 
     if args.sleep:
@@ -1573,6 +1576,14 @@ def main():
 
     ensure_correct_python(AGY_DIR)
     venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+
+    if args.garmin:
+        handle_garmin_command(AGY_DIR, venv_py, [])
+        return
+
+    if args.doctor:
+        handle_doctor_command(AGY_DIR, venv_py)
+        return
 
     if args.serve:
         handle_serve_command(AGY_DIR, venv_py, [])
