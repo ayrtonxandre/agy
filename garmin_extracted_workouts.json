@@ -24684,7 +24684,7 @@
     "Total_Volume_kg": 300.0,
     "e1RM_kg": 70.0,
     "Duration_s": 0.0,
-    "Session_Type": "Pull"
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24503269582,
@@ -24697,7 +24697,7 @@
     "Total_Volume_kg": 405.0,
     "e1RM_kg": 58.5,
     "Duration_s": 0.0,
-    "Session_Type": "Pull"
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24503269582,
@@ -24710,7 +24710,7 @@
     "Total_Volume_kg": 350.0,
     "e1RM_kg": 81.7,
     "Duration_s": 0.0,
-    "Session_Type": "Pull"
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24503269582,
@@ -24723,7 +24723,7 @@
     "Total_Volume_kg": 405.0,
     "e1RM_kg": 58.5,
     "Duration_s": 0.0,
-    "Session_Type": "Pull"
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24503269582,
@@ -24736,7 +24736,7 @@
     "Total_Volume_kg": 400.0,
     "e1RM_kg": 93.3,
     "Duration_s": 0.0,
-    "Session_Type": "Pull"
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24503269582,
@@ -24749,7 +24749,7 @@
     "Total_Volume_kg": 405.0,
     "e1RM_kg": 58.5,
     "Duration_s": 0.0,
-    "Session_Type": "Pull"
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24503269582,
@@ -24762,7 +24762,7 @@
     "Total_Volume_kg": 450.0,
     "e1RM_kg": 105.0,
     "Duration_s": 0.0,
-    "Session_Type": "Pull"
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24503269582,
@@ -24775,7 +24775,7 @@
     "Total_Volume_kg": 405.0,
     "e1RM_kg": 58.5,
     "Duration_s": 0.0,
-    "Session_Type": "Pull"
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24503269582,
@@ -24788,7 +24788,7 @@
     "Total_Volume_kg": 500.0,
     "e1RM_kg": 116.7,
     "Duration_s": 0.0,
-    "Session_Type": "Pull"
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24503269582,
@@ -24801,7 +24801,7 @@
     "Total_Volume_kg": 405.0,
     "e1RM_kg": 58.5,
     "Duration_s": 0.0,
-    "Session_Type": "Pull"
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24533322405,
@@ -25418,37 +25418,11 @@
     "Activity_ID": 24659045766,
     "Date": "2026-10-09",
     "Activity_Name": "CrossFit",
-    "Exercise": "Push Up",
-    "Set": 1,
-    "Reps": 4,
-    "Weight_kg": 0.0,
-    "Total_Volume_kg": 0.0,
-    "e1RM_kg": 0.0,
-    "Duration_s": 0.0,
-    "Session_Type": "Full Body"
-  },
-  {
-    "Activity_ID": 24659045766,
-    "Date": "2026-10-09",
-    "Activity_Name": "CrossFit",
     "Exercise": "Snatch",
     "Set": 2,
     "Reps": 30,
     "Weight_kg": 30.0,
     "Total_Volume_kg": 900.0,
-    "e1RM_kg": 0.0,
-    "Duration_s": 0.0,
-    "Session_Type": "Full Body"
-  },
-  {
-    "Activity_ID": 24659045766,
-    "Date": "2026-10-09",
-    "Activity_Name": "CrossFit",
-    "Exercise": "Push Up",
-    "Set": 2,
-    "Reps": 4,
-    "Weight_kg": 0.0,
-    "Total_Volume_kg": 0.0,
     "e1RM_kg": 0.0,
     "Duration_s": 0.0,
     "Session_Type": "Full Body"
@@ -25470,38 +25444,12 @@
     "Activity_ID": 24659045766,
     "Date": "2026-10-09",
     "Activity_Name": "CrossFit",
-    "Exercise": "Push Up",
-    "Set": 3,
-    "Reps": 4,
-    "Weight_kg": 0.0,
-    "Total_Volume_kg": 0.0,
-    "e1RM_kg": 0.0,
-    "Duration_s": 0.0,
-    "Session_Type": "Full Body"
-  },
-  {
-    "Activity_ID": 24659045766,
-    "Date": "2026-10-09",
-    "Activity_Name": "CrossFit",
     "Exercise": "Snatch",
     "Set": 4,
     "Reps": 10,
     "Weight_kg": 30.0,
     "Total_Volume_kg": 300.0,
     "e1RM_kg": 40.0,
-    "Duration_s": 0.0,
-    "Session_Type": "Full Body"
-  },
-  {
-    "Activity_ID": 24659045766,
-    "Date": "2026-10-09",
-    "Activity_Name": "CrossFit",
-    "Exercise": "Push Up",
-    "Set": 4,
-    "Reps": 4,
-    "Weight_kg": 0.0,
-    "Total_Volume_kg": 0.0,
-    "e1RM_kg": 0.0,
     "Duration_s": 0.0,
     "Session_Type": "Full Body"
   },
@@ -26952,52 +26900,52 @@
     "Activity_ID": 24822339601,
     "Date": "2026-10-23",
     "Activity_Name": "CrossFit",
-    "Exercise": "Kettlebell Thrusters",
+    "Exercise": "Thruster",
     "Set": 1,
     "Reps": 10,
     "Weight_kg": 32.0,
     "Total_Volume_kg": 320.0,
     "e1RM_kg": 42.7,
     "Duration_s": 0.0,
-    "Session_Type": "Full Body"
+    "Session_Type": "Push"
   },
   {
     "Activity_ID": 24822339601,
     "Date": "2026-10-23",
     "Activity_Name": "CrossFit",
-    "Exercise": "Kettlebell Thrusters",
+    "Exercise": "Thruster",
     "Set": 2,
     "Reps": 10,
     "Weight_kg": 32.0,
     "Total_Volume_kg": 320.0,
     "e1RM_kg": 42.7,
     "Duration_s": 0.0,
-    "Session_Type": "Full Body"
+    "Session_Type": "Push"
   },
   {
     "Activity_ID": 24822339601,
     "Date": "2026-10-23",
     "Activity_Name": "CrossFit",
-    "Exercise": "Kettlebell Thrusters",
+    "Exercise": "Thruster",
     "Set": 3,
     "Reps": 10,
     "Weight_kg": 32.0,
     "Total_Volume_kg": 320.0,
     "e1RM_kg": 42.7,
     "Duration_s": 0.0,
-    "Session_Type": "Full Body"
+    "Session_Type": "Push"
   },
   {
     "Activity_ID": 24822339601,
     "Date": "2026-10-23",
     "Activity_Name": "CrossFit",
-    "Exercise": "Kettlebell Thrusters",
+    "Exercise": "Thruster",
     "Set": 4,
     "Reps": 10,
     "Weight_kg": 32.0,
     "Total_Volume_kg": 320.0,
     "e1RM_kg": 42.7,
     "Duration_s": 0.0,
-    "Session_Type": "Full Body"
+    "Session_Type": "Push"
   }
 ]

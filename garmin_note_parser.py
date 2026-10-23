@@ -232,8 +232,8 @@ def normalize_exercise_name(raw_name: str) -> str:
         return "Unknown Exercise"
     
     cleaned = raw_name.strip().lower()
-    cleaned = re.sub(r"^(barbell|dumbbells?|db|bb)\s+", "", cleaned)
-    cleaned = re.sub(r"\s+(barbell|dumbbells?|db|bb)$", "", cleaned)
+    cleaned = re.sub(r"^(barbell|dumbbells?|db|bb|kettlebells?|kb|sandbags?)\s+", "", cleaned)
+    cleaned = re.sub(r"\s+(barbell|dumbbells?|db|bb|kettlebells?|kb|sandbags?)$", "", cleaned)
     
     if cleaned in EXERCISE_ALIASES:
         return EXERCISE_ALIASES[cleaned]

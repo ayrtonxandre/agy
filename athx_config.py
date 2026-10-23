@@ -275,6 +275,19 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     "Power Clean": "Full Body",
     "Clean and Jerk": "Full Body",
     "Thruster": "Shoulders",
+    "Thrusters": "Shoulders",
+    "Kettlebell Thruster": "Shoulders",
+    "Kettlebell Thrusters": "Shoulders",
+    "Sandbag Thruster": "Shoulders",
+    "Sandbag Thrusters": "Shoulders",
+    "Barbell Hack Squat": "Quads",
+    "Leg Extensions": "Quads",
+    "Single Leg Sliding Leg Curl": "Hamstrings/Glutes",
+    "Weighted Seated Calf Raise": "Hamstrings/Glutes",
+    "Farmers Walk": "Forearms",
+    "Incline Barbell Bench Press": "Chest",
+    "Knee Raises": "Core",
+    "Snatch Barbell": "Full Body",
     "Wall Ball": "Quads",
     "Box Jump": "Quads",
     "Toes to Bar": "Core",
@@ -301,6 +314,90 @@ MUSCLE_TO_SPLIT_MAP: dict[str, str] = {
     "Core": "Core",
     "Full Body": "Full Body",
     "Warmup": "Warmup"
+}
+
+# ------------------------------------------------------------------------------
+# 3b. MULTI-MUSCLE & COMPOUND STIMULUS VOLUME FACTORS
+# ------------------------------------------------------------------------------
+# In sports science (e.g. Renaissance Periodization / Dr. Mike Israetel hypertrophy standards),
+# compound exercises provide substantial hypertrophy stimulus to multiple muscle groups simultaneously.
+# Sets for these exercises contribute fractional or full set volume to each target muscle.
+EXERCISE_COMPOUND_VOLUME: dict[str, dict[str, float]] = {
+    # Hybrid Movements: Full front squat + overhead push press (stimulates Quads and Shoulders)
+    "Thruster": {"Quads": 1.0, "Shoulders": 1.0},
+    "Thrusters": {"Quads": 1.0, "Shoulders": 1.0},
+    "Kettlebell Thruster": {"Quads": 1.0, "Shoulders": 1.0},
+    "Kettlebell Thrusters": {"Quads": 1.0, "Shoulders": 1.0},
+    "Sandbag Thruster": {"Quads": 1.0, "Shoulders": 1.0},
+    "Sandbag Thrusters": {"Quads": 1.0, "Shoulders": 1.0},
+    "Wall Ball": {"Quads": 1.0, "Shoulders": 0.75},
+
+    # Posterior Chain Compounds: Hamstring/Glute hinge + isometric back/lat pull
+    "Barbell Deadlift": {"Hamstrings/Glutes": 1.0, "Lats/Back": 0.75},
+    "Deadlift": {"Hamstrings/Glutes": 1.0, "Lats/Back": 0.75},
+    "Sumo Deadlift": {"Hamstrings/Glutes": 1.0, "Quads": 0.5},
+    "Sumo Deadlift High Pull": {"Hamstrings/Glutes": 0.75, "Shoulders": 0.75, "Lats/Back": 0.5},
+    "Kettlebell Swing": {"Hamstrings/Glutes": 1.0, "Core": 0.25},
+
+    # Squat & Lunge Compounds: Prime Quad mover + secondary glute/adductor stimulus
+    "Barbell Back Squat": {"Quads": 1.0, "Hamstrings/Glutes": 0.5},
+    "Back Squat": {"Quads": 1.0, "Hamstrings/Glutes": 0.5},
+    "Squat": {"Quads": 1.0, "Hamstrings/Glutes": 0.5},
+    "Barbell Squat": {"Quads": 1.0, "Hamstrings/Glutes": 0.5},
+    "Front Squat": {"Quads": 1.0, "Hamstrings/Glutes": 0.25},
+    "Goblet Squat": {"Quads": 1.0, "Hamstrings/Glutes": 0.25},
+    "Barbell Hack Squat": {"Quads": 1.0},
+    "Leg Press": {"Quads": 1.0, "Hamstrings/Glutes": 0.25},
+    "Lunge": {"Quads": 1.0, "Hamstrings/Glutes": 0.5},
+    "Walking Lunge": {"Quads": 1.0, "Hamstrings/Glutes": 0.5},
+    "Walking Lunges": {"Quads": 1.0, "Hamstrings/Glutes": 0.5},
+    "Bulgarian Split Squat": {"Quads": 1.0, "Hamstrings/Glutes": 0.5},
+    "Split Squat": {"Quads": 1.0, "Hamstrings/Glutes": 0.5},
+    "Single Leg Squat": {"Quads": 1.0, "Hamstrings/Glutes": 0.5},
+    "Overhead Lunge": {"Quads": 1.0, "Hamstrings/Glutes": 0.5, "Shoulders": 0.5},
+
+    # Upper Body Compounds: Chest presses (Triceps + Anterior Delts)
+    "Barbell Bench Press": {"Chest": 1.0, "Triceps": 0.5, "Shoulders": 0.5},
+    "Bench Press": {"Chest": 1.0, "Triceps": 0.5, "Shoulders": 0.5},
+    "Incline Barbell Bench Press": {"Chest": 1.0, "Triceps": 0.5, "Shoulders": 0.5},
+    "Incline Bench Press": {"Chest": 1.0, "Triceps": 0.5, "Shoulders": 0.5},
+    "Dumbbell Bench Press": {"Chest": 1.0, "Triceps": 0.5, "Shoulders": 0.5},
+    "Incline Dumbbell Press": {"Chest": 1.0, "Triceps": 0.5, "Shoulders": 0.5},
+    "Push Up": {"Chest": 1.0, "Triceps": 0.5, "Shoulders": 0.25},
+    "Dip": {"Triceps": 1.0, "Chest": 0.5, "Shoulders": 0.5},
+    "Bench Dip": {"Triceps": 1.0, "Chest": 0.25, "Shoulders": 0.25},
+
+    # Overhead Presses (Shoulders + Triceps)
+    "Overhead Press": {"Shoulders": 1.0, "Triceps": 0.5},
+    "Barbell Shoulder Press": {"Shoulders": 1.0, "Triceps": 0.5},
+    "Barbell Push Press": {"Shoulders": 1.0, "Triceps": 0.5, "Quads": 0.25},
+    "Push Press": {"Shoulders": 1.0, "Triceps": 0.5, "Quads": 0.25},
+    "Military Press": {"Shoulders": 1.0, "Triceps": 0.5},
+    "Dumbbell Shoulder Press": {"Shoulders": 1.0, "Triceps": 0.5},
+
+    # Upper Body Pulls: Lats/Back + Biceps secondary
+    "Pull Up": {"Lats/Back": 1.0, "Biceps": 0.5},
+    "Chin Up": {"Lats/Back": 1.0, "Biceps": 0.75},
+    "Lat Pulldown": {"Lats/Back": 1.0, "Biceps": 0.5},
+    "Row": {"Lats/Back": 1.0, "Biceps": 0.5},
+    "Barbell Row": {"Lats/Back": 1.0, "Biceps": 0.5},
+    "Bent Over Row": {"Lats/Back": 1.0, "Biceps": 0.5},
+    "Dumbbell Row": {"Lats/Back": 1.0, "Biceps": 0.5},
+    "Seated Cable Row": {"Lats/Back": 1.0, "Biceps": 0.5},
+    "T Bar Row": {"Lats/Back": 1.0, "Biceps": 0.5},
+    "T-Bar Row": {"Lats/Back": 1.0, "Biceps": 0.5},
+
+    # Olympic & Explosive Full-Body
+    "Snatch": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.5, "Lats/Back": 0.5},
+    "Single Arm Dumbbell Snatch": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.25},
+    "Clean": {"Quads": 0.5, "Hamstrings/Glutes": 0.5, "Lats/Back": 0.5},
+    "Devil Press": {"Shoulders": 0.75, "Hamstrings/Glutes": 0.5, "Chest": 0.5},
+    "Single Arm Dumbbells Devil Press": {"Shoulders": 0.75, "Hamstrings/Glutes": 0.5, "Chest": 0.5},
+
+    # Carries
+    "Farmers Walk": {"Forearms": 1.0, "Core": 0.5},
+    "Farmers Carry": {"Forearms": 1.0, "Core": 0.5},
+    "Farmer's Walk": {"Forearms": 1.0, "Core": 0.5},
 }
 
 # ------------------------------------------------------------------------------
