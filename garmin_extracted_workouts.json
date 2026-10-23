@@ -26947,5 +26947,57 @@
     "e1RM_kg": 84.0,
     "Duration_s": 0.0,
     "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24822339601,
+    "Date": "2026-10-23",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Kettlebell Thrusters",
+    "Set": 1,
+    "Reps": 10,
+    "Weight_kg": 32.0,
+    "Total_Volume_kg": 320.0,
+    "e1RM_kg": 42.7,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
+  },
+  {
+    "Activity_ID": 24822339601,
+    "Date": "2026-10-23",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Kettlebell Thrusters",
+    "Set": 2,
+    "Reps": 10,
+    "Weight_kg": 32.0,
+    "Total_Volume_kg": 320.0,
+    "e1RM_kg": 42.7,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
+  },
+  {
+    "Activity_ID": 24822339601,
+    "Date": "2026-10-23",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Kettlebell Thrusters",
+    "Set": 3,
+    "Reps": 10,
+    "Weight_kg": 32.0,
+    "Total_Volume_kg": 320.0,
+    "e1RM_kg": 42.7,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
+  },
+  {
+    "Activity_ID": 24822339601,
+    "Date": "2026-10-23",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Kettlebell Thrusters",
+    "Set": 4,
+    "Reps": 10,
+    "Weight_kg": 32.0,
+    "Total_Volume_kg": 320.0,
+    "e1RM_kg": 42.7,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
   }
 ]

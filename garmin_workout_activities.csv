@@ -1,4 +1,7 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect_Label,Moderate_Intensity_Min,Vigorous_Intensity_Min,Steps,Notes
+24822339601,2026-10-23,2026-10-23 06:36:11,CrossFit,indoor_cardio,Cross-Training,40.3,0.0,502,140.0,188.0,SPEED,4,32,2672,"4 rounds
+400m run
+10 kettlebell thrusters 32Kg"
 24798737901,2026-10-21,2026-10-21 06:40:43,CrossFit,indoor_cardio,Cross-Training,44.4,0.0,544,139.0,186.0,SPEED,12,32,900,"3 rounds
 
 25 single arm dumbbell snatch - 35Lbs

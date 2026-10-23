@@ -1,5 +1,23 @@
 [
   {
+    "Activity_ID": 24822339601,
+    "Date": "2026-10-23",
+    "Start_Time": "2026-10-23 06:36:11",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Category": "Cross-Training",
+    "Duration_min": 40.3,
+    "Distance_km": 0.0,
+    "Calories_kcal": 502,
+    "Average_HR": 140.0,
+    "Max_HR": 188.0,
+    "Training_Effect_Label": "SPEED",
+    "Moderate_Intensity_Min": 4,
+    "Vigorous_Intensity_Min": 32,
+    "Steps": 2672,
+    "Notes": "4 rounds\n400m run\n10 kettlebell thrusters 32Kg"
+  },
+  {
     "Activity_ID": 24798737901,
     "Date": "2026-10-21",
     "Start_Time": "2026-10-21 06:40:43",
