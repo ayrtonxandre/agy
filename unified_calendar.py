@@ -87,6 +87,48 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
     except Exception as e:
         print(f"Warning: Could not fetch Clariane events: {e}", file=sys.stderr)
 
+    # 4. ATHX Training Schedule (Microcycle: 4x CrossFit • 2x Gym • 3x Run)
+    try:
+        cur_day = start_dt.date()
+        end_day = end_dt.date()
+        while cur_day <= end_day:
+            dow = cur_day.weekday()  # 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+            day_sessions = []
+            if dow == 0:  # Monday
+                day_sessions.append(("06:30", "07:30", "🏋️‍♂️ CrossFit (Session 1)", "CrossFit Box WOD · Conditioning & Gymnastics", "CrossFit Box"))
+            elif dow == 1:  # Tuesday
+                day_sessions.append(("06:30", "07:25", "🦵 ATHX Gym A: Squats & S2O Overhead Power", "Barbell Back Squat 4×6 (77.5–82.5kg) + Bulgarian Split Squat 3×8 + Push Press 4×5 + Leg Ext 3×15", "Gym / Strength Facility"))
+            elif dow == 2:  # Wednesday
+                day_sessions.append(("06:30", "07:30", "🏋️‍♂️ CrossFit (Session 2)", "CrossFit Box WOD programming", "CrossFit Box"))
+                day_sessions.append(("18:30", "19:15", "🏃 ATHX Run 1: Zone 2 Aerobic Base & Cadence Drill", "Distance: 5.0–6.0 km @ 5:40–6:10/km (HR <145 bpm) · 172-174 spm cadence cue", "Road / Track"))
+            elif dow == 3:  # Thursday
+                day_sessions.append(("06:30", "07:25", "🏋️ ATHX Gym B: Deadlift Floor Pull & Upper Maintenance", "Deadlift 4×5 (115–125kg) + Bench Press 3×6–8 + RDL 3×8–10 + Weighted Pull-ups 3×6–8 + Carries", "Gym / Strength Facility"))
+            elif dow == 4:  # Friday
+                day_sessions.append(("06:30", "07:30", "🏋️‍♂️ CrossFit (Session 3)", "CrossFit Box WOD programming", "CrossFit Box"))
+                day_sessions.append(("18:30", "19:20", "🏃 ATHX Run 2: 5km Qualifying Threshold Intervals", "Warm-up + 4–5×1,000m @ 4:25–4:35/km (90s rest) + Cool-down (~6.5 km total)", "Track / Flat Course"))
+            elif dow == 5:  # Saturday
+                day_sessions.append(("10:00", "11:15", "🏋️‍♂️ CrossFit (Session 4 - Team / Engine WOD)", "Saturday Box WOD · Partner / Long aerobic engine metcon", "CrossFit Box"))
+            elif dow == 6:  # Sunday
+                day_sessions.append(("09:30", "10:15", "🏃 ATHX Run 3: Lighter Zone 2 5K (Active Recovery)", "Distance: Exactly 5.0 km easy conversational run @ 5:50–6:20/km (HR <140 bpm)", "Park / Easy Trail"))
+
+            for start_s, end_s, summary, desc, loc in day_sessions:
+                s_h, s_m = map(int, start_s.split(":"))
+                e_h, e_m = map(int, end_s.split(":"))
+                s_dt = datetime(cur_day.year, cur_day.month, cur_day.day, s_h, s_m, tzinfo=LOCAL_TZ)
+                e_dt = datetime(cur_day.year, cur_day.month, cur_day.day, e_h, e_m, tzinfo=LOCAL_TZ)
+                unified.append({
+                    "source": "⚡ ATHX (Training)",
+                    "summary": summary,
+                    "description": desc,
+                    "start": s_dt,
+                    "end": e_dt,
+                    "location": loc,
+                    "is_all_day": False
+                })
+            cur_day += timedelta(days=1)
+    except Exception as e:
+        print(f"Warning: Could not project ATHX training schedule: {e}", file=sys.stderr)
+
     # Sort chronologically
     unified.sort(key=lambda x: x["start"])
 

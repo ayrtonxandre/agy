@@ -292,37 +292,66 @@ def build_microcycle(all_activities: list[dict], coach_briefing: dict, as_of_dat
             act_by_date.setdefault(d, []).append(a)
 
     planned_presets = {
-        3: {  # Thursday
-            "title": "Legs A · Squat", "c": "legs",
+        0: {  # Monday
+            "title": "CrossFit WOD", "c": "cond",
             "items": [
-                {"name": "Barbell Back Squat", "scheme": "4 × 6", "load": "90–96 kg"},
-                {"name": "Bulgarian Split Squat", "scheme": "3 × 8 / leg", "load": "18–20 kg"}
+                {"name": "Box Metcon / Gymnastics", "scheme": "60 min", "load": "WOD"},
+                {"name": "Skill & Core Work", "scheme": "—", "load": "moderate"}
             ],
-            "why": "Quads at 4.1 sets/wk vs MEV 8.0. Target 75–80% of 120 kg e1RM to trigger hypertrophy adaptation."
+            "why": "General work capacity & metabolic conditioning. Protect systemic load for Tuesday's heavy squats."
+        },
+        1: {  # Tuesday
+            "title": "Gym A · Squats & S2O", "c": "legs",
+            "items": [
+                {"name": "Barbell Back Squat", "scheme": "4 × 6", "load": "77.5–82.5 kg"},
+                {"name": "Bulgarian Split Squat", "scheme": "3 × 8 / leg", "load": "2 × 18–22 kg"},
+                {"name": "Shoulder-to-Overhead (Push Press)", "scheme": "4 × 5", "load": "45–50 kg"},
+                {"name": "Leg Extension", "scheme": "3 × 12–15", "load": "RPE 8.5–9"}
+            ],
+            "why": "Quads at 4.5 sets/wk vs MEV 8.0. Target +1.25 kg/wk progression to eliminate the -38.7 kg squat deficit."
+        },
+        2: {  # Wednesday
+            "title": "CrossFit + Run 1 (Zone 2)", "c": "cond",
+            "items": [
+                {"name": "CrossFit Box WOD", "scheme": "60 min", "load": "WOD"},
+                {"name": "Aerobic Base Run", "scheme": "5–6 km", "load": "5:40–6:10/km (HR <145)"},
+                {"name": "Cadence Focus", "scheme": "172–174 spm", "load": "light midfoot"}
+            ],
+            "why": "Flushes Tuesday quad stiffness with Zone 2 aerobic circulation; fixes overstride cadence to lower GCT."
+        },
+        3: {  # Thursday
+            "title": "Gym B · Deadlift & Upper", "c": "pull",
+            "items": [
+                {"name": "Conventional / Trap Deadlift", "scheme": "4 × 5", "load": "115–125 kg"},
+                {"name": "Barbell Bench Press", "scheme": "3 × 6–8", "load": "75–80 kg"},
+                {"name": "Romanian Deadlift (RDL)", "scheme": "3 × 8–10", "load": "80–90 kg"},
+                {"name": "Weighted Pull-ups", "scheme": "3 × 6–8", "load": "+10 to +15 kg"},
+                {"name": "Heavy Sandbag / Carry", "scheme": "3 × 40 m", "load": "50 kg bag / KBs"}
+            ],
+            "why": "Closes deadlift gap (-28 kg) & maintains 104 kg bench press without junk fatigue."
         },
         4: {  # Friday
-            "title": "Zone 2 run", "c": "cond",
+            "title": "CrossFit + Run 2 (5k Intervals)", "c": "cond",
             "items": [
-                {"name": "Easy continuous run", "scheme": "35 min", "load": "5:45–6:00/km"},
-                {"name": "Heart rate cap", "scheme": "—", "load": "≤ 142 bpm"}
+                {"name": "CrossFit Box WOD", "scheme": "60 min", "load": "WOD"},
+                {"name": "5k Qualifying Repeats", "scheme": "4–5 × 1,000m", "load": "@ 4:25–4:35/km (90s rest)"}
             ],
-            "why": "Aerobic threshold maintenance. 5km running pace sits 37 s off standard without interfering with leg recovery."
+            "why": "Bridges the 37s/km gap to 4:30/km standard; high-velocity stride recruitment."
         },
         5: {  # Saturday
-            "title": "Legs B · Hinge", "c": "legs",
+            "title": "CrossFit · Team / Engine", "c": "cond",
             "items": [
-                {"name": "Deadlift Floor Pull", "scheme": "4 × 5", "load": "96–103 kg"},
-                {"name": "Romanian Deadlift", "scheme": "3 × 8", "load": "70–80 kg"}
+                {"name": "Saturday Box WOD", "scheme": "60 min", "load": "Team / Long Metcon"}
             ],
-            "why": "Deadlift carries the largest competition gap (31.7 kg). Posterior chain sets starved at 2.0/wk vs MEV 6.0."
+            "why": "High-volume hybrid work capacity & lactate buffering."
         },
         6: {  # Sunday
-            "title": "ATHX simulation", "c": "cond",
+            "title": "Run 3 · Lighter Zone 2 5K", "c": "cond",
             "items": [
-                {"name": "Rowing intervals", "scheme": "5 rounds", "load": "400 m"},
-                {"name": "Sandbag / DB Thrusters", "scheme": "× 12 per round", "load": "race weight"}
+                {"name": "Easy Recovery Run", "scheme": "5.0 km", "load": "5:50–6:20/km (HR <140)"},
+                {"name": "Mobility & Hips", "scheme": "20 min", "load": "couch stretch & foam roll"}
             ],
-            "why": "Work capacity & race-specific metabolic endurance. Keep loads sub-maximal after Saturday's hinge session."
+            "why": "Pure active recovery & parasympathetic recharge; brings weekly running volume to ~17 km."
         }
     }
 

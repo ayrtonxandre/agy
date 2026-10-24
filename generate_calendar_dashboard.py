@@ -83,6 +83,8 @@ def build_dashboard():
             --col-personal-bg: rgba(16, 185, 129, 0.15);
             --col-client: #f59e0b;
             --col-client-bg: rgba(245, 158, 11, 0.15);
+            --col-training: #ff0066;
+            --col-training-bg: rgba(255, 0, 102, 0.15);
             --col-free: #06b6d4;
             --col-free-bg: rgba(6, 182, 212, 0.12);
 
@@ -276,6 +278,7 @@ def build_dashboard():
         .kpi-card.work::before {{ background: var(--col-work); }}
         .kpi-card.personal::before {{ background: var(--col-personal); }}
         .kpi-card.client::before {{ background: var(--col-client); }}
+        .kpi-card.training::before {{ background: var(--col-training); }}
         .kpi-card.free::before {{ background: var(--col-free); }}
 
         .kpi-title {{
@@ -350,6 +353,7 @@ def build_dashboard():
         .pill-btn.work .indicator {{ background: var(--col-work); }}
         .pill-btn.personal .indicator {{ background: var(--col-personal); }}
         .pill-btn.client .indicator {{ background: var(--col-client); }}
+        .pill-btn.training .indicator {{ background: var(--col-training); }}
         .pill-btn.free .indicator {{ background: var(--col-free); }}
 
         .search-input {{
@@ -468,6 +472,11 @@ def build_dashboard():
         .event-card.client {{
             border-left-color: var(--col-client);
             background: linear-gradient(90deg, var(--col-client-bg) 0%, rgba(19, 31, 71, 0.5) 100%);
+        }}
+
+        .event-card.training {{
+            border-left-color: var(--col-training);
+            background: linear-gradient(90deg, var(--col-training-bg) 0%, rgba(19, 31, 71, 0.5) 100%);
         }}
 
         .event-card.free {{
@@ -712,13 +721,22 @@ def build_dashboard():
                 <div class="kpi-subtext">Invoicing 2.0 & HDJ coordination</div>
             </div>
 
+            <div class="kpi-card training">
+                <div class="kpi-title">
+                    <span>⚡ ATHX Training</span>
+                    <span id="kpiTrainingCount">0 sessions</span>
+                </div>
+                <div class="kpi-value" id="kpiTrainingHours" style="color: var(--artefact-pink);">0.0 hrs</div>
+                <div class="kpi-subtext">4× CrossFit • 2× Gym • 3× Run</div>
+            </div>
+
             <div class="kpi-card personal">
                 <div class="kpi-title">
                     <span>🍏 Personal (iCloud)</span>
                     <span id="kpiPersonalCount">0 events</span>
                 </div>
                 <div class="kpi-value" id="kpiPersonalSport">0 sessions</div>
-                <div class="kpi-subtext">Ma vie, Cross-training, appointments</div>
+                <div class="kpi-subtext">Ma vie, appointments, personal</div>
             </div>
 
             <div class="kpi-card free">
@@ -740,11 +758,14 @@ def build_dashboard():
                 <button class="pill-btn client active" id="filterClient" onclick="toggleFilter('client')">
                     <span class="indicator"></span> Clariane (Client)
                 </button>
+                <button class="pill-btn training active" id="filterTraining" onclick="toggleFilter('training')">
+                    <span class="indicator"></span> ⚡ Training (ATHX)
+                </button>
                 <button class="pill-btn personal active" id="filterPersonal" onclick="toggleFilter('personal')">
                     <span class="indicator"></span> Personal (iCloud)
                 </button>
                 <button class="pill-btn free active" id="filterFree" onclick="toggleFilter('free')">
-                    <span class="indicator"></span> Open Training Windows
+                    <span class="indicator"></span> Open Windows
                 </button>
             </div>
 
@@ -792,11 +813,11 @@ def build_dashboard():
                 <div class="timeline-container">
                     <h3 style="margin-bottom: 1rem; font-size: 1.1rem; color: #ffffff;">🎯 ATHX 2027 Training Recommendations</h3>
                     <div style="font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.85rem;">
-                        <p>• <strong>Optimal Gym Session Duration:</strong> 45 to 50 minutes (4 days/week: Mon Push, Tue Pull & Forearms, Thu Legs A, Fri Legs B).</p>
-                        <p>• <strong>CrossFit & Conditioning:</strong> Mon & Wed (19:00), Sat (11:30). Wednesday morning is reserved for 15–20 min Light Cardio & Core.</p>
-                        <p>• <strong>Recovery & Rest:</strong> Sunday is 100% Full Rest & Recovery to protect sleep and support the 85 kg mass target.</p>
+                        <p>• <strong>CrossFit Engine (4 sessions/wk):</strong> Mon (06:30), Wed (06:30), Fri (06:30), Sat (10:00 Team/Long WOD).</p>
+                        <p>• <strong>Gym Strength Precision (2 sessions/wk):</strong> Tue (06:30 Squat Anchor & S2O Power), Thu (06:30 Deadlift Floor Pull & Upper Maintenance).</p>
+                        <p>• <strong>Running Engine (3 sessions/wk):</strong> Wed (18:30 Zone 2 Aerobic Base), Fri (18:30 5k Threshold Intervals), Sun (09:30 Lighter Zone 2 5K Active Recovery).</p>
                         <div style="margin-top: 1rem; padding: 1rem; background: rgba(255, 0, 102, 0.08); border-left: 3px solid var(--artefact-pink); border-radius: 6px;">
-                            <strong>Multi-Calendar Guard:</strong> This radar checks across Google Calendar, Clariane Outlook, and iCloud CalDAV simultaneously to ensure zero double-booking.
+                            <strong>Multi-Calendar Guard:</strong> This radar checks across Google Calendar, Clariane Outlook, iCloud CalDAV, and ATHX Training simultaneously to ensure zero double-booking.
                         </div>
                     </div>
                 </div>
@@ -827,11 +848,13 @@ def build_dashboard():
         const filters = {{
             work: true,
             client: true,
+            training: true,
             personal: true,
             free: true
         }};
 
         function parseEventSource(src) {{
+            if (src.includes("Training") || src.includes("ATHX")) return "training";
             if (src.includes("Artefact")) return "work";
             if (src.includes("Clariane")) return "client";
             if (src.includes("Personal") || src.includes("Ma vie")) return "personal";
@@ -860,11 +883,13 @@ def build_dashboard():
             const evs = getEventsForDate(dateStr);
             const work = evs.filter(e => parseEventSource(e.source) === 'work');
             const client = evs.filter(e => parseEventSource(e.source) === 'client');
+            const training = evs.filter(e => parseEventSource(e.source) === 'training');
             const personal = evs.filter(e => parseEventSource(e.source) === 'personal');
             const free = getFreeSlotsForDate(dateStr);
 
             const workMins = work.reduce((acc, e) => acc + (e.isAllDay ? 0 : e.durationMin), 0);
             const clientMins = client.reduce((acc, e) => acc + (e.isAllDay ? 0 : e.durationMin), 0);
+            const trainingMins = training.reduce((acc, e) => acc + (e.isAllDay ? 0 : e.durationMin), 0);
             const freeMins = free.reduce((acc, s) => acc + s.durationMin, 0);
 
             document.getElementById('kpiWorkCount').innerText = `${{work.length}} events`;
@@ -872,6 +897,9 @@ def build_dashboard():
 
             document.getElementById('kpiClientCount').innerText = `${{client.length}} events`;
             document.getElementById('kpiClientHours').innerText = `${{(clientMins/60).toFixed(1)}} hrs`;
+
+            document.getElementById('kpiTrainingCount').innerText = `${{training.length}} sessions`;
+            document.getElementById('kpiTrainingHours').innerText = `${{(trainingMins/60).toFixed(1)}} hrs`;
 
             document.getElementById('kpiPersonalCount').innerText = `${{personal.length}} events`;
             const sports = personal.filter(e => e.summary.toLowerCase().includes('sport') || e.summary.toLowerCase().includes('training')).length;
@@ -899,7 +927,7 @@ def build_dashboard():
                 allDayStrip.style.display = 'none';
             }}
 
-            const startHour = 7;
+            const startHour = 6;
             const endHour = 22;
 
             for (let h = startHour; h <= endHour; h++) {{
