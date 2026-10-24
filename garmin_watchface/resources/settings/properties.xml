@@ -1,0 +1,8 @@
+<properties>
+    <property id="themeColor" type="number">0</property>
+    <property id="squatTargetKg" type="number">80</property>
+    <property id="deadliftTargetKg" type="number">120</property>
+    <property id="runningPaceSeconds" type="number">270</property>
+    <property id="aodMode" type="number">0</property>
+    <property id="showCountdown" type="boolean">true</property>
+</properties>

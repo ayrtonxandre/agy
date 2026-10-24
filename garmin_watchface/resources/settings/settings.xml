@@ -1,0 +1,34 @@
+<settings>
+    <setting propertyKey="@Properties.themeColor" title="@Strings.ThemeColorTitle" type="list">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ThemeColorPink</listEntry>
+            <listEntry value="1">@Strings.ThemeColorBlue</listEntry>
+            <listEntry value="2">@Strings.ThemeColorGreen</listEntry>
+            <listEntry value="3">@Strings.ThemeColorGold</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.squatTargetKg" title="@Strings.SquatTargetTitle" type="numeric">
+        <settingConfig min="50" max="220" type="numeric"/>
+    </setting>
+
+    <setting propertyKey="@Properties.deadliftTargetKg" title="@Strings.DeadliftTargetTitle" type="numeric">
+        <settingConfig min="70" max="260" type="numeric"/>
+    </setting>
+
+    <setting propertyKey="@Properties.runningPaceSeconds" title="@Strings.RunningTargetTitle" type="numeric">
+        <settingConfig min="180" max="420" type="numeric"/>
+    </setting>
+
+    <setting propertyKey="@Properties.aodMode" title="@Strings.AodModeTitle" type="list">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.AodModeMinimal</listEntry>
+            <listEntry value="1">@Strings.AodModeDimmed</listEntry>
+            <listEntry value="2">@Strings.AodModeOff</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.showCountdown" title="@Strings.ShowCountdownTitle" type="boolean">
+        <settingConfig type="boolean"/>
+    </setting>
+</settings>

@@ -1,0 +1,23 @@
+<iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
+    <iq:application entry="ATHXApp" id="e987c02b-8a4d-4e92-a1b7-98ef31d45c99" launcherIcon="@Drawables.LauncherIcon" name="@Strings.AppName" type="watchface" version="1.0.0">
+        <iq:products>
+            <iq:product id="venu3"/>
+            <iq:product id="venu3s"/>
+            <iq:product id="fr965"/>
+            <iq:product id="epix2"/>
+            <iq:product id="epix2pro47mm"/>
+            <iq:product id="fenix7"/>
+            <iq:product id="fenix7pro"/>
+        </iq:products>
+        <iq:permissions>
+            <iq:permission id="SensorHistory"/>
+            <iq:permission id="ActivityMonitor"/>
+            <iq:permission id="UserProfile"/>
+        </iq:permissions>
+        <iq:languages>
+            <iq:language>eng</iq:language>
+            <iq:language>fre</iq:language>
+        </iq:languages>
+        <iq:min-api-level>4.2.0</iq:min-api-level>
+    </iq:application>
+</iq:manifest>

@@ -26,7 +26,7 @@
 
 ## 4. 🧬 Hypertrophy & Workload Engineering
 - **Volume Distribution**: Upper body pressing and pulling maintain consistent sets within or near Maximum Adaptive Volume (MAV). Conversely, quad and hamstring sets require an immediate 4–6 set weekly infusion to cross the MEV threshold and trigger structural hypertrophy.
-- **Recomposition & Mass Velocity**: Current mass is `79.7 kg` against the competition standard of `85.0 kg` (+5.3 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
+- **Recomposition & Mass Velocity**: Current mass is `79.9 kg` against the competition standard of `85.0 kg` (+5.1 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
 
 ---
 

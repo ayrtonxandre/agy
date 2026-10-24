@@ -1,0 +1,16 @@
+<strings>
+    <string id="AppName">ATHX Mission Control</string>
+    <string id="ThemeColorTitle">Accent Theme</string>
+    <string id="ThemeColorPink">Artefact Pink (#FF0066)</string>
+    <string id="ThemeColorBlue">Electric Blue (#1F65FF)</string>
+    <string id="ThemeColorGreen">Volt Green (#10B981)</string>
+    <string id="ThemeColorGold">Championship Gold (#FFD700)</string>
+    <string id="SquatTargetTitle">Squat Target (kg)</string>
+    <string id="DeadliftTargetTitle">Deadlift Target (kg)</string>
+    <string id="RunningTargetTitle">5K Threshold Pace (s/km)</string>
+    <string id="AodModeTitle">Always-On Display (AOD)</string>
+    <string id="AodModeMinimal">Minimalist Outline (Anti-Burn-In)</string>
+    <string id="AodModeDimmed">Dimmed Digital</string>
+    <string id="AodModeOff">Off (Gesture Only)</string>
+    <string id="ShowCountdownTitle">ATHX 2027 Countdown Ticker</string>
+</strings>
