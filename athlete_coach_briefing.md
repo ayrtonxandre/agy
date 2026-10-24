@@ -20,7 +20,7 @@
 - **Volume Starvation**: Quads: 5.5 sets/wk (Deficit vs MEV 8.0)
 - **Volume Starvation**: Forearms: 1.0 sets/wk (Deficit vs MEV 4.0)
 - **Acute:Chronic Workload Ratio (ACWR)**: `0.84` (Sweet Spot (Optimal)). Acute load is 2,068.0 kg vs chronic baseline 2,464.9 kg. Foster training monotony is `0.63`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
-- **Sleep & Recovery**: 7-day average sleep duration is `7.0 hrs` with a composite readiness score of `96.9%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
+- **Sleep & Recovery**: 7-day average sleep duration is `7.0 hrs` with a composite readiness score of `93.9%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
 ---
 
@@ -35,11 +35,27 @@
 
 ---
 
-## 6. 📋 7-Day Tactical Microcycle Prescription
-- **Priority 1 (Mandatory Lower Body Volume)**:
-  - Inject 2 weekly squat/hinge sessions: Session A (Back Squat 4×6 @ 75–80% e1RM, followed by Bulgarian Split Squats 3×8/leg) and Session B (Deadlift floor pull 4×5 followed by Romanian Deadlifts 3×8).
-  - *Target*: Elevate weekly quad volume from 5.5 sets to 10+ sets, and hamstrings from 6.3 sets to 8+ sets.
-- **Priority 2 (Conditioning Session)**:
-  - 1× 35-minute polarized Zone 2 aerobic base run (pace 5:45–6:00/km, HR capped at 142 bpm) + 1× ATHX simulation interval (5 rounds of 400m row + 12 sandbag/DB thrusters).
-- **Priority 3 (Recovery & Fueling Directive)**:
-  - Target 180g+ daily protein intake with a 250 kcal surplus to sustain lower-body hypertrophy; protect an 8.0-hour sleep opportunity window nightly.
+## 6. 📋 7-Day Tactical Microcycle Prescription (Tue/Thu Gym • Wed/Fri/Sun Run)
+- **Tuesday [Gym - Lower Body Squat & S2O Overhead Anchor]**:
+  - Barbell Back Squat: 4×6 @ 75–80% e1RM (target: +1.25 kg/wk progression)
+  - Bulgarian Split Squats: 3×8–10 / leg (unilateral strength & knee stability)
+  - Shoulder-to-Overhead (Push Press / S2O): 4×5 @ 45–50 kg (explosive triple extension)
+  - Leg Extensions: 3×12–15 (strict quad hypertrophy) + Core Anti-Extension: 3 sets
+- **Wednesday [Run 1 - Zone 2 Aerobic Base & Cadence Drill]**:
+  - Distance: 6.0–7.5 km @ 5:45–6:15/km (strictly HR <142 bpm, conversational)
+  - Focus: Metronome locked at 172–174 spm to eliminate overstriding and drop GCT <265 ms
+- **Thursday [Gym - Posterior Chain Deadlift & Upper Body Maintenance]**:
+  - Conventional / Trap Bar Deadlift: 4×5 @ 75–80% e1RM (explosive floor pull)
+  - Barbell Bench Press: 3×6–8 @ 75–80 kg (preserve 104 kg e1RM without junk volume)
+  - Romanian Deadlifts (RDLs): 3×8–10 (loaded eccentric hamstring stretch)
+  - Weighted Pull-ups: 3×6–8 (+10–15 kg) + Farmer's / Sandbag Carries: 3×50m
+- **Friday [Run 2 - 5km Qualifying Threshold & Speed Intervals]**:
+  - 1.5 km warm-up + 5×1,000m @ 4:25–4:35/km (90s jog recovery) + 1.0 km cool-down (7.5 km total)
+  - Focus: Race pace mechanics, aggressive turnover (176–180 spm during work intervals)
+- **Saturday [Active Recovery & Mobility]**:
+  - 25 min hips, ankles & thoracic mobility + 10k–14k easy daily steps. Zero barbell/speed load.
+- **Sunday [Run 3 - Aerobic Durability & Engine Mileage]**:
+  - Distance: 8.5–10.5 km steady Zone 2/3 @ 5:30–5:50/km (elevates weekly running volume to ~24 km)
+  - *Option*: Alternate with compromised running (every 3rd week: 2km run + 30 walking lunges + 2km tempo)
+- **Monday [Full Recovery & Sleep Banking]**:
+  - Complete CNS rest. Prioritize 8.5h sleep window to erase sleep debt and reset Body Battery.
