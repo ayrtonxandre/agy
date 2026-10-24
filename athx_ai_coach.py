@@ -294,30 +294,32 @@ def generate_local_fallback_briefing(digest: dict[str, Any]) -> tuple[str, str]:
 
 ---
 
-## 6. 📋 7-Day Tactical Microcycle Prescription (Tue/Thu Gym • Wed/Fri/Sun Run)
+## 6. 📋 7-Day Tactical Microcycle Prescription (Mon/Wed/Fri/Sat CrossFit • Tue/Thu Gym • Wed/Fri/Sun Run)
+- **Monday [CrossFit - Metabolic Conditioning & Work Capacity]**:
+  - Box WOD (Conditioning, Gymnastics & Olympic skill). Protect systemic load; hydrate and fuel for Tuesday's heavy squat stimulus.
 - **Tuesday [Gym - Lower Body Squat & S2O Overhead Anchor]**:
   - Barbell Back Squat: 4×6 @ 75–80% e1RM (target: +1.25 kg/wk progression)
   - Bulgarian Split Squats: 3×8–10 / leg (unilateral strength & knee stability)
   - Shoulder-to-Overhead (Push Press / S2O): 4×5 @ 45–50 kg (explosive triple extension)
   - Leg Extensions: 3×12–15 (strict quad hypertrophy) + Core Anti-Extension: 3 sets
-- **Wednesday [Run 1 - Zone 2 Aerobic Base & Cadence Drill]**:
-  - Distance: 6.0–7.5 km @ 5:45–6:15/km (strictly HR <142 bpm, conversational)
+- **Wednesday [Double: CrossFit WOD + Run 1 (Aerobic Base & Cadence)]**:
+  - CrossFit WOD (box programming)
+  - Run 1 (Base & Flush): 5.0–6.0 km @ 5:40–6:10/km (Zone 2, HR <145 bpm)
   - Focus: Metronome locked at 172–174 spm to eliminate overstriding and drop GCT <265 ms
 - **Thursday [Gym - Posterior Chain Deadlift & Upper Body Maintenance]**:
   - Conventional / Trap Bar Deadlift: 4×5 @ 75–80% e1RM (explosive floor pull)
   - Barbell Bench Press: 3×6–8 @ 75–80 kg (preserve 104 kg e1RM without junk volume)
   - Romanian Deadlifts (RDLs): 3×8–10 (loaded eccentric hamstring stretch)
-  - Weighted Pull-ups: 3×6–8 (+10–15 kg) + Farmer's / Sandbag Carries: 3×50m
-- **Friday [Run 2 - 5km Qualifying Threshold & Speed Intervals]**:
-  - 1.5 km warm-up + 5×1,000m @ 4:25–4:35/km (90s jog recovery) + 1.0 km cool-down (7.5 km total)
-  - Focus: Race pace mechanics, aggressive turnover (176–180 spm during work intervals)
-- **Saturday [Active Recovery & Mobility]**:
-  - 25 min hips, ankles & thoracic mobility + 10k–14k easy daily steps. Zero barbell/speed load.
-- **Sunday [Run 3 - Aerobic Durability & Engine Mileage]**:
-  - Distance: 8.5–10.5 km steady Zone 2/3 @ 5:30–5:50/km (elevates weekly running volume to ~24 km)
-  - *Option*: Alternate with compromised running (every 3rd week: 2km run + 30 walking lunges + 2km tempo)
-- **Monday [Full Recovery & Sleep Banking]**:
-  - Complete CNS rest. Prioritize 8.5h sleep window to erase sleep debt and reset Body Battery.
+  - Weighted Pull-ups: 3×6–8 (+10–15 kg) + Heavy Carries: 3×40m (ATHX sandbag/grip prep)
+- **Friday [Double: CrossFit WOD + Run 2 (5km Race Pace Intervals)]**:
+  - CrossFit WOD (box programming)
+  - Run 2 (Threshold Intervals): 1.0 km warm-up + 4–5×1,000m @ 4:25–4:35/km (90s rest) + 1.0 km cool-down (~6.5 km)
+  - Focus: Closing the 37s/km gap to standard 4:30/km pace
+- **Saturday [CrossFit - Team / Long Engine WOD]**:
+  - Box Saturday WOD (Partner / Long aerobic engine metcon)
+- **Sunday [Run 3 - Lighter Recovery Run (Zone 2 5K)]**:
+  - Distance: Exactly 5.0 km easy conversational run @ 5:50–6:20/km
+  - Focus: Pure active recovery & parasympathetic flush. Keep HR strictly Zone 2 (<140 bpm). Sets up weekly running volume at ~17 km.
 """
     return markdown_report, "ATHX Deterministic Sports Science Engine (Offline Mode)"
 
