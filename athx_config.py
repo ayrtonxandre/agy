@@ -118,6 +118,9 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     "Lat Pulldown": "Lats/Back",
     "Pull Up": "Lats/Back",
     "Chin Up": "Lats/Back",
+    "Muscle Up": "Lats/Back",
+    "Bar Muscle Up": "Lats/Back",
+    "Ring Muscle Up": "Lats/Back",
     "Row": "Lats/Back",
     "Barbell Row": "Lats/Back",
     "Bent Over Row": "Lats/Back",
@@ -150,6 +153,11 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     "Upright Row": "Shoulders",
     "Reverse Flye": "Shoulders",
     "Rear Delt Flye": "Shoulders",
+    "Wall Walk": "Shoulders",
+    "Wall Walks": "Shoulders",
+    "Handstand Push Up": "Shoulders",
+    "Handstand Push-Up": "Shoulders",
+    "HSPU": "Shoulders",
 
     # Quads
     "Barbell Back Squat": "Quads",
@@ -252,6 +260,8 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     "Ab Wheel Rollout": "Core",
     "Cable Crunch": "Core",
     "Crunch": "Core",
+    "Hollow Rock": "Core",
+    "Hollow Hold": "Core",
 
     # Cardio & Warmup
     "Snatch": "Full Body",
@@ -374,10 +384,15 @@ EXERCISE_COMPOUND_VOLUME: dict[str, dict[str, float]] = {
     "Push Press": {"Shoulders": 1.0, "Triceps": 0.5, "Quads": 0.25},
     "Military Press": {"Shoulders": 1.0, "Triceps": 0.5},
     "Dumbbell Shoulder Press": {"Shoulders": 1.0, "Triceps": 0.5},
+    "Wall Walk": {"Shoulders": 1.0, "Core": 0.5},
+    "Handstand Push Up": {"Shoulders": 1.0, "Triceps": 0.5},
 
     # Upper Body Pulls: Lats/Back + Biceps secondary
     "Pull Up": {"Lats/Back": 1.0, "Biceps": 0.5},
     "Chin Up": {"Lats/Back": 1.0, "Biceps": 0.75},
+    "Muscle Up": {"Lats/Back": 1.0, "Chest": 0.5, "Triceps": 0.5},
+    "Bar Muscle Up": {"Lats/Back": 1.0, "Chest": 0.5, "Triceps": 0.5},
+    "Ring Muscle Up": {"Lats/Back": 1.0, "Chest": 0.5, "Triceps": 0.5},
     "Lat Pulldown": {"Lats/Back": 1.0, "Biceps": 0.5},
     "Row": {"Lats/Back": 1.0, "Biceps": 0.5},
     "Barbell Row": {"Lats/Back": 1.0, "Biceps": 0.5},
@@ -410,6 +425,7 @@ PLAUSIBLE_LOAD_RANGES: dict[str, tuple[float, float]] = {
     "Push Up": (0.0, 45.0),            # Weight > 45 kg on pushups is user-bodyweight artifact (e.g. 90 kg)
     "Pull Up": (0.0, 50.0),            # Added weight > 50 kg is artifact (e.g. 110 kg entered as bodyweight)
     "Chin Up": (0.0, 50.0),
+    "Muscle Up": (0.0, 40.0),
     "Dip": (0.0, 60.0),
     "Bench Dip": (0.0, 50.0),
     "Cable Crossover": (2.0, 55.0),    # Single cable stack > 55 kg is artifact (e.g. 70, 80, 85 kg)

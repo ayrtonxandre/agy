@@ -867,6 +867,113 @@ def build_html(payload_json: str, d: dict) -> str:
       display: flex;
       flex-direction: column;
       gap: 10px;
+      position: relative;
+    }}
+
+    .kpi-info-btn {{
+      all: unset;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      font-size: 11px;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      line-height: 1;
+      color: var(--muted-foreground);
+      background: color-mix(in oklch, var(--muted) 45%, transparent);
+      border: 1px solid var(--border);
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+      margin-left: 6px;
+      vertical-align: middle;
+      user-select: none;
+    }}
+
+    .kpi-info-btn:hover, .kpi-info-btn:focus-visible {{
+      color: var(--foreground);
+      border-color: var(--atf-pink-400);
+      background: color-mix(in oklch, var(--atf-pink-400) 18%, transparent);
+      box-shadow: 0 0 8px rgba(255, 45, 85, 0.35);
+      transform: scale(1.1);
+    }}
+
+    .kpi-popover {{
+      position: fixed;
+      z-index: 10000;
+      width: 320px;
+      max-width: calc(100vw - 32px);
+      background: color-mix(in oklch, var(--card) 96%, black 4%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--atf-pink-400);
+      border-radius: var(--radius-lg, 12px);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      animation: kpiPopoverFadeIn 0.15s ease-out;
+      pointer-events: auto;
+    }}
+
+    @keyframes kpiPopoverFadeIn {{
+      from {{ opacity: 0; transform: translateY(-4px) scale(0.98); }}
+      to {{ opacity: 1; transform: translateY(0) scale(1); }}
+    }}
+
+    .kpi-popover-header {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }}
+
+    .kpi-popover-badge {{
+      font: 600 10px/1 var(--font-sans);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--atf-pink-400);
+      background: color-mix(in oklch, var(--atf-pink-400) 12%, transparent);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid color-mix(in oklch, var(--atf-pink-400) 25%, transparent);
+    }}
+
+    .kpi-popover-close {{
+      all: unset;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      color: var(--muted-foreground);
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s ease;
+    }}
+
+    .kpi-popover-close:hover {{
+      color: var(--foreground);
+      background: var(--muted);
+    }}
+
+    .kpi-popover-title {{
+      margin: 0;
+      font: 600 14px/1.3 var(--font-sans);
+      color: var(--foreground);
+    }}
+
+    .kpi-popover-body {{
+      margin: 0;
+      font: 400 12.5px/1.55 var(--font-sans);
+      color: var(--muted-foreground);
+      text-wrap: pretty;
     }}
 
     .badge {{
@@ -1398,27 +1505,37 @@ def build_html(payload_json: str, d: dict) -> str:
         <!-- AI Coach Verdict Card -->
         <div class="card" style="display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);">
           <div style="padding: 24px; display: flex; flex-direction: column; gap: 14px; border-right: 1px solid var(--border);">
-            <div style="display: flex; align-items: center; gap: 8px; font: 500 11px/1 var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground);">
-              <span>✨</span> Coach verdict
+            <div style="display: flex; align-items: center; justify-content: space-between; font: 500 11px/1 var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground);" data-kpi-title="Coach Verdict Readiness" data-kpi-desc="The Coach Verdict synthesizes rolling training volume, autonomic recovery, and sleep metrics into a single readiness score. It indicates how aggressively you can push training intensity today without elevating injury risk. High scores signal optimal systemic recovery for high-threshold adaptation.">
+              <span style="display: flex; align-items: center; gap: 8px;"><span>✨</span> Coach verdict</span>
+              <button type="button" class="kpi-info-btn" aria-label="Explain Coach Verdict" title="Explain Coach Verdict">ℹ</button>
             </div>
             <div style="display: flex; align-items: baseline; gap: 12px;">
-              <span style="font: 600 44px/1 var(--font-sans); letter-spacing: -0.02em;">{score_pct}%</span>
+              <span style="font-600 44px/1 var(--font-sans); letter-spacing: -0.02em;">{score_pct}%</span>
               <span class="badge badge-warn">{risk_level}</span>
             </div>
             <p style="margin: 0; color: var(--muted-foreground); line-height: 1.55; text-wrap: pretty;">
               {macro_text}
             </p>
             <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--border); border-radius: 10px; margin-top: auto;">
-              <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px;">
-                <span style="font-size: 11px; color: var(--muted-foreground);">Sleep 7d</span>
+              <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px;" data-kpi-title="7-Day Sleep Average" data-kpi-desc="This measures your rolling average of actual nightly sleep duration across the past seven days from Apple Health. Sustaining 7.5 to 8.5 hours is critical for endocrine recovery, muscle protein synthesis, and central nervous system restoration. Values below your baseline indicate accumulated sleep debt requiring immediate recovery prioritisation.">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 11px; color: var(--muted-foreground);">Sleep 7d</span>
+                  <button type="button" class="kpi-info-btn" aria-label="Explain Sleep 7d" title="Explain Sleep 7d">ℹ</button>
+                </div>
                 <span style="font: 500 16px/1.2 var(--font-mono);">{ap['sleep']['avg_sleep_hrs']} h</span>
               </div>
-              <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--border);">
-                <span style="font-size: 11px; color: var(--muted-foreground);">Resting HR</span>
+              <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--border);" data-kpi-title="Resting Heart Rate (RHR)" data-kpi-desc="Resting heart rate reflects basal autonomic nervous system status recorded during deep sleep or morning rest. A lower and stable RHR indicates strong cardiovascular conditioning and parasympathetic dominance. Elevated readings above your 28-day baseline signal systemic fatigue, under-recovery, or impending illness.">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 11px; color: var(--muted-foreground);">Resting HR</span>
+                  <button type="button" class="kpi-info-btn" aria-label="Explain Resting HR" title="Explain Resting HR">ℹ</button>
+                </div>
                 <span style="font: 500 16px/1.2 var(--font-mono);">{ap['mobility']['current_rhr']} bpm</span>
               </div>
-              <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--border);">
-                <span style="font-size: 11px; color: var(--muted-foreground);">ACWR</span>
+              <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--border);" data-kpi-title="Acute:Chronic Workload Ratio (ACWR)" data-kpi-desc="ACWR evaluates the balance between acute fatigue (7-day rolling tonnage) and chronic athletic conditioning (28-day rolling tonnage). Keeping this ratio within the 0.8 to 1.3 sweet spot minimizes injury risk while progressively building strength. Ratios over 1.5 signify an excessive training spike that demands proactive recovery.">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 11px; color: var(--muted-foreground);">ACWR</span>
+                  <button type="button" class="kpi-info-btn" aria-label="Explain ACWR" title="Explain ACWR">ℹ</button>
+                </div>
                 <span style="font: 500 16px/1.2 var(--font-mono);">{st['acwr']['value']}</span>
               </div>
             </div>
@@ -1533,9 +1650,12 @@ def build_html(payload_json: str, d: dict) -> str:
       <section id="strengthTab" class="tab-content">
         <!-- 6 KPI Grid -->
         <div class="kpi-grid">
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Acute:Chronic Workload Ratio (ACWR)" data-kpi-desc="ACWR evaluates the balance between acute fatigue (7-day rolling tonnage) and chronic athletic conditioning (28-day rolling tonnage). Keeping this ratio within the 0.8 to 1.3 sweet spot minimizes injury risk while progressively building strength. Ratios over 1.5 signify an excessive training spike that demands proactive recovery.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Acute:Chronic Workload</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Acute:Chronic Workload</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Acute:Chronic Workload" title="Explain Acute:Chronic Workload">ℹ</button>
+              </span>
               <span class="badge badge-ok">{st['acwr']['status']}</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -1545,9 +1665,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Acute {st['acwr']['acute_load_kg']:,} kg/d vs chronic {st['acwr']['chronic_load_kg']:,} kg/d.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Foster Monotony Index" data-kpi-desc="Foster Monotony measures day-to-day training load variability calculated as mean daily load divided by standard deviation over seven days. High monotony combined with high strain exponentially increases the risk of overtraining and immune suppression. Keeping the index below 1.5 ensures adequate undulating recovery between heavy strength sessions.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Foster Monotony</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Foster Monotony</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Foster Monotony" title="Explain Foster Monotony">ℹ</button>
+              </span>
               <span class="badge badge-ok">Safe</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -1557,9 +1680,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Weekly strain {st['foster_workload']['strain_k']}k · volume {st['foster_workload']['weekly_tonnage_t']} t. Keep &lt; 1.5.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Valid Strength Tonnage" data-kpi-desc="Valid Tonnage represents cumulative mechanical workload calculated as weight lifted multiplied by completed repetitions across verified sets. Only validated, non-duplicate sets pass our strict audit pipeline while erroneous machine spikes are filtered out. Tracking this metric confirms whether progressive overload targets are met across the training block.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Valid Tonnage</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Valid Tonnage</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Valid Tonnage" title="Explain Valid Tonnage">ℹ</button>
+              </span>
               <span class="badge badge-ok">{st['total_sessions']} sessions</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -1569,9 +1695,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">{st['total_valid_sets']:,} valid sets. {au['summary']['unknown_imputed']} imputed, {au['summary']['unknown_unattributed']} unattributed.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Bench Press Estimated 1RM" data-kpi-desc="Estimated one-rep maximum calculates maximal pressing strength derived from your heaviest submaximal sets using the validated Epley formula. It tracks neuromuscular strength adaptations across time without requiring dangerous true maximum testing. The accompanying strength-to-bodyweight ratio benchmarks upper-body pressing power relative to your current mass.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Bench Press e1RM</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Bench Press e1RM</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Bench Press e1RM" title="Explain Bench Press e1RM">ℹ</button>
+              </span>
               <span class="badge badge-ok">{st['lift_progressions'].get('Bench Press', {}).get('relative_strength', 1.04)}× BW</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -1581,9 +1710,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Best {st['lift_progressions'].get('Bench Press', {}).get('best_set_load', '65 kg × 8')}. Projected {st['lift_progressions'].get('Bench Press', {}).get('projected_e1rm', 88.5)} kg at Games.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Lower-Body Muscle Volume" data-kpi-desc="This metric monitors weekly hard sets dedicated to quadriceps, hamstrings, and glutes against evidence-based Minimum Effective Volume (MEV). Adequate lower-body volume is essential for generating running propulsion and building Hyrox competition durability. Training below MEV leads to detraining, while targeting Maximum Adaptive Volume drives optimal muscular development.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Leg Volume</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Leg Volume</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Leg Volume" title="Explain Leg Volume">ℹ</button>
+              </span>
               <span class="badge badge-bad">Below MEV</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -1593,9 +1725,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Hamstrings {st['muscle_summary'].get('Hamstrings/Glutes', {}).get('avg_weekly_sets', 2.0)}/wk vs MEV 6.0.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Junk-Volume Share" data-kpi-desc="Junk volume tracks sets performed at ultra-high rep ranges or with insufficient load to stimulate meaningful neuromuscular adaptations. High junk volume creates disproportionate central and joint fatigue without proportional strength gains. Keeping this share below 5% guarantees that training economy remains focused on high-stimulus work.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Junk-Volume Share</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Junk-Volume Share</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Junk-Volume Share" title="Explain Junk-Volume Share">ℹ</button>
+              </span>
               <span class="badge badge-ok">Under 5%</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -1908,9 +2043,12 @@ def build_html(payload_json: str, d: dict) -> str:
       <!-- ============================================================== -->
       <section id="engineTab" class="tab-content">
         <div class="kpi-grid">
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="5 km Running Pace" data-kpi-desc="This metric displays your best average kilometer pace over a continuous 5-kilometer effort recorded in the trailing 28 days. It serves as a primary benchmark for aerobic threshold velocity and pacing stamina. The gap to standard highlights how many seconds per kilometer must be shaved to achieve competition targets.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">5 km Pace</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">5 km Pace</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain 5 km Pace" title="Explain 5 km Pace">ℹ</button>
+              </span>
               <span class="badge badge-warn">Std 4:30</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -1920,9 +2058,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Best of trailing 28 days. Gap: +37s/km.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Maximal Oxygen Uptake (VO2max)" data-kpi-desc="VO2max estimates the maximum rate of oxygen consumption your body can utilize per kilogram during maximal aerobic exertion. Measured in ml/kg/min, it quantifies your aerobic engine and cardiovascular capacity for sustaining high-intensity work. Higher values allow faster lactate clearance and superior recovery between intense intervals.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">VO2max</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">VO2max</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain VO2max" title="Explain VO2max">ℹ</button>
+              </span>
               <span class="badge badge-ok">Aerobic Base</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -1932,9 +2073,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Avg cadence {rn.get('avg_cadence_spm', 157)} spm · avg HR {rn.get('avg_hr', 150)} bpm.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Weekly Running Volume" data-kpi-desc="Running Volume tracks total kilometers and active minutes accumulated across dedicated running sessions during the current phase. Steady volume accumulation strengthens bone density, tendons, and aerobic capillary density without overloading joint structures. Keeping within the weekly phase target ensures safe progressive tissue tolerance.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Running Volume</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Running Volume</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Running Volume" title="Explain Running Volume">ℹ</button>
+              </span>
               <span class="badge badge-warn">{rn.get('total_runs', 6)} runs</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -1944,9 +2088,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">{rn.get('total_duration_min', 159.6)} min total. Phase target: 5–8 km/wk.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Total Conditioning Volume" data-kpi-desc="Conditioning Total aggregates all functional non-running aerobic sessions including CrossFit WODs, bouldering, rowing, and hiking. It captures cumulative caloric expenditure and total minutes spent challenging oxidative and glycolytic energy systems. This reflects overall athletic work capacity and work-to-rest stamina across diverse domains.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Conditioning Total</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Conditioning Total</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Conditioning Total" title="Explain Conditioning Total">ℹ</button>
+              </span>
               <span class="badge badge-ok">{wk.get('total_sessions', 43)} sessions</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2009,9 +2156,12 @@ def build_html(payload_json: str, d: dict) -> str:
       <!-- ============================================================== -->
       <section id="bodyTab" class="tab-content">
         <div class="kpi-grid">
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="7-Day Smoothed Bodyweight" data-kpi-desc="This metric applies a 7-day moving average filter to raw weigh-ins to remove day-to-day fluid and glycogen fluctuations. It provides an accurate representation of true physiological weight trends toward your target mass. Consistent tracking ensures mass gains reflect lean tissue growth rather than dehydration artifacts.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Weight (7d smoothed)</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Weight (7d smoothed)</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Weight (7d smoothed)" title="Explain Weight (7d smoothed)">ℹ</button>
+              </span>
               <span class="badge badge-warn">+{ap['body_comp']['weight_remaining']} to go</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2021,9 +2171,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Target {cfg['bodyweight_target_kg']} kg. {len(ap['body_comp']['history'])} weigh-ins since May.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Lean Body Mass (LBM)" data-kpi-desc="Lean Body Mass calculates total fat-free tissue mass including muscle, bone, and essential organ weight. Filtered to mitigate bioelectrical impedance scale drift, it verifies that caloric surplus drives muscular hypertrophy. Preserving or growing LBM while conditioning ensures optimal power-to-weight performance.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Lean Body Mass</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Lean Body Mass</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Lean Body Mass" title="Explain Lean Body Mass">ℹ</button>
+              </span>
               <span class="badge badge-warn">Low Confidence</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2033,9 +2186,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">BF {ap['body_comp']['current_bf_pct']}%. Bioimpedance drift filtered.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Daily Step Count" data-kpi-desc="Daily steps quantify non-exercise physical activity (NEAT) and baseline daily movement volume from your wearable sensors. Sustaining high NEAT promotes lymphatic drainage, speeds up muscular recovery, and maintains baseline metabolic flux. Tracking step volume prevents excessive sedentary stagnation on recovery days.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Daily Steps</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Daily Steps</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Daily Steps" title="Explain Daily Steps">ℹ</button>
+              </span>
               <span class="badge badge-ok">n = {ap['activity']['days_tracked']} days</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2045,9 +2201,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Max day: {ap['activity']['max_steps']:,} steps.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Daily Protein Intake" data-kpi-desc="This metric measures total daily protein intake both as an absolute quantity and normalized per kilogram of bodyweight. Consuming 2.0 to 2.4 g/kg is vital for maximizing muscle protein synthesis, repairing microtrauma, and supporting lean tissue growth. Regular intake across all meals ensures sustained amino acid availability for tissue repair.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Protein Intake</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Protein Intake</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Protein Intake" title="Explain Protein Intake">ℹ</button>
+              </span>
               <span class="badge badge-ok">{round(ap['nutrition']['avg_protein'] / ap['body_comp']['current_weight'], 2)} g/kg</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2057,9 +2216,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">{round(ap['nutrition']['avg_calories']):,} kcal/d across {len(ap['nutrition']['history'])} logged days.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Carbohydrate to Protein Ratio" data-kpi-desc="The C:P ratio measures the balance between glycogen-replenishing carbohydrates and tissue-building protein in your daily nutrition. High-volume conditioning demands adequate carbs to replenish muscle glycogen without displacing essential fats and protein. Keeping this ratio within the recommended band guarantees explosive glycolytic fuel while preventing excess fat storage.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Carb : Protein</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Carb : Protein</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Carb : Protein" title="Explain Carb : Protein">ℹ</button>
+              </span>
               <span class="badge badge-warn">Above band</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2069,9 +2231,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Target 1.5–2.0. Shift excess carbs to unsaturated fat.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Energy Balance Variance" data-kpi-desc="Calorie Variance compares your 7-day rolling caloric intake against your prescribed energy target for hypertrophy. A controlled surplus of 250 to 350 kcal per day promotes steady muscle accretion with minimal fat accumulation. Chronic deficits impair hormonal recovery and sabotage high-volume strength progression.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Calorie Variance</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Calorie Variance</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Calorie Variance" title="Explain Calorie Variance">ℹ</button>
+              </span>
               <span class="badge badge-warn">Under target</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2141,9 +2306,12 @@ def build_html(payload_json: str, d: dict) -> str:
       <!-- ============================================================== -->
       <section id="recoveryTab" class="tab-content">
         <div class="kpi-grid">
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="ATHX Readiness Composite" data-kpi-desc="The Readiness Composite integrates objective biomarkers including sleep duration, resting heart rate, gait symmetry, and nutritional compliance into a unified score. It reflects systemic nervous system and musculoskeletal recovery before each session. Scores above 80% indicate that you are fully ready to tolerate planned high-intensity training loads.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Readiness Composite</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Readiness Composite</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Readiness Composite" title="Explain Readiness Composite">ℹ</button>
+              </span>
               <span class="badge badge-ok">High</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2153,9 +2321,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Sleep {ap['readiness_composite']['components']['sleep']['score']} · RHR {ap['readiness_composite']['components']['rhr']['score']} · Gait {ap['readiness_composite']['components']['asymmetry']['score']} · Fuel {ap['readiness_composite']['components']['protein']['score']}.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Sleep Duration & Coverage" data-kpi-desc="This tracks total actual sleep duration per night along with sensor coverage consistency over the tracking period. Deep restorative sleep is essential for human growth hormone release, memory consolidation, and cellular tissue repair. Consistently hitting at least 8 hours ensures rapid central nervous system rejuvenation.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Sleep Duration</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Sleep Duration</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Sleep Duration" title="Explain Sleep Duration">ℹ</button>
+              </span>
               <span class="badge badge-warn">{ap['sleep']['coverage_pct']}% coverage</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2165,9 +2336,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">{ap['sleep']['valid_nights']} of {ap['sleep']['calendar_days']} nights recorded.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Gait Asymmetry" data-kpi-desc="Gait Asymmetry measures the percentage difference in ground contact time between your left and right legs during walking and running. Values below 2.0% indicate balanced bilateral mechanics and absence of compensatory movement patterns. Spikes in asymmetry are early warning indicators of unilateral fatigue, joint stiffness, or impending overuse injury.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Gait Asymmetry</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Gait Asymmetry</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Gait Asymmetry" title="Explain Gait Asymmetry">ℹ</button>
+              </span>
               <span class="badge badge-ok">Normal</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2177,9 +2351,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">7-day mean. Threshold: 2.0%. Zero movement compensations.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Resting Heart Rate (Recovery Baseline)" data-kpi-desc="Resting Heart Rate tracks nocturnal cardiac autonomic tone relative to your individual 28-day rolling baseline. Maintaining RHR within plus or minus 2 beats of baseline confirms parasympathetic recovery and absence of systemic inflammation. Significant elevated trends indicate autonomic stress, dehydration, or accumulated fatigue requiring extra rest.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Resting Heart Rate</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Resting Heart Rate</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Resting Heart Rate" title="Explain Resting Heart Rate">ℹ</button>
+              </span>
               <span class="badge badge-ok">At baseline</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2245,9 +2422,12 @@ def build_html(payload_json: str, d: dict) -> str:
       <!-- ============================================================== -->
       <section id="auditTab" class="tab-content">
         <div class="kpi-grid">
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Pre-May Historical Exclusion" data-kpi-desc="This metric tracks historical workout and telemetry sets recorded prior to the official May baseline inception date. Pre-baseline data is preserved exclusively for establishing chronic training load context rather than acute performance scoring. Excluding these sets maintains strict data integrity across the competition preparation cycle.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Pre-May Excluded</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Pre-May Excluded</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Pre-May Excluded" title="Explain Pre-May Excluded">ℹ</button>
+              </span>
               <span class="badge badge-warn">Date Floor</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2257,9 +2437,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Dated before {cfg['data_start']}. Kept for chronic baseline only.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Imputed Exercise Sets" data-kpi-desc="Imputed Exercises identifies sets whose movement names were missing or malformed in Garmin logs and reconstructed using load, repetition, and temporal signatures. Automated imputation ensures no mechanical tonnage or muscle group volume is lost from workload tracking. Unmatched sets are flagged transparently for ongoing pipeline auditing.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Imputed Exercises</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Imputed Exercises</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Imputed Exercises" title="Explain Imputed Exercises">ℹ</button>
+              </span>
               <span class="badge badge-ok">Imputed</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2269,9 +2452,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Matched by load/rep signature. {au['summary']['unknown_unattributed']} left unattributed.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Implausible Load Artifacts" data-kpi-desc="This metric counts aberrant weight values resulting from machine stack multipliers, typo inputs, or sensor errors that have been automatically excluded. Filtering these extreme outliers prevents artificial distortion of estimated 1RMs and volume progression models. Flagged records are preserved in the audit log for transparency and manual inspection.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Implausible Loads</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Implausible Loads</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Implausible Loads" title="Explain Implausible Loads">ℹ</button>
+              </span>
               <span class="badge badge-bad">Excluded</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2281,9 +2467,12 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Garmin stack & auto-weight artifacts excluded from e1RM.</span>
           </div>
 
-          <div class="kpi-box">
+          <div class="kpi-box" data-kpi-title="Audited Usable Sleep Nights" data-kpi-desc="Usable Sleep Nights tracks the count of nights with valid Apple Health sleep stage telemetry passing quality verification. Records with false non-wear intervals, broken recording sessions, or in-bed overflow artifacts are filtered out. High usable night counts guarantee reliable recovery modeling and trend detection.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 13px; color: var(--muted-foreground);">Usable Sleep Nights</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="font-size: 13px; color: var(--muted-foreground);">Usable Sleep Nights</span>
+                <button type="button" class="kpi-info-btn" aria-label="Explain Usable Sleep Nights" title="Explain Usable Sleep Nights">ℹ</button>
+              </span>
               <span class="badge badge-ok">Usable</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
@@ -2336,6 +2525,16 @@ def build_html(payload_json: str, d: dict) -> str:
 
     </div>
   </main>
+</div>
+
+<!-- Floating KPI Explanatory Popover -->
+<div id="kpiPopover" class="kpi-popover" role="dialog" aria-hidden="true" style="display: none;">
+  <div class="kpi-popover-header">
+    <span class="kpi-popover-badge">KPI Explanation</span>
+    <button type="button" class="kpi-popover-close" id="kpiPopoverClose" aria-label="Close popup">✕</button>
+  </div>
+  <h4 id="kpiPopoverTitle" class="kpi-popover-title"></h4>
+  <p id="kpiPopoverBody" class="kpi-popover-body"></p>
 </div>
 
 <!-- DATA PAYLOADS & CLIENT ENGINE -->
@@ -2968,7 +3167,7 @@ def build_html(payload_json: str, d: dict) -> str:
     if (!tbody) return;
 
     let list = (ATHX_DATA.apple && ATHX_DATA.apple.sleep && ATHX_DATA.apple.sleep.history) || [];
-    list = list.filter(s => s.Date >= '2026-05-01');
+    list = list.filter(s => s.Date >= '2026-05-01').sort((a, b) => b.Date.localeCompare(a.Date));
 
     if (sleepFilter === 'Valid') list = list.filter(s => s.Status === 'Valid');
     else if (sleepFilter === 'Flagged') list = list.filter(s => s.Status !== 'Valid');
@@ -3341,6 +3540,139 @@ def build_html(payload_json: str, d: dict) -> str:
     }}
   }}
 
+  // KPI Popover System
+  function initKpiPopovers() {{
+    const popover = document.getElementById('kpiPopover');
+    const titleEl = document.getElementById('kpiPopoverTitle');
+    const bodyEl = document.getElementById('kpiPopoverBody');
+    const closeBtn = document.getElementById('kpiPopoverClose');
+    if (!popover || !titleEl || !bodyEl) return;
+
+    let activeTrigger = null;
+    let isPinned = false;
+    let hoverTimeout = null;
+
+    function getKpiData(el) {{
+      if (!el) return null;
+      const target = el.hasAttribute('data-kpi-title') ? el : el.closest('[data-kpi-title]');
+      if (target) {{
+        return {{
+          title: target.getAttribute('data-kpi-title'),
+          desc: target.getAttribute('data-kpi-desc'),
+          anchor: el
+        }};
+      }}
+      return null;
+    }}
+
+    function positionPopover(anchorEl) {{
+      const rect = anchorEl.getBoundingClientRect();
+      const popWidth = Math.min(320, window.innerWidth - 32);
+      popover.style.width = popWidth + 'px';
+
+      let left = rect.left + (rect.width / 2) - (popWidth / 2);
+      left = Math.max(16, Math.min(window.innerWidth - popWidth - 16, left));
+
+      popover.style.left = left + 'px';
+      popover.style.display = 'flex';
+
+      const popHeight = popover.offsetHeight || 140;
+      let top = rect.bottom + 8;
+      if (top + popHeight > window.innerHeight - 16) {{
+        top = Math.max(16, rect.top - popHeight - 8);
+      }}
+      popover.style.top = top + 'px';
+    }}
+
+    function showPopover(data, pin) {{
+      if (!data || !data.title || !data.desc) return;
+      clearTimeout(hoverTimeout);
+
+      titleEl.textContent = data.title;
+      bodyEl.textContent = data.desc;
+      positionPopover(data.anchor);
+      popover.setAttribute('aria-hidden', 'false');
+
+      activeTrigger = data.anchor;
+      isPinned = pin;
+      if (pin) {{
+        popover.setAttribute('data-pinned', 'true');
+      }} else {{
+        popover.removeAttribute('data-pinned');
+      }}
+    }}
+
+    function hidePopover(force) {{
+      clearTimeout(hoverTimeout);
+      if (!force && isPinned) return;
+      popover.style.display = 'none';
+      popover.setAttribute('aria-hidden', 'true');
+      popover.removeAttribute('data-pinned');
+      activeTrigger = null;
+      isPinned = false;
+    }}
+
+    document.querySelectorAll('.kpi-info-btn, [data-kpi-title]').forEach(el => {{
+      const data = getKpiData(el);
+      if (!data) return;
+
+      if (el.classList.contains('kpi-info-btn')) {{
+        el.addEventListener('click', (e) => {{
+          e.stopPropagation();
+          e.preventDefault();
+          if (activeTrigger === el && isPinned) {{
+            hidePopover(true);
+          }} else {{
+            showPopover(data, true);
+          }}
+        }});
+        el.addEventListener('mouseenter', () => {{
+          if (!isPinned) {{
+            clearTimeout(hoverTimeout);
+            showPopover(data, false);
+          }}
+        }});
+        el.addEventListener('mouseleave', () => {{
+          if (!isPinned) {{
+            hoverTimeout = setTimeout(() => hidePopover(false), 200);
+          }}
+        }});
+      }}
+    }});
+
+    popover.addEventListener('mouseenter', () => {{
+      if (!isPinned) clearTimeout(hoverTimeout);
+    }});
+    popover.addEventListener('mouseleave', () => {{
+      if (!isPinned) {{
+        hoverTimeout = setTimeout(() => hidePopover(false), 200);
+      }}
+    }});
+
+    if (closeBtn) {{
+      closeBtn.addEventListener('click', (e) => {{
+        e.stopPropagation();
+        hidePopover(true);
+      }});
+    }}
+
+    document.addEventListener('click', (e) => {{
+      if (isPinned && !popover.contains(e.target) && (!activeTrigger || !activeTrigger.contains(e.target))) {{
+        hidePopover(true);
+      }}
+    }});
+
+    document.addEventListener('keydown', (e) => {{
+      if (e.key === 'Escape') hidePopover(true);
+    }});
+
+    window.addEventListener('resize', () => {{
+      if (activeTrigger && popover.style.display !== 'none') {{
+        positionPopover(activeTrigger);
+      }}
+    }});
+  }}
+
   // Init
   document.addEventListener('DOMContentLoaded', () => {{
     renderMicrocycle();
@@ -3352,6 +3684,7 @@ def build_html(payload_json: str, d: dict) -> str:
       selectStrengthSession(STRENGTH_SESSIONS[0].id);
     }}
     initAnatomyTooltips();
+    initKpiPopovers();
     renderEngineTable();
     renderBodyTable();
     renderSleepTable();

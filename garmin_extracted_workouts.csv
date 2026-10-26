@@ -1,12 +1,20 @@
 Activity_ID,Date,Activity_Name,Exercise,Set,Reps,Weight_kg,Total_Volume_kg,e1RM_kg,Duration_s,Session_Type
-24853486904,2026-10-26,CrossFit,Thruster,3,9,43.1,387.9,56.0,0.0,Push
-24853486904,2026-10-26,CrossFit,Thruster,2,12,43.1,517.2,0.0,0.0,Push
-24853486904,2026-10-26,CrossFit,Thruster,1,15,43.1,646.5,0.0,0.0,Push
-24833250042,2026-10-24,CrossFit,Leg Raise,5,15,0.0,0.0,0.0,0.0,Full Body
-24833250042,2026-10-24,CrossFit,Leg Raise,4,15,0.0,0.0,0.0,0.0,Full Body
-24833250042,2026-10-24,CrossFit,Leg Raise,3,15,0.0,0.0,0.0,0.0,Full Body
-24833250042,2026-10-24,CrossFit,Leg Raise,2,15,0.0,0.0,0.0,0.0,Full Body
-24833250042,2026-10-24,CrossFit,Leg Raise,1,15,0.0,0.0,0.0,0.0,Full Body
+24853486904,2026-10-26,CrossFit,Thruster,3,9,43.1,387.9,56.0,0.0,Full Body
+24853486904,2026-10-26,CrossFit,Muscle Up,3,9,0.0,0.0,0.0,0.0,Full Body
+24853486904,2026-10-26,CrossFit,Thruster,2,12,43.1,517.2,0.0,0.0,Full Body
+24853486904,2026-10-26,CrossFit,Muscle Up,2,12,0.0,0.0,0.0,0.0,Full Body
+24853486904,2026-10-26,CrossFit,Thruster,1,15,43.1,646.5,0.0,0.0,Full Body
+24853486904,2026-10-26,CrossFit,Muscle Up,1,15,0.0,0.0,0.0,0.0,Full Body
+24833250042,2026-10-24,CrossFit,Leg Raise,5,15,0.0,0.0,0.0,0.0,Legs
+24833250042,2026-10-24,CrossFit,Sumo Deadlift High Pull,5,15,29.5,442.5,0.0,0.0,Legs
+24833250042,2026-10-24,CrossFit,Leg Raise,4,15,0.0,0.0,0.0,0.0,Legs
+24833250042,2026-10-24,CrossFit,Sumo Deadlift High Pull,4,15,29.5,442.5,0.0,0.0,Legs
+24833250042,2026-10-24,CrossFit,Leg Raise,3,15,0.0,0.0,0.0,0.0,Legs
+24833250042,2026-10-24,CrossFit,Sumo Deadlift High Pull,3,15,29.5,442.5,0.0,0.0,Legs
+24833250042,2026-10-24,CrossFit,Leg Raise,2,15,0.0,0.0,0.0,0.0,Legs
+24833250042,2026-10-24,CrossFit,Sumo Deadlift High Pull,2,15,29.5,442.5,0.0,0.0,Legs
+24833250042,2026-10-24,CrossFit,Leg Raise,1,15,0.0,0.0,0.0,0.0,Legs
+24833250042,2026-10-24,CrossFit,Sumo Deadlift High Pull,1,15,29.5,442.5,0.0,0.0,Legs
 24822339601,2026-10-23,CrossFit,Thruster,4,10,32.0,320.0,42.7,0.0,Push
 24822339601,2026-10-23,CrossFit,Thruster,3,10,32.0,320.0,42.7,0.0,Push
 24822339601,2026-10-23,CrossFit,Thruster,2,10,32.0,320.0,42.7,0.0,Push
@@ -44,15 +52,19 @@ Activity_ID,Date,Activity_Name,Exercise,Set,Reps,Weight_kg,Total_Volume_kg,e1RM_
 24787048686,2026-10-20,CrossFit ,Burpee,4,15,0.0,0.0,0.0,0.0,Push
 24787048686,2026-10-20,CrossFit ,Barbell Push Press,4,4,43.1,172.4,48.8,0.0,Push
 24787048686,2026-10-20,CrossFit ,Overhead Press,4,4,34.0,136.0,38.5,0.0,Push
+24787048686,2026-10-20,CrossFit ,Hollow Rock,4,1,0.0,0.0,0.0,30.0,Push
 24787048686,2026-10-20,CrossFit ,Burpee,3,15,0.0,0.0,0.0,0.0,Push
 24787048686,2026-10-20,CrossFit ,Barbell Push Press,3,4,43.1,172.4,48.8,0.0,Push
 24787048686,2026-10-20,CrossFit ,Overhead Press,3,4,34.0,136.0,38.5,0.0,Push
+24787048686,2026-10-20,CrossFit ,Hollow Rock,3,1,0.0,0.0,0.0,30.0,Push
 24787048686,2026-10-20,CrossFit ,Burpee,2,15,0.0,0.0,0.0,0.0,Push
 24787048686,2026-10-20,CrossFit ,Barbell Push Press,2,4,43.1,172.4,48.8,0.0,Push
 24787048686,2026-10-20,CrossFit ,Overhead Press,2,4,34.0,136.0,38.5,0.0,Push
+24787048686,2026-10-20,CrossFit ,Hollow Rock,2,1,0.0,0.0,0.0,30.0,Push
 24787048686,2026-10-20,CrossFit ,Burpee,1,15,0.0,0.0,0.0,0.0,Push
 24787048686,2026-10-20,CrossFit ,Barbell Push Press,1,4,43.1,172.4,48.8,0.0,Push
 24787048686,2026-10-20,CrossFit ,Overhead Press,1,4,34.0,136.0,38.5,0.0,Push
+24787048686,2026-10-20,CrossFit ,Hollow Rock,1,1,0.0,0.0,0.0,30.0,Push
 24741308773,2026-10-16,CrossFit,Snatch,4,5,38.6,193.0,45.0,0.0,Full Body
 24741308773,2026-10-16,CrossFit,Snatch,3,5,34.0,170.0,39.7,0.0,Full Body
 24741308773,2026-10-16,CrossFit,Snatch,2,5,22.7,113.5,26.5,0.0,Full Body

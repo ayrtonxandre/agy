@@ -10,7 +10,20 @@
     "Total_Volume_kg": 387.9,
     "e1RM_kg": 56.0,
     "Duration_s": 0.0,
-    "Session_Type": "Push"
+    "Session_Type": "Full Body"
+  },
+  {
+    "Activity_ID": 24853486904,
+    "Date": "2026-10-26",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Muscle Up",
+    "Set": 3,
+    "Reps": 9,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24853486904,
@@ -23,7 +36,20 @@
     "Total_Volume_kg": 517.2,
     "e1RM_kg": 0.0,
     "Duration_s": 0.0,
-    "Session_Type": "Push"
+    "Session_Type": "Full Body"
+  },
+  {
+    "Activity_ID": 24853486904,
+    "Date": "2026-10-26",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Muscle Up",
+    "Set": 2,
+    "Reps": 12,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24853486904,
@@ -36,7 +62,20 @@
     "Total_Volume_kg": 646.5,
     "e1RM_kg": 0.0,
     "Duration_s": 0.0,
-    "Session_Type": "Push"
+    "Session_Type": "Full Body"
+  },
+  {
+    "Activity_ID": 24853486904,
+    "Date": "2026-10-26",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Muscle Up",
+    "Set": 1,
+    "Reps": 15,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
   },
   {
     "Activity_ID": 24833250042,
@@ -49,7 +88,20 @@
     "Total_Volume_kg": 0.0,
     "e1RM_kg": 0.0,
     "Duration_s": 0.0,
-    "Session_Type": "Full Body"
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24833250042,
+    "Date": "2026-10-24",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Sumo Deadlift High Pull",
+    "Set": 5,
+    "Reps": 15,
+    "Weight_kg": 29.5,
+    "Total_Volume_kg": 442.5,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
   },
   {
     "Activity_ID": 24833250042,
@@ -62,7 +114,20 @@
     "Total_Volume_kg": 0.0,
     "e1RM_kg": 0.0,
     "Duration_s": 0.0,
-    "Session_Type": "Full Body"
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24833250042,
+    "Date": "2026-10-24",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Sumo Deadlift High Pull",
+    "Set": 4,
+    "Reps": 15,
+    "Weight_kg": 29.5,
+    "Total_Volume_kg": 442.5,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
   },
   {
     "Activity_ID": 24833250042,
@@ -75,7 +140,20 @@
     "Total_Volume_kg": 0.0,
     "e1RM_kg": 0.0,
     "Duration_s": 0.0,
-    "Session_Type": "Full Body"
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24833250042,
+    "Date": "2026-10-24",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Sumo Deadlift High Pull",
+    "Set": 3,
+    "Reps": 15,
+    "Weight_kg": 29.5,
+    "Total_Volume_kg": 442.5,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
   },
   {
     "Activity_ID": 24833250042,
@@ -88,7 +166,20 @@
     "Total_Volume_kg": 0.0,
     "e1RM_kg": 0.0,
     "Duration_s": 0.0,
-    "Session_Type": "Full Body"
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24833250042,
+    "Date": "2026-10-24",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Sumo Deadlift High Pull",
+    "Set": 2,
+    "Reps": 15,
+    "Weight_kg": 29.5,
+    "Total_Volume_kg": 442.5,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
   },
   {
     "Activity_ID": 24833250042,
@@ -101,7 +192,20 @@
     "Total_Volume_kg": 0.0,
     "e1RM_kg": 0.0,
     "Duration_s": 0.0,
-    "Session_Type": "Full Body"
+    "Session_Type": "Legs"
+  },
+  {
+    "Activity_ID": 24833250042,
+    "Date": "2026-10-24",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Sumo Deadlift High Pull",
+    "Set": 1,
+    "Reps": 15,
+    "Weight_kg": 29.5,
+    "Total_Volume_kg": 442.5,
+    "e1RM_kg": 0.0,
+    "Duration_s": 0.0,
+    "Session_Type": "Legs"
   },
   {
     "Activity_ID": 24822339601,
@@ -620,6 +724,19 @@
     "Activity_ID": 24787048686,
     "Date": "2026-10-20",
     "Activity_Name": "CrossFit ",
+    "Exercise": "Hollow Rock",
+    "Set": 4,
+    "Reps": 1,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 30.0,
+    "Session_Type": "Push"
+  },
+  {
+    "Activity_ID": 24787048686,
+    "Date": "2026-10-20",
+    "Activity_Name": "CrossFit ",
     "Exercise": "Burpee",
     "Set": 3,
     "Reps": 15,
@@ -653,6 +770,19 @@
     "Total_Volume_kg": 136.0,
     "e1RM_kg": 38.5,
     "Duration_s": 0.0,
+    "Session_Type": "Push"
+  },
+  {
+    "Activity_ID": 24787048686,
+    "Date": "2026-10-20",
+    "Activity_Name": "CrossFit ",
+    "Exercise": "Hollow Rock",
+    "Set": 3,
+    "Reps": 1,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 30.0,
     "Session_Type": "Push"
   },
   {
@@ -698,6 +828,19 @@
     "Activity_ID": 24787048686,
     "Date": "2026-10-20",
     "Activity_Name": "CrossFit ",
+    "Exercise": "Hollow Rock",
+    "Set": 2,
+    "Reps": 1,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 30.0,
+    "Session_Type": "Push"
+  },
+  {
+    "Activity_ID": 24787048686,
+    "Date": "2026-10-20",
+    "Activity_Name": "CrossFit ",
     "Exercise": "Burpee",
     "Set": 1,
     "Reps": 15,
@@ -731,6 +874,19 @@
     "Total_Volume_kg": 136.0,
     "e1RM_kg": 38.5,
     "Duration_s": 0.0,
+    "Session_Type": "Push"
+  },
+  {
+    "Activity_ID": 24787048686,
+    "Date": "2026-10-20",
+    "Activity_Name": "CrossFit ",
+    "Exercise": "Hollow Rock",
+    "Set": 1,
+    "Reps": 1,
+    "Weight_kg": 0.0,
+    "Total_Volume_kg": 0.0,
+    "e1RM_kg": 0.0,
+    "Duration_s": 30.0,
     "Session_Type": "Push"
   },
   {

@@ -223,6 +223,40 @@ EXERCISE_ALIASES: dict[str, str] = {
     "box jump": "Box Jump",
     "jumping jack": "Jumping Jacks",
     "jumping jacks": "Jumping Jacks",
+
+    # Gymnastics & Calisthenics
+    "muscle up": "Muscle Up",
+    "muscle ups": "Muscle Up",
+    "muscle-up": "Muscle Up",
+    "muscle-ups": "Muscle Up",
+    "bar muscle up": "Muscle Up",
+    "bar muscle-up": "Muscle Up",
+    "bar muscle ups": "Muscle Up",
+    "bar muscle-ups": "Muscle Up",
+    "ring muscle up": "Muscle Up",
+    "ring muscle-up": "Muscle Up",
+    "ring muscle ups": "Muscle Up",
+    "ring muscle-ups": "Muscle Up",
+    "muscle up low bar": "Muscle Up",
+    "muscle-up low bar": "Muscle Up",
+    "muscle ups low bar": "Muscle Up",
+    "muscle-ups low bar": "Muscle Up",
+    "low bar muscle up": "Muscle Up",
+    "low bar muscle-up": "Muscle Up",
+    "wall walk": "Wall Walk",
+    "wall walks": "Wall Walk",
+    "wall-walk": "Wall Walk",
+    "wall-walks": "Wall Walk",
+    "handstand push up": "Handstand Push Up",
+    "handstand push-up": "Handstand Push Up",
+    "handstand push ups": "Handstand Push Up",
+    "handstand push-ups": "Handstand Push Up",
+    "hspu": "Handstand Push Up",
+    "hspus": "Handstand Push Up",
+    "hollow rock": "Hollow Rock",
+    "hollow rocks": "Hollow Rock",
+    "hollow hold": "Hollow Rock",
+    "hollow body": "Hollow Rock",
 }
 
 
@@ -232,8 +266,14 @@ def normalize_exercise_name(raw_name: str) -> str:
         return "Unknown Exercise"
     
     cleaned = raw_name.strip().lower()
+    cleaned = re.sub(r"\s+", " ", cleaned)
     cleaned = re.sub(r"^(barbell|dumbbells?|db|bb|kettlebells?|kb|sandbags?)\s+", "", cleaned)
     cleaned = re.sub(r"\s+(barbell|dumbbells?|db|bb|kettlebells?|kb|sandbags?)$", "", cleaned)
+    
+    # Strip apparatus / descriptor modifiers (e.g. "muscle-ups low bar", "pull ups on bar", "muscle-ups (low bar)")
+    cleaned = re.sub(r"\s*\((?:low\s*bar|high\s*bar|rings?|bar)\)", "", cleaned)
+    cleaned = re.sub(r"\s+(?:low\s*bar|high\s*bar|on\s+rings?|on\s+bar|rings?)\b", "", cleaned)
+    cleaned = cleaned.strip()
     
     if cleaned in EXERCISE_ALIASES:
         return EXERCISE_ALIASES[cleaned]
@@ -256,8 +296,8 @@ def is_modifier_segment(segment: str) -> bool:
     if not s:
         return True
     
-    # Weight: e.g. "25kg", "25 kg", "25 kg (55 lbs)", "@ 25kg", "at 106,5kg"
-    if re.match(r"^(?:@|at\s+)?\s*\d+(?:[.,]\d+)?\s*(?:kg|kilos?|lbs?|pounds?)\b(?:\s*\([^)]*\))?$", s, re.I):
+    # Weight: e.g. "25kg", "25 kg", "25 kg (55 lbs)", "@ 25kg", "at 106,5kg", "65Lbd"
+    if re.match(r"^(?:@|at\s+)?\s*\d+(?:[.,]\d+)?\s*(?:kg|kilos?|lbs?|lbd|lbsd|lbes|pounds?)\b(?:\s*\([^)]*\))?$", s, re.I):
         return True
         
     # Calories: e.g. "15cal", "15 cal", "13 cals", "20 calories"
@@ -418,7 +458,7 @@ def parse_single_movement(sm: str, default_sets: int = 1) -> dict[str, Any] | No
         weight_kg = float(m_kg.group(1).replace(",", "."))
         rem = sm[:m_kg.start()] + " " + sm[m_kg.end():]
     else:
-        m_lbs = re.search(r"(?:[:@\-_]|at\s+|,)?\s*(\d+(?:[.,]\d+)?)\s*(?:lbs?|pounds?)\b(?:\s*\([^)]*\))?", sm, re.IGNORECASE)
+        m_lbs = re.search(r"(?:[:@\-_]|at\s+|,)?\s*(\d+(?:[.,]\d+)?)\s*(?:lbs?|lbd|lbsd|lbes|pounds?)\b(?:\s*\([^)]*\))?", sm, re.IGNORECASE)
         if m_lbs:
             weight_kg = round(float(m_lbs.group(1).replace(",", ".")) * 0.45359237, 1)
             rem = sm[:m_lbs.start()] + " " + sm[m_lbs.end():]
@@ -430,24 +470,35 @@ def parse_single_movement(sm: str, default_sets: int = 1) -> dict[str, Any] | No
 
     rem = rem.strip(" ,-:@_")
 
-    m_rep = re.match(r"^(\d+)\s*(?:reps?|x)?\s+(.*)$", rem, re.IGNORECASE)
-    if m_rep:
-        reps = int(m_rep.group(1))
-        raw_name = m_rep.group(2).strip()
+    duration_s = 0.0
+    m_timed = re.match(r"^(\d+(?:[.,]\d+)?)\s*(?:s|sec|secs|seconds?|min|mins)\s+(.*)$", rem, re.IGNORECASE)
+    if m_timed:
+        val = float(m_timed.group(1).replace(",", "."))
+        unit = m_timed.group(0).lower()
+        duration_s = val * 60.0 if "min" in unit else val
+        reps = 1
+        raw_name = m_timed.group(2).strip()
     else:
-        m_rev = re.match(r"^(.*?)\s+(\d+)\s*(?:reps?|x)?$", rem, re.IGNORECASE)
-        if m_rev:
-            reps = int(m_rev.group(2))
-            raw_name = m_rev.group(1).strip()
+        m_rep = re.match(r"^(\d+)\s*(?:reps?|x)?\s+(.*)$", rem, re.IGNORECASE)
+        if m_rep:
+            reps = int(m_rep.group(1))
+            raw_name = m_rep.group(2).strip()
         else:
-            reps = 10
-            raw_name = rem
+            m_rev = re.match(r"^(.*?)\s+(\d+)\s*(?:reps?|x)?$", rem, re.IGNORECASE)
+            if m_rev:
+                reps = int(m_rev.group(2))
+                raw_name = m_rev.group(1).strip()
+            else:
+                reps = 10
+                raw_name = rem
 
     if not raw_name:
         return None
 
     ex_name = normalize_exercise_name(raw_name)
-    cleaned_lower = re.sub(r"^(barbell|dumbbells?|db|bb)\s+", "", raw_name.strip().lower())
+    cleaned_lower = re.sub(r"\s+", " ", raw_name.strip().lower())
+    cleaned_lower = re.sub(r"^(barbell|dumbbells?|db|bb)\s+", "", cleaned_lower)
+    cleaned_lower = re.sub(r"\s+(?:low\s*bar|high\s*bar|on\s+rings?|on\s+bar|rings?)\b", "", cleaned_lower).strip()
     is_known = (
         ex_name in athx_config.EXERCISE_MUSCLE_MAP or
         raw_name.lower() in EXERCISE_ALIASES or
@@ -470,7 +521,12 @@ def parse_single_movement(sm: str, default_sets: int = 1) -> dict[str, Any] | No
         "sets": default_sets,
         "reps": reps,
         "weight_kg": weight_kg,
-        "notes": f"{default_sets}x{reps} {ex_name} @ {weight_kg}kg" if weight_kg > 0 else f"{default_sets}x{reps} {ex_name} (Bodyweight)"
+        "duration_s": duration_s,
+        "notes": (
+            f"{default_sets}x{reps} {ex_name} @ {weight_kg}kg" if weight_kg > 0
+            else (f"{default_sets}x {int(duration_s)}s {ex_name}" if duration_s > 0
+                  else f"{default_sets}x{reps} {ex_name} (Bodyweight)")
+        )
     }
 
 
@@ -649,9 +705,9 @@ Canonical ATHX Exercises list:
 Front Squat, Back Squat, Goblet Squat, Split Squat, Bulgarian Split Squat, Lunge, Overhead Lunge, Leg Press, Hack Squat, Leg Extension,
 Deadlift, Romanian Deadlift, Straight Leg Deadlift, Hip Thrust, Kettlebell Swing,
 Bench Press, Incline Bench Press, Dumbbell Bench Press, Overhead Press, Barbell Push Press, Shoulder Press, Military Press, Push Up, Dip, Thruster,
-Pull Up, Chin Up, Row, Barbell Row, Bent Over Row, Dumbbell Row, Lat Pulldown, Shrug, Face Pull, Ring Row,
+Pull Up, Chin Up, Muscle Up, Row, Barbell Row, Bent Over Row, Dumbbell Row, Lat Pulldown, Shrug, Face Pull, Ring Row,
 Biceps Curl, Hammer Curl, Triceps Extension, Triceps Pushdown, Close Grip Bench Press,
-Clean, Clean and Jerk, Snatch, Hang Snatch, Burpee, Toes to Bar, Wall Ball.
+Clean, Clean and Jerk, Snatch, Hang Snatch, Burpee, Toes to Bar, Wall Ball, Wall Walk, Handstand Push Up, Hollow Rock.
 
 Instructions:
 1. Detect total rounds/sets (e.g. '4 rounds', 'EMOM 10', '3 sets', default 1).
@@ -909,7 +965,7 @@ def convert_note_to_strength_records(
                 "Weight_kg": weight_kg,
                 "Total_Volume_kg": round(reps * weight_kg, 1),
                 "e1RM_kg": e1rm,
-                "Duration_s": 0.0,
+                "Duration_s": float(item.get("duration_s", 0.0) or 0.0),
                 "Session_Type": dominant_split,
             })
 
