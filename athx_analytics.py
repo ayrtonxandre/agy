@@ -871,7 +871,7 @@ def process_running_data(running_input: Path | list[dict] | None = None, audit: 
             "current_28d_best_pace_s": 295.0,
             "current_28d_best_pace_formatted": "4:55/km",
             "latest_run": None,
-            "latest_vo2max": None,
+            "latest_vo2max": getattr(athx_config, "DEFAULT_VO2MAX", 55.0),
             "avg_cadence_spm": None,
             "avg_hr": None,
             "history": []
@@ -902,6 +902,13 @@ def process_running_data(running_input: Path | list[dict] | None = None, audit: 
 
     latest_run = valid_runs[-1]
     latest_vo2 = next((r.get("VO2Max") for r in reversed(valid_runs) if r.get("VO2Max")), None)
+    if latest_vo2 is None:
+        latest_vo2 = getattr(athx_config, "DEFAULT_VO2MAX", 55.0)
+    else:
+        try:
+            latest_vo2 = round(float(latest_vo2), 1)
+        except Exception:
+            pass
 
     cadences = [r.get("Cadence_spm") for r in valid_runs if (r.get("Cadence_spm") or 0) > 0]
     avg_cadence = round(sum(cadences) / len(cadences), 1) if cadences else None
@@ -1244,7 +1251,7 @@ def generate_telemetry_digest(
             "total_runs": running_data.get("total_runs", 0),
             "total_distance_km": running_data.get("total_distance_km", 0.0),
             "best_5k_pace": running_data.get("best_5k_pace_formatted", "N/A"),
-            "latest_vo2max": running_data.get("latest_vo2max", "N/A"),
+            "latest_vo2max": running_data.get("latest_vo2max") or getattr(athx_config, "DEFAULT_VO2MAX", 55.0),
             "avg_ground_contact_time_ms": running_data.get("avg_gct_ms"),
             "avg_vertical_ratio_pct": running_data.get("avg_vertical_ratio_pct"),
             "other_workout_sessions": workout_data.get("total_sessions", 0)

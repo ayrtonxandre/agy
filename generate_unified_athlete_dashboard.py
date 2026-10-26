@@ -2067,7 +2067,7 @@ def build_html(payload_json: str, d: dict) -> str:
               <span class="badge badge-ok">Aerobic Base</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
-              <span style="font: 600 28px/1.1 var(--font-sans);">{rn.get('latest_vo2max', 55.0)}</span>
+              <span style="font: 600 28px/1.1 var(--font-sans);">{rn.get('latest_vo2max') or 55.0}</span>
               <span style="font-size: 13px; color: var(--muted-foreground);">ml/kg/min</span>
             </div>
             <span style="font-size: 12px; color: var(--muted-foreground);">Avg cadence {rn.get('avg_cadence_spm', 157)} spm · avg HR {rn.get('avg_hr', 150)} bpm.</span>

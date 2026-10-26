@@ -26,6 +26,7 @@ DEFAULT_BODYWEIGHT_KG: float = 79.3      # Fallback/current scale weight
 BODYWEIGHT_TARGET_KG: float = 85.0       # Target bodyweight for competition
 BODYWEIGHT_GOAL_TYPE: str = "gain"       # "gain" (Mass/Hypertrophy Bulking) | "cut" | "recomp"
 ATHLETE_HEIGHT_M: float = 1.83           # Used for BMI calculation
+DEFAULT_VO2MAX: float = 55.0             # Baseline athlete VO2Max (ml/kg/min)
 
 # Maximum rep count for valid e1RM estimation (Epley invalid above this)
 E1RM_MAX_REPS: int = 10
