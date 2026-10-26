@@ -386,13 +386,13 @@ def build_microcycle(all_activities: list[dict], coach_briefing: dict, as_of_dat
             hr_str = f" · avg HR {hr} bpm" if hr > 0 else ""
             why = f"Garmin Connect · {kcal} kcal{hr_str} · duration {dur} min. Telemetry verified in audit engine."
             days_list.append({
-                "dow": dow_label, "date": date_num, "long": long_label, "title": name,
+                "dow": dow_label, "date": date_num, "iso": cur_d_str, "long": long_label, "title": name,
                 "c": split_color, "state": f"Done · {dur} min", "past": is_past, "today": is_today,
                 "items": items, "why": why
             })
         elif is_past:
             days_list.append({
-                "dow": dow_label, "date": date_num, "long": long_label, "title": "Rest",
+                "dow": dow_label, "date": date_num, "iso": cur_d_str, "long": long_label, "title": "Rest",
                 "c": "rest", "state": "Nothing logged", "past": True, "today": False,
                 "items": [], "why": "No Garmin activity recorded. Scheduled recovery."
             })
@@ -402,7 +402,7 @@ def build_microcycle(all_activities: list[dict], coach_briefing: dict, as_of_dat
                 "items": [], "why": "Scheduled biological recovery window. Target 8.0h sleep and hydration."
             })
             days_list.append({
-                "dow": dow_label, "date": date_num, "long": long_label, "title": preset["title"],
+                "dow": dow_label, "date": date_num, "iso": cur_d_str, "long": long_label, "title": preset["title"],
                 "c": preset["c"], "state": "Planned", "past": False, "today": is_today,
                 "items": preset["items"], "why": preset["why"]
             })
@@ -569,10 +569,11 @@ def build_html(payload_json: str, d: dict) -> str:
     volume_gauges = d.get("volume_gauges", [])
     fueling_targets = d.get("fueling_targets", [])
 
-    as_of_date = st["as_of_date"]
+    today_dt = date.today()
+    as_of_date = today_dt.isoformat()
     weeks_to_games = cp["weeks_remaining"]
     comp_date_display = datetime.strptime(cfg["competition_date"], "%Y-%m-%d").strftime("%d %B %Y")
-    as_of_display = datetime.strptime(as_of_date, "%Y-%m-%d").strftime("%A %d %B")
+    as_of_display = today_dt.strftime("%A %d %B")
 
     # Coach verdict & rating
     coach_rating = cb.get("executive_verdict", {}).get("rating", "76% • Moderate Risk")
@@ -2351,6 +2352,31 @@ def build_html(payload_json: str, d: dict) -> str:
   // State
   let activeTabId = 'todayTab';
   let selectedStrengthSessionId = (STRENGTH_SESSIONS && STRENGTH_SESSIONS.length > 0) ? STRENGTH_SESSIONS[0].id : null;
+  // Dynamic client-side date synchronization for active session
+  (function syncClientToday() {{
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayIso = `${{y}}-${{m}}-${{day}}`;
+    
+    const matchedIdx = MICROCYCLE_DATA.findIndex(d => d.iso === todayIso);
+    if (matchedIdx >= 0) {{
+      MICROCYCLE_DATA.forEach((d, idx) => {{
+        d.today = (idx === matchedIdx);
+        d.past = (d.iso < todayIso);
+        if (d.today) {{
+          d.long = 'Today';
+        }}
+      }});
+      const todayDisplay = now.toLocaleDateString('en-GB', {{ weekday: 'long', day: 'numeric', month: 'long' }});
+      const activeSub = document.getElementById('activePageSub');
+      if (activeSub && activeTabId === 'todayTab') {{
+        activeSub.textContent = todayDisplay;
+      }}
+    }}
+  }})();
+
   const todayMicroIdx = MICROCYCLE_DATA.findIndex(d => d.today);
   let selectedMicroDay = todayMicroIdx >= 0 ? todayMicroIdx : 0;
   let strengthLimit = 25;
@@ -2379,6 +2405,11 @@ def build_html(payload_json: str, d: dict) -> str:
         item.classList.add('active');
       }}
     }});
+
+    if (tabId === 'todayTab') {{
+      const now = new Date();
+      sub = now.toLocaleDateString('en-GB', {{ weekday: 'long', day: 'numeric', month: 'long' }});
+    }}
 
     document.getElementById('activePageTitle').textContent = title;
     document.getElementById('activePageSub').textContent = sub;
@@ -3421,11 +3452,11 @@ def main():
     coach_briefing = athx_ai_coach.get_or_generate_coach_briefing(telemetry_digest, base_dir=BASE_DIR)
     print(f"✅ ATHX AI Performance Coach: Verdict [{coach_briefing['executive_verdict']['rating']}] via {coach_briefing['provider_used']}")
 
-    microcycle_days = build_microcycle(all_activities, coach_briefing, strength_data["as_of_date"])
+    today_dt = date.today()
+    microcycle_days = build_microcycle(all_activities, coach_briefing, today_dt.isoformat())
     volume_gauges = build_volume_gauges(strength_data["muscle_summary"])
     fueling_targets = build_fueling_targets(apple_data["nutrition"]["history"])
 
-    today_dt = date.today()
     latest_garmin_date = strength_data["as_of_date"]
     latest_bc_date = apple_data["body_comp"]["history"][-1]["Date"] if apple_data["body_comp"]["history"] else "N/A"
     latest_nut_date = apple_data["nutrition"]["history"][-1]["Date"] if apple_data["nutrition"]["history"] else "N/A"
