@@ -1,5 +1,35 @@
 [
   {
+    "Activity_ID": 24853486904,
+    "Date": "2026-10-26",
+    "Start_Time": "2026-10-26 06:40:20",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 44.7,
+    "Distance_km": 0.0,
+    "Calories_kcal": 339,
+    "Average_HR": 110.0,
+    "Max_HR": 166.0,
+    "Training_Effect": "ANAEROBIC_CAPACITY",
+    "Notes": "15 thrusters - 95 Lbs\n15 muscle-ups low bar \n\n12 thrusters - 95 Lbs\n12 muscle-ups low bar \n\n9 thrusters - 95 Lbs\n9 muscle-ups low bar"
+  },
+  {
+    "Activity_ID": 24833250042,
+    "Date": "2026-10-24",
+    "Start_Time": "2026-10-24 10:36:05",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 50.3,
+    "Distance_km": 0.0,
+    "Calories_kcal": 586,
+    "Average_HR": 140.0,
+    "Max_HR": 194.0,
+    "Training_Effect": "SPEED",
+    "Notes": "5 rounds\n\n15 leg raises\n15 sumo deadlift  high pull 65Lbd"
+  },
+  {
     "Activity_ID": 24822339601,
     "Date": "2026-10-23",
     "Start_Time": "2026-10-23 06:36:11",
@@ -1384,33 +1414,5 @@
     "Average_HR": 108.0,
     "Max_HR": 145.0,
     "Training_Effect": "AEROBIC_BASE"
-  },
-  {
-    "Activity_ID": 23129826205,
-    "Date": "2026-06-03",
-    "Start_Time": "2026-06-03 19:14:21",
-    "Activity_Name": "Strength",
-    "Activity_Type": "strength_training",
-    "Primary_Category": "Strength",
-    "Duration_min": 45.0,
-    "Distance_km": 0.0,
-    "Calories_kcal": 358,
-    "Average_HR": 114.0,
-    "Max_HR": 159.0,
-    "Training_Effect": "ANAEROBIC_CAPACITY"
-  },
-  {
-    "Activity_ID": 23103619374,
-    "Date": "2026-06-02",
-    "Start_Time": "2026-06-02 15:01:30",
-    "Activity_Name": "Strength",
-    "Activity_Type": "strength_training",
-    "Primary_Category": "Strength",
-    "Duration_min": 48.7,
-    "Distance_km": 0.0,
-    "Calories_kcal": 346,
-    "Average_HR": 107.0,
-    "Max_HR": 153.0,
-    "Training_Effect": "ANAEROBIC_CAPACITY"
   }
 ]

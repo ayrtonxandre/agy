@@ -1,4 +1,16 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect,Notes
+24853486904,2026-10-26,2026-10-26 06:40:20,CrossFit,indoor_cardio,Cardio / Cross-Training,44.7,0.0,339,110.0,166.0,ANAEROBIC_CAPACITY,"15 thrusters - 95 Lbs
+15 muscle-ups low bar 
+
+12 thrusters - 95 Lbs
+12 muscle-ups low bar 
+
+9 thrusters - 95 Lbs
+9 muscle-ups low bar"
+24833250042,2026-10-24,2026-10-24 10:36:05,CrossFit,indoor_cardio,Cardio / Cross-Training,50.3,0.0,586,140.0,194.0,SPEED,"5 rounds
+
+15 leg raises
+15 sumo deadlift  high pull 65Lbd"
 24822339601,2026-10-23,2026-10-23 06:36:11,CrossFit,indoor_cardio,Cardio / Cross-Training,40.3,0.0,502,140.0,188.0,SPEED,"4 rounds
 400m run
 10 kettlebell thrusters 32Kg"
@@ -195,5 +207,3 @@ Puis:
 23183201056,2026-06-09,2026-06-09 06:55:06,Strength,strength_training,Strength,51.5,0.0,350,110.0,158.0,ANAEROBIC_CAPACITY,
 23141296154,2026-06-05,2026-06-05 17:17:26,Strength,strength_training,Strength,36.5,0.0,312,119.0,145.0,AEROBIC_BASE,
 23129826844,2026-06-04,2026-06-04 12:15:39,Strength,strength_training,Strength,55.3,0.0,385,108.0,145.0,AEROBIC_BASE,
-23129826205,2026-06-03,2026-06-03 19:14:21,Strength,strength_training,Strength,45.0,0.0,358,114.0,159.0,ANAEROBIC_CAPACITY,
-23103619374,2026-06-02,2026-06-02 15:01:30,Strength,strength_training,Strength,48.7,0.0,346,107.0,153.0,ANAEROBIC_CAPACITY,

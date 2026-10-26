@@ -1,4 +1,12 @@
 Activity_ID,Date,Activity_Name,Exercise,Set,Reps,Weight_kg,Total_Volume_kg,e1RM_kg,Duration_s,Session_Type
+24853486904,2026-10-26,CrossFit,Thruster,3,9,43.1,387.9,56.0,0.0,Push
+24853486904,2026-10-26,CrossFit,Thruster,2,12,43.1,517.2,0.0,0.0,Push
+24853486904,2026-10-26,CrossFit,Thruster,1,15,43.1,646.5,0.0,0.0,Push
+24833250042,2026-10-24,CrossFit,Leg Raise,5,15,0.0,0.0,0.0,0.0,Full Body
+24833250042,2026-10-24,CrossFit,Leg Raise,4,15,0.0,0.0,0.0,0.0,Full Body
+24833250042,2026-10-24,CrossFit,Leg Raise,3,15,0.0,0.0,0.0,0.0,Full Body
+24833250042,2026-10-24,CrossFit,Leg Raise,2,15,0.0,0.0,0.0,0.0,Full Body
+24833250042,2026-10-24,CrossFit,Leg Raise,1,15,0.0,0.0,0.0,0.0,Full Body
 24822339601,2026-10-23,CrossFit,Thruster,4,10,32.0,320.0,42.7,0.0,Push
 24822339601,2026-10-23,CrossFit,Thruster,3,10,32.0,320.0,42.7,0.0,Push
 24822339601,2026-10-23,CrossFit,Thruster,2,10,32.0,320.0,42.7,0.0,Push
@@ -1259,43 +1267,3 @@ Activity_ID,Date,Activity_Name,Exercise,Set,Reps,Weight_kg,Total_Volume_kg,e1RM_
 23129826844,2026-06-04,Strength,Triceps Pressdown,1,10,25.0,225.0,33.3,116.7,Upper Push
 23129826844,2026-06-04,Strength,Cable Crossover,1,9,70.0,631.7,91.0,133.5,Upper Push
 23129826844,2026-06-04,Strength,Unknown,1,10,0.0,0.0,,199.0,Upper Push
-23129826205,2026-06-03,Strength,Row,4,10,50.0,400.0,66.7,155.2,Lower Body
-23129826205,2026-06-03,Strength,Push Up,3,10,90.0,833.3,120.0,78.7,Lower Body
-23129826205,2026-06-03,Strength,Pull Up,3,18,14.0,248.0,22.4,96.1,Lower Body
-23129826205,2026-06-03,Strength,Row,3,10,50.0,400.0,66.7,155.2,Lower Body
-23129826205,2026-06-03,Strength,Push Up,2,10,90.0,833.3,120.0,78.7,Lower Body
-23129826205,2026-06-03,Strength,Sit Up,2,18,5.0,40.0,8.0,89.6,Lower Body
-23129826205,2026-06-03,Strength,Pull Up,2,18,14.0,248.0,22.4,96.1,Lower Body
-23129826205,2026-06-03,Strength,Cable Crossover,2,20,5.0,100.0,8.3,52.6,Lower Body
-23129826205,2026-06-03,Strength,Row,2,10,50.0,400.0,66.7,155.2,Lower Body
-23129826205,2026-06-03,Strength,Push Up,1,10,90.0,833.3,120.0,78.7,Lower Body
-23129826205,2026-06-03,Strength,Sit Up,1,18,5.0,40.0,8.0,89.6,Lower Body
-23129826205,2026-06-03,Strength,Jump Rope,1,10,0.0,0.0,,56.4,Lower Body
-23129826205,2026-06-03,Strength,Curl,1,16,14.0,224.0,21.5,27.4,Lower Body
-23129826205,2026-06-03,Strength,Lateral Raise,1,16,14.0,224.0,21.5,46.7,Lower Body
-23129826205,2026-06-03,Strength,Triceps Extension,1,20,0.0,0.0,,46.2,Lower Body
-23129826205,2026-06-03,Strength,Pull Up,1,18,14.0,248.0,22.4,96.1,Lower Body
-23129826205,2026-06-03,Strength,Lunge,1,16,14.0,224.0,21.5,25.2,Lower Body
-23129826205,2026-06-03,Strength,Cable Crossover,1,20,5.0,100.0,8.3,52.6,Lower Body
-23129826205,2026-06-03,Strength,Row,1,10,50.0,400.0,66.7,155.2,Lower Body
-23129826205,2026-06-03,Strength,Lat Pulldown,1,16,14.0,224.0,21.5,43.4,Lower Body
-23129826205,2026-06-03,Strength,Snatch,1,20,5.0,100.0,8.3,24.9,Lower Body
-23103619374,2026-06-02,Strength,Bench Press,7,7,75.0,488.6,92.5,305.5,Upper Push
-23103619374,2026-06-02,Strength,Bench Press,6,7,75.0,488.6,92.5,305.5,Upper Push
-23103619374,2026-06-02,Strength,Bench Press,5,7,75.0,488.6,92.5,305.5,Upper Push
-23103619374,2026-06-02,Strength,Pull Up,5,9,0.0,0.0,,175.2,Upper Push
-23103619374,2026-06-02,Strength,Bench Press,4,7,75.0,488.6,92.5,305.5,Upper Push
-23103619374,2026-06-02,Strength,Pull Up,4,9,0.0,0.0,,175.2,Upper Push
-23103619374,2026-06-02,Strength,Unknown,4,13,20.0,40.0,28.7,110.8,Upper Push
-23103619374,2026-06-02,Strength,Bench Press,3,7,75.0,488.6,92.5,305.5,Upper Push
-23103619374,2026-06-02,Strength,Lateral Raise,3,20,10.0,154.7,16.7,100.9,Upper Push
-23103619374,2026-06-02,Strength,Pull Up,3,9,0.0,0.0,,175.2,Upper Push
-23103619374,2026-06-02,Strength,Unknown,3,13,20.0,40.0,28.7,110.8,Upper Push
-23103619374,2026-06-02,Strength,Bench Press,2,7,75.0,488.6,92.5,305.5,Upper Push
-23103619374,2026-06-02,Strength,Lateral Raise,2,20,10.0,154.7,16.7,100.9,Upper Push
-23103619374,2026-06-02,Strength,Pull Up,2,9,0.0,0.0,,175.2,Upper Push
-23103619374,2026-06-02,Strength,Unknown,2,13,20.0,40.0,28.7,110.8,Upper Push
-23103619374,2026-06-02,Strength,Bench Press,1,7,75.0,488.6,92.5,305.5,Upper Push
-23103619374,2026-06-02,Strength,Lateral Raise,1,20,10.0,154.7,16.7,100.9,Upper Push
-23103619374,2026-06-02,Strength,Pull Up,1,9,0.0,0.0,,175.2,Upper Push
-23103619374,2026-06-02,Strength,Unknown,1,13,20.0,40.0,28.7,110.8,Upper Push
