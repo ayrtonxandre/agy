@@ -1,5 +1,19 @@
 [
   {
+    "Activity_ID": 24865135471,
+    "Date": "2026-10-27",
+    "Start_Time": "2026-10-27 06:48:00",
+    "Activity_Name": "ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",
+    "Activity_Type": "strength_training",
+    "Primary_Category": "Strength",
+    "Duration_min": 50.5,
+    "Distance_km": 0.0,
+    "Calories_kcal": 391,
+    "Average_HR": 114.0,
+    "Max_HR": 151.0,
+    "Training_Effect": "AEROBIC_BASE"
+  },
+  {
     "Activity_ID": 24853486904,
     "Date": "2026-10-26",
     "Start_Time": "2026-10-26 06:40:20",
@@ -1398,20 +1412,6 @@
     "Distance_km": 0.0,
     "Calories_kcal": 312,
     "Average_HR": 119.0,
-    "Max_HR": 145.0,
-    "Training_Effect": "AEROBIC_BASE"
-  },
-  {
-    "Activity_ID": 23129826844,
-    "Date": "2026-06-04",
-    "Start_Time": "2026-06-04 12:15:39",
-    "Activity_Name": "Strength",
-    "Activity_Type": "strength_training",
-    "Primary_Category": "Strength",
-    "Duration_min": 55.3,
-    "Distance_km": 0.0,
-    "Calories_kcal": 385,
-    "Average_HR": 108.0,
     "Max_HR": 145.0,
     "Training_Effect": "AEROBIC_BASE"
   }
