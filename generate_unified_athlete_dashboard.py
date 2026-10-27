@@ -399,7 +399,7 @@ def build_microcycle(all_activities: list[dict], coach_briefing: dict, as_of_dat
         else:
             preset = planned_presets.get(i, {
                 "title": "Rest / Active Recovery", "c": "rest",
-                "items": [], "why": "Scheduled biological recovery window. Target 8.0h sleep and hydration."
+                "items": [], "why": f"Scheduled biological recovery window. Target {getattr(athx_config, 'TARGET_SLEEP_HRS', 7.5):.1f}h sleep and hydration."
             })
             days_list.append({
                 "dow": dow_label, "date": date_num, "iso": cur_d_str, "long": long_label, "title": preset["title"],
@@ -1562,7 +1562,7 @@ def build_html(payload_json: str, d: dict) -> str:
                 <span style="font: 500 13px/20px var(--font-mono); color: var(--atf-pink-400);">03</span>
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                   <span style="font: 500 15px/20px var(--font-sans);">Eat and sleep for growth</span>
-                  <span style="color: var(--muted-foreground); font-size: 13px; line-height: 1.5;">180 g+ protein, +250 kcal surplus, 8 h sleep window.</span>
+                  <span style="color: var(--muted-foreground); font-size: 13px; line-height: 1.5;">180 g+ protein, +250 kcal surplus, {getattr(athx_config, 'TARGET_SLEEP_HRS', 7.5):.1f} h sleep window.</span>
                 </div>
               </div>
             </div>
@@ -2321,7 +2321,7 @@ def build_html(payload_json: str, d: dict) -> str:
             <span style="font-size: 12px; color: var(--muted-foreground);">Sleep {ap['readiness_composite']['components']['sleep']['score']} · RHR {ap['readiness_composite']['components']['rhr']['score']} · Gait {ap['readiness_composite']['components']['asymmetry']['score']} · Fuel {ap['readiness_composite']['components']['protein']['score']}.</span>
           </div>
 
-          <div class="kpi-box" data-kpi-title="Sleep Duration & Coverage" data-kpi-desc="This tracks total actual sleep duration per night along with sensor coverage consistency over the tracking period. Deep restorative sleep is essential for human growth hormone release, memory consolidation, and cellular tissue repair. Consistently hitting at least 8 hours ensures rapid central nervous system rejuvenation.">
+          <div class="kpi-box" data-kpi-title="Sleep Duration & Coverage" data-kpi-desc="This tracks total actual sleep duration per night along with sensor coverage consistency over the tracking period. Deep restorative sleep is essential for human growth hormone release, memory consolidation, and cellular tissue repair. Consistently hitting your {getattr(athx_config, 'TARGET_SLEEP_HRS', 7.5):.1f}h baseline ensures rapid central nervous system rejuvenation.">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span style="display: inline-flex; align-items: center; gap: 6px;">
                 <span style="font-size: 13px; color: var(--muted-foreground);">Sleep Duration</span>
@@ -2669,7 +2669,7 @@ def build_html(payload_json: str, d: dict) -> str:
         </div>
       `).join('');
     }} else {{
-      itemsHtml = '<span style="color: var(--muted-foreground); font-size: 13px;">Rest & recovery. Walk, mobility work, protect 8h sleep opportunity window.</span>';
+      itemsHtml = '<span style="color: var(--muted-foreground); font-size: 13px;">Rest & recovery. Walk, mobility work, protect 7.5h sleep opportunity window.</span>';
     }}
 
     panel.innerHTML = `
@@ -3825,7 +3825,10 @@ def main():
     critical_speed_data = adcg.compute_critical_speed(running_activities)
     crossfit_durability_data = adcg.compute_crossfit_durability(garmin_raw)
     garmin_hrv_data = adcg.load_garmin_hrv(BASE_DIR)
-    sleep_debt_data = adcg.compute_sleep_debt_model(apple_data["sleep"]["history"])
+    sleep_debt_data = adcg.compute_sleep_debt_model(
+        apple_data["sleep"]["history"],
+        sleep_need_hrs=getattr(athx_config, "TARGET_SLEEP_HRS", 7.5),
+    )
     plews_hrv_data = adcg.compute_plews_buchheit_hrv(BASE_DIR)
     running_biomechanics_data = adcg.compute_running_biomechanics(running_activities)
     allostatic_stress_data = adcg.compute_allostatic_stress_balance(BASE_DIR)
@@ -3856,6 +3859,7 @@ def main():
             "bodyweight_target_kg": athx_config.BODYWEIGHT_TARGET_KG,
             "bodyweight_goal_type": athx_config.BODYWEIGHT_GOAL_TYPE,
             "e1rm_max_reps": athx_config.E1RM_MAX_REPS,
+            "target_sleep_hrs": athx_config.TARGET_SLEEP_HRS,
             "readiness_weights": athx_config.READINESS_WEIGHTS,
         },
         "audit": audit.to_dict(),

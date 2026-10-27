@@ -19,6 +19,7 @@ from pathlib import Path
 from datetime import datetime, date, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from collections import defaultdict
+import athx_config
 
 
 # ==============================================================================
@@ -434,7 +435,7 @@ def load_garmin_hrv(hrv_json_path: Path | str) -> dict:
 
 def compute_sleep_debt_model(
     sleep_history: list[dict] | None = None,
-    sleep_need_hrs: float = 8.0,
+    sleep_need_hrs: float | None = None,
     garmin_sleep_path: Path | str | None = None,
 ) -> dict:
     """
@@ -449,6 +450,8 @@ def compute_sleep_debt_model(
         3.0h - 7.0h: Moderate Debt (Monitor recovery)
         > 7.0h: High Debt Alert (Autonomic strain & volume recovery warning)
     """
+    if sleep_need_hrs is None:
+        sleep_need_hrs = getattr(athx_config, "TARGET_SLEEP_HRS", 7.5)
     garmin_records: list[dict] = []
     # Check provided path or default candidate paths for official Garmin sleep summary
     candidate_paths = []
@@ -492,11 +495,11 @@ def compute_sleep_debt_model(
             effective_tot = round(tot + nap, 1)
 
             sn_dict = n.get("sleepNeed") or {}
-            actual_need_mins = (
-                sn_dict.get("actual")
-                or sn_dict.get("baseline")
-                or int(sleep_need_hrs * 60)
-            )
+            g_base = sn_dict.get("baseline", 480)
+            g_act = sn_dict.get("actual", g_base)
+            adjustment = (g_act - g_base) if (g_act is not None and g_base is not None) else 0
+            # Anchor dynamic training adjustments to athlete's configured target sleep need
+            actual_need_mins = int(sleep_need_hrs * 60) + adjustment
             night_need = round(float(actual_need_mins) / 60.0, 1)
 
             defic = round(max(0.0, night_need - effective_tot), 1)
@@ -1175,7 +1178,7 @@ def render_recovery_autonomic_model_html(sleep_debt: dict, plews_hrv: dict) -> s
     Upgraded for Garmin Connect Personal API (dynamic sleepNeed, naps & nocturnal SpO2).
     """
     debt_hrs = sleep_debt.get("total_debt_hrs", 5.2)
-    sleep_need = sleep_debt.get("sleep_need_hrs", 8.0)
+    sleep_need = sleep_debt.get("sleep_need_hrs", getattr(athx_config, "TARGET_SLEEP_HRS", 7.5))
     debt_badge = sleep_debt.get("badge", "badge-warn")
     debt_status = sleep_debt.get("status_text", "Moderate Sleep Debt")
     directive = sleep_debt.get("directive", "")

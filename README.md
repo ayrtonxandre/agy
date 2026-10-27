@@ -161,7 +161,7 @@ Target Date: **`2027-05-27`** | Athlete Mass Target: **`85.0 kg`** (Gain/Recomp 
 ### 4. Biometrics, Recomposition & Sleep Hygiene
 - **Body Recomposition**: 7-day smoothed rolling average curve isolating true tissue gain from daily hydration fluctuations towards the 85.0 kg target.
 - **Sleep Quality Filter**: Drops non-wear periods ($< 3\text{h}$) and excludes recording overflows ($\text{In\_Bed} > 14\text{h}$), computing genuine sleep efficiency and stage distribution.
-- **5-Component Recovery Composite**: Transparent score combining resting heart rate (RHR), sleep duration vs 8h baseline, sleep efficiency %, step volume, and workout strain.
+- **5-Component Recovery Composite**: Transparent score combining resting heart rate (RHR), sleep duration vs 7.5h baseline (`TARGET_SLEEP_HRS`), sleep efficiency %, step volume, and workout strain.
 
 ### 5. Transparent Data Audit Trail
 - Enforces an analysis floor at **`2026-05-01`** (excluding pre-cycle test records from active KPIs while maintaining baseline chronic lookback).
@@ -201,7 +201,7 @@ Adapts Marco Mornati’s durability framework to quantify work-rate maintenance 
 ### 3. Evidence-Based Sleep Debt & Plews–Buchheit Autonomic HRV Model
 Grounded in sports science research (Plews, Buchheit, et al., 2013) and Marco Mornati's `arc_metrics`:
 * **7-Day Rolling Sleep Debt**:
-  * Calculates nightly deficit against an 8.0h baseline: $\max(0, 8.0 - \text{Actual Sleep})$.
+  * Calculates nightly deficit against a 7.5h baseline (`TARGET_SLEEP_HRS`): $\max(0, 7.5 - \text{Actual Sleep})$.
   * Surplus sleep is floored at 0h (cellular recovery cannot be pre-banked).
   * **Severity Tiers**: `< 3.0h` (Restored / Low Debt), `3.0h - 7.0h` (Moderate Debt / Watch), `> 7.0h` (Material Fatigue Alert / 20% Volume Reduction).
 * **Garmin Connect Overnight HRV Baseline**:

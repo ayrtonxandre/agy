@@ -407,7 +407,7 @@ def generate_html_preview():
         <ul class="card-bullets">
           <li><b>28-Day Baseline Corridor:</b> Personalized vagal normal band</li>
           <li><b>Smallest Worthwhile Change (SWC):</b> Spots true physiological strain</li>
-          <li><b>7-Day Rolling Sleep Debt:</b> Deficit vs. 8h target (5.2h tracked)</li>
+          <li><b>7-Day Rolling Sleep Debt:</b> Deficit vs. 7.5h target</li>
           <li><b>Early Warning:</b> Detects central fatigue days before symptoms</li>
         </ul>
       </article>
@@ -515,7 +515,7 @@ def generate_html_preview():
         </div>
         <div class="card-subtitle">Sleep Debt &amp; Autonomic HRV Corridor</div>
         <ul class="card-bullets">
-          <li><b>7-Night Deficit Bars:</b> Nightly sleep shortfall vs. 8.0h baseline</li>
+          <li><b>7-Night Deficit Bars:</b> Nightly sleep shortfall vs. 7.5h baseline</li>
           <li><b>Garmin HRV Corridor:</b> 43–60ms safe zone vs. 76ms latest boost</li>
           <li><b>Sleep Stage Ratios:</b> Deep &amp; REM restoration tracking</li>
         </ul>

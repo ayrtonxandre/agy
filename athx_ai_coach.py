@@ -685,7 +685,7 @@ def _generate_heuristic_coach_answer(question: str, digest: dict[str, Any]) -> t
 - **Microcycle Prescription**:
   - **Session 1 (Primary)**: Barbell Back Squat 4×5 @ 78–82% e1RM (78–82 kg). Rest 3 min.
   - **Session 2 (Accessory)**: Front Squat 3×8 @ 60–65 kg + Bulgarian Split Squat 3×8/leg.
-  - **Recovery**: Protein intake must reach 180g+ daily with 8.0+ hours sleep to support connective tissue adaptation."""
+  - **Recovery**: Protein intake must reach 180g+ daily with 7.5+ hours sleep to support connective tissue adaptation."""
 
     elif matches_any(["deadlift", "deadlifts", "deadlifting", "hinge", "hinging", "posterior", "hamstring", "hamstrings", "glute", "glutes"]):
         ans = f"""### 🎯 Deadlift & Posterior Chain Directive
@@ -721,7 +721,7 @@ def _generate_heuristic_coach_answer(question: str, digest: dict[str, Any]) -> t
 - **Immediate Directive**:
   - **Green Light**: You have full clearance for a high-intensity strength and volume accumulation session today.
   - **Priority Target**: Direct that capacity into your lagging lower-body muscle groups (Back Squat or Deadlift).
-  - **Sleep Target**: Protect a 7.5–8.0 hour sleep window tonight (7-day average: {sleep_hrs} hrs) to optimize anabolic hormone release."""
+  - **Sleep Target**: Protect a 7.5-hour sleep window tonight (7-day average: {sleep_hrs} hrs) to optimize anabolic hormone release."""
 
     elif matches_any(["weight", "bulk", "bulking", "diet", "protein", "mass", "calorie", "calories", "nutrition", "eat", "eating", "food", "surplus", "recomp"]):
         ans = f"""### 🎯 Recomposition & Mass Velocity Directive

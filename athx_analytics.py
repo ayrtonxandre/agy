@@ -744,8 +744,9 @@ def process_apple_health(base_dir: Path, audit: DataAuditTracker) -> dict:
     max_steps = max((r["Steps"] for r in raw_act), default=0)
 
     # 2e. Transparent Recovery & Readiness Composite Score (0 - 100%)
-    # Sleep Score (target 8.0h)
-    sleep_score = min(100.0, max(0.0, (avg_sleep_dur / 8.0) * 100.0))
+    # Sleep Score (target TARGET_SLEEP_HRS, default 7.5h)
+    target_sleep = getattr(athx_config, "TARGET_SLEEP_HRS", 7.5)
+    sleep_score = min(100.0, max(0.0, (avg_sleep_dur / target_sleep) * 100.0))
     
     # RHR Score (deviation from baseline: each 1 bpm elevation above baseline loses 15 points)
     rhr_diff = curr_rhr - baseline_rhr
