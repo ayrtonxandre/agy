@@ -14,6 +14,79 @@ LOCAL_TZ = ZoneInfo("Europe/Paris")
 BASE_DIR = Path(__file__).resolve().parent
 CAL_DATA_DIR = BASE_DIR / "calendar_data"
 
+def extract_meeting_video_link(ev: dict) -> str:
+    """Extracts video conference links (Google Meet, Microsoft Teams, Zoom, Webex) from event metadata."""
+    # 1. Direct hangoutLink (Google Meet)
+    if ev.get("hangoutLink"):
+        return ev["hangoutLink"]
+    
+    # 2. conferenceData entryPoints
+    conf = ev.get("conferenceData") or {}
+    for ep in conf.get("entryPoints", []):
+        if ep.get("entryPointType") == "video" and ep.get("uri"):
+            return ep["uri"]
+        if ep.get("uri") and ("meet.google.com" in ep["uri"] or "teams.microsoft.com" in ep["uri"]):
+            return ep["uri"]
+
+    # 3. Scan description and location text
+    text_corpus = f"{ev.get('location', '')} {ev.get('description', '')} {ev.get('summary', '')}"
+    
+    # Microsoft Teams
+    m_teams = re.search(r'https://(?:teams\.microsoft\.com/(?:l/meetup-join/|meet/)[^\s"<>\)]+|teams\.live\.com/[^\s"<>\)]+)', text_corpus)
+    if m_teams:
+        return m_teams.group(0)
+
+    # Google Meet
+    m_meet = re.search(r'https://meet\.google\.com/[a-z]{3}-[a-z]{4}-[a-z]{3}', text_corpus)
+    if m_meet:
+        return m_meet.group(0)
+
+    # Zoom
+    m_zoom = re.search(r'https://[a-zA-Z0-9.-]*zoom\.us/j/[0-9]+[^\s"<>\)]*', text_corpus)
+    if m_zoom:
+        return m_zoom.group(0)
+
+    return ""
+
+def extract_attendees_info(ev: dict) -> list[dict]:
+    """Extracts sanitized attendees list with display name, email, and response status."""
+    attendees = []
+    raw_att = ev.get("attendees", [])
+    if not isinstance(raw_att, list):
+        return attendees
+
+    for att in raw_att:
+        if not isinstance(att, dict):
+            continue
+        email = att.get("email", "")
+        # Flag resource calendars (rooms, equipment)
+        is_resource = att.get("resource", False) or "resource.calendar.google.com" in email or "c_188" in email
+        name = att.get("displayName")
+        if not name:
+            name = email.split("@")[0].replace(".", " ").title() if email else "Guest"
+        attendees.append({
+            "name": name,
+            "email": email,
+            "status": att.get("responseStatus", "needsAction"),
+            "self": att.get("self", False),
+            "is_resource": is_resource,
+            "optional": att.get("optional", False)
+        })
+    return attendees
+
+def extract_organizer_info(ev: dict) -> dict:
+    """Extracts event organizer name and email."""
+    org = ev.get("organizer") or {}
+    email = org.get("email", "")
+    name = org.get("displayName")
+    if not name and email:
+        name = email.split("@")[0].replace(".", " ").title()
+    return {
+        "name": name or "Organizer",
+        "email": email,
+        "self": org.get("self", False)
+    }
+
 def parse_cached_ics_events(ics_file_path: Path, start_dt: datetime, end_dt: datetime, source_label: str = "💼 Artefact (Work)") -> list[dict]:
     """Lightweight pure-python RFC 5545 iCalendar parser for offline fallback."""
     events = []
@@ -22,14 +95,20 @@ def parse_cached_ics_events(ics_file_path: Path, start_dt: datetime, end_dt: dat
 
     try:
         content = ics_file_path.read_text(encoding="utf-8", errors="ignore")
-        # Split into VEVENT blocks
         raw_events = re.findall(r"BEGIN:VEVENT(.*?)END:VEVENT", content, re.DOTALL)
         for raw in raw_events:
-            # Parse Summary
             sum_m = re.search(r"SUMMARY:(.*)", raw)
             summary = sum_m.group(1).strip().replace("\\,", ",") if sum_m else "Event"
 
-            # Parse Start
+            uid_m = re.search(r"UID:(.*)", raw)
+            uid = uid_m.group(1).strip() if uid_m else ""
+
+            loc_m = re.search(r"LOCATION:(.*)", raw)
+            loc = loc_m.group(1).strip().replace("\\,", ",") if loc_m else ""
+
+            desc_m = re.search(r"DESCRIPTION:(.*)", raw)
+            desc = desc_m.group(1).strip().replace("\\n", "\n").replace("\\,", ",") if desc_m else ""
+
             dtstart_m = re.search(r"DTSTART(?:;[^:]+)?:([0-9TZ]+)", raw)
             dtend_m = re.search(r"DTEND(?:;[^:]+)?:([0-9TZ]+)", raw)
             if not dtstart_m:
@@ -38,7 +117,7 @@ def parse_cached_ics_events(ics_file_path: Path, start_dt: datetime, end_dt: dat
             dtstart_str = dtstart_m.group(1)
             dtend_str = dtend_m.group(1) if dtend_m else dtstart_str
 
-            is_all_day = len(dtstart_str) == 8  # YYYYMMDD
+            is_all_day = len(dtstart_str) == 8
             try:
                 if is_all_day:
                     d_start = datetime.strptime(dtstart_str, "%Y%m%d").date()
@@ -59,14 +138,25 @@ def parse_cached_ics_events(ics_file_path: Path, start_dt: datetime, end_dt: dat
             except Exception:
                 continue
 
-            # Check time range
             if s_dt < end_dt and e_dt > start_dt:
+                corpus = f"{loc} {desc}"
+                m_teams = re.search(r'https://(?:teams\.microsoft\.com/(?:l/meetup-join/|meet/)[^\s"<>\)]+|teams\.live\.com/[^\s"<>\)]+)', corpus)
+                m_meet = re.search(r'https://meet\.google\.com/[a-z]{3}-[a-z]{4}-[a-z]{3}', corpus)
+                video_link = m_teams.group(0) if m_teams else (m_meet.group(0) if m_meet else "")
+
                 events.append({
+                    "id": uid,
                     "source": source_label,
                     "summary": summary,
                     "start": s_dt,
                     "end": e_dt,
-                    "location": "",
+                    "location": loc,
+                    "description": desc,
+                    "video_link": video_link,
+                    "html_link": "",
+                    "attendees": [],
+                    "organizer": {"name": "Artefact", "email": "ayrton.andre@artefact.com", "self": True},
+                    "status": "confirmed",
                     "is_all_day": is_all_day
                 })
     except Exception as e:
@@ -122,13 +212,23 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                     if any(prefix in summary for prefix in ["⚡ ATHX", "🏋️ ATHX", "🏃 ATHX"]) or summary.strip().startswith("🏋️"):
                         src = "⚡ ATHX (Training)"
 
+                    video_link = extract_meeting_video_link(ev)
+                    attendees = extract_attendees_info(ev)
+                    organizer = extract_organizer_info(ev)
+
                     unified.append({
+                        "id": ev.get("id", ""),
                         "source": src,
                         "summary": summary,
                         "start": s_dt,
                         "end": e_dt,
                         "location": ev.get("location", ""),
                         "description": ev.get("description", ""),
+                        "video_link": video_link,
+                        "html_link": ev.get("htmlLink", ""),
+                        "attendees": attendees,
+                        "organizer": organizer,
+                        "status": ev.get("status", "confirmed"),
                         "is_all_day": "T" not in start_raw
                     })
                 if g_events:
@@ -153,12 +253,18 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                     e_dt = datetime.fromisoformat(item["end"])
                     if s_dt < end_dt and e_dt > start_dt:
                         unified.append({
+                            "id": item.get("id", ""),
                             "source": item["source"],
                             "summary": item["summary"],
                             "start": s_dt,
                             "end": e_dt,
                             "location": item.get("location", ""),
                             "description": item.get("description", ""),
+                            "video_link": item.get("video_link", ""),
+                            "html_link": item.get("html_link", ""),
+                            "attendees": item.get("attendees", []),
+                            "organizer": item.get("organizer", {}),
+                            "status": item.get("status", "confirmed"),
                             "is_all_day": item.get("is_all_day", False)
                         })
             except Exception as e_cache:
@@ -182,12 +288,18 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                 e_dt = datetime.combine(e_dt, datetime.min.time(), tzinfo=LOCAL_TZ)
 
             unified.append({
+                "id": ev.get("id", ""),
                 "source": f"🍏 Personal ({ev.get('calendar', 'iCloud')})",
                 "summary": ev["summary"],
                 "start": s_dt,
                 "end": e_dt,
                 "location": ev.get("location", ""),
                 "description": ev.get("description", ""),
+                "video_link": "",
+                "html_link": "",
+                "attendees": [],
+                "organizer": {"name": "Personal", "email": "me@icloud.com", "self": True},
+                "status": "confirmed",
                 "is_all_day": (e_dt - s_dt) >= timedelta(hours=18)
             })
     except Exception:
@@ -199,13 +311,19 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
         for ev in clariane_evs:
             if ev["start"] >= start_dt and ev["start"] <= end_dt:
                 unified.append({
+                    "id": ev.get("id", ""),
                     "source": "🏥 Clariane (Client)",
                     "summary": ev["summary"],
                     "start": ev["start"],
                     "end": ev["end"],
                     "location": ev.get("location", ""),
                     "description": ev.get("description", ""),
-                    "is_all_day": (ev["end"] - ev["start"]) >= timedelta(hours=18)
+                    "video_link": ev.get("video_link", ""),
+                    "html_link": "",
+                    "attendees": ev.get("attendees", []),
+                    "organizer": ev.get("organizer", {"name": "Clariane", "email": "clariane.fr", "self": False}),
+                    "status": "confirmed",
+                    "is_all_day": ev.get("is_all_day", False)
                 })
     except Exception:
         pass
@@ -242,12 +360,18 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                     s_dt = datetime(cur_day.year, cur_day.month, cur_day.day, s_h, s_m, tzinfo=LOCAL_TZ)
                     e_dt = datetime(cur_day.year, cur_day.month, cur_day.day, e_h, e_m, tzinfo=LOCAL_TZ)
                     unified.append({
+                        "id": f"athx_{cur_day.strftime('%Y%m%d')}_{s_h:02d}{s_m:02d}",
                         "source": "⚡ ATHX (Training)",
                         "summary": summary,
                         "description": desc,
                         "start": s_dt,
                         "end": e_dt,
                         "location": loc,
+                        "video_link": "",
+                        "html_link": "",
+                        "attendees": [],
+                        "organizer": {"name": "ATHX Performance Engine", "email": "coach@athx.ai", "self": True},
+                        "status": "confirmed",
                         "is_all_day": False
                     })
                 cur_day += timedelta(days=1)
@@ -275,12 +399,18 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
             import json
             cache_payload = [
                 {
+                    "id": ev.get("id", ""),
                     "source": ev["source"],
                     "summary": ev["summary"],
                     "start": ev["start"].isoformat(),
                     "end": ev["end"].isoformat(),
                     "location": ev.get("location", ""),
                     "description": ev.get("description", ""),
+                    "video_link": ev.get("video_link", ""),
+                    "html_link": ev.get("html_link", ""),
+                    "attendees": ev.get("attendees", []),
+                    "organizer": ev.get("organizer", {}),
+                    "status": ev.get("status", "confirmed"),
                     "is_all_day": ev.get("is_all_day", False)
                 }
                 for ev in deduped

@@ -56,6 +56,8 @@ def fetch_client_events() -> list[dict]:
             current["dtstart_raw"] = line
         elif line.startswith("DTEND"):
             current["dtend_raw"] = line
+        elif line.startswith("UID:"):
+            current["uid"] = clean_text(line[len("UID:"):])
         elif line.startswith("SUMMARY:"):
             current["summary"] = clean_text(line[len("SUMMARY:"):])
         elif line.startswith("LOCATION:"):
@@ -67,13 +69,23 @@ def fetch_client_events() -> list[dict]:
                 start_dt = parse_outlook_datetime(current["dtstart_raw"])
                 end_dt = parse_outlook_datetime(current.get("dtend_raw", current["dtstart_raw"]))
                 if start_dt and end_dt:
+                    corpus = f"{current.get('location', '')} {current.get('description', '')}"
+                    m_teams = re.search(r'https://(?:teams\.microsoft\.com/(?:l/meetup-join/|meet/)[^\s"<>\)]+|teams\.live\.com/[^\s"<>\)]+)', corpus)
+                    video_link = m_teams.group(0) if m_teams else ""
                     events.append({
-                        "source": "Clariane (Client)",
+                        "id": current.get("uid", ""),
+                        "source": "🏥 Clariane (Client)",
                         "summary": current.get("summary", "Client Meeting"),
                         "start": start_dt,
                         "end": end_dt,
                         "location": current.get("location", ""),
-                        "description": current.get("description", "")
+                        "description": current.get("description", ""),
+                        "video_link": video_link,
+                        "html_link": "",
+                        "attendees": [],
+                        "organizer": {"name": "Clariane", "email": "clariane.fr", "self": False},
+                        "status": "confirmed",
+                        "is_all_day": (end_dt - start_dt) >= timedelta(hours=18)
                     })
 
     return sorted(events, key=lambda x: x["start"])
