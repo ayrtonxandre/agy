@@ -35,6 +35,7 @@ TOKEN_DIR = SCRIPT_DIR / "garmin_tokens"
 
 OUTPUT_CSV = SCRIPT_DIR / "garmin_extracted_workouts.csv"
 OUTPUT_JSON = SCRIPT_DIR / "garmin_extracted_workouts.json"
+OUTPUT_VOL_JSON = SCRIPT_DIR / "garmin_workout_volume.json"
 OUTPUT_RUNNING_CSV = SCRIPT_DIR / "garmin_running_activities.csv"
 OUTPUT_RUNNING_JSON = SCRIPT_DIR / "garmin_running_activities.json"
 OUTPUT_WORKOUTS_CSV = SCRIPT_DIR / "garmin_workout_activities.csv"
@@ -401,12 +402,14 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
     all_strength_sets.sort(key=lambda x: (x.get("Date", ""), x.get("Activity_ID", 0), x.get("Set", 0)), reverse=True)
     with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(all_strength_sets, f, indent=2)
+    with open(OUTPUT_VOL_JSON, "w", encoding="utf-8") as f:
+        json.dump(all_strength_sets, f, indent=2)
     if all_strength_sets:
         with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=list(all_strength_sets[0].keys()), extrasaction="ignore")
             writer.writeheader()
             writer.writerows(all_strength_sets)
-    print(f"✔ Strength sets: {len(all_strength_sets)} records -> {OUTPUT_JSON.name}")
+    print(f"✔ Strength sets: {len(all_strength_sets)} records -> {OUTPUT_JSON.name} & {OUTPUT_VOL_JSON.name}")
 
     # Running Activities
     all_running_records.sort(key=lambda x: x.get("Start_Time", ""), reverse=True)

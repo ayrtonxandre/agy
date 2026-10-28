@@ -211,6 +211,14 @@ EXERCISE_ALIASES: dict[str, str] = {
     "c&j": "Clean and Jerk",
     "burpees": "Burpee",
     "burpee": "Burpee",
+    "leg raise": "Leg Raise",
+    "leg raises": "Leg Raise",
+    "legs raise": "Leg Raise",
+    "legs raises": "Leg Raise",
+    "hanging leg raise": "Hanging Leg Raise",
+    "hanging leg raises": "Hanging Leg Raise",
+    "hanging legs raise": "Hanging Leg Raise",
+    "hanging legs raises": "Hanging Leg Raise",
     "toes to bar": "Toes to Bar",
     "t2b": "Toes to Bar",
     "sit-up": "Sit Up",
@@ -273,6 +281,7 @@ def normalize_exercise_name(raw_name: str) -> str:
     # Strip apparatus / descriptor modifiers (e.g. "muscle-ups low bar", "pull ups on bar", "muscle-ups (low bar)")
     cleaned = re.sub(r"\s*\((?:low\s*bar|high\s*bar|rings?|bar)\)", "", cleaned)
     cleaned = re.sub(r"\s+(?:low\s*bar|high\s*bar|on\s+rings?|on\s+bar|rings?)\b", "", cleaned)
+    cleaned = re.sub(r"\blegs\b", "leg", cleaned)
     cleaned = cleaned.strip()
     
     if cleaned in EXERCISE_ALIASES:
