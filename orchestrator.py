@@ -16,7 +16,7 @@ import time
 import threading
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 from zoneinfo import ZoneInfo
 import socket
@@ -41,6 +41,7 @@ WORKOUT_HTML = DATA_DIR / "garmin_workout.html"
 CALENDAR_HTML = DATA_DIR / "calendar_dashboard.html"
 ACCESS_LOG = DATA_DIR / "server_access.log"
 LAST_PAYLOAD_FILE = DATA_DIR / "last_payload.json"
+CAL_DATA_DIR = BASE_DIR / "calendar_data"
 
 def get_python_binary() -> str:
     """Returns the best Python interpreter with all ATHX dependencies installed."""
@@ -670,6 +671,99 @@ def process_health_auto_export_payload(payload: dict) -> dict:
 
     return {"status": "success", "updates": updates, "timestamp": now_str}
 
+def fetch_google_doc(doc_ref: str) -> dict:
+    """Fetches a Google Doc by ID or URL using credentials from env or drive_token.json, falling back to docs_cache.json."""
+    import re
+    # Extract ID from ref (can be full URL or bare ID)
+    clean_ref = (doc_ref or "").strip()
+    match = re.search(r'/d/([a-zA-Z0-9_-]+)', clean_ref)
+    doc_id = match.group(1) if match else clean_ref
+    doc_id = doc_id.split('/')[0].split('?')[0].split('#')[0]
+
+    # Strict validation of Google Drive document ID format
+    if not re.match(r'^[a-zA-Z0-9_-]{20,100}$', doc_id):
+        log_event(f"Rejected invalid Google Doc ID pattern: {clean_ref[:40]}")
+        return {
+            "status": "error",
+            "message": "Invalid Google Doc ID format. Document IDs must match strict pattern ^[a-zA-Z0-9_-]{20,100}$"
+        }
+
+    cache_file = BASE_DIR / "meeting_hub" / "data" / "docs_cache.json"
+    cache_data = {}
+    if cache_file.exists():
+        try:
+            cache_data = json.loads(cache_file.read_text(encoding="utf-8"))
+        except Exception as e:
+            log_event(f"Notice: Failed to read docs_cache.json: {e}")
+
+    # Attempt live fetch via Google Drive v3 API using env var or local token
+    token_env = os.environ.get("GOOGLE_DRIVE_TOKEN") or os.environ.get("GOOGLE_TOKEN_JSON") or os.environ.get("DRIVE_TOKEN_JSON")
+    token_path = BASE_DIR / "drive_token.json"
+
+    if token_env or token_path.exists():
+        try:
+            from google.oauth2.credentials import Credentials
+            from google.auth.transport.requests import Request
+            from googleapiclient.discovery import build
+
+            if token_env:
+                creds_info = json.loads(token_env)
+                creds = Credentials.from_authorized_user_info(creds_info)
+            else:
+                creds = Credentials.from_authorized_user_file(str(token_path))
+
+            if creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+                if not token_env and token_path.exists():
+                    with open(token_path, "w", encoding="utf-8") as tf:
+                        tf.write(creds.to_json())
+
+            service = build('drive', 'v3', credentials=creds)
+            meta = service.files().get(fileId=doc_id, supportsAllDrives=True, fields="id, name, mimeType").execute()
+            title = meta.get("name", "Document")
+            exported_bytes = service.files().export(fileId=doc_id, mimeType='text/plain', supportsAllDrives=True).execute()
+            content = exported_bytes.decode('utf-8')
+
+            # Update cache file
+            cache_data[doc_id] = {"title": title, "content": content}
+            try:
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
+                cache_file.write_text(json.dumps(cache_data, indent=2, ensure_ascii=False), encoding="utf-8")
+            except Exception:
+                pass
+
+            log_event(f"📄 Successfully retrieved Google Doc '{title}' ({doc_id}) via Drive API")
+            return {
+                "status": "success",
+                "docId": doc_id,
+                "title": title,
+                "content": content,
+                "source": "live_drive_api"
+            }
+        except Exception as e:
+            log_event(f"Notice: Google Drive API live fetch failed for {doc_id}: {e}. Falling back to cache.")
+            }
+        except Exception as e:
+            log_event(f"Notice: Google Drive API live fetch failed for {doc_id}: {e}. Falling back to cache.")
+
+    # Fallback to local cache
+    if doc_id in cache_data:
+        cached = cache_data[doc_id]
+        log_event(f"📄 Serving Google Doc '{cached.get('title')}' ({doc_id}) from local cache")
+        return {
+            "status": "success",
+            "docId": doc_id,
+            "title": cached.get("title", "Document"),
+            "content": cached.get("content", ""),
+            "source": "local_cache"
+        }
+
+    return {
+        "status": "error",
+        "docId": doc_id,
+        "message": f"Document {doc_id} could not be retrieved from Google Drive and was not found in local cache."
+    }
+
 class AthleteServerHandler(BaseHTTPRequestHandler):
     def send_cors_headers(self):
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -751,6 +845,44 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404, "Calendar dashboard not found")
 
+        # Meeting Hub Dashboard
+        elif clean_path in ("/meeting", "/meeting_hub", "/meeting_hub.html"):
+            target_file = BASE_DIR / "meeting_hub.html"
+            if target_file.exists():
+                content = target_file.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+            else:
+                self.send_error(404, "Meeting Hub not found")
+
+        # Meeting Hub modular assets (.js, .css, .json)
+        elif clean_path.startswith("/meeting_hub/"):
+            rel_path = clean_path.lstrip("/")
+            target_file = (BASE_DIR / rel_path).resolve()
+            if target_file.exists() and str(target_file).startswith(str(BASE_DIR)):
+                content = target_file.read_bytes()
+                content_type = "text/plain"
+                if target_file.suffix == ".js":
+                    content_type = "application/javascript; charset=utf-8"
+                elif target_file.suffix == ".css":
+                    content_type = "text/css; charset=utf-8"
+                elif target_file.suffix == ".json":
+                    content_type = "application/json; charset=utf-8"
+                elif target_file.suffix == ".html":
+                    content_type = "text/html; charset=utf-8"
+                self.send_response(200)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+            else:
+                self.send_error(404, f"Asset not found: {clean_path}")
+
         # AI Coach Briefing API
         elif clean_path in ("/api/coach", "/api/coach/briefing"):
             briefing_file = DATA_DIR / "athlete_coach_briefing.json"
@@ -771,6 +903,86 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     self.send_error(500, f"Error loading briefing: {e}")
             else:
                 self.send_error(404, "Coach briefing not found. Generate dashboard or run 'athx coach' first.")
+
+        # Calendar Sync Status API
+        elif clean_path in ("/api/sync/status", "/api/calendar/status"):
+            sync_file = CAL_DATA_DIR / "calendar_sync_status.json"
+            now_iso = datetime.now(LOCAL_TZ).isoformat()
+            status_data = {
+                "last_sync": now_iso,
+                "sources": {
+                    "google": {"name": "Artefact", "protocol": "Google API", "status": "active", "last_sync": now_iso},
+                    "outlook": {"name": "Clariane", "protocol": "Office 365 ICS", "status": "active", "last_sync": now_iso},
+                    "icloud": {"name": "Personal", "protocol": "iCloud CalDAV", "status": "active", "last_sync": now_iso},
+                    "athx": {"name": "ATHX", "protocol": "Garmin Training", "status": "active", "last_sync": now_iso}
+                }
+            }
+            if sync_file.exists():
+                try:
+                    status_data = json.loads(sync_file.read_text(encoding="utf-8"))
+                except Exception:
+                    pass
+            content = json.dumps(status_data, indent=2).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(content)))
+            self.send_cors_headers()
+            self.end_headers()
+            self.wfile.write(content)
+
+        # Calendar Events Feed API
+        elif clean_path in ("/api/sync/calendars", "/api/calendar/events"):
+            cached_json = CAL_DATA_DIR / "cached_unified_events.json"
+            sync_file = CAL_DATA_DIR / "calendar_sync_status.json"
+            events = []
+            sources_meta = None
+            last_sync = None
+            if cached_json.exists():
+                try:
+                    events = json.loads(cached_json.read_text(encoding="utf-8"))
+                except Exception:
+                    pass
+            if sync_file.exists():
+                try:
+                    meta_info = json.loads(sync_file.read_text(encoding="utf-8"))
+                    sources_meta = meta_info.get("sources")
+                    last_sync = meta_info.get("last_sync")
+                except Exception:
+                    pass
+            resp_data = {"events": events, "count": len(events)}
+            if sources_meta:
+                resp_data["sources"] = sources_meta
+            if last_sync:
+                resp_data["last_sync"] = last_sync
+            content = json.dumps(resp_data, indent=2).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(content)))
+            self.send_cors_headers()
+            self.end_headers()
+            self.wfile.write(content)
+
+        # Google Docs Fetch API for Meeting Hub
+        elif clean_path == "/api/docs/fetch":
+            parsed_url = urlparse(self.path)
+            query_params = parse_qs(parsed_url.query)
+            doc_ref = query_params.get("docId", query_params.get("url", [""]))[0]
+            if not doc_ref:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "error", "message": "Missing docId or url query parameter"}).encode("utf-8"))
+            else:
+                result = fetch_google_doc(doc_ref)
+                status_code = 200 if result.get("status") == "success" else 404
+                content = json.dumps(result, indent=2, ensure_ascii=False).encode("utf-8")
+                self.send_response(status_code)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
 
         else:
             self.send_error(404, f"Path not found: {clean_path}")
@@ -833,6 +1045,81 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     "output": res.stdout.strip() if res.returncode == 0 else res.stderr.strip()
                 }).encode("utf-8"))
 
+            # Live Multi-Calendar Sync API
+            elif clean_path in ("/api/sync/calendars", "/api/calendar/sync"):
+                log_event("📅 Live multi-calendar sync triggered (Google, Outlook, iCloud & ATHX)...")
+                res = subprocess.run(
+                    [get_python_binary(), str(BASE_DIR / "generate_calendar_dashboard.py")],
+                    capture_output=True,
+                    text=True,
+                    timeout=60
+                )
+                now_str = datetime.now(LOCAL_TZ).isoformat()
+                cached_json = CAL_DATA_DIR / "cached_unified_events.json"
+                events = []
+                if cached_json.exists():
+                    try:
+                        events = json.loads(cached_json.read_text(encoding="utf-8"))
+                    except Exception:
+                        pass
+
+                # Parse per-source execution details
+                out_err = (res.stdout or "") + " " + (res.stderr or "")
+                google_failed = ("Google calendar" in out_err and "fetch failed" in out_err) or res.returncode != 0
+                outlook_failed = "Clariane" in out_err and "fetch failed" in out_err
+                icloud_failed = "iCloud" in out_err and "fetch failed" in out_err
+
+                sources_meta = {
+                    "google": {
+                        "name": "Artefact",
+                        "protocol": "Google API",
+                        "last_sync": now_str,
+                        "status": "error" if (google_failed and not events) else "active",
+                        "error": "Google Calendar SSL or Auth error" if google_failed else None
+                    },
+                    "outlook": {
+                        "name": "Clariane",
+                        "protocol": "Office 365 ICS",
+                        "last_sync": now_str,
+                        "status": "error" if outlook_failed else "active",
+                        "error": "Outlook ICS feed unreachable" if outlook_failed else None
+                    },
+                    "icloud": {
+                        "name": "Personal",
+                        "protocol": "iCloud CalDAV",
+                        "last_sync": now_str,
+                        "status": "error" if icloud_failed else "active",
+                        "error": "iCloud CalDAV unreachable" if icloud_failed else None
+                    },
+                    "athx": {
+                        "name": "ATHX",
+                        "protocol": "Garmin Training",
+                        "last_sync": now_str,
+                        "status": "active"
+                    }
+                }
+
+                # Update sync status metadata
+                sync_file = CAL_DATA_DIR / "calendar_sync_status.json"
+                sync_meta = {
+                    "last_sync": now_str,
+                    "event_count": len(events),
+                    "sources": sources_meta
+                }
+                sync_file.write_text(json.dumps(sync_meta, indent=2), encoding="utf-8")
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "timestamp": now_str,
+                    "count": len(events),
+                    "sources": sources_meta,
+                    "events": events
+                }).encode("utf-8"))
+
             # AI Coach interactive Q&A consultation endpoint
             elif clean_path in ("/api/coach/ask", "/api/coach"):
                 question = payload.get("question", "").strip()
@@ -860,6 +1147,26 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                         self.send_cors_headers()
                         self.end_headers()
                         self.wfile.write(json.dumps({"error": f"Coach consultation error: {e}"}).encode("utf-8"))
+
+            # Google Docs Fetch API for Meeting Hub
+            elif clean_path == "/api/docs/fetch":
+                doc_ref = payload.get("docId", payload.get("url", "")).strip()
+                if not doc_ref:
+                    self.send_response(400)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"status": "error", "message": "Missing docId or url in request body"}).encode("utf-8"))
+                else:
+                    result = fetch_google_doc(doc_ref)
+                    status_code = 200 if result.get("status") == "success" else 404
+                    content = json.dumps(result, indent=2, ensure_ascii=False).encode("utf-8")
+                    self.send_response(status_code)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Content-Length", str(len(content)))
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(content)
 
             else:
                 self.send_error(404, f"API endpoint not found: {clean_path}")
@@ -913,9 +1220,12 @@ def run_server(port: int | None = None):
     if port is None:
         port = int(os.environ.get("PORT", os.environ.get("AGY_PORT", "8080")))
 
+    # Security Hardening: Bind exclusively to 127.0.0.1 loopback
+    bind_host = os.environ.get("AGY_BIND_HOST", "127.0.0.1")
+
     # Check if port is already bound
     try:
-        server = ThreadingHTTPServer(("0.0.0.0", port), AthleteServerHandler)
+        server = ThreadingHTTPServer((bind_host, port), AthleteServerHandler)
     except OSError as e:
         if e.errno == 48:
             net = get_network_endpoints(port)

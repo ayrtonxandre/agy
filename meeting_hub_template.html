@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meeting Hub · Starter</title>
+<!--
+  STARTER TEMPLATE (Arty design language). Layout + data model + 3 seams for agy to extend:
+  1. store        -> swap seed data for real sync (Google / Outlook ICS / iCloud). Notes/items key on event id.
+  2. cart         -> "macro to cart" tray. Items from any meeting; export() is the macro entry point.
+  3. suggestLinks -> minutes-intelligence entry point. Returns [{id, reason, score}]. Stubbed on series + attendees + tags.
+  Keep UI flat, bordered, Jost, pink only for primary action / active state. Stroke icons only, no emoji.
+-->
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-sans:"Jost",ui-sans-serif,system-ui,sans-serif;--font-mono:"Fira Code",ui-monospace,monospace;
+  --background:oklch(1 0 0);--foreground:oklch(0.129 0.042 264.695);--card:oklch(1 0 0);
+  --secondary:oklch(0.968 0.007 247.896);--muted:oklch(0.968 0.007 247.896);--muted-foreground:oklch(0.554 0.046 257.417);
+  --border:oklch(0.929 0.013 255.508);--ring:oklch(0.704 0.04 256.788);--destructive:oklch(0.577 0.29 27.325);
+  --success:oklch(0.9386 0.119 124.35);--success-foreground:oklch(0.2739 0.0684 131.95);
+  --warn:oklch(0.8813 0.1526 91.77);--warn-foreground:oklch(0.4096 0.103681 46.3142);
+  --info:oklch(0.9452 0.031 234.42);--info-foreground:oklch(0.3175 0.0764 248.91);
+  --pink-50:oklch(0.9673 0.0172 0.36);--pink-200:oklch(0.8839 0.0675 357.73);--pink-600:oklch(0.6388 0.2554 10.51);--pink-700:oklch(0.5603 0.22406 10.0532);
+  --navy:oklch(0.2469 0.0734 251.79);--navy-2:oklch(0.3339 0.1065 254.07);
+  --r-sm:6px;--r-md:8px;--r-lg:10px;--r-xl:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:400 14px/1.5 var(--font-sans);color:var(--foreground);background:var(--background);height:100vh;display:flex;overflow:hidden}
+a{color:var(--navy);text-underline-offset:3px}a:hover{color:var(--pink-700)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--pink-600);outline-offset:2px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* shell */
+aside{width:232px;background:var(--navy);color:oklch(0.95 0.01 250);display:flex;flex-direction:column;padding:16px 12px;gap:4px;flex:none}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 16px;font-weight:600;font-size:15px}
+.brand b{width:28px;height:28px;border-radius:var(--r-md);background:var(--pink-600);display:grid;place-items:center;font-size:14px}
+.brand small{display:block;font-weight:400;font-size:11px;opacity:.65;line-height:1.2}
+.grp{font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.5;padding:12px 8px 4px}
+.nav{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:var(--r-md);background:none;border:0;text-align:left;width:100%;opacity:.8}
+.nav:hover{background:var(--navy-2);opacity:1}
+.nav.on{background:var(--pink-600);opacity:1;color:#fff}
+.nav .n{margin-left:auto;font:500 11px var(--font-mono);opacity:.8}
+.spacer{flex:1}
+.src{display:flex;gap:8px;align-items:center;font-size:12px;opacity:.75;padding:2px 8px}
+.dot{width:7px;height:7px;border-radius:50%;background:oklch(0.7603 0.1825 154.1)}
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+header{height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 24px;flex:none;background:color-mix(in oklab,var(--background) 90%,transparent);backdrop-filter:blur(8px)}
+h1{font:600 20px var(--font-sans)}.sub{color:var(--muted-foreground);font-size:13px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:var(--r-md);border:1px solid var(--border);background:var(--background);box-shadow:0 1px 1px rgba(0,0,0,.04);font-weight:500;font-size:13px}
+.btn:hover{background:var(--secondary)}
+.btn.pink{background:var(--pink-600);border-color:var(--pink-600);color:#fff;box-shadow:none}.btn.pink:hover{background:var(--pink-700)}
+.btn.sm{height:28px;padding:0 8px;font-size:12px}
+.seg{display:flex;border:1px solid var(--border);border-radius:var(--r-md);padding:2px;gap:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:var(--r-sm);font-size:13px;color:var(--muted-foreground)}
+.seg button.on{background:var(--secondary);color:var(--foreground);font-weight:500}
+.body{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 440px;min-height:0}
+.col{overflow:auto;padding:24px}
+.col.right{border-left:1px solid var(--border);background:var(--muted)}
+.card{border:1px solid var(--border);border-radius:var(--r-xl);background:var(--card);padding:20px}
+.label{font-size:12px;color:var(--muted-foreground);letter-spacing:.04em;text-transform:uppercase;font-weight:500}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:9999px;border:.5px solid var(--border);font-size:12px;font-weight:500;background:var(--secondary)}
+.badge.ok{background:var(--success);color:var(--success-foreground);border-color:transparent}
+.badge.warn{background:var(--warn);color:var(--warn-foreground);border-color:transparent}
+.badge.info{background:var(--info);color:var(--info-foreground);border-color:transparent}
+.mono{font-family:var(--font-mono);font-size:12px}
+/* next up */
+.next{display:grid;gap:14px;margin-bottom:24px}
+.next h2{font:600 24px/1.2 var(--font-sans)}
+.prep{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.prep div{border:1px solid var(--border);border-radius:var(--r-lg);padding:10px 12px;display:grid;gap:2px}
+.prep div.miss{border-style:dashed;border-color:var(--pink-200);background:var(--pink-50)}
+.prep b{font-weight:600}.prep span{font-size:12px;color:var(--muted-foreground)}
+/* agenda list */
+.day{display:grid;gap:6px}
+.row{display:grid;grid-template-columns:64px 3px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--card);text-align:left;width:100%}
+.row:hover{background:var(--secondary)}.row.sel{border-color:var(--pink-600);box-shadow:0 0 0 1px var(--pink-600)}
+.row .bar{align-self:stretch;border-radius:2px}
+.row .t{font:500 12px var(--font-mono);color:var(--muted-foreground)}
+.row .ttl{font-weight:500}.row .meta{font-size:12px;color:var(--muted-foreground)}
+.row.past{opacity:.55}
+.life{border-style:dashed;background:transparent}
+/* right panel */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin:16px 0}
+.tabs button{border:0;background:none;padding:8px 10px;color:var(--muted-foreground);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:500}
+.tabs button.on{color:var(--foreground);border-color:var(--pink-600)}
+textarea{width:100%;min-height:160px;resize:vertical;border:1px solid var(--border);border-radius:var(--r-md);padding:10px;font:400 14px/1.5 var(--font-sans);background:var(--background)}
+input.in{height:34px;border:1px solid var(--border);border-radius:var(--r-md);padding:0 10px;font:inherit;width:100%;background:var(--background)}
+.item{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border)}
+.item:last-child{border:0}.item .tx{flex:1}
+.kind{font:500 11px var(--font-mono);text-transform:uppercase;color:var(--muted-foreground);width:60px;padding-top:3px}
+.rel{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--background);text-align:left;width:100%}
+.rel:hover{border-color:var(--pink-200)}
+/* cart */
+.cart{position:fixed;right:24px;bottom:24px;width:340px;border:1px solid var(--border);border-radius:var(--r-xl);background:var(--background);box-shadow:0 4px 24px rgba(0,0,0,.12);overflow:hidden}
+.cart header{height:44px;padding:0 14px;border:0;background:var(--navy);color:#fff;font-weight:600}
+.cart .list{max-height:200px;overflow:auto;padding:4px 14px}
+.cart .foot{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--border)}
+.empty{padding:16px 0;color:var(--muted-foreground);font-size:13px}
+@media(max-width:1100px){.body{grid-template-columns:1fr}.col.right{border-left:0;border-top:1px solid var(--border)}aside{display:none}}
+</style>
+</head>
+<body>
+<aside>
+  <div class="brand"><b>M</b><div>Meeting Hub<small>Prep · Capture · Link</small></div></div>
+  <div class="grp">Work</div>
+  <button class="nav on" data-view="today"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Today</button>
+  <button class="nav" data-view="week"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>Week</button>
+  <button class="nav" data-view="meetings"><svg class="i" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Meetings</button>
+  <button class="nav" data-view="actions"><svg class="i" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Open Actions<span class="n" id="navActions">0</span></button>
+  <button class="nav" data-view="series"><svg class="i" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>Series &amp; Links</button>
+  <div class="grp">Ecosystem</div>
+  <a class="nav" href="garmin_workout.html" target="_blank"><svg class="i" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>ATHX Dashboard</a>
+  <div class="spacer"></div>
+  <div class="grp">Sources</div>
+  <div class="src"><span class="dot"></span>Artefact<span class="mono" style="margin-left:auto">Google</span></div>
+  <div class="src"><span class="dot"></span>Clariane<span class="mono" style="margin-left:auto">ICS</span></div>
+  <div class="src"><span class="dot"></span>Personal<span class="mono" style="margin-left:auto">iCloud</span></div>
+</aside>
+
+<main>
+  <header>
+    <h1 id="title">Today</h1><span class="sub" id="subtitle"></span>
+    <div class="spacer" style="flex:1"></div>
+    <div class="seg" id="mode"><button data-m="all" class="on">All</button><button data-m="work">Work</button><button data-m="life">Life</button></div>
+    <button class="btn" id="todayBtn">Today</button>
+    <button class="btn pink" id="newBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Meeting</button>
+  </header>
+  <div class="body">
+    <section class="col" id="left"></section>
+    <section class="col right" id="right"></section>
+  </div>
+</main>
+
+<div class="cart" id="cart"></div>
+
+<script>
+/* ============ 1. STORE (seam: replace seed with real sync; keep keys stable) ============ */
+const TODAY = '2026-10-28';
+const SEED = [
+  {id:'e1',date:TODAY,start:'09:30',end:'10:30',title:'MO – Suivi anomalies et évolutions',stream:'work',client:'Clariane',series:'mo-weekly',attendees:['Claire M.','Julien R.'],tags:['anomalies','F360'],link:'Teams'},
+  {id:'e2',date:TODAY,start:'12:30',end:'13:30',title:'CrossFit WOD',stream:'life',client:'',series:'athx',attendees:[],tags:['training'],link:''},
+  {id:'e3',date:TODAY,start:'14:00',end:'15:00',title:'Clariane F360 – Weekly sync',stream:'work',client:'Clariane',series:'f360-weekly',attendees:['Claire M.','Sophie L.','Amine B.'],tags:['F360','roadmap'],link:'Meet'},
+  {id:'e4',date:TODAY,start:'16:00',end:'16:45',title:'Chapter AI – Staffing & priorities',stream:'work',client:'Internal',series:'chapter-ai',attendees:['Marc D.','Inès T.'],tags:['staffing'],link:'Meet'},
+  {id:'p1',date:'2026-10-21',start:'14:00',end:'15:00',title:'Clariane F360 – Weekly sync',stream:'work',client:'Clariane',series:'f360-weekly',attendees:['Claire M.','Sophie L.'],tags:['F360','data-quality'],link:'Meet'},
+  {id:'p2',date:'2026-10-26',start:'09:00',end:'09:45',title:'Clariane – Data model review',stream:'work',client:'Clariane',series:'',attendees:['Amine B.'],tags:['F360','data-quality'],link:'Teams'},
+  {id:'p3',date:'2026-10-14',start:'09:30',end:'10:30',title:'MO – Suivi anomalies et évolutions',stream:'work',client:'Clariane',series:'mo-weekly',attendees:['Claire M.','Julien R.'],tags:['anomalies'],link:'Teams'},
+];
+const store = {
+  meetings: SEED,
+  // notes/items persist locally; key = event id so re-syncs never wipe them
+  load(){ try{return JSON.parse(localStorage.getItem('mh.data')||'{}')}catch(e){return{}} },
+  data: null,
+  get(id){ this.data ||= this.load(); return this.data[id] ||= {agenda:'',minutes:'',items:[],prepared:false} },
+  save(){ localStorage.setItem('mh.data',JSON.stringify(this.data)) },
+};
+// seed example items so Related/Actions are not empty
+(()=>{ const p=store.get('p1'); if(!p.items.length){p.minutes='Data quality issues on residents referential. Agreed to freeze schema until Nov.';p.items=[
+ {id:'i1',kind:'action',text:'Send anomalies list to Claire',owner:'Me',done:false},
+ {id:'i2',kind:'decision',text:'Freeze referential schema until November',owner:'',done:true},
+ {id:'i3',kind:'question',text:'Who owns the Netsoins feed?',owner:'',done:false}]; store.save();} })();
+
+/* ============ 2. LINKS (seam: minutes intelligence) ============ */
+function suggestLinks(m){
+  return store.meetings.filter(o=>o.id!==m.id && o.date<m.date).map(o=>{
+    let s=0,why=[];
+    if(m.series&&o.series===m.series){s+=3;why.push('same series')}
+    const att=o.attendees.filter(a=>m.attendees.includes(a)).length; if(att){s+=att;why.push(att+' shared attendees')}
+    const tg=o.tags.filter(t=>m.tags.includes(t)); if(tg.length){s+=tg.length*1.5;why.push('#'+tg.join(' #'))}
+    return {id:o.id,score:s,reason:why.join(' · ')};
+  }).filter(x=>x.score>=2).sort((a,b)=>b.score-a.score).slice(0,4);
+}
+
+/* ============ 3. CART (seam: macro to cart) ============ */
+const cart = {
+  items: JSON.parse(localStorage.getItem('mh.cart')||'[]'), open:true,
+  add(it){ if(!this.items.find(x=>x.id===it.id)){this.items.push(it);this.persist()} },
+  remove(id){ this.items=this.items.filter(x=>x.id!==id); this.persist() },
+  persist(){ localStorage.setItem('mh.cart',JSON.stringify(this.items)); renderCart() },
+  // MACRO ENTRY POINT: turn the basket into something. Extend with: recap email, follow-up meeting, task batch.
+  export(kind){
+    const txt=this.items.map(i=>`- [${i.kind}] ${i.text}${i.owner?' ('+i.owner+')':''} — ${i.from}`).join('\n');
+    if(kind==='copy'){navigator.clipboard?.writeText(txt)}
+    return txt;
+  }
+};
+
+/* ============ UI ============ */
+const $=s=>document.querySelector(s);
+const I=(d)=>`<svg class="i" viewBox="0 0 24 24">${d}</svg>`;
+const ST={view:'today',mode:'all',sel:'e3',tab:'agenda'};
+const col=m=>m.stream==='life'?'var(--ring)':m.client==='Clariane'?'var(--pink-600)':'var(--navy)';
+const byId=id=>store.meetings.find(m=>m.id===id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const visible=()=>store.meetings.filter(m=>ST.mode==='all'||m.stream===ST.mode);
+const prepState=m=>{const d=store.get(m.id),prev=suggestLinks(m)[0];return{
+  agenda:!!d.agenda, last:prev?{ok:true,t:prev.reason}:{ok:false}, actions:store.meetings.some(o=>o.series&&o.series===m.series&&store.get(o.id).items.some(i=>i.kind==='action'&&!i.done)), people:m.attendees.length>0}};
+
+function renderLeft(){
+  const list=visible().filter(m=>m.date===TODAY).sort((a,b)=>a.start.localeCompare(b.start));
+  const next=list.find(m=>m.stream==='work'&&m.start>'13:00')||list[0];
+  const p=next&&prepState(next);
+  $('#left').innerHTML=`
+  ${next?`<div class="card next">
+    <div style="display:flex;gap:8px;align-items:center"><span class="label">Next up</span><span class="badge info">${next.start}–${next.end}</span>${next.client?`<span class="badge">${next.client}</span>`:''}</div>
+    <h2>${esc(next.title)}</h2>
+    <div class="prep">
+      <div class="${p.agenda?'':'miss'}"><b>Agenda</b><span>${p.agenda?'Written':'Missing'}</span></div>
+      <div class="${p.last.ok?'':'miss'}"><b>Last minutes</b><span>${p.last.ok?'Linked':'None found'}</span></div>
+      <div class="${p.actions?'miss':''}"><b>Open actions</b><span>${p.actions?'From earlier meetings':'None'}</span></div>
+      <div><b>People</b><span>${next.attendees.length} attendees</span></div>
+    </div>
+    <div style="display:flex;gap:8px"><button class="btn pink" data-open="${next.id}">Open prep</button><button class="btn" data-open="${next.id}" data-tab="related">View related</button></div>
+  </div>`:''}
+  <div class="label" style="margin-bottom:8px">Timeline · Wednesday 28 October</div>
+  <div class="day">${list.map(m=>`<button class="row ${m.stream==='life'?'life':''} ${m.id===ST.sel?'sel':''}" data-open="${m.id}">
+    <span class="t">${m.start}<br>${m.end}</span><span class="bar" style="background:${col(m)}"></span>
+    <span><div class="ttl">${esc(m.title)}</div><div class="meta">${[m.client,m.attendees.length?m.attendees.length+' attendees':'',m.link].filter(Boolean).join(' · ')}</div></span>
+    ${m.stream==='work'?(store.get(m.id).agenda?'<span class="badge ok">Prepared</span>':'<span class="badge warn">Needs prep</span>'):''}</button>`).join('')}</div>`;
+}
+
+function renderRight(){
+  const m=byId(ST.sel); if(!m){$('#right').innerHTML='';return}
+  const d=store.get(m.id);
+  const tabs=['agenda','minutes','actions','related'];
+  let body='';
+  if(ST.tab==='agenda') body=`<textarea id="agenda" placeholder="Objectives, questions to ask, what you need out of this meeting">${esc(d.agenda)}</textarea>`;
+  if(ST.tab==='minutes') body=`<textarea id="minutes" placeholder="Raw notes. Paste a transcript here later.">${esc(d.minutes)}</textarea>`;
+  if(ST.tab==='actions') body=`<div style="display:flex;gap:8px;margin-bottom:8px">
+      <select id="kind" class="in" style="width:110px"><option>action</option><option>decision</option><option>question</option><option>topic</option></select>
+      <input class="in" id="newItem" placeholder="Add item, press Enter"></div>
+    ${d.items.length?d.items.map(i=>`<div class="item"><span class="kind">${i.kind}</span><span class="tx" style="${i.done?'text-decoration:line-through;color:var(--muted-foreground)':''}">${esc(i.text)}</span>
+      ${i.kind==='action'?`<button class="btn sm" data-toggle="${i.id}">${i.done?'Reopen':'Done'}</button>`:''}
+      <button class="btn sm" data-cart="${i.id}" title="Add to cart">${I('<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/>')}</button></div>`).join(''):'<div class="empty">No items yet.</div>'}`;
+  if(ST.tab==='related'){const L=suggestLinks(m); body=L.length?`<div style="display:grid;gap:8px">${L.map(l=>{const o=byId(l.id);const op=store.get(o.id).items.filter(i=>!i.done&&i.kind==='action').length;
+      return `<button class="rel" data-open="${o.id}"><b>${esc(o.title)}</b><span class="meta" style="color:var(--muted-foreground);font-size:12px">${o.date} · ${l.reason}${op?` · ${op} open action${op>1?'s':''}`:''}</span></button>`}).join('')}</div>`:'<div class="empty">No related meetings yet.</div>'}
+  $('#right').innerHTML=`<div class="label">Meeting</div>
+    <h2 style="font:600 20px/1.25 var(--font-sans);margin:4px 0 6px">${esc(m.title)}</h2>
+    <div class="sub">${m.date} · ${m.start}–${m.end}${m.attendees.length?' · '+m.attendees.join(', '):''}</div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${m.tags.map(t=>`<span class="badge">#${t}</span>`).join('')}</div>
+    <div class="tabs">${tabs.map(t=>`<button data-tab="${t}" class="${ST.tab===t?'on':''}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</div>${body}`;
+}
+
+function renderCart(){
+  const c=cart; $('#cart').style.display=c.items.length||c.open?'block':'none';
+  $('#cart').innerHTML=`<header><span>Cart</span><span class="badge" style="margin-left:8px;background:var(--pink-600);color:#fff;border:0">${c.items.length}</span></header>
+  <div class="list">${c.items.length?c.items.map(i=>`<div class="item"><span class="kind" style="width:52px">${i.kind}</span><span class="tx">${esc(i.text)}<div class="meta" style="font-size:12px;color:var(--muted-foreground)">${esc(i.from)}</div></span><button class="btn sm" data-rm="${i.id}">Remove</button></div>`).join(''):'<div class="empty">Add actions or decisions from any meeting, then export them in one go.</div>'}</div>
+  <div class="foot"><button class="btn sm" data-export="copy" ${c.items.length?'':'disabled style="opacity:.5"'}>Copy recap</button><button class="btn sm" data-export="followup" ${c.items.length?'':'disabled style="opacity:.5"'}>Follow-up meeting</button></div>`;
+}
+function renderNav(){
+  const n=store.meetings.reduce((a,m)=>a+store.get(m.id).items.filter(i=>i.kind==='action'&&!i.done).length,0); $('#navActions').textContent=n;
+  $('#subtitle').textContent='Wednesday 28 October 2026';
+}
+const render=()=>{renderLeft();renderRight();renderCart();renderNav()};
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-open],[data-tab],[data-toggle],[data-cart],[data-rm],[data-export],[data-m]'); if(!t)return;
+  const D=t.dataset, m=byId(ST.sel);
+  if(D.open){ST.sel=D.open;ST.tab=D.tab||'agenda'}
+  else if(D.tab)ST.tab=D.tab;
+  if(D.toggle){const it=store.get(m.id).items.find(i=>i.id===D.toggle);it.done=!it.done;store.save()}
+  if(D.cart){const it=store.get(m.id).items.find(i=>i.id===D.cart);cart.add({...it,from:m.title+' · '+m.date})}
+  if(D.rm)cart.remove(D.rm);
+  if(D.export){const out=cart.export(D.export);if(D.export==='followup')alert('Stub: create follow-up meeting with\n\n'+out)}
+  if(D.m){ST.mode=D.m;document.querySelectorAll('#mode button').forEach(b=>b.classList.toggle('on',b.dataset.m===D.m))}
+  render();
+});
+document.addEventListener('input',e=>{const m=byId(ST.sel);if(e.target.id==='agenda'||e.target.id==='minutes'){store.get(m.id)[e.target.id]=e.target.value;store.save()}});
+document.addEventListener('keydown',e=>{if(e.target.id==='newItem'&&e.key==='Enter'&&e.target.value.trim()){const m=byId(ST.sel);
+  store.get(m.id).items.push({id:'i'+Date.now(),kind:$('#kind').value,text:e.target.value.trim(),owner:'',done:false});store.save();render();$('#newItem').focus()}});
+render();
+</script>
+</body>
+</html>

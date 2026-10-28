@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meeting Hub · Prep · Capture · Link</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="meeting_hub/ui/styles.css">
+</head>
+<body>
+
+  <!-- App Shell: Dark Navy Sidebar -->
+  <aside></aside>
+
+  <!-- Main View Area -->
+  <main>
+    <header></header>
+    <div class="body">
+      <!-- Left Column: Primary View (Today Timeline & Prep) -->
+      <section class="col" id="left">
+        <div class="loading-box">
+          <div class="spinner"></div>
+          <div>Initializing IndexedDB data layer...</div>
+        </div>
+      </section>
+
+      <!-- Right Column: Meeting Detail & Actions Drawer -->
+      <section class="col right" id="right"></section>
+    </div>
+  </main>
+
+  <!-- Global Seed Events (Pre-loaded to prevent file:// CORS restrictions) -->
+  <script src="meeting_hub/data/initial_events.js"></script>
+
+  <!-- Meeting Hub Application Engine -->
+  <script src="meeting_hub/meeting_hub.app.js"></script>
+</body>
+</html>
