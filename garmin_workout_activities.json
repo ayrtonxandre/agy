@@ -1,5 +1,23 @@
 [
   {
+    "Activity_ID": 24877418512,
+    "Date": "2026-10-28",
+    "Start_Time": "2026-10-28 06:34:47",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Category": "CrossFit",
+    "Duration_min": 46.0,
+    "Calories_kcal": 490,
+    "Average_HR": 129.0,
+    "Max_HR": 183.0,
+    "Training_Effect_Label": "SPEED",
+    "Moderate_Intensity_Min": 16,
+    "Vigorous_Intensity_Min": 29,
+    "Steps": 710,
+    "Distance_km": 0.0,
+    "Notes": "8 rounds \n12 burpees\n4 legs raises \n2 toes to bar \n4 clean 95Lbs"
+  },
+  {
     "Activity_ID": 24853486904,
     "Date": "2026-10-26",
     "Start_Time": "2026-10-26 06:40:20",

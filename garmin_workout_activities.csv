@@ -1,4 +1,9 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Category,Duration_min,Calories_kcal,Average_HR,Max_HR,Training_Effect_Label,Moderate_Intensity_Min,Vigorous_Intensity_Min,Steps,Distance_km,Notes
+24877418512,2026-10-28,2026-10-28 06:34:47,CrossFit,indoor_cardio,CrossFit,46.0,490,129.0,183.0,SPEED,16,29,710,0.0,"8 rounds 
+12 burpees
+4 legs raises 
+2 toes to bar 
+4 clean 95Lbs"
 24853486904,2026-10-26,2026-10-26 06:40:20,CrossFit,indoor_cardio,CrossFit,44.7,339,110.0,166.0,ANAEROBIC_CAPACITY,22,12,872,0.0,"15 thrusters - 95 Lbs
 15 muscle-ups low bar 
 
