@@ -109,14 +109,14 @@ export class MeetingPanelUI {
           <div class="google-doc-card ${docUrl ? 'connected' : 'unconnected'}">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
               <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                <span class="doc-icon">${Icons.fileText || '📄'}</span>
+                <span class="doc-icon">${Icons.fileText}</span>
                 <div style="min-width: 0;">
                   <div style="font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     ${docUrl ? 'Connected Google Doc' : 'No Google Doc Linked'}
                   </div>
                   ${docUrl ? `
                     <a href="${this._escape(docUrl)}" target="_blank" rel="noopener" class="sub" style="color: var(--pink-600); text-decoration: underline; font-size: 11px; display: inline-flex; align-items: center; gap: 3px;">
-                      Open document ↗
+                      Open document ${Icons.externalLink}
                     </a>
                   ` : `
                     <div class="sub" style="font-size: 11px;">Link a collaborative doc to ingest minutes</div>
@@ -149,7 +149,7 @@ export class MeetingPanelUI {
             ` : ''}
 
             ${this.docFetchError ? `
-              <div style="margin-top: 8px; font-size: 11.5px; color: var(--error, #e11d48); background: rgba(225, 29, 72, 0.08); padding: 6px 8px; border-radius: var(--r-sm);">
+              <div style="margin-top: 8px; font-size: 11.5px; color: var(--destructive); background: color-mix(in oklab, var(--destructive) 10%, transparent); padding: 6px 8px; border-radius: var(--r-sm);">
                 ${this._escape(this.docFetchError)}
               </div>
             ` : ''}

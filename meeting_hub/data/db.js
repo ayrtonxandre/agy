@@ -4,9 +4,14 @@
 import { IndexedDBAdapter, LocalStorageAdapter, MemoryAdapter } from './adapter.js';
 
 export const DB_NAME = 'MeetingHubDB';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 export const DB_SCHEMA = {
+  // Configured projects
+  projects: {
+    keyPath: 'id'
+  },
+
   // Calendar events imported and synced from external feeds
   events: {
     keyPath: 'id',

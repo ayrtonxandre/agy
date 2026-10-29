@@ -246,7 +246,7 @@ export class ProjectsView {
                   <div style="display: flex; gap: 6px; align-items: center;">
                     <span style="font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground);">${d.meetingDate}</span>
                     <button class="btn sm" data-open-meeting="${d.meetingId}" style="padding: 2px 8px; font-size: 11px;">
-                      View Meeting ↗
+                      View Meeting ${Icons.externalLink}
                     </button>
                   </div>
                 </div>
@@ -336,18 +336,18 @@ export class ProjectsView {
             ${project.connectedDocs.map(doc => `
               <div class="card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                 <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                  <span class="doc-icon">${Icons.fileText || '📄'}</span>
+                  <span class="doc-icon">${Icons.fileText}</span>
                   <div style="min-width: 0;">
                     <div style="font-weight: 600; font-size: 13px;">${this._escape(doc.title)}</div>
                     <div class="sub" style="font-size: 11px; margin-top: 2px;">
-                      ${doc.meetingDate} · ${this._escape(doc.facility)} · <span style="color: var(--ok);">✓ Minutes Ingested (${doc.minutesLength} chars)</span>
+                      ${doc.meetingDate} · ${this._escape(doc.facility)} · <span style="color: var(--ok); display: inline-flex; align-items: center; gap: 3px;">${Icons.check} Minutes Ingested (${doc.minutesLength} chars)</span>
                     </div>
                   </div>
                 </div>
 
                 <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
                   <a href="${this._escape(doc.url)}" target="_blank" rel="noopener" class="btn sm pink">
-                    Open in Google Docs ↗
+                    Open in Google Docs ${Icons.externalLink}
                   </a>
                   <button class="btn sm" data-open-meeting="${doc.meetingId}">
                     View Meeting

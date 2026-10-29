@@ -17,12 +17,13 @@ export class EventsImporter {
     const meta = await db.get('meta', 'initial_import_done');
     const existingCount = await db.count('events');
 
-    if (meta && meta.value === true && existingCount > 0 && !options.force) {
-      console.log(`[Importer] Initial import already completed (${existingCount} events in store).`);
+    // If store already has events (from previous import or calendar sync), skip cleanly
+    if (existingCount > 0 && !options.force) {
+      console.log(`[Importer] Store already populated with ${existingCount} events. Skipping initial snapshot.`);
       return { skipped: true, eventCount: existingCount };
     }
 
-    console.log('[Importer] Starting initial calendar events import...');
+    console.log('[Importer] Checking for initial calendar events import...');
     let rawList = options.rawEvents;
 
     // 1. Check window.INITIAL_EVENTS (fastest, immune to file:// CORS)
@@ -47,7 +48,7 @@ export class EventsImporter {
           console.log(`[Importer] Fetched ${rawList.length} events from ${dataUrl}.`);
         }
       } catch (err) {
-        console.warn(`[Importer] Fetch failed from ${dataUrl}:`, err.message);
+        // Safe to ignore if snapshot file is retired
       }
     }
 
@@ -55,7 +56,6 @@ export class EventsImporter {
     if (!rawList && typeof process !== 'undefined' && process.versions && process.versions.node) {
       try {
         const fs = await import('fs');
-        const path = await import('path');
         const candidatePaths = [
           'meeting_hub/data/initial_events.json',
           './meeting_hub/data/initial_events.json',
@@ -68,12 +68,16 @@ export class EventsImporter {
           }
         }
       } catch (e) {
-        console.warn('[Importer] Node fs fallback error:', e.message);
+        // Node fallback error ignored
       }
     }
 
     if (!rawList || !Array.isArray(rawList)) {
-      throw new Error('[Importer] No calendar events found. Provide window.INITIAL_EVENTS or ensure initial_events.json is accessible.');
+      if (existingCount > 0) {
+        return { skipped: true, eventCount: existingCount };
+      }
+      console.warn('[Importer] No snapshot events provided. Waiting for live sync or JSON import.');
+      return { skipped: true, eventCount: 0 };
     }
 
     // 1. Normalize events

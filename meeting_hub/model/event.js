@@ -7,7 +7,14 @@
 
 export class EventModel {
   static normalize(raw) {
-    const id = raw.id || '';
+    let id = raw.id || '';
+    const recurrenceId = raw.recurrenceId || raw.recurrence_id || raw.recurrence || (raw.originalStartTime && (raw.originalStartTime.dateTime || raw.originalStartTime.date)) || '';
+    if (recurrenceId) {
+      const cleanRecurrence = String(recurrenceId).replace(/[^a-zA-Z0-9]/g, '');
+      if (cleanRecurrence && !id.includes(cleanRecurrence)) {
+        id = `${id}_${cleanRecurrence}`;
+      }
+    }
     const summary = (raw.summary || raw.title || '(Untitled)').trim();
     const source = raw.source || '';
     const desc = raw.description || '';
@@ -90,8 +97,8 @@ export class EventModel {
   }
 
   static extractSeriesId(id, summary) {
-    // Google Calendar recurrence format: <base_id>_<timestamp>
-    const match = id.match(/^(.*)_(\d{8}(?:T\d+Z)?)$/);
+    // Google Calendar & ICS recurrence format: <base_id>_<timestamp>
+    const match = id.match(/^(.*)_(\d{8}(?:T\d{4,6}Z?)?)$/);
     if (match) {
       return match[1];
     }

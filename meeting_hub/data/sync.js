@@ -70,10 +70,16 @@ export class CalendarSyncService {
 
     for (const [key, conf] of Object.entries(SYNC_SOURCES)) {
       const syncKey = `last_sync_${key}`;
+      const statusKey = `sync_status_${key}`;
+      const errKey = `sync_error_${key}`;
       const ts = metaMap[syncKey] || metaMap['last_sync_all'] || defaultFallbackTime;
+      const status = metaMap[statusKey] || 'active';
+      const error = metaMap[errKey] || null;
       result.sources[key] = {
         ...conf,
         lastSync: ts,
+        status: status,
+        error: error,
         relativeTime: CalendarSyncService.formatRelativeTime(ts)
       };
     }
@@ -128,27 +134,36 @@ export class CalendarSyncService {
 
     let syncedEvents = null;
     let backendSuccess = false;
+    let backendSources = null;
 
     // 1. Attempt live sync via local orchestrator HTTP endpoint (Port 8080)
     // Server handles OAuth token refresh, iCloud CalDAV creds, and Clariane ICS securely.
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-      const resp = await fetch('/api/sync/calendars', {
+      let resp = await fetch('/api/sync/calendars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ trigger: 'manual_sync', timestamp: nowIso }),
         signal: controller.signal
-      });
+      }).catch(() => null);
+
+      if (!resp || !resp.ok) {
+        // Fallback to GET on orchestrator calendar events feed
+        resp = await fetch('/api/sync/calendars', { signal: controller.signal }).catch(() => null);
+      }
 
       clearTimeout(timeoutId);
 
-      if (resp.ok) {
+      if (resp && resp.ok) {
         const data = await resp.json();
         if (data && Array.isArray(data.events)) {
           syncedEvents = data.events;
           backendSuccess = true;
+          if (data.sources) {
+            backendSources = data.sources;
+          }
           console.log(`[SyncService] Live orchestrator sync returned ${syncedEvents.length} events.`);
         }
       }
@@ -179,10 +194,17 @@ export class CalendarSyncService {
     const collapsedSeries = SeriesModel.collapse(allEvents);
     await db.bulkPut('series', collapsedSeries);
 
-    // 6. Record last-synced timestamps per source in meta
+    // 6. Record last-synced timestamps and per-source status in meta
     await db.put('meta', { key: 'last_sync_all', value: nowIso });
     for (const key of Object.keys(SYNC_SOURCES)) {
-      await db.put('meta', { key: `last_sync_${key}`, value: nowIso });
+      const srcMeta = backendSources && backendSources[key];
+      const srcTs = (srcMeta && srcMeta.last_sync) || nowIso;
+      const srcStatus = (srcMeta && srcMeta.status) || 'active';
+      const srcErr = (srcMeta && srcMeta.error) || '';
+
+      await db.put('meta', { key: `last_sync_${key}`, value: srcTs });
+      await db.put('meta', { key: `sync_status_${key}`, value: srcStatus });
+      await db.put('meta', { key: `sync_error_${key}`, value: srcErr });
     }
     await db.put('meta', { key: 'event_count', value: allEvents.length });
     await db.put('meta', { key: 'series_count', value: collapsedSeries.length });

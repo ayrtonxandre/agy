@@ -8,13 +8,16 @@
 import { Icons } from './icons.js';
 
 export class ShellUI {
-  constructor({ onNavigate, onModeChange, onNewMeeting, onTodayClick, onSyncTrigger, onSearch }) {
+  constructor({ onNavigate, onModeChange, onNewMeeting, onTodayClick, onSyncTrigger, onSearch, onExportData, onImportData, getStorageEngine }) {
     this.onNavigate = onNavigate;
     this.onModeChange = onModeChange;
     this.onNewMeeting = onNewMeeting;
     this.onTodayClick = onTodayClick;
     this.onSyncTrigger = onSyncTrigger;
     this.onSearch = onSearch;
+    this.onExportData = onExportData;
+    this.onImportData = onImportData;
+    this.getStorageEngine = getStorageEngine || (() => 'IndexedDB');
     this.currentView = 'today';
     this.currentMode = 'all';
     this.isSyncing = false;
@@ -116,8 +119,11 @@ export class ShellUI {
         <!-- Rendered by renderSyncSection -->
       </div>
 
-      <!-- Theme Switcher & System Footer -->
+      <!-- Theme Switcher & Storage Footer -->
       <div class="sidebar-footer">
+        <div class="sidebar-storage-block" id="sidebarStorageBlock">
+          <!-- Rendered by renderStorageSection -->
+        </div>
         <button class="theme-toggle-btn" id="themeToggleBtn">
           <!-- Rendered by renderThemeButton -->
         </button>
@@ -134,7 +140,13 @@ export class ShellUI {
     });
 
     this.renderSyncSection();
+    this.renderStorageSection();
     this.renderThemeButton();
+  }
+
+  _escape(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   renderSyncSection() {
@@ -142,10 +154,28 @@ export class ShellUI {
     if (!container) return;
 
     const sources = this.syncStatus?.sources || {
-      google: { name: 'Artefact', label: 'Google', dotClass: 'pink', relativeTime: 'Just now' },
-      outlook: { name: 'Clariane', label: 'Outlook', dotClass: 'blue', relativeTime: 'Just now' },
-      icloud: { name: 'Personal', label: 'iCloud', dotClass: 'green', relativeTime: 'Just now' },
-      athx: { name: 'ATHX', label: 'Training', dotClass: 'amber', relativeTime: 'Just now' }
+      google: { name: 'Artefact', label: 'Google', dotClass: 'pink', status: 'active', relativeTime: 'Just now' },
+      outlook: { name: 'Clariane', label: 'Outlook', dotClass: 'blue', status: 'active', relativeTime: 'Just now' },
+      icloud: { name: 'Personal', label: 'iCloud', dotClass: 'green', status: 'active', relativeTime: 'Just now' },
+      athx: { name: 'ATHX', label: 'Training', dotClass: 'amber', status: 'active', relativeTime: 'Just now' }
+    };
+
+    const renderSourceRow = (key, defaultTitle) => {
+      const src = sources[key] || { name: key, dotClass: 'blue', status: 'active', relativeTime: 'Never' };
+      const isErr = src.status === 'error';
+      const tooltip = isErr ? `${src.name}: ${src.error || 'Connection failed'}` : defaultTitle;
+      const dotCls = isErr ? 'sync-source-dot error' : `sync-source-dot ${src.dotClass}`;
+      const timeDisplay = isErr ? 'Error' : src.relativeTime;
+
+      return `
+        <div class="sync-source-item ${isErr ? 'has-error' : ''}" title="${this._escape(tooltip)}">
+          <div class="sync-source-info">
+            <span class="${dotCls}"></span>
+            <span>${this._escape(src.name)}</span>
+          </div>
+          <span class="sync-source-time ${isErr ? 'err-text' : ''}">${this._escape(timeDisplay)}</span>
+        </div>
+      `;
     };
 
     container.innerHTML = `
@@ -156,43 +186,67 @@ export class ShellUI {
         </button>
       </div>
 
-      <div class="sync-source-item" title="Google Calendar API (Work)">
-        <div class="sync-source-info">
-          <span class="sync-source-dot ${sources.google.dotClass}"></span>
-          <span>${sources.google.name}</span>
-        </div>
-        <span class="sync-source-time" id="syncTimeGoogle">${sources.google.relativeTime}</span>
-      </div>
-
-      <div class="sync-source-item" title="Office 365 Outlook ICS (Client)">
-        <div class="sync-source-info">
-          <span class="sync-source-dot ${sources.outlook.dotClass}"></span>
-          <span>${sources.outlook.name}</span>
-        </div>
-        <span class="sync-source-time" id="syncTimeOutlook">${sources.outlook.relativeTime}</span>
-      </div>
-
-      <div class="sync-source-item" title="iCloud CalDAV / ICS (Personal)">
-        <div class="sync-source-info">
-          <span class="sync-source-dot ${sources.icloud.dotClass}"></span>
-          <span>${sources.icloud.name}</span>
-        </div>
-        <span class="sync-source-time" id="syncTimeIcloud">${sources.icloud.relativeTime}</span>
-      </div>
-
-      <div class="sync-source-item" title="ATHX Garmin Training Microcycle">
-        <div class="sync-source-info">
-          <span class="sync-source-dot ${sources.athx.dotClass}"></span>
-          <span>${sources.athx.name}</span>
-        </div>
-        <span class="sync-source-time" id="syncTimeAthx">${sources.athx.relativeTime}</span>
-      </div>
+      ${renderSourceRow('google', 'Google Calendar API (Work)')}
+      ${renderSourceRow('outlook', 'Office 365 Outlook ICS (Client)')}
+      ${renderSourceRow('icloud', 'iCloud CalDAV / ICS (Personal)')}
+      ${renderSourceRow('athx', 'ATHX Garmin Training Microcycle')}
     `;
 
     container.querySelector('#sidebarSyncBtn')?.addEventListener('click', () => {
       if (this.onSyncTrigger && !this.isSyncing) {
         this.onSyncTrigger();
       }
+    });
+  }
+
+  renderStorageSection() {
+    const container = document.querySelector('#sidebarStorageBlock');
+    if (!container) return;
+
+    const engine = this.getStorageEngine ? this.getStorageEngine() : 'IndexedDB';
+    const isIndexedDb = engine === 'IndexedDB';
+
+    container.innerHTML = `
+      <div class="storage-badge-row" title="Active local client storage engine">
+        <span class="storage-badge ${isIndexedDb ? 'storage-ok' : 'storage-warn'}">
+          ${Icons.database} Engine: ${this._escape(engine)}
+        </span>
+      </div>
+      ${!isIndexedDb ? `
+        <div class="storage-warning-banner" role="alert" title="Data stored in fallback storage">
+          ${Icons.alertCircle} <span>Notes may be lost on browser clear</span>
+        </div>
+      ` : ''}
+      <div class="storage-actions-row">
+        <button class="btn-storage-action" id="exportDataBtn" title="Export all notes, items and links as JSON">
+          ${Icons.download} Export JSON
+        </button>
+        <button class="btn-storage-action" id="importDataBtn" title="Import notes, items and links from JSON file">
+          ${Icons.upload} Import JSON
+        </button>
+        <input type="file" id="importJsonFileInput" accept=".json,application/json" style="display: none;" />
+      </div>
+    `;
+
+    container.querySelector('#exportDataBtn')?.addEventListener('click', () => {
+      if (this.onExportData) this.onExportData();
+    });
+
+    const fileInput = container.querySelector('#importJsonFileInput');
+    container.querySelector('#importDataBtn')?.addEventListener('click', () => {
+      fileInput?.click();
+    });
+
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file && this.onImportData) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          this.onImportData(evt.target.result);
+        };
+        reader.readAsText(file);
+      }
+      e.target.value = '';
     });
   }
 

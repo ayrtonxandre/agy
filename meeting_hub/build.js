@@ -277,6 +277,38 @@ const shell = new MeetingHub.ShellUI({
     } finally {
       shell.setSyncing(false);
     }
+  },
+  getStorageEngine: () => MeetingHub.store ? MeetingHub.store.getStorageEngineName() : 'IndexedDB',
+  onExportData: async () => {
+    try {
+      const json = await MeetingHub.store.exportUserDataJson();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'meeting_hub_data_' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[MeetingHub] Export failed:', err);
+    }
+  },
+  onImportData: async (jsonString) => {
+    try {
+      const res = await MeetingHub.store.importUserDataJson(jsonString);
+      await MeetingHub.store.refreshCache();
+      openActionsCount = await MeetingHub.store.getOpenActionsCount();
+      shell.updateActionsBadge(openActionsCount);
+      shell.renderSidebar(openActionsCount);
+      renderActiveView();
+      if (meetingPanel && AppState.selectedEventId) {
+        meetingPanel.render();
+      }
+    } catch (err) {
+      console.error('[MeetingHub] Import failed:', err);
+    }
   }
 });
 

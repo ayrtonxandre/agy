@@ -1,6 +1,6 @@
 /**
  * Meeting Hub Compiled Application Bundle
- * Generated: 2026-10-28T15:59:38.947Z
+ * Generated: 2026-10-29T10:34:02.588Z
  */
 (function(window, document) {
 'use strict';
@@ -555,7 +555,14 @@ MeetingHub.resetDatabaseInstance = resetDatabaseInstance;
 
 class EventModel {
   static normalize(raw) {
-    const id = raw.id || '';
+    let id = raw.id || '';
+    const recurrenceId = raw.recurrenceId || raw.recurrence_id || raw.recurrence || (raw.originalStartTime && (raw.originalStartTime.dateTime || raw.originalStartTime.date)) || '';
+    if (recurrenceId) {
+      const cleanRecurrence = String(recurrenceId).replace(/[^a-zA-Z0-9]/g, '');
+      if (cleanRecurrence && !id.includes(cleanRecurrence)) {
+        id = `${id}_${cleanRecurrence}`;
+      }
+    }
     const summary = (raw.summary || raw.title || '(Untitled)').trim();
     const source = raw.source || '';
     const desc = raw.description || '';
@@ -638,8 +645,8 @@ class EventModel {
   }
 
   static extractSeriesId(id, summary) {
-    // Google Calendar recurrence format: <base_id>_<timestamp>
-    const match = id.match(/^(.*)_(\d{8}(?:T\d+Z)?)$/);
+    // Google Calendar & ICS recurrence format: <base_id>_<timestamp>
+    const match = id.match(/^(.*)_(\d{8}(?:T\d{4,6}Z?)?)$/);
     if (match) {
       return match[1];
     }
@@ -1860,12 +1867,13 @@ class EventsImporter {
     const meta = await db.get('meta', 'initial_import_done');
     const existingCount = await db.count('events');
 
-    if (meta && meta.value === true && existingCount > 0 && !options.force) {
-      console.log(`[Importer] Initial import already completed (${existingCount} events in store).`);
+    // If store already has events (from previous import or calendar sync), skip cleanly
+    if (existingCount > 0 && !options.force) {
+      console.log(`[Importer] Store already populated with ${existingCount} events. Skipping initial snapshot.`);
       return { skipped: true, eventCount: existingCount };
     }
 
-    console.log('[Importer] Starting initial calendar events import...');
+    console.log('[Importer] Checking for initial calendar events import...');
     let rawList = options.rawEvents;
 
     // 1. Check window.INITIAL_EVENTS (fastest, immune to file:// CORS)
@@ -1890,7 +1898,7 @@ class EventsImporter {
           console.log(`[Importer] Fetched ${rawList.length} events from ${dataUrl}.`);
         }
       } catch (err) {
-        console.warn(`[Importer] Fetch failed from ${dataUrl}:`, err.message);
+        // Safe to ignore if snapshot file is retired
       }
     }
 
@@ -1898,7 +1906,6 @@ class EventsImporter {
     if (!rawList && typeof process !== 'undefined' && process.versions && process.versions.node) {
       try {
         const fs = await import('fs');
-        const path = await import('path');
         const candidatePaths = [
           'meeting_hub/data/initial_events.json',
           './meeting_hub/data/initial_events.json',
@@ -1911,12 +1918,16 @@ class EventsImporter {
           }
         }
       } catch (e) {
-        console.warn('[Importer] Node fs fallback error:', e.message);
+        // Node fallback error ignored
       }
     }
 
     if (!rawList || !Array.isArray(rawList)) {
-      throw new Error('[Importer] No calendar events found. Provide window.INITIAL_EVENTS or ensure initial_events.json is accessible.');
+      if (existingCount > 0) {
+        return { skipped: true, eventCount: existingCount };
+      }
+      console.warn('[Importer] No snapshot events provided. Waiting for live sync or JSON import.');
+      return { skipped: true, eventCount: 0 };
     }
 
     // 1. Normalize events
@@ -2124,10 +2135,16 @@ class CalendarSyncService {
 
     for (const [key, conf] of Object.entries(SYNC_SOURCES)) {
       const syncKey = `last_sync_${key}`;
+      const statusKey = `sync_status_${key}`;
+      const errKey = `sync_error_${key}`;
       const ts = metaMap[syncKey] || metaMap['last_sync_all'] || defaultFallbackTime;
+      const status = metaMap[statusKey] || 'active';
+      const error = metaMap[errKey] || null;
       result.sources[key] = {
         ...conf,
         lastSync: ts,
+        status: status,
+        error: error,
         relativeTime: CalendarSyncService.formatRelativeTime(ts)
       };
     }
@@ -2182,27 +2199,36 @@ class CalendarSyncService {
 
     let syncedEvents = null;
     let backendSuccess = false;
+    let backendSources = null;
 
     // 1. Attempt live sync via local orchestrator HTTP endpoint (Port 8080)
     // Server handles OAuth token refresh, iCloud CalDAV creds, and Clariane ICS securely.
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-      const resp = await fetch('/api/sync/calendars', {
+      let resp = await fetch('/api/sync/calendars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ trigger: 'manual_sync', timestamp: nowIso }),
         signal: controller.signal
-      });
+      }).catch(() => null);
+
+      if (!resp || !resp.ok) {
+        // Fallback to GET on orchestrator calendar events feed
+        resp = await fetch('/api/sync/calendars', { signal: controller.signal }).catch(() => null);
+      }
 
       clearTimeout(timeoutId);
 
-      if (resp.ok) {
+      if (resp && resp.ok) {
         const data = await resp.json();
         if (data && Array.isArray(data.events)) {
           syncedEvents = data.events;
           backendSuccess = true;
+          if (data.sources) {
+            backendSources = data.sources;
+          }
           console.log(`[SyncService] Live orchestrator sync returned ${syncedEvents.length} events.`);
         }
       }
@@ -2233,10 +2259,17 @@ class CalendarSyncService {
     const collapsedSeries = SeriesModel.collapse(allEvents);
     await db.bulkPut('series', collapsedSeries);
 
-    // 6. Record last-synced timestamps per source in meta
+    // 6. Record last-synced timestamps and per-source status in meta
     await db.put('meta', { key: 'last_sync_all', value: nowIso });
     for (const key of Object.keys(SYNC_SOURCES)) {
-      await db.put('meta', { key: `last_sync_${key}`, value: nowIso });
+      const srcMeta = backendSources && backendSources[key];
+      const srcTs = (srcMeta && srcMeta.last_sync) || nowIso;
+      const srcStatus = (srcMeta && srcMeta.status) || 'active';
+      const srcErr = (srcMeta && srcMeta.error) || '';
+
+      await db.put('meta', { key: `last_sync_${key}`, value: srcTs });
+      await db.put('meta', { key: `sync_status_${key}`, value: srcStatus });
+      await db.put('meta', { key: `sync_error_${key}`, value: srcErr });
     }
     await db.put('meta', { key: 'event_count', value: allEvents.length });
     await db.put('meta', { key: 'series_count', value: collapsedSeries.length });
@@ -2843,6 +2876,100 @@ class MeetingHubStore {
     await this.db.clear('cart');
     this.notify({ type: 'cart_updated' });
   }
+
+  /* ================= Storage Engine Honesty & Backup ================= */
+
+  /**
+   * Returns human-readable storage engine name: 'IndexedDB', 'LocalStorage', or 'Memory'.
+   */
+  getStorageEngineName() {
+    if (!this.db) return 'Memory';
+    const raw = (this.db.engineName || '').toLowerCase();
+    if (raw.includes('indexed')) return 'IndexedDB';
+    if (raw.includes('local')) return 'LocalStorage';
+    return 'Memory';
+  }
+
+  /**
+   * Returns true if active storage engine is IndexedDB.
+   */
+  isPersistentStorage() {
+    return this.getStorageEngineName() === 'IndexedDB';
+  }
+
+  /**
+   * Exports all user notes, items, decisions, links, and cart state to a JSON string.
+   */
+  async exportUserDataJson() {
+    if (!this.db) await this.init();
+    const meetingData = await this.db.getAll('meeting_data');
+    const cartData = await this.db.getAll('cart');
+    const metaList = await this.db.getAll('meta');
+    
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      storageEngine: this.getStorageEngineName(),
+      meetingData: meetingData || [],
+      cart: cartData || [],
+      meta: metaList || []
+    };
+    return JSON.stringify(payload, null, 2);
+  }
+
+  /**
+   * Idempotently imports user notes, items, decisions, and links from JSON data.
+   * Does not wipe existing calendar events.
+   * @param {string|Object} jsonInput
+   */
+  async importUserDataJson(jsonInput) {
+    if (!this.db) await this.init();
+    let data;
+    if (typeof jsonInput === 'string') {
+      try {
+        data = JSON.parse(jsonInput);
+      } catch (e) {
+        throw new Error('Invalid JSON format for user data import');
+      }
+    } else {
+      data = jsonInput;
+    }
+
+    if (!data || typeof data !== 'object') {
+      throw new Error('Import data must be a valid JSON object');
+    }
+
+    const meetingData = Array.isArray(data.meetingData) ? data.meetingData : (Array.isArray(data.meeting_data) ? data.meeting_data : []);
+    const cart = Array.isArray(data.cart) ? data.cart : [];
+
+    let meetingDataCount = 0;
+    for (const record of meetingData) {
+      if (record && record.id) {
+        await this.db.put('meeting_data', record);
+        meetingDataCount++;
+      }
+    }
+
+    let cartCount = 0;
+    for (const item of cart) {
+      if (item && item.id) {
+        await this.db.put('cart', item);
+        cartCount++;
+      }
+    }
+
+    this.notify({
+      type: 'user_data_imported',
+      meetingDataCount,
+      cartCount
+    });
+
+    return {
+      success: true,
+      meetingDataCount,
+      cartCount
+    };
+  }
 }
 
 // Global Store Singleton
@@ -2881,7 +3008,10 @@ const Icons = {
   sparkles: `<svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/></svg>`,
   unlink: `<svg class="i" viewBox="0 0 24 24"><path d="M18.84 12.25l1.72-1.71a4.84 4.84 0 0 0-6.84-6.85l-1.72 1.72"/><path d="M5.16 11.75l-1.72 1.71a4.84 4.84 0 0 0 6.84 6.85l1.72-1.72"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`,
   layers: `<svg class="i" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`,
-  fileText: `<svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`
+  fileText: `<svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+  download: `<svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+  upload: `<svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+  database: `<svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`
 };
 
 MeetingHub.Icons = Icons;
@@ -2897,13 +3027,16 @@ MeetingHub.Icons = Icons;
 
 
 class ShellUI {
-  constructor({ onNavigate, onModeChange, onNewMeeting, onTodayClick, onSyncTrigger, onSearch }) {
+  constructor({ onNavigate, onModeChange, onNewMeeting, onTodayClick, onSyncTrigger, onSearch, onExportData, onImportData, getStorageEngine }) {
     this.onNavigate = onNavigate;
     this.onModeChange = onModeChange;
     this.onNewMeeting = onNewMeeting;
     this.onTodayClick = onTodayClick;
     this.onSyncTrigger = onSyncTrigger;
     this.onSearch = onSearch;
+    this.onExportData = onExportData;
+    this.onImportData = onImportData;
+    this.getStorageEngine = getStorageEngine || (() => 'IndexedDB');
     this.currentView = 'today';
     this.currentMode = 'all';
     this.isSyncing = false;
@@ -3005,8 +3138,11 @@ class ShellUI {
         <!-- Rendered by renderSyncSection -->
       </div>
 
-      <!-- Theme Switcher & System Footer -->
+      <!-- Theme Switcher & Storage Footer -->
       <div class="sidebar-footer">
+        <div class="sidebar-storage-block" id="sidebarStorageBlock">
+          <!-- Rendered by renderStorageSection -->
+        </div>
         <button class="theme-toggle-btn" id="themeToggleBtn">
           <!-- Rendered by renderThemeButton -->
         </button>
@@ -3023,7 +3159,13 @@ class ShellUI {
     });
 
     this.renderSyncSection();
+    this.renderStorageSection();
     this.renderThemeButton();
+  }
+
+  _escape(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   renderSyncSection() {
@@ -3031,10 +3173,28 @@ class ShellUI {
     if (!container) return;
 
     const sources = this.syncStatus?.sources || {
-      google: { name: 'Artefact', label: 'Google', dotClass: 'pink', relativeTime: 'Just now' },
-      outlook: { name: 'Clariane', label: 'Outlook', dotClass: 'blue', relativeTime: 'Just now' },
-      icloud: { name: 'Personal', label: 'iCloud', dotClass: 'green', relativeTime: 'Just now' },
-      athx: { name: 'ATHX', label: 'Training', dotClass: 'amber', relativeTime: 'Just now' }
+      google: { name: 'Artefact', label: 'Google', dotClass: 'pink', status: 'active', relativeTime: 'Just now' },
+      outlook: { name: 'Clariane', label: 'Outlook', dotClass: 'blue', status: 'active', relativeTime: 'Just now' },
+      icloud: { name: 'Personal', label: 'iCloud', dotClass: 'green', status: 'active', relativeTime: 'Just now' },
+      athx: { name: 'ATHX', label: 'Training', dotClass: 'amber', status: 'active', relativeTime: 'Just now' }
+    };
+
+    const renderSourceRow = (key, defaultTitle) => {
+      const src = sources[key] || { name: key, dotClass: 'blue', status: 'active', relativeTime: 'Never' };
+      const isErr = src.status === 'error';
+      const tooltip = isErr ? `${src.name}: ${src.error || 'Connection failed'}` : defaultTitle;
+      const dotCls = isErr ? 'sync-source-dot error' : `sync-source-dot ${src.dotClass}`;
+      const timeDisplay = isErr ? 'Error' : src.relativeTime;
+
+      return `
+        <div class="sync-source-item ${isErr ? 'has-error' : ''}" title="${this._escape(tooltip)}">
+          <div class="sync-source-info">
+            <span class="${dotCls}"></span>
+            <span>${this._escape(src.name)}</span>
+          </div>
+          <span class="sync-source-time ${isErr ? 'err-text' : ''}">${this._escape(timeDisplay)}</span>
+        </div>
+      `;
     };
 
     container.innerHTML = `
@@ -3045,43 +3205,67 @@ class ShellUI {
         </button>
       </div>
 
-      <div class="sync-source-item" title="Google Calendar API (Work)">
-        <div class="sync-source-info">
-          <span class="sync-source-dot ${sources.google.dotClass}"></span>
-          <span>${sources.google.name}</span>
-        </div>
-        <span class="sync-source-time" id="syncTimeGoogle">${sources.google.relativeTime}</span>
-      </div>
-
-      <div class="sync-source-item" title="Office 365 Outlook ICS (Client)">
-        <div class="sync-source-info">
-          <span class="sync-source-dot ${sources.outlook.dotClass}"></span>
-          <span>${sources.outlook.name}</span>
-        </div>
-        <span class="sync-source-time" id="syncTimeOutlook">${sources.outlook.relativeTime}</span>
-      </div>
-
-      <div class="sync-source-item" title="iCloud CalDAV / ICS (Personal)">
-        <div class="sync-source-info">
-          <span class="sync-source-dot ${sources.icloud.dotClass}"></span>
-          <span>${sources.icloud.name}</span>
-        </div>
-        <span class="sync-source-time" id="syncTimeIcloud">${sources.icloud.relativeTime}</span>
-      </div>
-
-      <div class="sync-source-item" title="ATHX Garmin Training Microcycle">
-        <div class="sync-source-info">
-          <span class="sync-source-dot ${sources.athx.dotClass}"></span>
-          <span>${sources.athx.name}</span>
-        </div>
-        <span class="sync-source-time" id="syncTimeAthx">${sources.athx.relativeTime}</span>
-      </div>
+      ${renderSourceRow('google', 'Google Calendar API (Work)')}
+      ${renderSourceRow('outlook', 'Office 365 Outlook ICS (Client)')}
+      ${renderSourceRow('icloud', 'iCloud CalDAV / ICS (Personal)')}
+      ${renderSourceRow('athx', 'ATHX Garmin Training Microcycle')}
     `;
 
     container.querySelector('#sidebarSyncBtn')?.addEventListener('click', () => {
       if (this.onSyncTrigger && !this.isSyncing) {
         this.onSyncTrigger();
       }
+    });
+  }
+
+  renderStorageSection() {
+    const container = document.querySelector('#sidebarStorageBlock');
+    if (!container) return;
+
+    const engine = this.getStorageEngine ? this.getStorageEngine() : 'IndexedDB';
+    const isIndexedDb = engine === 'IndexedDB';
+
+    container.innerHTML = `
+      <div class="storage-badge-row" title="Active local client storage engine">
+        <span class="storage-badge ${isIndexedDb ? 'storage-ok' : 'storage-warn'}">
+          ${Icons.database} Engine: ${this._escape(engine)}
+        </span>
+      </div>
+      ${!isIndexedDb ? `
+        <div class="storage-warning-banner" role="alert" title="Data stored in fallback storage">
+          ${Icons.alertCircle} <span>Notes may be lost on browser clear</span>
+        </div>
+      ` : ''}
+      <div class="storage-actions-row">
+        <button class="btn-storage-action" id="exportDataBtn" title="Export all notes, items and links as JSON">
+          ${Icons.download} Export JSON
+        </button>
+        <button class="btn-storage-action" id="importDataBtn" title="Import notes, items and links from JSON file">
+          ${Icons.upload} Import JSON
+        </button>
+        <input type="file" id="importJsonFileInput" accept=".json,application/json" style="display: none;" />
+      </div>
+    `;
+
+    container.querySelector('#exportDataBtn')?.addEventListener('click', () => {
+      if (this.onExportData) this.onExportData();
+    });
+
+    const fileInput = container.querySelector('#importJsonFileInput');
+    container.querySelector('#importDataBtn')?.addEventListener('click', () => {
+      fileInput?.click();
+    });
+
+    fileInput?.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file && this.onImportData) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          this.onImportData(evt.target.result);
+        };
+        reader.readAsText(file);
+      }
+      e.target.value = '';
     });
   }
 
@@ -3281,14 +3465,14 @@ class MeetingPanelUI {
           <div class="google-doc-card ${docUrl ? 'connected' : 'unconnected'}">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
               <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                <span class="doc-icon">${Icons.fileText || '📄'}</span>
+                <span class="doc-icon">${Icons.fileText}</span>
                 <div style="min-width: 0;">
                   <div style="font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     ${docUrl ? 'Connected Google Doc' : 'No Google Doc Linked'}
                   </div>
                   ${docUrl ? `
                     <a href="${this._escape(docUrl)}" target="_blank" rel="noopener" class="sub" style="color: var(--pink-600); text-decoration: underline; font-size: 11px; display: inline-flex; align-items: center; gap: 3px;">
-                      Open document ↗
+                      Open document ${Icons.externalLink}
                     </a>
                   ` : `
                     <div class="sub" style="font-size: 11px;">Link a collaborative doc to ingest minutes</div>
@@ -3321,7 +3505,7 @@ class MeetingPanelUI {
             ` : ''}
 
             ${this.docFetchError ? `
-              <div style="margin-top: 8px; font-size: 11.5px; color: var(--error, #e11d48); background: rgba(225, 29, 72, 0.08); padding: 6px 8px; border-radius: var(--r-sm);">
+              <div style="margin-top: 8px; font-size: 11.5px; color: var(--destructive); background: color-mix(in oklab, var(--destructive) 10%, transparent); padding: 6px 8px; border-radius: var(--r-sm);">
                 ${this._escape(this.docFetchError)}
               </div>
             ` : ''}
@@ -5531,7 +5715,7 @@ class ProjectsView {
                   <div style="display: flex; gap: 6px; align-items: center;">
                     <span style="font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground);">${d.meetingDate}</span>
                     <button class="btn sm" data-open-meeting="${d.meetingId}" style="padding: 2px 8px; font-size: 11px;">
-                      View Meeting ↗
+                      View Meeting ${Icons.externalLink}
                     </button>
                   </div>
                 </div>
@@ -5621,18 +5805,18 @@ class ProjectsView {
             ${project.connectedDocs.map(doc => `
               <div class="card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                 <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                  <span class="doc-icon">${Icons.fileText || '📄'}</span>
+                  <span class="doc-icon">${Icons.fileText}</span>
                   <div style="min-width: 0;">
                     <div style="font-weight: 600; font-size: 13px;">${this._escape(doc.title)}</div>
                     <div class="sub" style="font-size: 11px; margin-top: 2px;">
-                      ${doc.meetingDate} · ${this._escape(doc.facility)} · <span style="color: var(--ok);">✓ Minutes Ingested (${doc.minutesLength} chars)</span>
+                      ${doc.meetingDate} · ${this._escape(doc.facility)} · <span style="color: var(--ok); display: inline-flex; align-items: center; gap: 3px;">${Icons.check} Minutes Ingested (${doc.minutesLength} chars)</span>
                     </div>
                   </div>
                 </div>
 
                 <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
                   <a href="${this._escape(doc.url)}" target="_blank" rel="noopener" class="btn sm pink">
-                    Open in Google Docs ↗
+                    Open in Google Docs ${Icons.externalLink}
                   </a>
                   <button class="btn sm" data-open-meeting="${doc.meetingId}">
                     View Meeting
@@ -5882,6 +6066,38 @@ const shell = new MeetingHub.ShellUI({
       console.error('[MeetingHub] Sync error:', err);
     } finally {
       shell.setSyncing(false);
+    }
+  },
+  getStorageEngine: () => MeetingHub.store ? MeetingHub.store.getStorageEngineName() : 'IndexedDB',
+  onExportData: async () => {
+    try {
+      const json = await MeetingHub.store.exportUserDataJson();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'meeting_hub_data_' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[MeetingHub] Export failed:', err);
+    }
+  },
+  onImportData: async (jsonString) => {
+    try {
+      const res = await MeetingHub.store.importUserDataJson(jsonString);
+      await MeetingHub.store.refreshCache();
+      openActionsCount = await MeetingHub.store.getOpenActionsCount();
+      shell.updateActionsBadge(openActionsCount);
+      shell.renderSidebar(openActionsCount);
+      renderActiveView();
+      if (meetingPanel && AppState.selectedEventId) {
+        meetingPanel.render();
+      }
+    } catch (err) {
+      console.error('[MeetingHub] Import failed:', err);
     }
   }
 });

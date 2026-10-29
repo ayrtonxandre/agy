@@ -27,10 +27,10 @@ export class CartUI {
           ${Icons.cart}
           <span>Macro Cart</span>
         </span>
-        <span class="badge" style="margin-left: 8px; background: var(--pink-600); color: #fff; border: 0;">
+        <span class="badge" style="margin-left: 8px; background: var(--pink-600); color: oklch(1 0 0); border: 0;">
           ${items.length}
         </span>
-        <button id="toggleCartBtn" class="btn sm" style="margin-left: auto; color: #fff; border: 0; background: rgba(255,255,255,0.15); padding: 2px 6px;">
+        <button id="toggleCartBtn" class="btn sm" style="margin-left: auto; color: oklch(1 0 0); border: 0; background: rgba(255,255,255,0.15); padding: 2px 6px;">
           ${this.isOpen ? '–' : '+'}
         </button>
       </header>

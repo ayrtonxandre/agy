@@ -358,6 +358,100 @@ export class MeetingHubStore {
     await this.db.clear('cart');
     this.notify({ type: 'cart_updated' });
   }
+
+  /* ================= Storage Engine Honesty & Backup ================= */
+
+  /**
+   * Returns human-readable storage engine name: 'IndexedDB', 'LocalStorage', or 'Memory'.
+   */
+  getStorageEngineName() {
+    if (!this.db) return 'Memory';
+    const raw = (this.db.engineName || '').toLowerCase();
+    if (raw.includes('indexed')) return 'IndexedDB';
+    if (raw.includes('local')) return 'LocalStorage';
+    return 'Memory';
+  }
+
+  /**
+   * Returns true if active storage engine is IndexedDB.
+   */
+  isPersistentStorage() {
+    return this.getStorageEngineName() === 'IndexedDB';
+  }
+
+  /**
+   * Exports all user notes, items, decisions, links, and cart state to a JSON string.
+   */
+  async exportUserDataJson() {
+    if (!this.db) await this.init();
+    const meetingData = await this.db.getAll('meeting_data');
+    const cartData = await this.db.getAll('cart');
+    const metaList = await this.db.getAll('meta');
+    
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      storageEngine: this.getStorageEngineName(),
+      meetingData: meetingData || [],
+      cart: cartData || [],
+      meta: metaList || []
+    };
+    return JSON.stringify(payload, null, 2);
+  }
+
+  /**
+   * Idempotently imports user notes, items, decisions, and links from JSON data.
+   * Does not wipe existing calendar events.
+   * @param {string|Object} jsonInput
+   */
+  async importUserDataJson(jsonInput) {
+    if (!this.db) await this.init();
+    let data;
+    if (typeof jsonInput === 'string') {
+      try {
+        data = JSON.parse(jsonInput);
+      } catch (e) {
+        throw new Error('Invalid JSON format for user data import');
+      }
+    } else {
+      data = jsonInput;
+    }
+
+    if (!data || typeof data !== 'object') {
+      throw new Error('Import data must be a valid JSON object');
+    }
+
+    const meetingData = Array.isArray(data.meetingData) ? data.meetingData : (Array.isArray(data.meeting_data) ? data.meeting_data : []);
+    const cart = Array.isArray(data.cart) ? data.cart : [];
+
+    let meetingDataCount = 0;
+    for (const record of meetingData) {
+      if (record && record.id) {
+        await this.db.put('meeting_data', record);
+        meetingDataCount++;
+      }
+    }
+
+    let cartCount = 0;
+    for (const item of cart) {
+      if (item && item.id) {
+        await this.db.put('cart', item);
+        cartCount++;
+      }
+    }
+
+    this.notify({
+      type: 'user_data_imported',
+      meetingDataCount,
+      cartCount
+    });
+
+    return {
+      success: true,
+      meetingDataCount,
+      cartCount
+    };
+  }
 }
 
 // Global Store Singleton
