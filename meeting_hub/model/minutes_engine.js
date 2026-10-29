@@ -1,34 +1,33 @@
 /**
  * Meeting Minutes Intelligence Engine
  * 
- * High-precision parser for structured meeting minutes (such as Google Docs notes).
- * Extracts:
- * - Metadata (Date, Title, Facility/Site)
- * - Participants (Name, Role, Organization)
- * - Discussion Topics & Sub-points
- * - Action Items with Owner, Due Timing, and Tags
- * - Architecture & Operational Decisions
- * - Domain Knowledge Entities & Tools
+ * Generic high-precision parser for structured meeting minutes.
+ * Decoupled from any domain knowledge or client-specific vocabulary.
+ * All clinical/business concepts, tools, workstream tags, and decision triggers
+ * are driven dynamically by the project configuration.
  */
 
 export class MinutesEngine {
   /**
    * Main parsing entry point.
    * @param {string} rawText Raw plain text or markdown from Google Doc / notes
-   * @param {object} meta Optional contextual metadata (e.g. event summary, date)
+   * @param {object} meta Optional contextual metadata (e.g. event summary, date, meetingId)
+   * @param {object} projectConfig Optional Project configuration object containing parserHints
    * @returns {object} Structured minutes intelligence
    */
-  static parseMinutes(rawText, meta = {}) {
+  static parseMinutes(rawText, meta = {}, projectConfig = null) {
     if (!rawText || typeof rawText !== 'string') {
       return {
         title: meta.title || 'Untitled Meeting',
         date: meta.date || '',
         facility: meta.facility || '',
+        meetingId: meta.meetingId || '',
         participants: [],
         topics: [],
         actions: [],
         decisions: [],
-        knowledge: { tools: [], concepts: [], facilities: [] }
+        knowledge: { tools: [], concepts: [], facilities: [] },
+        rawLength: 0
       };
     }
 
@@ -36,19 +35,21 @@ export class MinutesEngine {
     const cleanText = rawText.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     const lines = cleanText.split('\n');
 
+    const hints = projectConfig?.parserHints || {};
     const date = MinutesEngine.extractDate(cleanText, meta.date);
-    const facility = MinutesEngine.extractFacility(cleanText, meta.title);
+    const facility = MinutesEngine.extractFacility(cleanText, meta.title, hints.facilities);
     const title = MinutesEngine.extractTitle(cleanText, meta.title);
-    const participants = MinutesEngine.extractParticipants(lines);
+    const participants = MinutesEngine.extractParticipants(lines, hints.ownerOrgRules);
     const topics = MinutesEngine.extractTopics(lines);
-    const actions = MinutesEngine.extractActions(lines, date);
-    const decisions = MinutesEngine.extractDecisions(cleanText, topics);
-    const knowledge = MinutesEngine.extractKnowledge(cleanText, facility);
+    const actions = MinutesEngine.extractActions(lines, date, hints, meta);
+    const decisions = MinutesEngine.extractDecisions(cleanText, topics, hints, meta);
+    const knowledge = MinutesEngine.extractKnowledge(cleanText, facility, hints);
 
     return {
       title,
       date,
       facility,
+      meetingId: meta.meetingId || '',
       participants,
       topics,
       actions,
@@ -61,44 +62,50 @@ export class MinutesEngine {
   /* ================= Metadata Extraction ================= */
 
   static extractDate(text, fallbackDate = '') {
-    // Check "Date | 26 Octobre 2026" or "Date : 21/10/2026"
     const match = text.match(/Date\s*[:|]\s*([^\n\r]+)/i);
     if (match && match[1].trim()) {
       return match[1].trim();
     }
-    // Check regex for date in French format
     const frDateMatch = text.match(/\b(\d{1,2})\s+(Janvier|Février|Mars|Avril|Mai|Juin|Juillet|Août|Septembre|Octobre|Novembre|Décembre)\s+(\d{4})\b/i);
     if (frDateMatch) {
       return frDateMatch[0];
     }
+    const isoMatch = text.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+    if (isoMatch) {
+      return isoMatch[1];
+    }
     return fallbackDate || '';
   }
 
-  static extractFacility(text, fallbackTitle = '') {
-    const combined = `${text.slice(0, 500)} ${fallbackTitle}`.toLowerCase();
-    if (combined.includes('mariénia') || combined.includes('marienia')) return 'Mariéna';
-    if (combined.includes('arbelles') || combined.includes('les arbelles')) return 'Les Arbelles';
-    if (combined.includes('glanum')) return 'Glanum';
-    if (combined.includes('inicea')) return 'Inicea';
-    if (combined.includes('clariane')) return 'Clariane';
+  static extractFacility(text, fallbackTitle = '', configuredFacilities = []) {
+    const combined = `${text.slice(0, 600)} ${fallbackTitle}`.toLowerCase();
+    
+    // Check against configured project facilities
+    if (Array.isArray(configuredFacilities) && configuredFacilities.length > 0) {
+      for (const fac of configuredFacilities) {
+        if (fac && combined.includes(fac.toLowerCase())) {
+          return fac;
+        }
+      }
+    }
+
     return '';
   }
 
   static extractTitle(text, fallbackTitle = '') {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    // Find lines before horizontal separator or greeting
     for (let i = 0; i < Math.min(lines.length, 5); i++) {
       const line = lines[i];
-      if (line.includes('HDJ Planning Manager') || line.includes('Paramétrage') || line.includes('Atelier') || line.includes('Compte Rendu')) {
+      if (/compte\s*rendu|minutes|ordre\s+du\s+jour|meeting|reunion|réunion|atelier/i.test(line)) {
         return line.replace(/^#+\s*/, '').trim();
       }
     }
-    return fallbackTitle || (lines[0] || 'Meeting Minutes');
+    return fallbackTitle || (lines[0] ? lines[0].replace(/^#+\s*/, '').trim() : 'Meeting Minutes');
   }
 
   /* ================= Participants Extraction ================= */
 
-  static extractParticipants(lines) {
+  static extractParticipants(lines, ownerOrgRules = []) {
     const participants = [];
     let inSection = false;
 
@@ -106,18 +113,17 @@ export class MinutesEngine {
       const line = lines[i].trim();
       if (!line) continue;
 
-      if (/^#*\s*Participants\b/i.test(line)) {
+      if (/^#*\s*(Participants|Attendees|Présents|Presences|Présences)\b/i.test(line)) {
         inSection = true;
         continue;
       }
 
       if (inSection) {
-        // If we reach the next header, break out
-        if (/^#*\s*(Points\s+abord[ée]s|(?:Les\s+)?prochaines\s+[ée]tapes|Actions|Ordre\s+du\s+jour|Agenda|Minutes)/i.test(line)) {
+        // Break out on next major header
+        if (/^#*\s*(Points\s+abord[ée]s|Prochaines\s+[ée]tapes|Actions|Ordre\s+du\s+jour|Agenda|Minutes|Next\s+steps)/i.test(line)) {
           break;
         }
 
-        // Parse bullet participant line
         if (/^[*\-•]/.test(line)) {
           const raw = line.replace(/^[*\-•]\s*/, '').trim();
           let name = raw;
@@ -140,12 +146,18 @@ export class MinutesEngine {
             }
           }
 
-          // Detect organization
+          // Classify organization from rules
           const lowerRole = role.toLowerCase();
-          if (lowerRole.includes('marienia') || lowerRole.includes('mariéna')) org = 'Mariéna';
-          else if (lowerRole.includes('arbelles')) org = 'Les Arbelles';
-          else if (lowerRole.includes('artefact') || lowerRole.includes('data analyst')) org = 'Artefact';
-          else if (lowerRole.includes('clariane')) org = 'Clariane';
+          const lowerName = name.toLowerCase();
+          if (Array.isArray(ownerOrgRules)) {
+            for (const rule of ownerOrgRules) {
+              const kws = rule.keywords || rule.match || [];
+              if (kws.some(k => lowerRole.includes(k.toLowerCase()) || lowerName.includes(k.toLowerCase()))) {
+                org = rule.org;
+                break;
+              }
+            }
+          }
 
           participants.push({ name, role, org, raw });
         }
@@ -167,22 +179,17 @@ export class MinutesEngine {
       const trimmed = rawLine.trim();
       if (!trimmed) continue;
 
-      if (/^#*\s*Points\s+abord[ée]s/i.test(trimmed)) {
+      if (/^#*\s*(Points\s+abord[ée]s|Discussion|Topics|Ordre\s+du\s+jour|Notes)/i.test(trimmed)) {
         inSection = true;
         continue;
       }
 
       if (inSection) {
-        // Stop if we hit Next steps or footer
+        // Stop on next steps / actions header
         if (/^#*\s*((?:Les\s+)?prochaines\s+[ée]tapes|Actions|Next\s+Steps)/i.test(trimmed)) {
           break;
         }
 
-        // Determine if line is a new topic header
-        // Examples:
-        // "Contexte et Approche du projet" (no bullet, or markdown header)
-        // "* Vue Vacations et Visibilité :"
-        // "* Processus d'Admission et flux "Annonce" :"
         const isBullet = /^[*\-•]/.test(trimmed);
         const hasColonEnd = /:\s*$/.test(trimmed);
         const indentLevel = rawLine.search(/\S|$/);
@@ -208,16 +215,14 @@ export class MinutesEngine {
           continue;
         }
 
-        // Otherwise it's a point inside current topic
         if (currentTopic) {
           const cleanPoint = trimmed.replace(/^[*\-•]\s*/, '').trim();
           if (cleanPoint) {
             currentTopic.points.push(cleanPoint);
           }
         } else if (trimmed) {
-          // Fallback initial topic
           currentTopic = {
-            title: 'Points Principaux',
+            title: 'General',
             points: [trimmed.replace(/^[*\-•]\s*/, '').trim()]
           };
         }
@@ -233,9 +238,13 @@ export class MinutesEngine {
 
   /* ================= Actions Extraction ================= */
 
-  static extractActions(lines, contextDate = '') {
+  static extractActions(lines, contextDate = '', hints = {}, meta = {}) {
     const actions = [];
     let inSection = false;
+    const meetingLink = meta.meetingId ? `#/meeting/${encodeURIComponent(meta.meetingId)}` : '';
+
+    const tagRules = hints.tagRules || [];
+    const ownerOrgRules = hints.ownerOrgRules || [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -247,26 +256,35 @@ export class MinutesEngine {
       }
 
       if (inSection) {
-        // Stop if hitting a new major header
+        // Stop if hitting a major new section
         if (/^#+\s+[A-Z]/.test(line) && !line.includes('étape') && !line.includes('action')) {
           break;
         }
 
         if (/^[*\-•]/.test(line)) {
-          const raw = line.replace(/^[*\-•]\s*/, '').trim();
-          let owner = 'Équipe';
+          let raw = line.replace(/^[*\-•]\s*/, '').trim();
+          let isDone = false;
+
+          // Strip checkbox markdown if present: [ ] or [x] or [X]
+          if (/^\[([ xX])\]\s*/.test(raw)) {
+            const cbMatch = raw.match(/^\[([ xX])\]\s*/);
+            if (cbMatch[1].toLowerCase() === 'x') isDone = true;
+            raw = raw.replace(/^\[([ xX])\]\s*/, '').trim();
+          }
+
+          let owner = 'Team';
           let text = raw;
           let dueDate = '';
 
           // Look for "Owner : Action" or "Owner | Action"
-          const colonMatch = raw.match(/^([A-Za-zÀ-ÿ0-9\s/]+)\s*[:|]\s*(.+)$/);
+          const colonMatch = raw.match(/^([A-Za-zÀ-ÿ0-9\s/.'-]+)\s*[:|]\s*(.+)$/);
           if (colonMatch) {
             const potentialOwner = colonMatch[1].trim();
             const actionText = colonMatch[2].trim();
 
-            if (potentialOwner.toLowerCase().includes('prochain point') || potentialOwner.toLowerCase().includes('suivi')) {
-              owner = 'Équipe';
-              text = `Prochain point de suivi : ${actionText}`;
+            if (potentialOwner.toLowerCase().includes('prochain point') || potentialOwner.toLowerCase().includes('suivi') || potentialOwner.toLowerCase().includes('next sync')) {
+              owner = 'Team';
+              text = `${potentialOwner} : ${actionText}`;
               dueDate = actionText;
             } else {
               owner = potentialOwner;
@@ -274,33 +292,50 @@ export class MinutesEngine {
             }
           }
 
-          // Due date inference
-          const lowerText = text.toLowerCase();
-          if (lowerText.includes('mardi matin') || lowerText.includes('semaine prochaine')) {
-            dueDate = 'Semaine prochaine';
-          } else if (lowerText.includes('dans la semaine')) {
-            dueDate = 'Cette semaine';
-          } else if (lowerText.includes('dès que') || lowerText.includes('urgent')) {
-            dueDate = 'Prioritaire';
+          // Due timing inference
+          const contextYear = contextDate ? (contextDate.match(/\b(\d{4})\b/) ? contextDate.match(/\b(\d{4})\b/)[1] : new Date().getFullYear()) : new Date().getFullYear();
+          const isoDateMatch = text.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+          const slashDateMatch = text.match(/(?:avant le|pour le|le|by|due|before)?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/i);
+
+          if (isoDateMatch) {
+            dueDate = isoDateMatch[1];
+          } else if (slashDateMatch) {
+            const d = slashDateMatch[1].padStart(2, '0');
+            const m = slashDateMatch[2].padStart(2, '0');
+            const y = slashDateMatch[3] ? (slashDateMatch[3].length === 2 ? `20${slashDateMatch[3]}` : slashDateMatch[3]) : contextYear;
+            dueDate = `${y}-${m}-${d}`;
           }
 
-          // Identify workstream tag
-          const tags = [];
-          if (lowerText.includes('hm') || lowerText.includes('hôpital manager')) tags.push('hm-sync');
-          if (lowerText.includes('foundry')) tags.push('foundry');
-          if (lowerText.includes('vacation')) tags.push('vacations');
-          if (lowerText.includes('annonce')) tags.push('annonces');
-          if (lowerText.includes('modélis') || lowerText.includes('parcours')) tags.push('modeling');
-          if (lowerText.includes('alerte') || lowerText.includes('alerting')) tags.push('alerting');
-          if (lowerText.includes('case mix') || lowerText.includes('budget')) tags.push('analytics');
+          if (!dueDate) {
+            const lowerText = text.toLowerCase();
+            if (lowerText.includes('mardi matin') || lowerText.includes('semaine prochaine') || lowerText.includes('next week')) {
+              dueDate = 'Next week';
+            } else if (lowerText.includes('dans la semaine') || lowerText.includes('this week')) {
+              dueDate = 'This week';
+            } else if (lowerText.includes('dès que') || lowerText.includes('urgent') || lowerText.includes('prioritaire')) {
+              dueDate = 'Priority';
+            }
+          }
 
-          // Infer owner organization
-          let ownerOrg = 'Transversal';
+          // Dynamic workstream tags from project parser hints
+          const tags = [];
+          const lowerText = text.toLowerCase();
+          for (const rule of tagRules) {
+            const kws = rule.keywords || rule.match || [];
+            if (kws.some(k => lowerText.includes(k.toLowerCase()))) {
+              tags.push(rule.tag);
+            }
+          }
+
+          // Dynamic owner organization from project parser hints
+          let ownerOrg = 'Team';
           const lowerOwner = owner.toLowerCase();
-          if (lowerOwner.includes('artefact') || lowerOwner.includes('ayrton') || lowerOwner.includes('benjamin')) {
-            ownerOrg = 'Artefact';
-          } else if (lowerOwner.includes('arbelles') || lowerOwner.includes('mariena') || lowerOwner.includes('mariéna') || lowerOwner.includes('claire') || lowerOwner.includes('fabien') || lowerOwner.includes('delphine') || lowerOwner.includes('clariane')) {
-            ownerOrg = 'Client';
+          for (const rule of ownerOrgRules) {
+            const kws = rule.keywords || rule.match || [];
+            if (kws.some(k => lowerOwner.includes(k.toLowerCase()) || lowerText.includes(k.toLowerCase()))) {
+              ownerOrg = rule.org;
+              break;
+            }
           }
 
           actions.push({
@@ -310,8 +345,10 @@ export class MinutesEngine {
             text,
             dueDate,
             tags,
-            done: false,
-            source: 'minutes'
+            done: isDone,
+            source: 'minutes',
+            quote: line,
+            meetingLink
           });
         }
       }
@@ -322,32 +359,51 @@ export class MinutesEngine {
 
   /* ================= Decisions Extraction ================= */
 
-  static extractDecisions(cleanText, topics = []) {
+  static extractDecisions(cleanText, topics = [], hints = {}, meta = {}) {
     const decisions = [];
     const lines = cleanText.split('\n').map(l => l.trim()).filter(Boolean);
+    const meetingLink = meta.meetingId ? `#/meeting/${encodeURIComponent(meta.meetingId)}` : '';
 
-    // Heuristic patterns for decisions in French meeting minutes
-    const decisionTriggers = [
-      { regex: /workflow\s+de\s+validation\s*:\s*(.+)/i, label: 'Workflow de Validation' },
-      { regex: /la\s+solution\s+retenue\s+est\s+(.+)/i, label: 'Solution Retenue' },
-      { regex: /politique\s+z[ée]ro\s+temps\s+mort\s*:\s*(.+)/i, label: 'Politique Zéro Temps Mort' },
-      { regex: /il\s+a\s+[ée]t[ée]\s+propos[ée]\s+de\s+(.+)/i, label: 'Processus Validé' },
-      { regex: /les\s+bilans\s+d'entr[ée]e\s+et\s+de\s+sortie\s+se\s+font\s+en\s+individuel/i, label: 'Règle Bilans' },
-      { regex: /d[ée]monstration\s+de\s+la\s+fonctionnalit[ée]\s+permettant\s+de\s+"forcer"\s+un\s+placement/i, label: 'Règle Surbooking & Forçage' },
-      { regex: /l'outil\s+a\s+[ée]t[ée]\s+adapt[ée]\s+avec\s+un\s+onglet\s+permettant\s+d'inclure\s+ou\s+d'exclure/i, label: 'Filtre Annonces / Pré-admissions' },
-      { regex: /à\s+terme,\s+l'outil\s+pourrait\s+offrir\s+un\s+accès\s+en\s+lecture\s+seule/i, label: 'Visibilité Praticiens' }
+    // Project-configured decision triggers
+    const configuredTriggers = (hints.decisionTriggers || []).map(t => {
+      try {
+        if (typeof t === 'string') {
+          const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return { regex: new RegExp(`(?:\\b${escaped}\\b)\\s*[:|]?\\s*(.+)`, 'i'), label: t };
+        }
+        return { regex: new RegExp(t.pattern, 'i'), label: t.label || 'Decision' };
+      } catch (e) {
+        return null;
+      }
+    }).filter(Boolean);
+
+    // Generic fallback triggers if none configured or alongside
+    const genericTriggers = [
+      { regex: /(?:\bdécision\b|\bdecision\b)\s*[:|]\s*(.+)/i, label: 'Decision' },
+      { regex: /(?:\bdécidé\s+que\b|\bdecided\s+that\b|\bconvenu\s+de\b|\bagreed\s+to\b)\s+(.+)/i, label: 'Agreement' },
+      { regex: /(?:\bsolution\s+retenue\b|\bsolution\s+adoptée\b)\s*[:|]?\s*(.+)/i, label: 'Adopted Solution' }
     ];
 
+    const decisionTriggers = configuredTriggers.length > 0
+      ? [...configuredTriggers, ...genericTriggers]
+      : genericTriggers;
+
     for (const line of lines) {
+      // Skip section headers like "Décisions prises:" or "Décisions :"
+      if (/^(?:#+\s*)?(?:décisions?(?:\s+prises)?|decisions?)\s*:\s*$/i.test(line)) {
+        continue;
+      }
+
       for (const trigger of decisionTriggers) {
         if (trigger.regex.test(line)) {
-          const match = line.match(trigger.regex);
           const statement = line.replace(/^[*\-•]\s*/, '').trim();
           decisions.push({
             id: `dec-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
             label: trigger.label,
             statement,
-            context: MinutesEngine.findContextTopic(line, topics)
+            context: MinutesEngine.findContextTopic(line, topics),
+            quote: line,
+            meetingLink
           });
           break;
         }
@@ -363,37 +419,45 @@ export class MinutesEngine {
         return t.title;
       }
     }
-    return 'Général';
+    return 'General';
   }
 
   /* ================= Knowledge Extraction ================= */
 
-  static extractKnowledge(text, facility = '') {
+  static extractKnowledge(text, facility = '', hints = {}) {
     const lower = text.toLowerCase();
     const tools = [];
     const concepts = [];
     const facilities = [];
 
-    // Tools & Systems
-    if (lower.includes('foundry')) tools.push({ name: 'Foundry (Palantir)', type: 'Data & Engine Platform' });
-    if (lower.includes('hm') || lower.includes('hôpital manager')) tools.push({ name: 'Hôpital Manager (HM)', type: 'SIH / Dossier Patient' });
-    if (lower.includes('rtms') || lower.includes('tdcs')) tools.push({ name: 'rTMS / tDCS', type: 'Protocole Thérapeutique' });
-    if (lower.includes('balnéo') || lower.includes('balneo')) tools.push({ name: 'Balnéothérapie', type: 'Plateau Technique' });
-    if (lower.includes('kiné') || lower.includes('kine')) tools.push({ name: 'Kinésithérapie', type: 'Soin Rééducation' });
-    if (lower.includes('ergo')) tools.push({ name: 'Ergothérapie', type: 'Soin Rééducation' });
+    // Driven dynamically by project parser hints
+    const configuredTools = hints.tools || [];
+    for (const t of configuredTools) {
+      const name = typeof t === 'string' ? t : t.name;
+      const keywords = typeof t === 'string' ? [t.toLowerCase()] : (t.keywords || [t.name.toLowerCase()]);
+      if (keywords.some(k => lower.includes(k.toLowerCase()))) {
+        tools.push({ name, type: (typeof t === 'object' && t.type) || 'Tool' });
+      }
+    }
 
-    // Concepts
-    if (lower.includes('annonce')) concepts.push({ name: 'Flux Annonces', desc: 'Gestion des pré-admissions et patients potentiels dans HM vers Foundry' });
-    if (lower.includes('zéro temps mort') || lower.includes('zero temps mort')) concepts.push({ name: 'Politique Zéro Temps Mort', desc: 'Optimisation continue sans temps d’attente inter-séances pour les patients' });
-    if (lower.includes('case mix')) concepts.push({ name: 'Analytique Case Mix', desc: 'Répartition de l’activité Neuro vs Locomoteur pour le pilotage budgétaire' });
-    if (lower.includes('surbooking') || lower.includes('forcer')) concepts.push({ name: 'Gestion Surbooking & Forçage', desc: 'Remplacement manuel et dépassement de capacité contrôlé' });
-    if (lower.includes('vacation')) concepts.push({ name: 'Vue Vacations & Disponibilité', desc: 'Planification centralisée par salle, soignant et créneau' });
+    const configuredConcepts = hints.concepts || [];
+    for (const c of configuredConcepts) {
+      const name = typeof c === 'string' ? c : c.name;
+      const keywords = typeof c === 'string' ? [c.toLowerCase()] : (c.keywords || [c.name.toLowerCase()]);
+      if (keywords.some(k => lower.includes(k.toLowerCase()))) {
+        concepts.push({ name, desc: (typeof c === 'object' && c.desc) || '' });
+      }
+    }
 
-    // Facilities
-    if (facility) facilities.push(facility);
-    if (lower.includes('mariénia') || lower.includes('marienia')) facilities.push('Mariéna');
-    if (lower.includes('arbelles')) facilities.push('Les Arbelles');
-    if (lower.includes('glanum')) facilities.push('Glanum');
+    const configuredFacilities = hints.facilities || [];
+    for (const f of configuredFacilities) {
+      if (lower.includes(f.toLowerCase())) {
+        facilities.push(f);
+      }
+    }
+    if (facility && !facilities.includes(facility)) {
+      facilities.push(facility);
+    }
 
     return {
       tools: Array.from(new Map(tools.map(t => [t.name, t])).values()),
@@ -418,10 +482,13 @@ export class MinutesEngine {
           kind: 'action',
           text: act.text,
           owner: act.owner || '',
+          ownerOrg: act.ownerOrg || '',
           dueDate: act.dueDate || '',
           done: false,
           tags: act.tags || [],
-          source: 'minutes'
+          source: 'minutes',
+          quote: act.quote || '',
+          meetingLink: act.meetingLink || ''
         });
       }
     }
@@ -433,8 +500,12 @@ export class MinutesEngine {
           id: dec.id || `item-dec-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
           kind: 'decision',
           text: `[${dec.label}] ${dec.statement}`,
+          label: dec.label,
+          statement: dec.statement,
           context: dec.context,
-          source: 'minutes'
+          source: 'minutes',
+          quote: dec.quote || '',
+          meetingLink: dec.meetingLink || ''
         });
       }
     }

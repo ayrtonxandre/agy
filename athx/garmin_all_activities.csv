@@ -1,5 +1,5 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect
-24889455619,2026-10-29,2026-10-29 06:52:46,Strength,strength_training,Strength,47.6,0.0,449,126.0,163.0,ANAEROBIC_CAPACITY
+24889455619,2026-10-29,2026-10-29 06:52:00,Strength,strength_training,Strength,47.6,0.0,449,126.0,163.0,ANAEROBIC_CAPACITY
 24877418512,2026-10-28,2026-10-28 06:34:47,CrossFit,indoor_cardio,Cardio / Cross-Training,46.0,0.0,490,129.0,183.0,SPEED
 24865135471,2026-10-27,2026-10-27 06:48:00,"ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",strength_training,Strength,50.5,0.0,391,114.0,151.0,AEROBIC_BASE
 24853486904,2026-10-26,2026-10-26 06:40:20,CrossFit,indoor_cardio,Cardio / Cross-Training,44.7,0.0,339,110.0,166.0,ANAEROBIC_CAPACITY

@@ -45,6 +45,8 @@ def locate_agy_dir() -> Path:
 
     # 2. Check resolve of this script (handles symlinks)
     self_path = Path(__file__).resolve()
+    if (self_path.parent.parent / "orchestrator.py").exists():
+        return self_path.parent.parent
     if (self_path.parent / "garmin_workout.html").exists() or (self_path.parent / "orchestrator.py").exists():
         return self_path.parent
 
@@ -72,7 +74,7 @@ def locate_agy_dir() -> Path:
         Path.cwd(),
     ]
     for c in candidates:
-        if (c / "orchestrator.py").exists() and (c / "athx_analytics.py").exists():
+        if (c / "orchestrator.py").exists() and ((c / "athx").is_dir() or (c / "athx_analytics.py").exists()):
             return c.resolve()
 
     # Fallback to current directory
@@ -80,6 +82,11 @@ def locate_agy_dir() -> Path:
 
 
 AGY_DIR = locate_agy_dir()
+ATHX_DIR = AGY_DIR / "athx" if (AGY_DIR / "athx").is_dir() else AGY_DIR
+LEGACY_CAL_DIR = AGY_DIR / "legacy_calendar" if (AGY_DIR / "legacy_calendar").is_dir() else AGY_DIR
+
+if str(ATHX_DIR) not in sys.path:
+    sys.path.insert(0, str(ATHX_DIR))
 
 def find_virtualenv_python(agy_dir: Path) -> Path | None:
     """Locates the virtualenv Python binary across machines."""
@@ -531,10 +538,11 @@ def run_git_push(agy_dir: Path) -> tuple[str, str]:
 
 def run_health_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
     """Syncs Apple Health biometrics via Automated Webhook and verifies local datasets."""
-    last_payload = agy_dir / "last_payload.json"
-    body_csv = agy_dir / "apple_body_composition.csv"
-    activity_csv = agy_dir / "apple_daily_activity.csv"
-    sleep_csv = agy_dir / "apple_sleep.csv"
+    athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+    last_payload = athx_dir / "last_payload.json"
+    body_csv = athx_dir / "apple_body_composition.csv"
+    activity_csv = athx_dir / "apple_daily_activity.csv"
+    sleep_csv = athx_dir / "apple_sleep.csv"
     orch_py = agy_dir / "orchestrator.py"
 
     # If payload is newer than CSVs (e.g. manual copy or recovery), ingest it
@@ -602,7 +610,10 @@ def get_garmin_api_key(agy_dir: Path) -> str | None:
 
 def get_garmin_token_status(agy_dir: Path) -> dict:
     """Inspects cached personal API JWT Bearer token and TTL."""
-    tok_file = agy_dir / "garmin_tokens" / "personal_token.json"
+    athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+    tok_file = athx_dir / "garmin_tokens" / "personal_token.json"
+    if not tok_file.exists():
+        tok_file = agy_dir / "garmin_tokens" / "personal_token.json"
     if not tok_file.exists():
         return {"exists": False, "valid": False, "message": "No token cached"}
     try:
@@ -637,8 +648,13 @@ def get_garmin_token_status(agy_dir: Path) -> dict:
 
 def run_garmin_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
     """Extracts Garmin Connect strength sets, running dynamics, HRV, sleep & daily wellness."""
-    garmin_script = agy_dir / "extract_garmin_strength.py"
-    tokens_dir = agy_dir / "garmin_tokens"
+    athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+    garmin_script = athx_dir / "extract_garmin_strength.py"
+    if not garmin_script.exists():
+        garmin_script = agy_dir / "extract_garmin_strength.py"
+    tokens_dir = athx_dir / "garmin_tokens"
+    if not tokens_dir.exists():
+        tokens_dir = agy_dir / "garmin_tokens"
     api_key = get_garmin_api_key(agy_dir)
 
     if not garmin_script.exists():
@@ -650,7 +666,7 @@ def run_garmin_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
     try:
         res = subprocess.run(
             [str(venv_py), str(garmin_script)],
-            cwd=str(agy_dir),
+            cwd=str(athx_dir),
             capture_output=True,
             text=True,
             timeout=60
@@ -668,22 +684,25 @@ def run_garmin_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
 
 def run_calendar_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
     """Generates standalone multi-calendar dashboard across Work, iCloud, and Client."""
-    cal_script = agy_dir / "generate_calendar_dashboard.py"
+    legacy_cal_dir = agy_dir / "legacy_calendar" if (agy_dir / "legacy_calendar").is_dir() else agy_dir
+    cal_script = legacy_cal_dir / "generate_calendar_dashboard.py"
+    if not cal_script.exists():
+        cal_script = agy_dir / "generate_calendar_dashboard.py"
     if not cal_script.exists():
         return "warning", "generate_calendar_dashboard.py not found"
 
     try:
         res = subprocess.run(
             [str(venv_py), str(cal_script)],
-            cwd=str(agy_dir),
+            cwd=str(legacy_cal_dir),
             capture_output=True,
             text=True,
             timeout=30
         )
         if res.returncode == 0:
-            return "success", "Multi-Calendar: 3 calendars synced (calendar_dashboard.html)"
+            return "success", "Legacy Calendar [DEPRECATED]: Cached schedule synced (use Meeting Hub /meeting)"
         else:
-            return "warning", "Multi-Calendar: Synchronized using local ICS cache"
+            return "warning", "Legacy Calendar [DEPRECATED]: Synchronized using local ICS cache"
     except subprocess.TimeoutExpired:
         return "warning", "Multi-Calendar: Request timeout (using cached schedule)"
     except Exception as e:
@@ -692,14 +711,17 @@ def run_calendar_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
 
 def run_athlete_dashboard_build(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
     """Rebuilds the ATHX 2027 Unified Athlete Headquarters (garmin_workout.html)."""
-    builder_script = agy_dir / "generate_unified_athlete_dashboard.py"
+    athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+    builder_script = athx_dir / "generate_unified_athlete_dashboard.py"
+    if not builder_script.exists():
+        builder_script = agy_dir / "generate_unified_athlete_dashboard.py"
     if not builder_script.exists():
         return "error", "generate_unified_athlete_dashboard.py not found"
 
     try:
         res = subprocess.run(
             [str(venv_py), str(builder_script)],
-            cwd=str(agy_dir),
+            cwd=str(athx_dir),
             capture_output=True,
             text=True,
             timeout=25
@@ -902,7 +924,12 @@ def handle_status_command(agy_dir: Path, venv_py: Path):
     print(f"  • Local Dashboard  : {gray}{net['dashboard_local']}{reset}")
 
     # Last payload info
-    last_payload = agy_dir / "last_payload.json"
+    athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+    cal_dir = agy_dir / "legacy_calendar" if (agy_dir / "legacy_calendar").is_dir() else agy_dir
+
+    last_payload = athx_dir / "last_payload.json"
+    if not last_payload.exists():
+        last_payload = agy_dir / "last_payload.json"
     if last_payload.exists():
         mtime = datetime.fromtimestamp(last_payload.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
         sz_kb = last_payload.stat().st_size / 1024
@@ -914,14 +941,16 @@ def handle_status_command(agy_dir: Path, venv_py: Path):
     # 2. Apple Health Datasets
     print(f"  {bold}🍏 Apple Health Datasets{reset}")
     datasets = [
-        ("Body Composition", agy_dir / "apple_body_composition.csv"),
-        ("Daily Activity", agy_dir / "apple_daily_activity.csv"),
-        ("Sleep Analysis", agy_dir / "apple_sleep.csv"),
-        ("Nutrition & Macros", agy_dir / "apple_nutrition_macros.csv"),
-        ("Mobility & Biomechanics", agy_dir / "apple_mobility_biomechanics.csv"),
-        ("Workouts History", agy_dir / "apple_workouts_history.csv"),
+        ("Body Composition", athx_dir / "apple_body_composition.csv"),
+        ("Daily Activity", athx_dir / "apple_daily_activity.csv"),
+        ("Sleep Analysis", athx_dir / "apple_sleep.csv"),
+        ("Nutrition & Macros", athx_dir / "apple_nutrition_macros.csv"),
+        ("Mobility & Biomechanics", athx_dir / "apple_mobility_biomechanics.csv"),
+        ("Workouts History", athx_dir / "apple_workouts_history.csv"),
     ]
     for name, path in datasets:
+        if not path.exists() and (agy_dir / path.name).exists():
+            path = agy_dir / path.name
         if path.exists():
             try:
                 with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -953,12 +982,12 @@ def handle_status_command(agy_dir: Path, venv_py: Path):
     else:
         print(f"  • Bearer Token     : {gray}○ None cached (runs on first sync){reset}")
 
-    strength_json = agy_dir / "garmin_extracted_workouts.json"
-    running_json = agy_dir / "garmin_running_activities.json"
-    workout_json = agy_dir / "garmin_workout_activities.json"
-    hrv_json = agy_dir / "garmin_hrv_summary.json"
-    sleep_json = agy_dir / "garmin_sleep_summary.json"
-    wellness_json = agy_dir / "garmin_daily_summaries.json"
+    strength_json = athx_dir / "garmin_extracted_workouts.json"
+    running_json = athx_dir / "garmin_running_activities.json"
+    workout_json = athx_dir / "garmin_workout_activities.json"
+    hrv_json = athx_dir / "garmin_hrv_summary.json"
+    sleep_json = athx_dir / "garmin_sleep_summary.json"
+    wellness_json = athx_dir / "garmin_daily_summaries.json"
 
     if strength_json.exists():
         try:
@@ -1000,8 +1029,12 @@ def handle_status_command(agy_dir: Path, venv_py: Path):
 
     # 4. Multi-Calendar & Dashboards
     print(f"  {bold}📅 Multi-Calendar & Dashboards{reset}")
-    cal_html = agy_dir / "calendar_dashboard.html"
-    workout_html = agy_dir / "garmin_workout.html"
+    cal_html = cal_dir / "calendar_dashboard.html"
+    if not cal_html.exists():
+        cal_html = agy_dir / "calendar_dashboard.html"
+    workout_html = athx_dir / "garmin_workout.html"
+    if not workout_html.exists():
+        workout_html = agy_dir / "garmin_workout.html"
     for name, path in [("Athlete Headquarters", workout_html), ("Tri-Calendar Dashboard", cal_html)]:
         if path.exists():
             mtime = datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
@@ -1185,13 +1218,21 @@ def handle_sleep_command(agy_dir: Path, venv_py: Path, args_list: list[str]):
         print(f"  • Core Sleep  : {core} hrs")
         print(f"  • In Bed      : {in_bed} hrs")
         print(f"\n{cyan}⚡ Rebuilding athlete headquarters with updated sleep...{reset}")
-        subprocess.run([str(venv_py), str(agy_dir / "generate_unified_athlete_dashboard.py")], cwd=str(agy_dir), check=False)
+        athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+        builder_script = athx_dir / "generate_unified_athlete_dashboard.py"
+        if not builder_script.exists():
+            builder_script = agy_dir / "generate_unified_athlete_dashboard.py"
+        subprocess.run([str(venv_py), str(builder_script)], cwd=str(athx_dir), check=False)
         print(f"{green}✔ Done! Dashboard updated.{reset}\n")
         return
 
     # Otherwise show sleep status and recent records
     print(f"\n{gold}{bold}😴 ATHX 2027 • Sleep Extraction & Status{reset}")
     print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}")
+    athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+    sleep_csv = athx_dir / "apple_sleep.csv"
+    if not sleep_csv.exists():
+        sleep_csv = agy_dir / "apple_sleep.csv"
     rows = []
     if sleep_csv.exists():
         with open(sleep_csv, "r", encoding="utf-8") as f:
@@ -1242,11 +1283,14 @@ def handle_garmin_command(agy_dir: Path, venv_py: Path, sub_args: list[str]):
     if do_sync:
         print(f"\n{gold}{bold}⚡ ATHX 2027 • Garmin Connect Developer Personal API Sync{reset}")
         print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
-        sync_script = agy_dir / "garmin_personal_sync.py"
+        athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+        sync_script = athx_dir / "garmin_personal_sync.py"
         if not sync_script.exists():
-            print(f"  {yellow}⚠️ garmin_personal_sync.py not found in {agy_dir}{reset}\n")
+            sync_script = agy_dir / "garmin_personal_sync.py"
+        if not sync_script.exists():
+            print(f"  {yellow}⚠️ garmin_personal_sync.py not found in {athx_dir}{reset}\n")
             return
-        res = subprocess.run([str(venv_py), str(sync_script)], cwd=str(agy_dir))
+        res = subprocess.run([str(venv_py), str(sync_script)], cwd=str(athx_dir))
         if res.returncode == 0:
             print(f"\n  {green}✔ Garmin Personal API Synchronization completed successfully.{reset}\n")
         else:
@@ -1279,12 +1323,13 @@ def handle_garmin_command(agy_dir: Path, venv_py: Path, sub_args: list[str]):
 
     # Show dataset status
     print(f"  {bold}📊 Extracted Datasets & Sports-Science Telemetry:{reset}")
-    strength_json = agy_dir / "garmin_extracted_workouts.json"
-    running_json = agy_dir / "garmin_running_activities.json"
-    workout_json = agy_dir / "garmin_workout_activities.json"
-    hrv_json = agy_dir / "garmin_hrv_summary.json"
-    sleep_json = agy_dir / "garmin_sleep_summary.json"
-    wellness_json = agy_dir / "garmin_daily_summaries.json"
+    athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+    strength_json = athx_dir / "garmin_extracted_workouts.json"
+    running_json = athx_dir / "garmin_running_activities.json"
+    workout_json = athx_dir / "garmin_workout_activities.json"
+    hrv_json = athx_dir / "garmin_hrv_summary.json"
+    sleep_json = athx_dir / "garmin_sleep_summary.json"
+    wellness_json = athx_dir / "garmin_daily_summaries.json"
 
     datasets = [
         ("Strength Sets (VBT)", strength_json, lambda d: f"{len(d):,} sets across movements"),
@@ -1357,11 +1402,14 @@ def handle_doctor_command(agy_dir: Path, venv_py: Path):
     ))
 
     # 4. Garmin Datasets
-    g_sets = agy_dir / "garmin_extracted_workouts.json"
-    g_hrv = agy_dir / "garmin_hrv_summary.json"
-    g_sleep = agy_dir / "garmin_sleep_summary.json"
-    g_daily = agy_dir / "garmin_daily_summaries.json"
-    g_all_exist = all(p.exists() for p in [g_sets, g_hrv, g_sleep, g_daily])
+    athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+    cal_dir = agy_dir / "legacy_calendar" if (agy_dir / "legacy_calendar").is_dir() else agy_dir
+
+    g_sets = athx_dir / "garmin_extracted_workouts.json"
+    g_hrv = athx_dir / "garmin_hrv_summary.json"
+    g_sleep = athx_dir / "garmin_sleep_summary.json"
+    g_daily = athx_dir / "garmin_daily_summaries.json"
+    g_all_exist = all(p.exists() or (agy_dir / p.name).exists() for p in [g_sets, g_hrv, g_sleep, g_daily])
     checks.append((
         "Garmin Data Pipeline",
         "PASS" if g_all_exist else "WARN",
@@ -1369,9 +1417,9 @@ def handle_doctor_command(agy_dir: Path, venv_py: Path):
     ))
 
     # 5. Apple Health Datasets
-    ap_sleep = agy_dir / "apple_sleep.csv"
-    ap_body = agy_dir / "apple_body_composition.csv"
-    ap_ok = ap_sleep.exists() and ap_body.exists()
+    ap_sleep = athx_dir / "apple_sleep.csv"
+    ap_body = athx_dir / "apple_body_composition.csv"
+    ap_ok = (ap_sleep.exists() or (agy_dir / "apple_sleep.csv").exists()) and (ap_body.exists() or (agy_dir / "apple_body_composition.csv").exists())
     checks.append((
         "Apple Health Datasets",
         "PASS" if ap_ok else "WARN",
@@ -1387,19 +1435,21 @@ def handle_doctor_command(agy_dir: Path, venv_py: Path):
     ))
 
     # 7. Tri-Calendar Integration
-    cal_html = agy_dir / "calendar_dashboard.html"
+    cal_html = cal_dir / "calendar_dashboard.html"
+    cal_ok = cal_html.exists() or (agy_dir / "calendar_dashboard.html").exists()
     checks.append((
         "Tri-Calendar Feed",
-        "PASS" if cal_html.exists() else "WARN",
-        "calendar_dashboard.html generated" if cal_html.exists() else "Not generated yet"
+        "PASS" if cal_ok else "WARN",
+        "calendar_dashboard.html generated" if cal_ok else "Not generated yet"
     ))
 
     # 8. Athlete Headquarters Dashboard
-    dash_html = agy_dir / "garmin_workout.html"
-    index_html = agy_dir / "index.html"
-    dash_ok = dash_html.exists() and index_html.exists()
+    dash_html = athx_dir / "garmin_workout.html"
+    index_html = athx_dir / "index.html"
+    dash_ok = (dash_html.exists() or (agy_dir / "garmin_workout.html").exists()) and (index_html.exists() or (agy_dir / "index.html").exists())
     if dash_ok:
-        sz_mb = dash_html.stat().st_size / (1024 * 1024)
+        active_dash = dash_html if dash_html.exists() else (agy_dir / "garmin_workout.html")
+        sz_mb = active_dash.stat().st_size / (1024 * 1024)
         dash_desc = f"Ready ({sz_mb:.2f} MB, garmin_workout.html & index.html)"
     else:
         dash_desc = "Missing dashboard files (run: athx)"
@@ -1619,7 +1669,7 @@ def main():
     if not args.skip_garmin:
         steps.append(("Extracting Garmin strength, running & workouts", lambda: run_garmin_sync(AGY_DIR, venv_py)))
     if not args.skip_cal:
-        steps.append(("Syncing tri-calendar schedule & open slots", lambda: run_calendar_sync(AGY_DIR, venv_py)))
+        steps.append(("Syncing legacy calendar cache [DEPRECATED -> Meeting Hub]", lambda: run_calendar_sync(AGY_DIR, venv_py)))
     steps.append(("Rebuilding ATHX 2027 Athlete Headquarters", lambda: run_athlete_dashboard_build(AGY_DIR, venv_py)))
     if not args.no_push:
         steps.append(("Pushing updated datasets & dashboards to GitHub", lambda: run_git_push(AGY_DIR)))
@@ -1632,17 +1682,19 @@ def main():
         ui.finish_step(status=status, message=msg)
 
     total_time = time.time() - start_time
-    workout_html = AGY_DIR / "garmin_workout.html"
-    cal_html = AGY_DIR / "calendar_dashboard.html"
+    workout_html = (ATHX_DIR / "garmin_workout.html") if (ATHX_DIR / "garmin_workout.html").exists() else (AGY_DIR / "garmin_workout.html")
+    cal_html = (LEGACY_CAL_DIR / "calendar_dashboard.html") if (LEGACY_CAL_DIR / "calendar_dashboard.html").exists() else (AGY_DIR / "calendar_dashboard.html")
+    meeting_html = AGY_DIR / "meeting_hub.html"
 
     print(f"\n{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}")
     print(f"  {TerminalUI.GREEN}✨ ATHX Orchestration Complete!{reset} {TerminalUI.GRAY}(Total time: {total_time:.1f}s){reset}")
     print(f"  🏆 Athlete Dashboard  : {TerminalUI.BOLD}{workout_html.as_uri()}{reset}")
-    print(f"  📅 Calendar Dashboard : {TerminalUI.GRAY}{cal_html.as_uri()}{reset}")
+    print(f"  💼 Meeting Hub        : {TerminalUI.BOLD}{meeting_html.as_uri()}{reset} {TerminalUI.GRAY}(http://localhost:8080/meeting){reset}")
+    print(f"  📅 Calendar (Legacy)  : {TerminalUI.GRAY}{cal_html.as_uri()} [DEPRECATED]{reset}")
     print(f"{cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{reset}\n")
 
     # Display AI Coach Executive Verdict
-    briefing_file = AGY_DIR / "athlete_coach_briefing.json"
+    briefing_file = (ATHX_DIR / "athlete_coach_briefing.json") if (ATHX_DIR / "athlete_coach_briefing.json").exists() else (AGY_DIR / "athlete_coach_briefing.json")
     if briefing_file.exists():
         try:
             with open(briefing_file, "r", encoding="utf-8") as f:

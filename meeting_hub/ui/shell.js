@@ -3,12 +3,29 @@
  * 
  * Renders the persistent dark navy sidebar and sticky header,
  * manages view/mode switching, handles dark/light theme toggle,
- * and displays live calendar source sync status with trigger.
+ * sidebar project switcher with suggestions, and live calendar source sync status.
  */
 import { Icons } from './icons.js';
 
 export class ShellUI {
-  constructor({ onNavigate, onModeChange, onNewMeeting, onTodayClick, onSyncTrigger, onSearch, onExportData, onImportData, getStorageEngine }) {
+  constructor({
+    onNavigate,
+    onModeChange,
+    onNewMeeting,
+    onTodayClick,
+    onSyncTrigger,
+    onSearch,
+    onExportData,
+    onImportData,
+    getStorageEngine,
+    onProjectChange,
+    onConfirmSuggestedProject,
+    onCreateProject,
+    onTogglePanel,
+    projects = [],
+    activeProjectId = 'clariane',
+    suggestedProjects = []
+  }) {
     this.onNavigate = onNavigate;
     this.onModeChange = onModeChange;
     this.onNewMeeting = onNewMeeting;
@@ -18,6 +35,17 @@ export class ShellUI {
     this.onExportData = onExportData;
     this.onImportData = onImportData;
     this.getStorageEngine = getStorageEngine || (() => 'IndexedDB');
+    this.onProjectChange = onProjectChange;
+    this.onConfirmSuggestedProject = onConfirmSuggestedProject;
+    this.onCreateProject = onCreateProject;
+    this.onTogglePanel = onTogglePanel;
+
+    this.projects = projects;
+    this.activeProjectId = activeProjectId;
+    this.suggestedProjects = suggestedProjects;
+    this.isProjectDropdownOpen = false;
+    this.isPanelCollapsed = false;
+
     this.currentView = 'today';
     this.currentMode = 'all';
     this.isSyncing = false;
@@ -25,6 +53,17 @@ export class ShellUI {
     this.theme = this.getInitialTheme();
 
     this.applyTheme(this.theme);
+
+    // Global click listener to close project dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (this.isProjectDropdownOpen) {
+        const selector = document.querySelector('.sidebar-project-selector');
+        if (selector && !selector.contains(e.target)) {
+          this.isProjectDropdownOpen = false;
+          this.renderProjectSwitcher();
+        }
+      }
+    });
   }
 
   getInitialTheme() {
@@ -32,7 +71,6 @@ export class ShellUI {
       const saved = localStorage.getItem('mhub_theme');
       if (saved) return saved;
     } catch (e) {}
-    // Default to dark mode as requested
     return 'dark';
   }
 
@@ -62,6 +100,13 @@ export class ShellUI {
     this.renderSyncSection();
   }
 
+  setProjects(projects, activeProjectId, suggestedProjects = []) {
+    this.projects = projects || [];
+    if (activeProjectId) this.activeProjectId = activeProjectId;
+    this.suggestedProjects = suggestedProjects || [];
+    this.renderProjectSwitcher();
+  }
+
   setSyncing(syncing) {
     this.isSyncing = syncing;
     const syncBtn = document.querySelector('#sidebarSyncBtn');
@@ -84,6 +129,11 @@ export class ShellUI {
       <div class="brand">
         <b>M</b>
         <div>Meeting Hub<small>Prep · Capture · Link</small></div>
+      </div>
+
+      <!-- Project Switcher & Initiative Scope -->
+      <div class="sidebar-project-block" id="sidebarProjectContainer">
+        <!-- Rendered by renderProjectSwitcher -->
       </div>
 
       <div class="grp">Work</div>
@@ -139,9 +189,116 @@ export class ShellUI {
       });
     });
 
+    this.renderProjectSwitcher();
     this.renderSyncSection();
     this.renderStorageSection();
     this.renderThemeButton();
+  }
+
+  renderProjectSwitcher() {
+    const container = document.querySelector('#sidebarProjectContainer');
+    if (!container) return;
+
+    const activeProject = (this.projects && this.projects.length > 0)
+      ? (this.projects.find(p => p.id === this.activeProjectId) || this.projects[0])
+      : { id: 'clariane', name: 'Clariane' };
+
+    container.innerHTML = `
+      <div class="sidebar-project-selector">
+        <button class="sidebar-project-trigger" id="sidebarProjectTrigger" title="Switch active project initiative">
+          <span class="sidebar-project-icon">${Icons.layers}</span>
+          <span class="sidebar-project-name">${this._escape(activeProject.name)}</span>
+          <span class="sidebar-project-chevron ${this.isProjectDropdownOpen ? 'open' : ''}">${Icons.chevronDown || '▾'}</span>
+        </button>
+
+        ${this.isProjectDropdownOpen ? `
+          <div class="sidebar-project-dropdown" id="sidebarProjectDropdown">
+            <div class="sidebar-project-section-title">Projects</div>
+            <div class="sidebar-project-list">
+              ${(this.projects || []).map(p => `
+                <button class="sidebar-project-option ${p.id === this.activeProjectId ? 'active' : ''}" data-project-id="${this._escape(p.id)}">
+                  <span class="sidebar-project-opt-name">${this._escape(p.name)}</span>
+                  ${p.id === this.activeProjectId ? `<span class="badge ok" style="font-size: 10px;">Active</span>` : ''}
+                </button>
+              `).join('')}
+            </div>
+
+            ${(this.suggestedProjects && this.suggestedProjects.length > 0) ? `
+              <div class="sidebar-project-section-title" style="margin-top: 8px;">Suggested from Tags</div>
+              <div class="sidebar-project-suggestions">
+                ${this.suggestedProjects.map(sp => `
+                  <div class="sidebar-project-suggest-row">
+                    <div style="min-width: 0;">
+                      <div class="sidebar-project-opt-name" style="font-weight: 500;">${this._escape(sp.name)}</div>
+                      <div class="sub" style="font-size: 10px;">${sp.meetingCount} meeting${sp.meetingCount !== 1 ? 's' : ''}</div>
+                    </div>
+                    <button class="btn sm pink" data-confirm-suggested="${this._escape(sp.name)}" data-suggest-id="${this._escape(sp.id)}" style="font-size: 10px; padding: 2px 7px;">
+                      Confirm
+                    </button>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <div class="sidebar-project-actions">
+              <button class="btn sm" id="sidebarNewProjectBtn" style="width: 100%; justify-content: center; font-size: 11px;">
+                ${Icons.plus} New Project
+              </button>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    // Trigger toggle
+    container.querySelector('#sidebarProjectTrigger')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.isProjectDropdownOpen = !this.isProjectDropdownOpen;
+      this.renderProjectSwitcher();
+    });
+
+    // Project selection
+    container.querySelectorAll('[data-project-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.projectId;
+        this.activeProjectId = id;
+        this.isProjectDropdownOpen = false;
+        this.renderProjectSwitcher();
+        if (this.onProjectChange) this.onProjectChange(id);
+      });
+    });
+
+    // Confirm suggested project
+    container.querySelectorAll('[data-confirm-suggested]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.suggestId;
+        const name = btn.dataset.confirmSuggested;
+        const suggestion = (this.suggestedProjects || []).find(s => s.id === id) || { id, name, clientMatch: [name] };
+        if (this.onConfirmSuggestedProject) {
+          this.onConfirmSuggestedProject(suggestion);
+        }
+        this.isProjectDropdownOpen = false;
+      });
+    });
+
+    // New project action
+    container.querySelector('#sidebarNewProjectBtn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.isProjectDropdownOpen = false;
+      if (this.onCreateProject) {
+        this.onCreateProject();
+      } else {
+        const name = prompt('Enter new project name:');
+        if (name && name.trim()) {
+          const clientTag = prompt('Enter primary client/meeting tag for this project (optional):', name.trim()) || name.trim();
+          if (this.onConfirmSuggestedProject) {
+            this.onConfirmSuggestedProject({ name: name.trim(), clientMatch: [clientTag.trim()] });
+          }
+        }
+      }
+    });
   }
 
   _escape(str) {
@@ -262,7 +419,6 @@ export class ShellUI {
       btn.title = 'Switch to Dark Theme';
     }
 
-    // Replace event listener cleanly
     btn.onclick = () => this.toggleTheme();
   }
 
@@ -288,9 +444,12 @@ export class ShellUI {
 
       <button class="btn sm" id="todayNavBtn" style="font-family: var(--font-mono); font-size: 11.5px;">Today</button>
       <button class="btn sm pink" id="newMeetingBtn">${Icons.plus} New Meeting</button>
+      <button class="btn sm" id="togglePanelBtn" title="${this.isPanelCollapsed ? 'Expand meeting panel' : 'Collapse meeting panel'}" style="display: inline-flex; align-items: center; gap: 5px;">
+        ${this.isPanelCollapsed ? Icons.panelRightOpen : Icons.panelRightClose}
+        <span class="btn-text">Panel</span>
+      </button>
     `;
 
-    // Search input handler
     const searchInput = header.querySelector('#quickSearch');
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
@@ -305,7 +464,6 @@ export class ShellUI {
       });
     }
 
-    // Mode switch handler
     header.querySelectorAll('.seg button').forEach(btn => {
       btn.addEventListener('click', () => {
         header.querySelectorAll('.seg button').forEach(b => b.classList.remove('on'));
@@ -315,15 +473,31 @@ export class ShellUI {
       });
     });
 
-    // Today jump
     header.querySelector('#todayNavBtn')?.addEventListener('click', () => {
       if (this.onTodayClick) this.onTodayClick();
     });
 
-    // New meeting trigger
     header.querySelector('#newMeetingBtn')?.addEventListener('click', () => {
       if (this.onNewMeeting) this.onNewMeeting();
     });
+
+    header.querySelector('#togglePanelBtn')?.addEventListener('click', () => {
+      if (this.onTogglePanel) this.onTogglePanel();
+    });
+  }
+
+  updatePanelToggle(isCollapsed) {
+    this.isPanelCollapsed = isCollapsed;
+    const btn = document.querySelector('#togglePanelBtn');
+    if (btn) {
+      btn.title = isCollapsed ? 'Expand meeting panel' : 'Collapse meeting panel';
+      btn.innerHTML = `${isCollapsed ? Icons.panelRightOpen : Icons.panelRightClose} <span class="btn-text">Panel</span>`;
+      if (isCollapsed) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    }
   }
 
   updateActionsBadge(count) {

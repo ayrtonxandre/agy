@@ -1441,10 +1441,14 @@ def build_html(payload_json: str, d: dict) -> str:
         <span>Data Quality</span>
       </div>
 
-      <div class="nav-group-title">External</div>
-      <a href="calendar_dashboard.html" class="nav-item" style="color: var(--muted-foreground);" target="_blank">
+      <div class="nav-group-title">Work Intelligence</div>
+      <a href="meeting_hub.html" class="nav-item" style="color: var(--primary);" target="_blank">
+        <span class="nav-icon">💼</span>
+        <span>Meeting Hub ↗</span>
+      </a>
+      <a href="calendar_dashboard.html" class="nav-item" style="color: var(--muted-foreground); font-size: 11px; opacity: 0.65;" target="_blank">
         <span class="nav-icon">📆</span>
-        <span>Calendar Hub ↗</span>
+        <span>Calendar (Deprecated) ↗</span>
       </a>
     </nav>
 

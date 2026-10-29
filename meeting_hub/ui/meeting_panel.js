@@ -16,11 +16,12 @@ import { Icons } from './icons.js';
 import { PrepScoreCalculator } from '../model/prep_score.js';
 
 export class MeetingPanelUI {
-  constructor({ container, store, onOpenMeeting, onClose }) {
+  constructor({ container, store, onOpenMeeting, onClose, onCollapse }) {
     this.container = container;
     this.store = store;
     this.onOpenMeeting = onOpenMeeting;
     this.onClose = onClose;
+    this.onCollapse = onCollapse;
     this.currentMeetingId = null;
     this.currentTab = 'agenda';
     this.llmActiveForMeeting = {};
@@ -55,11 +56,19 @@ export class MeetingPanelUI {
 
     if (!this.currentMeetingId) {
       this.container.innerHTML = `
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+          <button class="btn sm" id="collapsePanelEmptyBtn" title="Collapse meeting panel">
+            ${Icons.panelRightClose} Collapse
+          </button>
+        </div>
         <div class="empty" style="padding-top: 60px;">
           ${Icons.calendar}
           <div style="margin-top: 8px;">Select a meeting from the timeline or press <code>j/k</code> to navigate.</div>
         </div>
       `;
+      this.container.querySelector('#collapsePanelEmptyBtn')?.addEventListener('click', () => {
+        if (this.onCollapse) this.onCollapse();
+      });
       return;
     }
 
@@ -115,8 +124,8 @@ export class MeetingPanelUI {
                     ${docUrl ? 'Connected Google Doc' : 'No Google Doc Linked'}
                   </div>
                   ${docUrl ? `
-                    <a href="${this._escape(docUrl)}" target="_blank" rel="noopener" class="sub" style="color: var(--pink-600); text-decoration: underline; font-size: 11px; display: inline-flex; align-items: center; gap: 3px;">
-                      Open document ${Icons.externalLink}
+                    <a href="${this._escape(docUrl)}" target="_blank" rel="noopener" class="sub" style="color: var(--pink-600); text-decoration: underline; font-size: 11px;">
+                      Open document
                     </a>
                   ` : `
                     <div class="sub" style="font-size: 11px;">Link a collaborative doc to ingest minutes</div>
@@ -205,6 +214,11 @@ export class MeetingPanelUI {
                             ${(act.tags || []).map(t => `<span class="badge" style="font-size: 10px;">#${this._escape(t)}</span>`).join('')}
                           </div>
                           <div style="margin-top: 3px; color: var(--foreground);">${this._escape(act.text)}</div>
+                          ${act.quote ? `
+                            <div class="quote-box" style="margin-top: 4px;">
+                              “${this._escape(act.quote)}”
+                            </div>
+                          ` : ''}
                         </div>
                       </label>
                     `).join('')}
@@ -230,6 +244,11 @@ export class MeetingPanelUI {
                             <span class="sub" style="font-size: 11px;">${this._escape(dec.context || 'Général')}</span>
                           </div>
                           <div style="margin-top: 3px; color: var(--foreground);">${this._escape(dec.statement)}</div>
+                          ${dec.quote ? `
+                            <div class="quote-box decision" style="margin-top: 4px;">
+                              “${this._escape(dec.quote)}”
+                            </div>
+                          ` : ''}
                         </div>
                       </label>
                     `).join('')}
@@ -252,7 +271,7 @@ export class MeetingPanelUI {
 
               <div style="display: flex; gap: 8px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
                 <button class="btn sm pink" id="applyExtractionBtn" style="flex: 1; justify-content: center;">
-                  ${Icons.check} Apply to Meeting Items &amp; Project Base
+                  Apply to Meeting Items &amp; Project Base
                 </button>
                 <button class="btn sm" id="cancelExtractionBtn">Dismiss</button>
               </div>
@@ -308,6 +327,11 @@ export class MeetingPanelUI {
               <span class="kind-badge ${item.kind}">${item.kind}</span>
               <div class="item-body">
                 <span class="tx ${item.done ? 'done' : ''}">${this._escape(item.text)}</span>
+                ${item.quote ? `
+                  <div class="quote-box ${item.kind === 'decision' ? 'decision' : ''}" style="margin-top: 4px; font-size: 11px;">
+                    “${this._escape(item.quote)}”
+                  </div>
+                ` : ''}
                 <div class="item-meta">
                   ${item.owner ? `<span class="chip-owner">${this._escape(item.owner)}</span>` : ''}
                   ${item.dueDate ? `<span class="chip-due">${Icons.clock} ${this._formatDue(item.dueDate)}</span>` : ''}
@@ -441,9 +465,14 @@ export class MeetingPanelUI {
           ${prep.badgeText} · ${prep.scorePercent}%
         </span>
         ${videoBadge}
-        <button class="btn sm" id="closePanelBtn" title="Close meeting drawer (Esc)" style="margin-left: ${meeting.link ? '6px' : 'auto'}; padding: 0 6px;">
-          ${Icons.x}
-        </button>
+        <div style="margin-left: ${meeting.link ? '6px' : 'auto'}; display: flex; align-items: center; gap: 4px;">
+          <button class="btn sm" id="collapsePanelBtn" title="Collapse meeting panel" style="padding: 0 6px;">
+            ${Icons.panelRightClose}
+          </button>
+          <button class="btn sm" id="closePanelBtn" title="Close meeting drawer (Esc)" style="padding: 0 6px;">
+            ${Icons.x}
+          </button>
+        </div>
       </div>
 
       <h2 style="font: 600 20px/1.25 var(--font-sans); margin: 6px 0;">${this._escape(meeting.title)}</h2>
@@ -475,6 +504,11 @@ export class MeetingPanelUI {
   }
 
   _bindEvents(meeting, meetingData) {
+    // Collapse button
+    this.container.querySelector('#collapsePanelBtn')?.addEventListener('click', () => {
+      if (this.onCollapse) this.onCollapse();
+    });
+
     // Close button
     this.container.querySelector('#closePanelBtn')?.addEventListener('click', () => {
       if (this.onClose) this.onClose();

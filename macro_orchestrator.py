@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 
 LOCAL_TZ = ZoneInfo("Europe/Paris")
 BASE_DIR = Path(__file__).resolve().parent
-CAL_DATA_DIR = BASE_DIR / "calendar_data"
+CAL_DATA_DIR = BASE_DIR / "legacy_calendar" / "calendar_data" if (BASE_DIR / "legacy_calendar" / "calendar_data").exists() else BASE_DIR / "calendar_data"
 INVENTORY_FILE = CAL_DATA_DIR / "fridge_inventory.json"
 
 # Seeding baseline extracted from Intermarché Drive receipt (26 Oct 2026, Paris 19e, 193.94€)

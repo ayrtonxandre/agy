@@ -38,6 +38,7 @@ const sourceFiles = [
   'model/event.js',
   'model/series.js',
   'model/links.js',
+  'model/project.js',
   'model/minutes_engine.js',
   'model/project_engine.js',
   'data/importer.js',
@@ -118,7 +119,8 @@ const AppState = {
   date: '2026-10-28',
   view: 'today',
   mode: 'all',
-  selectedEventId: null
+  selectedEventId: null,
+  isPanelCollapsed: false
 };
 
 let todayView;
@@ -130,11 +132,30 @@ let projectsView;
 let meetingPanel;
 let openActionsCount = 0;
 
+function setPanelCollapsed(collapsed) {
+  AppState.isPanelCollapsed = Boolean(collapsed);
+  const bodyEl = document.querySelector('.body');
+  if (bodyEl) {
+    if (AppState.isPanelCollapsed) {
+      bodyEl.classList.add('collapsed');
+    } else {
+      bodyEl.classList.remove('collapsed');
+    }
+  }
+  if (shell && typeof shell.updatePanelToggle === 'function') {
+    shell.updatePanelToggle(AppState.isPanelCollapsed);
+  }
+  try {
+    localStorage.setItem('mhub_panel_collapsed', AppState.isPanelCollapsed ? 'true' : 'false');
+  } catch (e) {}
+}
+
 function selectMeeting(eventId, tab = null) {
   if (tab && meetingPanel) {
     meetingPanel.currentTab = tab;
   }
   AppState.selectedEventId = eventId;
+  setPanelCollapsed(false);
   const targetHash = '#/meeting/' + encodeURIComponent(eventId);
   if (window.location.hash !== targetHash) {
     window.location.hash = targetHash;
@@ -209,6 +230,9 @@ function renderActiveView() {
 
 // Instantiate App Shell
 const shell = new MeetingHub.ShellUI({
+  onTogglePanel: () => {
+    setPanelCollapsed(!AppState.isPanelCollapsed);
+  },
   onNavigate: (viewName) => {
     AppState.view = viewName;
     if (viewName === 'today') {
@@ -217,6 +241,33 @@ const shell = new MeetingHub.ShellUI({
       window.location.hash = '#/' + viewName;
     }
     renderActiveView();
+  },
+  onProjectChange: async (projectId) => {
+    MeetingHub.store.setActiveProjectId(projectId);
+    if (projectsView) projectsView.setProject(projectId);
+    if (AppState.view === 'projects') renderActiveView();
+  },
+  onConfirmSuggestedProject: async (suggestion) => {
+    const p = await MeetingHub.store.confirmSuggestedProject(suggestion);
+    MeetingHub.store.setActiveProjectId(p.id);
+    const all = await MeetingHub.store.getAllProjects();
+    const sug = await MeetingHub.store.getSuggestedProjects();
+    shell.setProjects(all, p.id, sug);
+    if (projectsView) projectsView.setProject(p.id);
+    renderActiveView();
+  },
+  onCreateProject: async () => {
+    const name = prompt('Enter new project name:');
+    if (name && name.trim()) {
+      const tag = prompt('Enter primary client or meeting tag to match events:', name.trim()) || name.trim();
+      const p = await MeetingHub.store.confirmSuggestedProject({ name: name.trim(), clientMatch: [tag.trim()] });
+      MeetingHub.store.setActiveProjectId(p.id);
+      const all = await MeetingHub.store.getAllProjects();
+      const sug = await MeetingHub.store.getSuggestedProjects();
+      shell.setProjects(all, p.id, sug);
+      if (projectsView) projectsView.setProject(p.id);
+      renderActiveView();
+    }
   },
   onModeChange: (newMode) => {
     AppState.mode = newMode;
@@ -318,6 +369,7 @@ function handleHashRoute() {
   if (meetingMatch) {
     const meetingId = decodeURIComponent(meetingMatch[1]);
     AppState.selectedEventId = meetingId;
+    setPanelCollapsed(false);
     if (meetingPanel) meetingPanel.setMeeting(meetingId);
     if (todayView && AppState.view === 'today') todayView.setSelectedEvent(meetingId);
     if (weekView && AppState.view === 'week') weekView.setSelectedEvent(meetingId);
@@ -347,7 +399,7 @@ function handleHashRoute() {
   }
 }
 
-// Global Keyboard Navigation (j, k, a, /, Escape)
+// Global Keyboard Navigation (j, k, a, /, Escape, \)
 window.addEventListener('keydown', (e) => {
   const activeEl = document.activeElement;
   const isInputActive = activeEl && (
@@ -357,7 +409,7 @@ window.addEventListener('keydown', (e) => {
     activeEl.isContentEditable
   );
 
-  // Esc clears quick search or closes drawer
+  // Esc clears quick search, collapses drawer or resets selected meeting
   if (e.key === 'Escape') {
     if (isInputActive) {
       const isSearch = activeEl.id === 'quickSearch';
@@ -369,6 +421,8 @@ window.addEventListener('keydown', (e) => {
         if (AppState.view === 'actions' && actionsView) actionsView.setSearchQuery('');
         if (AppState.view === 'series' && seriesView) seriesView.setSearchQuery('');
       }
+    } else if (!AppState.isPanelCollapsed) {
+      setPanelCollapsed(true);
     } else if (AppState.selectedEventId) {
       window.location.hash = AppState.view === 'today' ? '#/today' : '#/' + AppState.view;
     }
@@ -377,6 +431,13 @@ window.addEventListener('keydown', (e) => {
 
   // Single-letter shortcuts only fire when not typing in editable fields
   if (isInputActive) return;
+
+  // '\\' -> toggle right meeting panel
+  if (e.key === '\\\\') {
+    e.preventDefault();
+    setPanelCollapsed(!AppState.isPanelCollapsed);
+    return;
+  }
 
   // 'j' or ArrowDown -> next meeting
   if (e.key === 'j' || e.key === 'ArrowDown') {
@@ -449,10 +510,22 @@ async function bootstrap() {
       } catch (e) {}
     }, 60000);
 
+    // Initialize projects in shell
+    const allProjects = await MeetingHub.store.getAllProjects();
+    const suggestedProjects = await MeetingHub.store.getSuggestedProjects();
+    const activeProjectId = MeetingHub.store.getActiveProjectId() || (allProjects[0] && allProjects[0].id) || 'clariane';
+    shell.setProjects(allProjects, activeProjectId, suggestedProjects);
+
     todayView = new MeetingHub.TodayView({
       container: leftCol,
       store: MeetingHub.store,
-      onSelectMeeting: (eventId, tab = null) => selectMeeting(eventId, tab)
+      onSelectMeeting: (eventId, tab = null) => selectMeeting(eventId, tab),
+      onNavigateProject: (projectId) => {
+        AppState.view = 'projects';
+        if (projectsView) projectsView.setProject(projectId);
+        window.location.hash = '#/projects';
+        renderActiveView();
+      }
     });
 
     weekView = new MeetingHub.WeekView({
@@ -492,21 +565,43 @@ async function bootstrap() {
         selectMeeting(relatedEventId);
       },
       onClose: () => {
+        setPanelCollapsed(true);
         window.location.hash = AppState.view === 'today' ? '#/today' : '#/' + AppState.view;
+      },
+      onCollapse: () => {
+        setPanelCollapsed(true);
       }
     });
+
+    const expandTab = document.querySelector('#expandPanelTab');
+    if (expandTab) {
+      expandTab.addEventListener('click', () => setPanelCollapsed(false));
+    }
 
     // Subscribe to store updates
     MeetingHub.store.subscribe(async (payload) => {
       openActionsCount = await MeetingHub.store.getOpenActionsCount();
       shell.updateActionsBadge(openActionsCount);
-      if (payload.type === 'meeting_data_updated' || payload.type === 'sync_completed') {
+      if (payload.type === 'project_updated' || payload.type === 'project_deleted' || payload.type === 'active_project_changed') {
+        const all = await MeetingHub.store.getAllProjects();
+        const sug = await MeetingHub.store.getSuggestedProjects();
+        shell.setProjects(all, MeetingHub.store.getActiveProjectId(), sug);
+        if (projectsView) projectsView.setProject(MeetingHub.store.getActiveProjectId());
+      }
+      if (payload.type === 'meeting_data_updated' || payload.type === 'sync_completed' || payload.type === 'project_updated') {
         renderActiveView();
         if (meetingPanel && AppState.selectedEventId) {
           meetingPanel.render();
         }
       }
     });
+
+    try {
+      const storedCollapsed = localStorage.getItem('mhub_panel_collapsed');
+      if (storedCollapsed === 'true' && !window.location.hash.startsWith('#/meeting/')) {
+        setPanelCollapsed(true);
+      }
+    } catch (e) {}
 
     // Handle initial route or default flagship meeting
     handleHashRoute();
@@ -515,7 +610,7 @@ async function bootstrap() {
     if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '#/today') {
       const todayEvents = MeetingHub.store.getEventsByDate(AppState.date, 'work');
       const defaultMeeting = todayEvents.find(e => e.title.includes('MO - Suivi anomalies')) || todayEvents[0];
-      if (defaultMeeting) {
+      if (defaultMeeting && !AppState.isPanelCollapsed) {
         window.location.hash = '#/meeting/' + encodeURIComponent(defaultMeeting.id);
       }
     }

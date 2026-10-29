@@ -15,7 +15,9 @@ BASE_DIR = Path(__file__).resolve().parent
 
 def load_biological_readiness() -> dict:
     """Loads current readiness metrics from ATHX athlete briefing."""
-    briefing_file = BASE_DIR / "athlete_coach_briefing.json"
+    briefing_file = BASE_DIR / "athx" / "athlete_coach_briefing.json"
+    if not briefing_file.exists():
+        briefing_file = BASE_DIR / "athlete_coach_briefing.json"
     default_readiness = {
         "rating": "96.9% Biological Readiness",
         "verdict": "Optimal Adaptation Band",

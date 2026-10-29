@@ -1,25 +1,25 @@
 Activity_ID,Date,Activity_Name,Exercise,Set,Reps,Weight_kg,Total_Volume_kg,e1RM_kg,Duration_s,Concentric_Velocity_cm_ms,Peak_Power_W,Session_Type
-24889455619,2026-10-29,Strength,Lateral Raise,4,10,16.0,160.0,21.3,113.6,,,Upper Push
-24889455619,2026-10-29,Strength,Unknown,4,22,120.0,351.5,208.0,139.9,,,Upper Push
-24889455619,2026-10-29,Strength,Lateral Raise,3,10,16.0,160.0,21.3,113.6,,,Upper Push
-24889455619,2026-10-29,Strength,Unknown,3,22,120.0,351.5,208.0,139.9,,,Upper Push
-24889455619,2026-10-29,Strength,Row,3,8,53.0,396.0,67.1,60.7,,,Upper Push
-24889455619,2026-10-29,Strength,Lateral Raise,2,10,16.0,160.0,21.3,113.6,,,Upper Push
-24889455619,2026-10-29,Strength,Curl,2,18,14.0,232.0,22.4,104.5,,,Upper Push
-24889455619,2026-10-29,Strength,Unknown,2,22,120.0,351.5,208.0,139.9,,,Upper Push
-24889455619,2026-10-29,Strength,Row,2,8,53.0,396.0,67.1,60.7,,,Upper Push
-24889455619,2026-10-29,Strength,Lat Pulldown,2,6,35.0,165.0,42.0,77.9,,,Upper Push
-24889455619,2026-10-29,Strength,Shrug,2,3,36.0,108.0,39.6,83.9,,,Upper Push
-24889455619,2026-10-29,Strength,Bench Press,1,5,40.0,200.0,46.7,50.1,,,Upper Push
-24889455619,2026-10-29,Strength,Triceps Extension,1,6,30.0,180.0,36.0,34.4,,,Upper Push
-24889455619,2026-10-29,Strength,Lateral Raise,1,10,16.0,160.0,21.3,113.6,,,Upper Push
-24889455619,2026-10-29,Strength,Curl,1,18,14.0,232.0,22.4,104.5,,,Upper Push
-24889455619,2026-10-29,Strength,Straight Leg Deadlift,1,5,110.0,550.0,128.3,35.8,,,Upper Push
-24889455619,2026-10-29,Strength,Unknown,1,22,120.0,351.5,208.0,139.9,,,Upper Push
-24889455619,2026-10-29,Strength,Row,1,8,53.0,396.0,67.1,60.7,,,Upper Push
-24889455619,2026-10-29,Strength,Lat Pulldown,1,6,35.0,165.0,42.0,77.9,,,Upper Push
-24889455619,2026-10-29,Strength,Shrug,1,3,36.0,108.0,39.6,83.9,,,Upper Push
-24889455619,2026-10-29,Strength,Barbell Deadlift,1,6,90.0,540.0,108.0,28.9,,,Upper Push
+24889455619,2026-10-29,Strength,Barbell Push Press,4,5,40.0,177.5,46.7,162.4,,,Upper Push
+24889455619,2026-10-29,Strength,Barbell Deadlift,4,5,120.0,480.0,140.0,134.3,,,Upper Push
+24889455619,2026-10-29,Strength,Lateral Raise,3,8,16.0,128.0,20.3,63.4,,,Upper Push
+24889455619,2026-10-29,Strength,T Bar Row,3,8,53.0,396.0,67.1,60.7,,,Upper Push
+24889455619,2026-10-29,Strength,Farmers Walk,3,7,28.0,205.3,34.5,146.9,,,Upper Push
+24889455619,2026-10-29,Strength,Dumbbell Hammer Curl,3,17,16.0,240.0,25.1,154.7,,,Upper Push
+24889455619,2026-10-29,Strength,Barbell Push Press,3,5,40.0,177.5,46.7,162.4,,,Upper Push
+24889455619,2026-10-29,Strength,Barbell Deadlift,3,5,120.0,480.0,140.0,134.3,,,Upper Push
+24889455619,2026-10-29,Strength,Lateral Raise,2,8,16.0,128.0,20.3,63.4,,,Upper Push
+24889455619,2026-10-29,Strength,T Bar Row,2,8,53.0,396.0,67.1,60.7,,,Upper Push
+24889455619,2026-10-29,Strength,Farmers Walk,2,7,28.0,205.3,34.5,146.9,,,Upper Push
+24889455619,2026-10-29,Strength,Dumbbell Hammer Curl,2,17,16.0,240.0,25.1,154.7,,,Upper Push
+24889455619,2026-10-29,Strength,Barbell Push Press,2,5,40.0,177.5,46.7,162.4,,,Upper Push
+24889455619,2026-10-29,Strength,Barbell Deadlift,2,5,120.0,480.0,140.0,134.3,,,Upper Push
+24889455619,2026-10-29,Strength,Push Up,1,66,0.0,0.0,,7.3,,,Upper Push
+24889455619,2026-10-29,Strength,Lateral Raise,1,8,16.0,128.0,20.3,63.4,,,Upper Push
+24889455619,2026-10-29,Strength,T Bar Row,1,8,53.0,396.0,67.1,60.7,,,Upper Push
+24889455619,2026-10-29,Strength,Farmers Walk,1,7,28.0,205.3,34.5,146.9,,,Upper Push
+24889455619,2026-10-29,Strength,Dumbbell Hammer Curl,1,17,16.0,240.0,25.1,154.7,,,Upper Push
+24889455619,2026-10-29,Strength,Barbell Push Press,1,5,40.0,177.5,46.7,162.4,,,Upper Push
+24889455619,2026-10-29,Strength,Barbell Deadlift,1,5,120.0,480.0,140.0,134.3,,,Upper Push
 24877418512,2026-10-28,CrossFit,Burpee,8,12,0.0,0.0,0.0,0.0,,,Full Body
 24877418512,2026-10-28,CrossFit,Leg Raise,8,4,0.0,0.0,0.0,0.0,,,Full Body
 24877418512,2026-10-28,CrossFit,Toes to Bar,8,2,0.0,0.0,0.0,0.0,,,Full Body

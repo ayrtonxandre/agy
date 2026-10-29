@@ -139,18 +139,27 @@ Located at [`meeting_hub/model/project_engine.js`](file:///Users/ayrtonandre/Doc
   - `k` / `ArrowUp`: Select previous meeting.
   - `a`: Quick-focus action input in the meeting drawer.
   - `/`: Focus quick search.
+  - `\`: Toggle right-hand meeting drawer (collapse/expand).
   - `Escape`: Clear search or close drawer.
 
 ---
 
 ## 5. Current Verification & Build State
 
-1. **Compilation**: `node meeting_hub/build.js` produces a verified 245 KB standalone bundle [`meeting_hub/meeting_hub.app.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/meeting_hub.app.js) with zero syntax errors (`node -c`).
-2. **Automated Test Suite**: Verified via [`test_minutes_and_project_base.js`](file:///Users/ayrtonandre/.gemini/antigravity-cli/brain/dd4c4380-20e9-408b-bf58-a0affef6c7bd/scratch/test_minutes_and_project_base.js):
-   - Correctly parses real Google Docs from Clariane (*Mariéna* and *Les Arbelles*).
-   - Generates 13 cross-meeting action matrix items, 8 cumulative decisions, 5 stakeholders, and 4 workstreams across 48 Clariane meetings.
-3. **Execution Modes**:
-   - `http://localhost:8080/meeting` (via `orchestrator.py`).
+1. **Step 1 & Step 2 Verified**:
+   - Generic project schema `{ id, name, clientMatch[], docSources[], workstreams[], parserHints[] }` stored in IndexedDB `projects`.
+   - Domain knowledge decoupled: 9 pre-configured initiatives matching real calendar tracks (HDJ, MO, Invoicing, F360, Coproj Data, GE Enterprise/UC Wizard, Healthcare/Care Dispensing, PrideFact RSE, Counseling).
+   - Priority matching on meeting title bracket tags (`[TAG]`) and auto-discovery via `getSuggestedProjects()`.
+   - Honest coverage bars ("X of Y meetings have minutes", never fake 100%).
+   - Source quotes and direct links stored on all extracted actions and decisions.
+   - Cross-meeting decision deduplication with "first decided on" and "restated on" audit history.
+   - 48h prep checklist replacing percentage scores for upcoming meetings.
+   - Collapsible right meeting panel with persistent state.
+   - Master shell command `meeting` to launch orchestrator server and open browser.
+2. **Compilation**: `node meeting_hub/build.js` produces a verified 317.3 KB standalone bundle [`meeting_hub/meeting_hub.app.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/meeting_hub.app.js) with zero syntax errors.
+3. **Automated Test Suite**: Verified via [`meeting_hub/tests/test_step2.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/tests/test_step2.js): 7/7 unit tests passing.
+4. **Execution Modes**:
+   - `http://localhost:8080/meeting` (via `orchestrator.py serve` or `meeting` command).
    - `file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub.html` (standalone double-click in browser).
 
 ---
@@ -159,12 +168,12 @@ Located at [`meeting_hub/model/project_engine.js`](file:///Users/ayrtonandre/Doc
 
 When presenting this project to Claude, consider asking the following targeted questions:
 
-1. **Project Base Scope & Scalability**:
-   - Currently, the Project Base synthesizes minutes deterministically for Clariane across its 48 meetings. How should we generalize multi-project switching (e.g. Artefact internal, Crédit Agricole, Ferrero) without creating clutter?
-   - Should project workstreams be dynamically discovered from minutes tags, or user-configurable per initiative?
-2. **LLM vs Deterministic Minutes Intelligence**:
-   - Currently, `MinutesEngine` uses high-precision regex/heuristics to parse French clinical/consulting notes. Where should an LLM pass (via local Python bridge or API) augment this (e.g., summarizing discussions, discovering latent risks, or auto-linking to previous decisions)?
+1. **Phase 3: Hybrid LLM + Deterministic Intelligence**:
+   - Currently, `MinutesEngine` runs client-side deterministic regex/heuristic parsing. Where should an LLM pass (via local Python server on port 8080 or Vertex AI) augment this?
+   - What is the best pattern to preserve deterministic speed for routine tasks while delegating semantic synthesis (e.g., latent risk detection across projects, contradictory decision alerts) to an LLM?
+2. **Bi-directional Sync & Meeting Notes Export**:
+   - Currently, notes are ingested into local storage from Google Docs. How should we architect exporting captured actions and follow-up recaps back into external tools (Google Docs, Notion, or Slack) while respecting the "client data stays local" principle?
 3. **Macro Cart Re-integration**:
-   - The user deferred the Macro Cart to prioritize minutes and calendar replacement. When re-introducing the cart, how should it interact with the new Project Base (e.g., adding actions directly from the Cross-Meeting Action Matrix into a weekly client status email)?
-4. **Calendar Dashboard Retirement**:
-   - With `meeting_hub.html` now offering Today, Week (with KPIs), Meetings directory, Actions, Series, and Projects, what remaining gaps (if any) prevent fully deprecating the legacy 600 KB `calendar_dashboard.html`?
+   - The Macro Cart (collecting items across meetings into a unified export basket) was preserved in `ui/cart.js` but deferred from the UI. How should it be re-integrated into the 9-project workflow (e.g. generating a weekly executive briefing across multiple initiatives)?
+4. **Deprecating Legacy `calendar_dashboard.html`**:
+   - With `meeting_hub.html` providing Today, Week, Meetings, Open Actions, Series & Links, and Projects & Knowledge, are there any critical UX or performance gaps preventing the complete deprecation of the 600 KB legacy dashboard?

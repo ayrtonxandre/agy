@@ -3,8 +3,9 @@
  * 
  * Renders the Today agenda timeline with:
  * 1. Thin all-day event strip above the timeline.
- * 2. Next up card with computed prep status (agenda, last minutes, open actions, attendees).
- * 3. Daily timeline with Life-mode training overlay.
+ * 2. Next up card with 48-hour missing items checklist (agenda, last minutes, open actions)
+ *    and wired Project Base context strip (open actions and decisions for this project).
+ * 3. Daily timeline with missing checklist status and Life-mode training overlay.
  * 4. Step 3 Keyboard-First navigation helpers: getVisibleTimedEvents(), selectNextMeeting(), selectPreviousMeeting().
  * 5. Instant search filtering with `/` shortcut.
  */
@@ -12,10 +13,11 @@ import { Icons } from '../ui/icons.js';
 import { PrepScoreCalculator } from '../model/prep_score.js';
 
 export class TodayView {
-  constructor({ container, store, onSelectMeeting }) {
+  constructor({ container, store, onSelectMeeting, onNavigateProject }) {
     this.container = container;
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
+    this.onNavigateProject = onNavigateProject;
     this.selectedEventId = null;
     this.currentDate = '2026-10-28';
     this.currentMode = 'all'; // 'all' | 'work' | 'life'
@@ -138,15 +140,29 @@ export class TodayView {
     const workMeetings = timedEvents.filter(e => e.stream === 'work');
     const nextMeeting = workMeetings.find(e => e.start >= '09:00') || workMeetings[0] || timedEvents[0];
 
-    // Compute dynamic prep score across all visible work meetings
+    // Compute dynamic prep evaluations across all visible work meetings
     const collectionPrep = await PrepScoreCalculator.computeCollectionPrep(workMeetings, this.store);
 
-    // Dynamic prep evaluation for Next up meeting
+    // Dynamic prep evaluation & Project Base wiring for Next up meeting
     let nextPrep = null;
+    let nextProjectBase = null;
+    let isNextWithin48h = false;
+
     if (nextMeeting) {
       const data = await this.store.getMeetingData(nextMeeting.id);
       const links = await this.store.suggestLinks(nextMeeting);
       nextPrep = PrepScoreCalculator.computeMeetingPrep(nextMeeting, data, links);
+      isNextWithin48h = PrepScoreCalculator.isWithin48Hours(nextMeeting.date, nextMeeting.start, this.currentDate, '00:00');
+
+      // Wire Project Base into Next up
+      const project = this.store.getProjectForMeeting(nextMeeting);
+      if (project) {
+        try {
+          nextProjectBase = await this.store.getProjectBase(project.id);
+        } catch (e) {
+          console.warn('[TodayView] Could not load project base for next meeting:', e);
+        }
+      }
 
       if (this.selectedEventId === undefined) {
         this.selectedEventId = nextMeeting.id;
@@ -176,49 +192,66 @@ export class TodayView {
 
       ${nextMeeting && !this.searchQuery && nextPrep ? `
         <div class="card next">
-          <div style="display: flex; gap: 8px; align-items: center;">
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <span class="label">Next up</span>
             <span class="badge info">${nextMeeting.start}–${nextMeeting.end}</span>
             ${nextMeeting.client ? `<span class="badge">${this._escape(nextMeeting.client)}</span>` : ''}
-            <span class="badge ${nextPrep.badgeClass}" style="margin-left: auto;">${nextPrep.badgeText} · ${nextPrep.scorePercent}%</span>
+            <span class="badge ${nextPrep.missingCount === 0 ? 'ok' : 'warn'}" style="margin-left: auto;">
+              ${nextPrep.missingCount === 0 ? 'Prepared' : `${nextPrep.missingCount} missing item${nextPrep.missingCount > 1 ? 's' : ''}`}
+            </span>
           </div>
 
           <h2>${this._escape(nextMeeting.title)}</h2>
 
-          <div class="prep-score-row">
-            <div class="prep-score-label">
-              <b>Prep Score</b>
-              <span>${nextPrep.scorePercent}% (${nextPrep.metCount} of ${nextPrep.totalCount} criteria met)</span>
-            </div>
-            <div class="prep-bar-track">
-              <div class="prep-bar-fill ${nextPrep.badgeClass}" style="width: ${nextPrep.scorePercent}%;"></div>
-            </div>
-          </div>
+          <!-- 48h Missing Items Checklist -->
+          ${isNextWithin48h ? `
+            <div class="prep-checklist-block" style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--r-sm); margin: 6px 0;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="label" style="margin-bottom: 0;">48h Prep Checklist</span>
+                <span class="sub" style="font-size: 11px; font-weight: 500;">
+                  ${nextPrep.missingCount === 0 ? 'All 3 criteria satisfied' : `${nextPrep.missingCount} item${nextPrep.missingCount > 1 ? 's' : ''} to complete before meeting`}
+                </span>
+              </div>
 
-          <div class="prep">
-            <div class="${nextPrep.agenda.ok ? '' : 'miss'}">
-              <b>Agenda</b>
-              <span>${this._escape(nextPrep.agenda.label)}</span>
-              <span class="sub" style="font-size: 11px;">${this._escape(nextPrep.agenda.detail)}</span>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-top: 4px;">
+                ${nextPrep.missingItems.map(item => `
+                  <div style="display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; padding: 6px 8px; border-radius: var(--r-sm); background: var(--card); border: 1px solid ${item.ok ? 'color-mix(in oklab, var(--ok) 30%, var(--border))' : 'color-mix(in oklab, var(--destructive) 30%, var(--border))'};">
+                    <span style="color: ${item.ok ? 'var(--ok)' : 'var(--destructive)'}; flex-shrink: 0; margin-top: 1px;">
+                      ${item.ok ? Icons.check : Icons.alertCircle}
+                    </span>
+                    <div style="min-width: 0;">
+                      <div style="font-weight: 600; color: var(--foreground);">${this._escape(item.label)}</div>
+                      <div class="sub" style="font-size: 10.5px;">${this._escape(item.detail)}</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
             </div>
-            <div class="${nextPrep.lastMinutes.ok ? '' : 'miss'}">
-              <b>Last minutes</b>
-              <span>${this._escape(nextPrep.lastMinutes.label)}</span>
-              <span class="sub" style="font-size: 11px;">${this._escape(nextPrep.lastMinutes.detail)}</span>
+          ` : `
+            <div class="sub" style="font-size: 12px; margin: 6px 0;">
+              Scheduled for ${this._escape(nextMeeting.date || 'later')} · Prep checklist activates 48 hours prior to start
             </div>
-            <div class="${nextPrep.openActions.ok ? '' : 'miss'}">
-              <b>Open actions</b>
-              <span>${this._escape(nextPrep.openActions.label)}</span>
-              <span class="sub" style="font-size: 11px;">${this._escape(nextPrep.openActions.detail)}</span>
-            </div>
-            <div>
-              <b>People</b>
-              <span>${nextPrep.people.label}</span>
-              <span class="sub" style="font-size: 11px;">${this._escape(nextMeeting.client || 'Work stream')}</span>
-            </div>
-          </div>
+          `}
 
-          <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <!-- Wired Project Base Intelligence Strip -->
+          ${nextProjectBase ? `
+            <div class="next-project-strip">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0;">
+                <span style="color: var(--pink-600); flex-shrink: 0;">${Icons.layers}</span>
+                <div style="min-width: 0;">
+                  <span style="font-weight: 600; color: var(--foreground);">${this._escape(nextProjectBase.projectName)}:</span>
+                  <span class="sub" style="font-size: 11.5px; margin-left: 4px;">
+                    Open actions and decisions for this project: <b>${nextProjectBase.actionStats.open}</b> open action${nextProjectBase.actionStats.open === 1 ? '' : 's'} · <b>${nextProjectBase.decisionStats.total}</b> validated decision${nextProjectBase.decisionStats.total === 1 ? '' : 's'}
+                  </span>
+                </div>
+              </div>
+              <button class="btn sm" data-open-project="${this._escape(nextProjectBase.projectId)}" style="font-size: 11px; padding: 2px 8px; flex-shrink: 0; margin-left: 8px;">
+                View Project Hub
+              </button>
+            </div>
+          ` : ''}
+
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
             ${!nextPrep.agenda.ok ? `
               <button class="btn pink" data-open-prep="${nextMeeting.id}">Draft agenda</button>
             ` : !nextPrep.openActions.ok ? `
@@ -242,7 +275,7 @@ export class TodayView {
           </div>
         ` : collectionPrep.total > 0 ? `
           <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted-foreground);">
-            <span style="font-family: var(--font-mono);">Day Prep: ${collectionPrep.preparedCount}/${collectionPrep.total} prepared (${collectionPrep.averagePercent}%)</span>
+            <span style="font-family: var(--font-mono);">${collectionPrep.preparedCount} of ${collectionPrep.total} prepared</span>
           </div>
         ` : ''}
       </div>
@@ -269,8 +302,8 @@ export class TodayView {
                 <div class="meta">${this._escape(metaParts.join(' · '))}</div>
               </span>
               ${m.stream === 'work' ? (mPrep ? `
-                <span class="badge ${mPrep.badgeClass}" title="Prep score: ${mPrep.scorePercent}% (${mPrep.metCount}/${mPrep.totalCount} criteria met)">
-                  ${mPrep.badgeText}
+                <span class="badge ${mPrep.missingCount === 0 ? 'ok' : 'warn'}" title="${mPrep.missingSummary}">
+                  ${mPrep.missingCount === 0 ? 'Prepared' : `${mPrep.missingCount} missing`}
                 </span>
               ` : `
                 <span class="badge ${isSelected ? 'info' : ''}">Work</span>
@@ -282,7 +315,10 @@ export class TodayView {
             </button>
           `;
         }).join('') : `
-          <div class="empty">No scheduled meetings matching your filter for this mode.</div>
+          <div class="empty" style="padding: 40px 0;">
+            ${Icons.calendar}
+            <div style="margin-top: 8px;">No scheduled events matching current criteria.</div>
+          </div>
         `}
       </div>
     `;
@@ -291,11 +327,11 @@ export class TodayView {
   }
 
   _bindEvents() {
-    // Clear search filter
+    // Clear filter
     this.container.querySelector('#clearFilterBtn')?.addEventListener('click', () => {
       this.searchQuery = '';
-      const searchIn = document.querySelector('#quickSearch');
-      if (searchIn) searchIn.value = '';
+      const input = document.querySelector('#quickSearch');
+      if (input) input.value = '';
       this.render();
     });
 
@@ -328,6 +364,19 @@ export class TodayView {
         const id = openRelatedBtn.dataset.openRelated;
         if (id && this.onSelectMeeting) {
           this.onSelectMeeting(id, 'related');
+        }
+      });
+    }
+
+    // Open project base button
+    const openProjectBtn = this.container.querySelector('[data-open-project]');
+    if (openProjectBtn) {
+      openProjectBtn.addEventListener('click', () => {
+        const projectId = openProjectBtn.dataset.openProject;
+        if (this.onNavigateProject) {
+          this.onNavigateProject(projectId);
+        } else {
+          window.location.hash = '#/projects';
         }
       });
     }

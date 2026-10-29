@@ -144,6 +144,36 @@ export class PrepScoreCalculator {
       badgeText = `Prep ${metCount}/${totalCount}`;
     }
 
+    // Missing items checklist
+    const missingItems = [
+      {
+        key: 'agenda',
+        label: 'Agenda',
+        ok: agenda.ok,
+        statusText: agenda.ok ? 'Agenda drafted' : 'Missing agenda',
+        detail: agenda.detail
+      },
+      {
+        key: 'lastMinutes',
+        label: 'Prior minutes',
+        ok: lastMinutes.ok,
+        statusText: lastMinutes.ok ? 'Prior minutes connected' : 'Missing prior minutes',
+        detail: lastMinutes.detail
+      },
+      {
+        key: 'openActions',
+        label: 'Open actions',
+        ok: openActions.ok,
+        statusText: openActions.ok ? 'Open actions reviewed' : 'Missing action review',
+        detail: openActions.detail
+      }
+    ];
+
+    const missingCount = missingItems.filter(i => !i.ok).length;
+    const missingSummary = missingCount === 0
+      ? 'All items prepared'
+      : `Missing: ${missingItems.filter(i => !i.ok).map(i => i.label).join(' · ')}`;
+
     return {
       scorePercent,
       metCount,
@@ -154,8 +184,27 @@ export class PrepScoreCalculator {
       agenda,
       lastMinutes,
       openActions,
-      people
+      people,
+      missingItems,
+      missingCount,
+      missingSummary
     };
+  }
+
+  /**
+   * Helper to check if a meeting is scheduled within the next 48 hours.
+   */
+  static isWithin48Hours(meetingDate, meetingStart = '00:00', refDateStr = '2026-10-28', refTimeStr = '00:00') {
+    if (!meetingDate) return false;
+    try {
+      const meetTime = new Date(`${meetingDate}T${meetingStart || '00:00'}:00`).getTime();
+      const refTime = new Date(`${refDateStr}T${refTimeStr || '00:00'}:00`).getTime();
+      const diffMs = meetTime - refTime;
+      const diffHours = diffMs / (1000 * 60 * 60);
+      return diffHours >= 0 && diffHours <= 48;
+    } catch (e) {
+      return true;
+    }
   }
 
   /**

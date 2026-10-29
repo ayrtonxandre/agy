@@ -2,37 +2,74 @@
  * Project Base & Minutes Synthesis Engine
  * 
  * Aggregates meeting minutes, decisions, actions, and connected documents across
- * a client or project initiative (e.g. Clariane HDJ Planning Manager).
+ * any configured project initiative.
  * 
- * Provides:
- * - Cumulative Decision Register
- * - Cross-Meeting Action Matrix (filtered by Owner & Status)
- * - Stakeholder Directory across facilities & teams
- * - Living Executive Context & Active Workstreams
- * - Connected Docs & Artifacts Library
+ * Completely generic and driven by Project configuration:
+ * - Honest coverage metrics ("X of Y meetings have minutes")
+ * - Cross-meeting decision deduplication ("first decided on" & "restated on")
+ * - Source quotes and meeting links on every action and decision
+ * - Dynamic workstream synthesis with open action counts
+ * - Stakeholder directory and connected document library
  */
 
 import { MinutesEngine } from './minutes_engine.js';
+import { ProjectModel, DEFAULT_CLARIANE_PROJECT } from './project.js';
 
 export class ProjectEngine {
   /**
-   * Builds the comprehensive Project Base for a given client / project.
-   * @param {string} clientId e.g. 'Clariane'
+   * Builds the comprehensive Project Base for a given project ID or client name.
+   * @param {string} projectIdOrClient e.g. 'clariane' or 'Clariane'
    * @param {object} store The MeetingHubStore instance
    * @returns {Promise<object>} Consolidated Project Base data
    */
-  static async buildProjectBase(clientId = 'Clariane', store) {
+  static async buildProjectBase(projectIdOrClient = 'clariane', store) {
     const allEvents = store.getAllEvents ? store.getAllEvents() : [];
-    
-    // Filter events for this client or project
+
+    // 1. Resolve project configuration
+    let project = null;
+    if (store.getProject) {
+      project = await store.getProject(projectIdOrClient);
+    }
+    if (!project && store.getAllProjects) {
+      const allProjects = await store.getAllProjects();
+      project = allProjects.find(p => 
+        p.id.toLowerCase() === projectIdOrClient.toLowerCase() ||
+        p.name.toLowerCase() === projectIdOrClient.toLowerCase() ||
+        (Array.isArray(p.clientMatch) && p.clientMatch.some(m => m.toLowerCase() === projectIdOrClient.toLowerCase()))
+      );
+    }
+    if (!project) {
+      // Fallback to default Clariane if matching, else generic project
+      if (projectIdOrClient.toLowerCase() === 'clariane') {
+        project = DEFAULT_CLARIANE_PROJECT;
+      } else {
+        project = ProjectModel.createDefault(projectIdOrClient, [projectIdOrClient]);
+      }
+    }
+
+    const clientMatches = (project.clientMatch || [project.name, project.id]).map(m => m.toLowerCase());
+
+    // 2. Filter events belonging to this project
     const projectEvents = allEvents.filter(e => {
-      const matchClient = (e.client || '').toLowerCase() === clientId.toLowerCase();
-      const matchTitle = (e.title || '').toLowerCase().includes(clientId.toLowerCase());
-      const matchTags = Array.isArray(e.tags) && e.tags.some(t => t.toLowerCase() === clientId.toLowerCase() || t === 'hdj');
-      return matchClient || matchTitle || matchTags;
+      if (store && typeof store.getProjectForMeeting === 'function') {
+        const assignedProj = store.getProjectForMeeting(e);
+        if (assignedProj) {
+          return assignedProj.id === project.id;
+        }
+      }
+      const client = (e.client || '').toLowerCase();
+      const title = (e.title || '').toLowerCase();
+      const tags = (e.tags || []).map(t => t.toLowerCase());
+
+      return clientMatches.some(match => 
+        client === match ||
+        client.includes(match) ||
+        title.includes(match) ||
+        tags.includes(match)
+      );
     }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-    // Collect all meeting_data for these events
+    // 3. Collect meeting data for these events
     const meetingDataList = [];
     for (const evt of projectEvents) {
       const mData = await store.getMeetingData(evt.id);
@@ -42,15 +79,11 @@ export class ProjectEngine {
       });
     }
 
-    // 1. Compile Actions Matrix
+    // 4. Compile Actions, Decisions, Stakeholders, Docs
     const actionMatrix = [];
-    // 2. Compile Decision Register
-    const decisionRegister = [];
-    // 3. Compile Stakeholders
+    const rawDecisions = [];
     const stakeholderMap = new Map();
-    // 4. Compile Connected Docs
     const connectedDocs = [];
-    // 5. Compile Knowledge Entities
     const toolSet = new Set();
     const conceptSet = new Map();
 
@@ -58,17 +91,18 @@ export class ProjectEngine {
       const { event, data } = item;
       const rawMinutes = data.minutes || '';
 
-      // Parse minutes if present or extract from items
+      // Parse minutes if present
       let parsed = null;
       if (rawMinutes.trim()) {
         parsed = MinutesEngine.parseMinutes(rawMinutes, {
           title: event.title,
           date: event.date,
-          facility: event.facility
-        });
+          facility: event.facility,
+          meetingId: event.id
+        }, project);
       }
 
-      // Check for attached Google Doc in event or data
+      // Track attached Google Doc
       const docUrl = data.googleDocUrl || event.googleDocUrl || ProjectEngine.findDocUrl(event.description || '');
       if (docUrl) {
         const docIdMatch = docUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -78,17 +112,16 @@ export class ProjectEngine {
           title: (parsed && parsed.title) || event.title,
           meetingId: event.id,
           meetingDate: event.date,
-          facility: (parsed && parsed.facility) || event.facility || ProjectEngine.detectFacility(event.title),
+          facility: (parsed && parsed.facility) || event.facility || '',
           url: docUrl,
           hasMinutes: Boolean(rawMinutes.trim()),
           minutesLength: rawMinutes.length
         });
       }
 
-      // Collect items (actions & decisions) from saved data.items first
+      // Collect items from saved data.items first
       const savedItems = Array.isArray(data.items) ? data.items : [];
       
-      // If no saved items but parsed minutes exist, synthesize them for the matrix
       const effectiveActions = savedItems.filter(i => i.kind === 'action').length > 0
         ? savedItems.filter(i => i.kind === 'action')
         : (parsed ? parsed.actions : []);
@@ -97,44 +130,54 @@ export class ProjectEngine {
         ? savedItems.filter(i => i.kind === 'decision')
         : (parsed ? parsed.decisions : []);
 
-      // Register actions
+      // Register actions with source quote and meeting link
       for (const act of effectiveActions) {
-        const owner = act.owner || 'Équipe';
-        const ownerOrg = ProjectEngine.classifyOwnerOrg(owner);
+        const owner = act.owner || 'Team';
+        const ownerOrg = act.ownerOrg || ProjectEngine.classifyOwnerOrg(owner, project);
+        const quote = act.quote || act.text || '';
+        const meetingLink = act.meetingLink || `#/meeting/${encodeURIComponent(event.id)}`;
+
         actionMatrix.push({
           id: act.id || `act-${Math.random().toString(36).substr(2, 6)}`,
           meetingId: event.id,
           meetingTitle: event.title,
           meetingDate: event.date,
-          facility: (parsed && parsed.facility) || ProjectEngine.detectFacility(event.title),
+          facility: (parsed && parsed.facility) || event.facility || '',
           owner,
           ownerOrg,
           text: act.text || act.title || '',
           dueDate: act.dueDate || '',
           done: Boolean(act.done),
           tags: act.tags || [],
-          source: act.source || 'meeting'
+          source: act.source || 'minutes',
+          quote,
+          meetingLink
         });
       }
 
-      // Register decisions
+      // Collect raw decisions for deduplication
       for (const dec of effectiveDecisions) {
-        const statement = dec.statement || dec.text || '';
-        const label = dec.label || ProjectEngine.deriveDecisionLabel(statement);
-        decisionRegister.push({
+        const statement = (dec.statement || dec.text || '').replace(/^\[.*?\]\s*/, '').trim();
+        const label = dec.label || ProjectEngine.deriveDecisionLabel(statement, project);
+        const quote = dec.quote || statement;
+        const meetingLink = dec.meetingLink || `#/meeting/${encodeURIComponent(event.id)}`;
+
+        rawDecisions.push({
           id: dec.id || `dec-${Math.random().toString(36).substr(2, 6)}`,
           meetingId: event.id,
           meetingTitle: event.title,
           meetingDate: event.date,
-          facility: (parsed && parsed.facility) || ProjectEngine.detectFacility(event.title),
+          facility: (parsed && parsed.facility) || event.facility || '',
           label,
-          statement: statement.replace(/^\[.*?\]\s*/, ''),
-          context: dec.context || 'Général'
+          statement,
+          context: dec.context || 'General',
+          quote,
+          meetingLink
         });
       }
 
-      // Register stakeholders from parsed participants or event attendees
-      if (parsed && Array.isArray(parsed.participants)) {
+      // Register stakeholders
+      if (parsed && Array.isArray(parsed.participants) && parsed.participants.length > 0) {
         for (const p of parsed.participants) {
           if (!p.name) continue;
           const key = p.name.toLowerCase();
@@ -142,7 +185,25 @@ export class ProjectEngine {
             stakeholderMap.set(key, {
               name: p.name,
               role: p.role || 'Participant',
-              org: p.org || ProjectEngine.classifyOwnerOrg(p.role || p.name),
+              org: p.org || ProjectEngine.classifyOwnerOrg(p.role || p.name, project),
+              meetingCount: 1,
+              lastSeen: event.date
+            });
+          } else {
+            const existing = stakeholderMap.get(key);
+            existing.meetingCount += 1;
+            if (event.date > existing.lastSeen) existing.lastSeen = event.date;
+          }
+        }
+      } else if (Array.isArray(event.attendees)) {
+        for (const att of event.attendees) {
+          if (!att) continue;
+          const key = att.toLowerCase();
+          if (!stakeholderMap.has(key)) {
+            stakeholderMap.set(key, {
+              name: att,
+              role: 'Attendee',
+              org: ProjectEngine.classifyOwnerOrg(att, project),
               meetingCount: 1,
               lastSeen: event.date
             });
@@ -163,35 +224,44 @@ export class ProjectEngine {
       }
     }
 
-    // Sort decision register chronologically (latest first)
-    decisionRegister.sort((a, b) => (b.meetingDate || '').localeCompare(a.meetingDate || ''));
+    // 5. Deduplicate decisions across meetings
+    const decisionRegister = ProjectEngine.deduplicateDecisions(rawDecisions);
 
-    // Sort action matrix: open first, then date
+    // 6. Action matrix sorting
     actionMatrix.sort((a, b) => {
       if (a.done !== b.done) return a.done ? 1 : -1;
       return (b.meetingDate || '').localeCompare(a.meetingDate || '');
     });
 
-    // Stakeholders list sorted by organization and name
+    // 7. Stakeholders sorting
     const stakeholders = Array.from(stakeholderMap.values()).sort((a, b) => {
       if (a.org !== b.org) return a.org.localeCompare(b.org);
       return a.name.localeCompare(b.name);
     });
 
+    // 8. Workstreams compilation from project configuration
+    const workstreams = ProjectEngine.synthesizeWorkstreams(project, decisionRegister, actionMatrix);
+
+    // 9. Honest coverage calculation
+    const totalMeetings = projectEvents.length;
+    const meetingsWithMinutes = meetingDataList.filter(m => (m.data.minutes || '').trim().length > 0).length;
+    const coveragePercent = totalMeetings > 0 ? Math.round((meetingsWithMinutes / totalMeetings) * 100) : 0;
+    const coverageText = `${meetingsWithMinutes} of ${totalMeetings} meetings have minutes`;
+
     // Action counts breakdown
     const openActions = actionMatrix.filter(a => !a.done);
     const closedActions = actionMatrix.filter(a => a.done);
-    const artefactActions = openActions.filter(a => a.ownerOrg === 'Artefact');
-    const clientActions = openActions.filter(a => a.ownerOrg !== 'Artefact');
-
-    // Strategic Workstreams Synthesis for Clariane / Project
-    const workstreams = ProjectEngine.generateWorkstreams(clientId, decisionRegister, actionMatrix);
+    const artefactActions = openActions.filter(a => a.ownerOrg.toLowerCase().includes('artefact'));
+    const clientActions = openActions.filter(a => !a.ownerOrg.toLowerCase().includes('artefact'));
 
     return {
-      clientId,
-      projectName: clientId === 'Clariane' ? 'HDJ Planning Manager (Inicea / Clariane)' : `${clientId} Project Base`,
-      totalMeetings: projectEvents.length,
-      meetingsWithMinutes: meetingDataList.filter(m => (m.data.minutes || '').trim()).length,
+      projectId: project.id,
+      projectName: project.name,
+      projectConfig: project,
+      totalMeetings,
+      meetingsWithMinutes,
+      coveragePercent,
+      coverageText,
       actionStats: {
         total: actionMatrix.length,
         open: openActions.length,
@@ -200,7 +270,9 @@ export class ProjectEngine {
         clientOpen: clientActions.length
       },
       decisionStats: {
-        total: decisionRegister.length
+        total: decisionRegister.length,
+        uniqueCount: decisionRegister.length,
+        rawCount: rawDecisions.length
       },
       workstreams,
       actionMatrix,
@@ -213,7 +285,131 @@ export class ProjectEngine {
     };
   }
 
-  /* ================= Helper Utilities ================= */
+  /**
+   * Deduplicates decisions across meetings.
+   * Tracks "first decided on" and "restated on" instances.
+   */
+  static deduplicateDecisions(rawDecisions) {
+    if (!Array.isArray(rawDecisions) || rawDecisions.length === 0) return [];
+
+    // Sort chronologically ascending to establish initial decision first
+    const sorted = [...rawDecisions].sort((a, b) => (a.meetingDate || '').localeCompare(b.meetingDate || ''));
+
+    const deduplicated = [];
+
+    for (const dec of sorted) {
+      const normText = ProjectEngine._normalizeStatement(dec.statement);
+
+      // Check for existing matching decision
+      const match = deduplicated.find(existing => {
+        const existingNorm = ProjectEngine._normalizeStatement(existing.statement);
+        if (normText === existingNorm) return true;
+        // Check for matching label and high text similarity
+        if (existing.label && dec.label && existing.label.toLowerCase() === dec.label.toLowerCase()) {
+          const overlap = ProjectEngine._calculateSimilarity(normText, existingNorm);
+          if (overlap >= 0.70) return true;
+        }
+        return false;
+      });
+
+      if (match) {
+        // Record as restated
+        match.restatedOn.push({
+          meetingId: dec.meetingId,
+          meetingTitle: dec.meetingTitle,
+          meetingDate: dec.meetingDate,
+          facility: dec.facility,
+          quote: dec.quote,
+          meetingLink: dec.meetingLink
+        });
+        match.restatedCount = match.restatedOn.length;
+      } else {
+        // New canonical decision
+        deduplicated.push({
+          id: dec.id,
+          label: dec.label,
+          statement: dec.statement,
+          context: dec.context,
+          quote: dec.quote,
+          meetingLink: dec.meetingLink,
+          firstDecidedOn: {
+            meetingId: dec.meetingId,
+            meetingTitle: dec.meetingTitle,
+            meetingDate: dec.meetingDate,
+            facility: dec.facility,
+            quote: dec.quote,
+            meetingLink: dec.meetingLink
+          },
+          restatedOn: [],
+          restatedCount: 0
+        });
+      }
+    }
+
+    // Sort final decision register latest first
+    return deduplicated.sort((a, b) => 
+      (b.firstDecidedOn.meetingDate || '').localeCompare(a.firstDecidedOn.meetingDate || '')
+    );
+  }
+
+  static _normalizeStatement(str) {
+    return (str || '')
+      .toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"\[\]]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  static _calculateSimilarity(s1, s2) {
+    if (!s1 || !s2) return 0;
+    if (s1 === s2) return 1;
+    const words1 = new Set(s1.split(' '));
+    const words2 = new Set(s2.split(' '));
+    let intersection = 0;
+    for (const w of words1) {
+      if (words2.has(w)) intersection++;
+    }
+    return (2.0 * intersection) / (words1.size + words2.size);
+  }
+
+  /**
+   * Synthesizes workstreams from project configuration.
+   */
+  static synthesizeWorkstreams(project, decisions, actions) {
+    const configured = project.workstreams || [];
+    if (configured.length > 0) {
+      return configured.map(ws => {
+        const wsTags = (ws.tags || []).map(t => t.toLowerCase());
+        const openActionsCount = actions.filter(a => {
+          if (a.done) return false;
+          if (wsTags.length > 0 && Array.isArray(a.tags) && a.tags.some(t => wsTags.includes(t.toLowerCase()))) {
+            return true;
+          }
+          const lowerText = (a.text || '').toLowerCase();
+          return wsTags.some(t => lowerText.includes(t));
+        }).length;
+
+        return {
+          ...ws,
+          openActionsCount
+        };
+      });
+    }
+
+    // Default generic workstream if none configured
+    return [
+      {
+        id: 'ws-core',
+        title: 'Core Delivery & Synchronization',
+        badge: 'General',
+        status: 'Active',
+        summary: `Progress tracking and action execution for ${project.name}.`,
+        facilities: ['All'],
+        openActionsCount: actions.filter(a => !a.done).length,
+        keyRules: ['Document all decisions in minutes', 'Track action items to completion']
+      }
+    ];
+  }
 
   static findDocUrl(text) {
     if (!text) return '';
@@ -221,105 +417,28 @@ export class ProjectEngine {
     return match ? match[0] : '';
   }
 
-  static detectFacility(title = '') {
-    const lower = title.toLowerCase();
-    if (lower.includes('mariénia') || lower.includes('marienia')) return 'Mariéna';
-    if (lower.includes('arbelles')) return 'Les Arbelles';
-    if (lower.includes('glanum')) return 'Glanum';
-    return 'Transversal';
-  }
-
-  static classifyOwnerOrg(owner = '') {
-    const lower = owner.toLowerCase();
-    if (lower.includes('artefact') || lower.includes('ayrton') || lower.includes('benjamin')) return 'Artefact';
-    if (lower.includes('mariénia') || lower.includes('marienia') || lower.includes('claire')) return 'Mariéna';
-    if (lower.includes('arbelles') || lower.includes('fabien') || lower.includes('delphine')) return 'Les Arbelles';
-    if (lower.includes('glanum')) return 'Glanum';
-    return 'Client / Équipe';
-  }
-
-  static deriveDecisionLabel(statement = '') {
-    const lower = statement.toLowerCase();
-    if (lower.includes('workflow') || lower.includes('validation')) return 'Workflow de Validation';
-    if (lower.includes('temps mort')) return 'Politique Zéro Temps Mort';
-    if (lower.includes('annonce')) return 'Processus Annonces HM';
-    if (lower.includes('bilan')) return 'Règle Bilans';
-    if (lower.includes('surbooking') || lower.includes('forcer')) return 'Surbooking & Forçage';
-    if (lower.includes('solution')) return 'Solution Retenue';
-    return 'Décision Structurante';
-  }
-
-  static generateWorkstreams(clientId, decisions, actions) {
-    if (clientId.toLowerCase() === 'clariane') {
-      return [
-        {
-          id: 'ws-admission',
-          title: 'Flux Annonces & Processus d’Admission',
-          badge: 'HM → Foundry',
-          status: 'En déploiement',
-          summary: 'Basculement de la gestion des listes d’attente papier vers le statut "Annonce" dans Hôpital Manager dès accord médical pour alimenter la disponibilité Foundry.',
-          facilities: ['Les Arbelles', 'Mariéna'],
-          openActionsCount: actions.filter(a => a.tags.includes('annonces') && !a.done).length,
-          keyRules: [
-            'Saisie directe des patients au statut Annonce dans HM pour remonter dans Foundry',
-            'Onglet dédié dans l’outil pour filtrer et isoler les annonces HDJ vs HC'
-          ]
-        },
-        {
-          id: 'ws-parcours',
-          title: 'Modélisation des Programmes Thérapeutiques',
-          badge: 'Moteur & Contraintes',
-          status: 'Actif',
-          summary: 'Paramétrage des programmes standardisés (Dos, Parkinson) et parcours complexes (Neuro, rTMS aux 3 semaines, séances ponctuelles de Diététique/Neuropsy).',
-          facilities: ['Les Arbelles', 'Mariéna', 'Glanum'],
-          openActionsCount: actions.filter(a => a.tags.includes('modeling') && !a.done).length,
-          keyRules: [
-            'Politique zéro temps mort : aucun trou inter-séance sans attente',
-            'Bilans d’entrée et de sortie isolés en séances individuelles',
-            'Séances espacées (rTMS) modélisées avec des vacations dédiées à fréquence 3 semaines'
-          ]
-        },
-        {
-          id: 'ws-sync',
-          title: 'Synchronisation SIH & Circuit de Validation',
-          badge: 'Foundry ↔ HM',
-          status: 'En cours',
-          summary: 'Boucle de validation bilatérale : proposition de circuit dans Foundry -> statut "En attente HM" -> saisie créneau HM -> rapprochement automatique en statut "Réel".',
-          facilities: ['Transversal'],
-          openActionsCount: actions.filter(a => (a.tags.includes('hm-sync') || a.tags.includes('vacations')) && !a.done).length,
-          keyRules: [
-            'Circuit Foundry passe en "En attente HM" puis réconciliation en "Réel"',
-            'Résolution du connecteur pour la remontée des vacations collectives (Kiné, Balnéo, Ergo)'
-          ]
-        },
-        {
-          id: 'ws-analytics',
-          title: 'Analytique, Alerting & Case Mix',
-          badge: 'Reporting & Pilotage',
-          status: 'Planifié',
-          summary: 'Extraction du case mix réel (% Neuro vs Locomoteur) pour la construction budgétaire et développement du module d’alerting pour double positionnement de patient.',
-          facilities: ['Les Arbelles', 'Mariéna'],
-          openActionsCount: actions.filter(a => (a.tags.includes('analytics') || a.tags.includes('alerting')) && !a.done).length,
-          keyRules: [
-            'Indicateur budgétaire case mix (tarifs de journée différenciés par segment)',
-            'Alerte automatique si un patient est positionné simultanément sur deux vacations'
-          ]
-        }
-      ];
-    }
-
-    // Default generic workstreams
-    return [
-      {
-        id: 'ws-core',
-        title: 'Core Delivery & Synchronization',
-        badge: 'Transversal',
-        status: 'Actif',
-        summary: `Suivi d’avancement et exécution des actions pour ${clientId}.`,
-        facilities: ['Global'],
-        openActionsCount: actions.filter(a => !a.done).length,
-        keyRules: ['Exécution des engagements bilatéraux', 'Documentation systématique des décisions']
+  static classifyOwnerOrg(owner = '', project = null) {
+    const lower = (owner || '').toLowerCase();
+    const rules = project?.parserHints?.ownerOrgRules || [];
+    for (const rule of rules) {
+      if (rule.keywords && rule.keywords.some(k => lower.includes(k.toLowerCase()))) {
+        return rule.org;
       }
-    ];
+    }
+    if (lower.includes('artefact')) return 'Artefact';
+    return 'Client / Team';
+  }
+
+  static deriveDecisionLabel(statement = '', project = null) {
+    const lower = (statement || '').toLowerCase();
+    const triggers = project?.parserHints?.decisionTriggers || [];
+    for (const tr of triggers) {
+      try {
+        if (new RegExp(tr.pattern, 'i').test(statement)) {
+          return tr.label;
+        }
+      } catch (e) {}
+    }
+    return 'Decision';
   }
 }

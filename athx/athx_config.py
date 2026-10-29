@@ -75,7 +75,7 @@ COMPETITION_BENCHMARKS: dict[str, dict] = {
         "name": "Sandbag Carry / Grip",
         "unit": "kg",
         "standard": 60.0,
-        "exercise_matches": ["Carry", "Farmer's Walk", "Farmers Carry", "Sandbag Carry", "Trap Bar Carry", "Deadlift Hold", "Plate Pinch", "Dead Hang", "Shrug"],
+        "exercise_matches": ["Carry", "Farmer's Walk", "Farmers Walk", "Farmers Carry", "Sandbag Carry", "Trap Bar Carry", "Deadlift Hold", "Plate Pinch", "Dead Hang", "Shrug"],
         "description": "Loaded carry grip and core endurance standard"
     }
 }
@@ -508,6 +508,7 @@ PLAUSIBLE_LOAD_RANGES: dict[str, tuple[float, float]] = {
     "Plate Pinch": (2.5, 40.0),
     "Farmers Carry": (10.0, 100.0),
     "Farmer's Walk": (10.0, 100.0),
+    "Farmers Walk": (10.0, 100.0),
     "Ring Row": (0.0, 50.0),
     "Inverted Row": (0.0, 50.0),
 }

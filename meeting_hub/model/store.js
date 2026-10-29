@@ -3,19 +3,22 @@
  * 
  * Bridges IndexedDB via the database adapter to the UI components.
  * Manages caching, query filtering, meeting notes persistence, minutes intelligence,
- * and reactive subscribers.
+ * dynamic project configuration, and reactive subscribers.
  */
 import { getDatabase } from '../data/db.js';
 import { EventsImporter } from '../data/importer.js';
 import { LinkEngine } from './links.js';
 import { MinutesEngine } from './minutes_engine.js';
 import { ProjectEngine } from './project_engine.js';
+import { DEFAULT_CLARIANE_PROJECT, DEFAULT_PROJECTS, ProjectModel } from './project.js';
 
 export class MeetingHubStore {
   constructor() {
     this.db = null;
     this.eventsCache = [];
     this.seriesCache = [];
+    this.projectsCache = [];
+    this.activeProjectId = 'clariane';
     this.subscribers = new Set();
     this.initialized = false;
   }
@@ -25,18 +28,48 @@ export class MeetingHubStore {
 
     this.db = await getDatabase();
     
-    // Idempotent initial import of the 259 events
+    // Idempotent initial import of the calendar events
     await EventsImporter.importInitialData(this.db, options);
 
     // Warm in-memory cache for fast UI updates
     await this.refreshCache();
     this.initialized = true;
-    this.notify();
+    this.notify({ type: 'store_initialized' });
   }
 
   async refreshCache() {
     this.eventsCache = await this.db.getAll('events');
     this.seriesCache = await this.db.getAll('series');
+
+    // Load projects and ensure default projects are seeded
+    let projects = await this.db.getAll('projects');
+    if (!projects || projects.length === 0) {
+      for (const p of DEFAULT_PROJECTS) {
+        await this.db.put('projects', p);
+      }
+      projects = await this.db.getAll('projects');
+    } else {
+      // Ensure all DEFAULT_PROJECTS are seeded if missing, or updated
+      const existingIds = new Set(projects.map(p => p.id));
+      let updated = false;
+      for (const defProj of DEFAULT_PROJECTS) {
+        if (!existingIds.has(defProj.id)) {
+          await this.db.put('projects', defProj);
+          updated = true;
+        } else if (defProj.id === 'clariane') {
+          // If clariane has old clientMatch containing 'Clariane', update it to HDJ specific matches
+          const existing = projects.find(p => p.id === 'clariane');
+          if (existing && Array.isArray(existing.clientMatch) && existing.clientMatch.includes('Clariane')) {
+            await this.db.put('projects', { ...existing, clientMatch: defProj.clientMatch, name: defProj.name });
+            updated = true;
+          }
+        }
+      }
+      if (updated) {
+        projects = await this.db.getAll('projects');
+      }
+    }
+    this.projectsCache = projects;
   }
 
   subscribe(callback) {
@@ -82,6 +115,203 @@ export class MeetingHubStore {
 
   getAllSeries() {
     return this.seriesCache;
+  }
+
+  /* ================= Project Management Methods ================= */
+
+  async getAllProjects() {
+    if (!this.db) await this.init();
+    let list = await this.db.getAll('projects');
+    if (!list || list.length === 0) {
+      for (const p of DEFAULT_PROJECTS) {
+        await this.db.put('projects', p);
+      }
+      list = await this.db.getAll('projects');
+      this.projectsCache = list;
+      return list;
+    }
+    const existingIds = new Set(list.map(p => p.id));
+    let updated = false;
+    for (const defProj of DEFAULT_PROJECTS) {
+      if (!existingIds.has(defProj.id)) {
+        await this.db.put('projects', defProj);
+        updated = true;
+      }
+    }
+    if (updated) {
+      list = await this.db.getAll('projects');
+      this.projectsCache = list;
+    }
+    return list;
+  }
+
+  async getProject(id) {
+    if (!this.db) await this.init();
+    if (!id) return null;
+    const direct = await this.db.get('projects', id);
+    if (direct) return direct;
+    const all = await this.getAllProjects();
+    return all.find(p => 
+      p.id.toLowerCase() === id.toLowerCase() ||
+      p.name.toLowerCase() === id.toLowerCase() ||
+      (Array.isArray(p.clientMatch) && p.clientMatch.some(m => m.toLowerCase() === id.toLowerCase()))
+    ) || null;
+  }
+
+  async saveProject(project) {
+    if (!this.db) await this.init();
+    if (!ProjectModel.validate(project)) {
+      throw new Error('Invalid project structure');
+    }
+    await this.db.put('projects', project);
+    await this.refreshCache();
+    this.notify({ type: 'project_updated', projectId: project.id });
+    return project;
+  }
+
+  async deleteProject(id) {
+    if (!this.db) await this.init();
+    await this.db.delete('projects', id);
+    if (this.activeProjectId === id) {
+      const remaining = await this.getAllProjects();
+      this.activeProjectId = remaining[0]?.id || 'clariane';
+    }
+    await this.refreshCache();
+    this.notify({ type: 'project_deleted', projectId: id });
+  }
+
+  getActiveProjectId() {
+    return this.activeProjectId;
+  }
+
+  setActiveProjectId(id) {
+    this.activeProjectId = id;
+    this.notify({ type: 'active_project_changed', projectId: id });
+  }
+
+  getProjectForMeeting(meeting) {
+    if (!meeting) return null;
+    const client = (meeting.client || '').toLowerCase().trim();
+    const title = (meeting.title || '').toLowerCase().trim();
+    const tags = (meeting.tags || []).map(t => t.toLowerCase().trim());
+    const projects = this.projectsCache || [];
+
+    // 1. First priority: Check if title bracket tags match a project (e.g. [MO], [HDJ], [Invoicing])
+    const bracketMatches = (meeting.title || '').match(/\[(.*?)\]/g) || [];
+    for (const rawBracket of bracketMatches) {
+      const bracketClean = rawBracket.toLowerCase().trim(); // e.g. '[mo]'
+      const bracketInner = bracketClean.replace(/[\[\]]/g, '').trim(); // e.g. 'mo'
+      for (const p of projects) {
+        const pMatches = (p.clientMatch || [p.name, p.id]).map(m => m.toLowerCase().trim());
+        if (pMatches.some(m => m === bracketClean || m === bracketInner || (m.startsWith('[') && m.replace(/[\[\]]/g, '') === bracketInner))) {
+          return p;
+        }
+      }
+    }
+
+    // 2. Second priority: Specific title match or event tags match
+    for (const p of projects) {
+      const pMatches = (p.clientMatch || [p.name, p.id]).map(m => m.toLowerCase().trim());
+      if (pMatches.some(m => m && (title.includes(m) || tags.includes(m)))) {
+        return p;
+      }
+    }
+
+    // 3. Third priority: Client field match
+    for (const p of projects) {
+      const pMatches = (p.clientMatch || [p.name, p.id]).map(m => m.toLowerCase().trim());
+      if (pMatches.some(m => m && (client === m || client.includes(m)))) {
+        return p;
+      }
+    }
+
+    return null;
+  }
+
+  async getSuggestedProjects() {
+    if (!this.db) await this.init();
+    const existing = await this.getAllProjects();
+    const existingMatches = new Set();
+    for (const p of existing) {
+      existingMatches.add(p.id.toLowerCase());
+      existingMatches.add(p.name.toLowerCase());
+      (p.clientMatch || []).forEach(m => {
+        const clean = m.toLowerCase().trim();
+        existingMatches.add(clean);
+        existingMatches.add(clean.replace(/[\[\]]/g, '').trim());
+      });
+    }
+
+    const suggestions = new Map();
+
+    // 1. Scan title brackets [TAG] for auto-discovery
+    for (const e of this.eventsCache) {
+      if (e.stream === 'life') continue;
+      const bracketMatches = (e.title || '').match(/\[(.*?)\]/g) || [];
+      for (const b of bracketMatches) {
+        const tag = b.replace(/[\[\]]/g, '').trim();
+        if (!tag || tag.length < 2) continue;
+        const tagLower = tag.toLowerCase();
+        // Ignore generic or status bracket tags
+        if (['visio', 'zoom', 'teams', 'call', 'sync', 'point', 'urgent'].includes(tagLower)) continue;
+        
+        let matched = false;
+        for (const em of existingMatches) {
+          if (em === tagLower || em.includes(tagLower) || tagLower.includes(em)) {
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          const key = tagLower;
+          if (!suggestions.has(key)) {
+            suggestions.set(key, {
+              id: key.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+              name: tag,
+              clientMatch: [`[${tagLower}]`, tagLower],
+              meetingCount: 0
+            });
+          }
+          suggestions.get(key).meetingCount += 1;
+        }
+      }
+    }
+
+    // 2. Scan client tags
+    for (const e of this.eventsCache) {
+      if (!e.client) continue;
+      const c = e.client.trim();
+      if (e.stream === 'life' || c === 'Personal' || c === 'ATHX') continue;
+      const cLower = c.toLowerCase();
+      let matched = false;
+      for (const em of existingMatches) {
+        if (em === cLower || em.includes(cLower) || cLower.includes(em)) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        const key = cLower;
+        if (!suggestions.has(key)) {
+          suggestions.set(key, {
+            id: cLower.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+            name: c,
+            clientMatch: [c],
+            meetingCount: 0
+          });
+        }
+        suggestions.get(key).meetingCount += 1;
+      }
+    }
+
+    return Array.from(suggestions.values()).filter(s => s.meetingCount > 0);
+  }
+
+  async confirmSuggestedProject(candidate) {
+    const project = ProjectModel.createDefault(candidate.name, candidate.clientMatch);
+    project.id = candidate.id || project.id;
+    await this.saveProject(project);
+    return project;
   }
 
   /* ================= Meeting Notes & Actions Persistence ================= */
@@ -203,19 +433,22 @@ export class MeetingHubStore {
   }
 
   /**
-   * Runs the MinutesEngine on raw text with meeting metadata.
+   * Runs the MinutesEngine on raw text with meeting metadata and project configuration.
    */
   async extractMinutes(meetingId, text) {
     const meeting = this.getEvent(meetingId);
+    const project = meeting ? this.getProjectForMeeting(meeting) : await this.getProject(this.activeProjectId);
     return MinutesEngine.parseMinutes(text, {
       title: meeting ? meeting.title : '',
       date: meeting ? meeting.date : '',
-      facility: meeting ? meeting.facility : ''
-    });
+      facility: meeting ? meeting.facility : '',
+      meetingId
+    }, project);
   }
 
   /**
-   * Commits confirmed actions and decisions to meeting items in storage.
+   * Commits confirmed actions and decisions to meeting items in storage,
+   * preserving source quotes and meeting links.
    */
   async applyExtractedItems(meetingId, { actions = [], decisions = [] }) {
     const meetingData = await this.getMeetingData(meetingId);
@@ -229,10 +462,13 @@ export class MeetingHubStore {
           kind: 'action',
           text: act.text,
           owner: act.owner || '',
+          ownerOrg: act.ownerOrg || '',
           dueDate: act.dueDate || '',
           done: false,
           tags: act.tags || [],
-          source: 'minutes'
+          source: 'minutes',
+          quote: act.quote || act.text || '',
+          meetingLink: act.meetingLink || `#/meeting/${encodeURIComponent(meetingId)}`
         });
       }
     }
@@ -244,8 +480,12 @@ export class MeetingHubStore {
           id: dec.id || `item-dec-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
           kind: 'decision',
           text: decText,
+          label: dec.label || 'Décision',
+          statement: dec.statement,
           context: dec.context,
-          source: 'minutes'
+          source: 'minutes',
+          quote: dec.quote || dec.statement || '',
+          meetingLink: dec.meetingLink || `#/meeting/${encodeURIComponent(meetingId)}`
         });
       }
     }
@@ -256,10 +496,11 @@ export class MeetingHubStore {
   }
 
   /**
-   * Computes the aggregated Project Base for a given client (e.g. Clariane).
+   * Computes the aggregated Project Base for a given project ID or client name.
    */
-  async getProjectBase(clientId = 'Clariane') {
-    return ProjectEngine.buildProjectBase(clientId, this);
+  async getProjectBase(projectIdOrClient = null) {
+    const targetId = projectIdOrClient || this.activeProjectId || 'clariane';
+    return ProjectEngine.buildProjectBase(targetId, this);
   }
 
   /* ================= Minutes Intelligence Seam ================= */
@@ -279,7 +520,6 @@ export class MeetingHubStore {
   async suggestLinks(meeting, options = {}) {
     if (!meeting) return [];
     const linkData = await this.getMeetingLinks(meeting, options);
-    // Return accepted links first with status, then suggested links
     return [
       ...linkData.accepted.map(a => ({ ...a, status: 'accepted' })),
       ...linkData.suggestions.map(s => ({ ...s, status: 'suggested' }))
@@ -380,18 +620,20 @@ export class MeetingHubStore {
   }
 
   /**
-   * Exports all user notes, items, decisions, links, and cart state to a JSON string.
+   * Exports all user notes, items, decisions, links, projects, and cart state to a JSON string.
    */
   async exportUserDataJson() {
     if (!this.db) await this.init();
     const meetingData = await this.db.getAll('meeting_data');
     const cartData = await this.db.getAll('cart');
+    const projectsData = await this.db.getAll('projects');
     const metaList = await this.db.getAll('meta');
     
     const payload = {
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       storageEngine: this.getStorageEngineName(),
+      projects: projectsData || [],
       meetingData: meetingData || [],
       cart: cartData || [],
       meta: metaList || []
@@ -400,7 +642,7 @@ export class MeetingHubStore {
   }
 
   /**
-   * Idempotently imports user notes, items, decisions, and links from JSON data.
+   * Idempotently imports user notes, items, decisions, links, and projects from JSON data.
    * Does not wipe existing calendar events.
    * @param {string|Object} jsonInput
    */
@@ -421,8 +663,17 @@ export class MeetingHubStore {
       throw new Error('Import data must be a valid JSON object');
     }
 
+    const projects = Array.isArray(data.projects) ? data.projects : [];
     const meetingData = Array.isArray(data.meetingData) ? data.meetingData : (Array.isArray(data.meeting_data) ? data.meeting_data : []);
     const cart = Array.isArray(data.cart) ? data.cart : [];
+
+    let projectCount = 0;
+    for (const proj of projects) {
+      if (proj && proj.id) {
+        await this.db.put('projects', proj);
+        projectCount++;
+      }
+    }
 
     let meetingDataCount = 0;
     for (const record of meetingData) {
@@ -440,14 +691,18 @@ export class MeetingHubStore {
       }
     }
 
+    await this.refreshCache();
+
     this.notify({
       type: 'user_data_imported',
+      projectCount,
       meetingDataCount,
       cartCount
     });
 
     return {
       success: true,
+      projectCount,
       meetingDataCount,
       cartCount
     };

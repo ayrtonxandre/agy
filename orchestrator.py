@@ -24,10 +24,15 @@ import signal
 import atexit
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = Path(os.environ.get("AGY_DATA_DIR", str(BASE_DIR)))
+ATHX_DIR = BASE_DIR / "athx" if (BASE_DIR / "athx").is_dir() else BASE_DIR
+LEGACY_CAL_DIR = BASE_DIR / "legacy_calendar" if (BASE_DIR / "legacy_calendar").is_dir() else BASE_DIR
+DATA_DIR = Path(os.environ.get("AGY_DATA_DIR", str(ATHX_DIR)))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 LOCAL_TZ = ZoneInfo(os.environ.get("TZ", "Europe/Paris"))
 SERVER_PID_FILE = BASE_DIR / "server.pid"
+
+if str(ATHX_DIR) not in sys.path:
+    sys.path.insert(0, str(ATHX_DIR))
 
 # Paths (check DATA_DIR first, then fallback to BASE_DIR if needed)
 GARMIN_CSV = DATA_DIR / "garmin_extracted_workouts.csv"
@@ -37,11 +42,11 @@ DAILY_ACT_CSV = DATA_DIR / "apple_daily_activity.csv"
 SLEEP_CSV = DATA_DIR / "apple_sleep.csv"
 MOBILITY_CSV = DATA_DIR / "apple_mobility_biomechanics.csv"
 WORKOUTS_CSV = DATA_DIR / "apple_workouts_history.csv"
-WORKOUT_HTML = DATA_DIR / "garmin_workout.html"
-CALENDAR_HTML = DATA_DIR / "calendar_dashboard.html"
-ACCESS_LOG = DATA_DIR / "server_access.log"
+WORKOUT_HTML = ATHX_DIR / "garmin_workout.html"
+CALENDAR_HTML = LEGACY_CAL_DIR / "calendar_dashboard.html"
+ACCESS_LOG = BASE_DIR / "server_access.log"
 LAST_PAYLOAD_FILE = DATA_DIR / "last_payload.json"
-CAL_DATA_DIR = BASE_DIR / "calendar_data"
+CAL_DATA_DIR = LEGACY_CAL_DIR / "calendar_data"
 
 def get_python_binary() -> str:
     """Returns the best Python interpreter with all ATHX dependencies installed."""
@@ -648,8 +653,12 @@ def process_health_auto_export_payload(payload: dict) -> dict:
 
     # Regenerate dashboard
     try:
+        dash_script = ATHX_DIR / "generate_unified_athlete_dashboard.py"
+        if not dash_script.exists():
+            dash_script = BASE_DIR / "generate_unified_athlete_dashboard.py"
         res = subprocess.run(
-            [get_python_binary(), str(BASE_DIR / "generate_unified_athlete_dashboard.py")],
+            [get_python_binary(), str(dash_script)],
+            cwd=str(ATHX_DIR),
             capture_output=True,
             text=True,
             timeout=60
@@ -742,9 +751,6 @@ def fetch_google_doc(doc_ref: str) -> dict:
             }
         except Exception as e:
             log_event(f"Notice: Google Drive API live fetch failed for {doc_id}: {e}. Falling back to cache.")
-            }
-        except Exception as e:
-            log_event(f"Notice: Google Drive API live fetch failed for {doc_id}: {e}. Falling back to cache.")
 
     # Fallback to local cache
     if doc_id in cache_data:
@@ -831,9 +837,12 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404, "Athlete Dashboard not found. Run ATHX dashboard build first.")
 
-        # Multi-Calendar Dashboard
+        # Multi-Calendar Dashboard (DEPRECATED: Superseded by Meeting Hub)
         elif clean_path in ("/calendar", "/calendar.html", "/calendar_dashboard.html"):
+            log_event("⚠️ [DEPRECATED] /calendar requested. Standalone calendar is deprecated in favor of /meeting.")
             target_file = CALENDAR_HTML if CALENDAR_HTML.exists() else (BASE_DIR / "calendar_dashboard.html")
+            if not target_file.exists():
+                target_file = BASE_DIR / "legacy_calendar" / "calendar_dashboard.html"
             if target_file.exists():
                 content = target_file.read_bytes()
                 self.send_response(200)
@@ -1010,8 +1019,12 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
 
             # On-demand dashboard rebuild API
             elif clean_path in ("/api/rebuild", "/api/sync/rebuild"):
+                dash_script = ATHX_DIR / "generate_unified_athlete_dashboard.py"
+                if not dash_script.exists():
+                    dash_script = BASE_DIR / "generate_unified_athlete_dashboard.py"
                 res = subprocess.run(
-                    [get_python_binary(), str(BASE_DIR / "generate_unified_athlete_dashboard.py")],
+                    [get_python_binary(), str(dash_script)],
+                    cwd=str(ATHX_DIR),
                     capture_output=True,
                     text=True,
                     timeout=60
@@ -1028,14 +1041,21 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
 
             # On-demand Garmin extraction API
             elif clean_path == "/api/sync/garmin":
+                garmin_script = ATHX_DIR / "extract_garmin_strength.py"
+                if not garmin_script.exists():
+                    garmin_script = BASE_DIR / "extract_garmin_strength.py"
+                dash_script = ATHX_DIR / "generate_unified_athlete_dashboard.py"
+                if not dash_script.exists():
+                    dash_script = BASE_DIR / "generate_unified_athlete_dashboard.py"
                 res = subprocess.run(
-                    [get_python_binary(), str(BASE_DIR / "extract_garmin_strength.py")],
+                    [get_python_binary(), str(garmin_script)],
+                    cwd=str(ATHX_DIR),
                     capture_output=True,
                     text=True,
                     timeout=60
                 )
                 if res.returncode == 0:
-                    subprocess.run([get_python_binary(), str(BASE_DIR / "generate_unified_athlete_dashboard.py")], timeout=60)
+                    subprocess.run([get_python_binary(), str(dash_script)], cwd=str(ATHX_DIR), timeout=60)
                 self.send_response(200 if res.returncode == 0 else 500)
                 self.send_header("Content-Type", "application/json")
                 self.send_cors_headers()
@@ -1048,8 +1068,12 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
             # Live Multi-Calendar Sync API
             elif clean_path in ("/api/sync/calendars", "/api/calendar/sync"):
                 log_event("📅 Live multi-calendar sync triggered (Google, Outlook, iCloud & ATHX)...")
+                cal_script = LEGACY_CAL_DIR / "generate_calendar_dashboard.py"
+                if not cal_script.exists():
+                    cal_script = BASE_DIR / "generate_calendar_dashboard.py"
                 res = subprocess.run(
-                    [get_python_binary(), str(BASE_DIR / "generate_calendar_dashboard.py")],
+                    [get_python_binary(), str(cal_script)],
+                    cwd=str(LEGACY_CAL_DIR),
                     capture_output=True,
                     text=True,
                     timeout=60
@@ -1132,8 +1156,8 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                 else:
                     try:
                         import athx_ai_coach
-                        digest = athx_ai_coach.load_telemetry_digest(BASE_DIR)
-                        qa_result = athx_ai_coach.ask_coach(question, digest=digest, base_dir=BASE_DIR)
+                        digest = athx_ai_coach.load_telemetry_digest(ATHX_DIR)
+                        qa_result = athx_ai_coach.ask_coach(question, digest=digest, base_dir=ATHX_DIR)
                         content = json.dumps(qa_result, indent=2, ensure_ascii=False).encode("utf-8")
                         self.send_response(200)
                         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -1255,9 +1279,10 @@ def run_server(port: int | None = None):
     signal.signal(signal.SIGINT, cleanup_pid)
 
     net = get_network_endpoints(port)
-    log_event(f"🚀 Athlete Orchestrator Server running on port {port} (PID: {pid})")
+    log_event(f"🚀 AGY Master Orchestrator Server running on port {port} (PID: {pid})")
+    log_event(f"  • Meeting Hub        : http://localhost:{port}/meeting")
     log_event(f"  • Athlete Dashboard  : {net['dashboard_local']}")
-    log_event(f"  • Calendar Dashboard : http://localhost:{port}/calendar")
+    log_event(f"  • Calendar (Legacy)  : http://localhost:{port}/calendar [DEPRECATED]")
     log_event(f"  • Webhook (iPhone)   : {net['webhook_mdns']}")
     log_event(f"  • Webhook (LAN IP)   : {net['webhook_lan']}")
     log_event(f"  • Healthcheck        : {net['healthcheck']}")
@@ -1271,10 +1296,13 @@ def run_server(port: int | None = None):
                 time.sleep(interval_hours * 3600)
                 log_event("⏰ Running scheduled background sync...")
                 try:
-                    garmin_tokens = BASE_DIR / "garmin_tokens"
-                    if garmin_tokens.exists():
-                        subprocess.run([sys.executable, str(BASE_DIR / "extract_garmin_strength.py")], timeout=45)
-                    subprocess.run([sys.executable, str(BASE_DIR / "generate_unified_athlete_dashboard.py")], timeout=35)
+                    garmin_tokens = ATHX_DIR / "garmin_tokens"
+                    garmin_script = ATHX_DIR / "extract_garmin_strength.py"
+                    dash_script = ATHX_DIR / "generate_unified_athlete_dashboard.py"
+                    if garmin_tokens.exists() and garmin_script.exists():
+                        subprocess.run([sys.executable, str(garmin_script)], cwd=str(ATHX_DIR), timeout=45)
+                    if dash_script.exists():
+                        subprocess.run([sys.executable, str(dash_script)], cwd=str(ATHX_DIR), timeout=35)
                     threading.Thread(target=git_auto_commit_and_push, args=("periodic background sync",), daemon=True).start()
                 except Exception as ex:
                     log_event(f"Periodic sync warning: {ex}")
@@ -1302,7 +1330,8 @@ if __name__ == "__main__":
                 time_str = f"at {t} ({sessions.get('duration_min', 0)}m)" if t else "OFF"
                 print(f"  • {d:9}: {sessions['type']} {time_str} - {sessions['split']}")
     elif mode == "sync-garmin":
-        subprocess.run([sys.executable, str(BASE_DIR / "extract_garmin_strength.py")])
+        garmin_script = ATHX_DIR / "extract_garmin_strength.py" if (ATHX_DIR / "extract_garmin_strength.py").exists() else BASE_DIR / "extract_garmin_strength.py"
+        subprocess.run([sys.executable, str(garmin_script)], cwd=str(ATHX_DIR))
     elif mode == "ingest":
         target = Path(sys.argv[2]) if len(sys.argv) > 2 else LAST_PAYLOAD_FILE
         if not target.exists():

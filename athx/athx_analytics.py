@@ -1053,7 +1053,7 @@ def evaluate_competition_readiness(strength_res: dict, apple_res: dict, running_
     run_pct = round(min(100.0, (run_std_s / run_curr_s) * 100.0), 1)
 
     # 5. Sandbag Carry / Grip (Standard 60kg)
-    carry_curr = 55.0
+    carry_curr = 56.0
     carry_std = athx_config.COMPETITION_BENCHMARKS["sandbag_carry"]["standard"]
     carry_gap = max(0.0, round(carry_std - carry_curr, 1))
     carry_req_rate = round(carry_gap / weeks_remaining, 2)

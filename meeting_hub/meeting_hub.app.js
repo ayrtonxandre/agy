@@ -1,6 +1,6 @@
 /**
  * Meeting Hub Compiled Application Bundle
- * Generated: 2026-10-29T10:34:02.588Z
+ * Generated: 2026-10-29T14:38:23.138Z
  */
 (function(window, document) {
 'use strict';
@@ -442,9 +442,14 @@ MeetingHub.MemoryAdapter = MemoryAdapter;
 
 
 const DB_NAME = 'MeetingHubDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 const DB_SCHEMA = {
+  // Configured projects
+  projects: {
+    keyPath: 'id'
+  },
+
   // Calendar events imported and synced from external feeds
   events: {
     keyPath: 'id',
@@ -1070,38 +1075,535 @@ class LinkEngine {
 
 MeetingHub.LinkEngine = LinkEngine;
 
+/* === Module: model/project.js === */
+/**
+ * Project Model & Configuration Schema
+ * 
+ * Defines the generic project contract:
+ * { id, name, clientMatch[], docSources[], workstreams[], parserHints[] }
+ * 
+ * Fully decouples domain-specific knowledge (workstreams, clinical terms,
+ * decision triggers, entity tags) into per-project data/config.
+ */
+
+const DEFAULT_CLARIANE_PROJECT = {
+  id: 'clariane',
+  name: 'HDJ Planning Manager (Inicea / Clariane)',
+  clientMatch: ['[planning hdj]', '[planning manager]', 'planning hdj', 'planning manager', 'hdj', 'arbelles', 'mariena', 'mariénia', 'mariéna'],
+  docSources: [
+    '1eLUVhYG6hwiqOzauSEDZoGJHu_B9jQuC5Pmbg-8bd_8',
+    '1jDunJURx26Di9c6k4vjhmA84w3Hh_zCCmCxnU0kcFjY'
+  ],
+  workstreams: [
+    {
+      id: 'ws-admission',
+      title: 'Flux Annonces & Processus d’Admission',
+      badge: 'HM → Foundry',
+      status: 'En déploiement',
+      summary: 'Basculement de la gestion des listes d’attente papier vers le statut "Annonce" dans Hôpital Manager dès accord médical pour alimenter la disponibilité Foundry.',
+      facilities: ['Les Arbelles', 'Mariéna'],
+      tags: ['annonces', 'admission'],
+      keyRules: [
+        'Saisie directe des patients au statut Annonce dans HM pour remonter dans Foundry',
+        'Onglet dédié dans l’outil pour filtrer et isoler les annonces HDJ vs HC'
+      ]
+    },
+    {
+      id: 'ws-parcours',
+      title: 'Modélisation des Programmes Thérapeutiques',
+      badge: 'Moteur & Contraintes',
+      status: 'Actif',
+      summary: 'Paramétrage des programmes standardisés (Dos, Parkinson) et parcours complexes (Neuro, rTMS aux 3 semaines, séances ponctuelles de Diététique/Neuropsy).',
+      facilities: ['Les Arbelles', 'Mariéna', 'Glanum'],
+      tags: ['modeling', 'parcours'],
+      keyRules: [
+        'Politique zéro temps mort : aucun trou inter-séance sans attente',
+        'Bilans d’entrée et de sortie isolés en séances individuelles',
+        'Séances espacées (rTMS) modélisées avec des vacations dédiées à fréquence 3 semaines'
+      ]
+    },
+    {
+      id: 'ws-sync',
+      title: 'Synchronisation SIH & Circuit de Validation',
+      badge: 'Foundry ↔ HM',
+      status: 'En cours',
+      summary: 'Boucle de validation bilatérale : proposition de circuit dans Foundry -> statut "En attente HM" -> saisie créneau HM -> rapprochement automatique en statut "Réel".',
+      facilities: ['Transversal'],
+      tags: ['hm-sync', 'vacations'],
+      keyRules: [
+        'Circuit Foundry passe en "En attente HM" puis réconciliation en "Réel"',
+        'Résolution du connecteur pour la remontée des vacations collectives (Kiné, Balnéo, Ergo)'
+      ]
+    },
+    {
+      id: 'ws-analytics',
+      title: 'Analytique, Alerting & Case Mix',
+      badge: 'Reporting & Pilotage',
+      status: 'Planifié',
+      summary: 'Extraction du case mix réel (% Neuro vs Locomoteur) pour la construction budgétaire et développement du module d’alerting pour double positionnement de patient.',
+      facilities: ['Les Arbelles', 'Mariéna'],
+      tags: ['analytics', 'alerting'],
+      keyRules: [
+        'Indicateur budgétaire case mix (tarifs de journée différenciés par segment)',
+        'Alerte automatique si un patient est positionné simultanément sur deux vacations'
+      ]
+    }
+  ],
+  parserHints: {
+    tools: [
+      { name: 'Foundry (Palantir)', keywords: ['foundry'], type: 'Data & Engine Platform' },
+      { name: 'Hôpital Manager (HM)', keywords: ['hm', 'hôpital manager', 'hopital manager'], type: 'SIH / Dossier Patient' },
+      { name: 'rTMS / tDCS', keywords: ['rtms', 'tdcs'], type: 'Protocole Thérapeutique' },
+      { name: 'Balnéothérapie', keywords: ['balnéo', 'balneo'], type: 'Plateau Technique' },
+      { name: 'Kinésithérapie', keywords: ['kiné', 'kine'], type: 'Soin Rééducation' },
+      { name: 'Ergothérapie', keywords: ['ergo'], type: 'Soin Rééducation' }
+    ],
+    concepts: [
+      { name: 'Flux Annonces', keywords: ['annonce'], desc: 'Gestion des pré-admissions et patients potentiels dans HM vers Foundry' },
+      { name: 'Politique Zéro Temps Mort', keywords: ['zéro temps mort', 'zero temps mort'], desc: 'Optimisation continue sans temps d’attente inter-séances pour les patients' },
+      { name: 'Analytique Case Mix', keywords: ['case mix'], desc: 'Répartition de l’activité Neuro vs Locomoteur pour le pilotage budgétaire' },
+      { name: 'Gestion Surbooking & Forçage', keywords: ['surbooking', 'forcer'], desc: 'Remplacement manuel et dépassement de capacité contrôlé' },
+      { name: 'Vue Vacations & Disponibilité', keywords: ['vacation'], desc: 'Planification centralisée par salle, soignant et créneau' }
+    ],
+    facilities: ['Mariéna', 'Les Arbelles', 'Glanum', 'Inicea', 'Clariane'],
+    decisionTriggers: [
+      { pattern: 'workflow\\s+de\\s+validation\\s*:\\s*(.+)', label: 'Workflow de Validation' },
+      { pattern: 'la\\s+solution\\s+retenue\\s+est\\s+(.+)', label: 'Solution Retenue' },
+      { pattern: 'politique\\s+z[ée]ro\\s+temps\\s+mort\\s*:\\s*(.+)', label: 'Politique Zéro Temps Mort' },
+      { pattern: 'il\\s+a\\s+[ée]t[ée]\\s+propos[ée]\\s+de\\s+(.+)', label: 'Processus Validé' },
+      { pattern: 'les\\s+bilans\\s+d\'entr[ée]e\\s+et\\s+de\\s+sortie\\s+se\\s+font\\s+en\\s+individuel', label: 'Règle Bilans' },
+      { pattern: 'd[ée]monstration\\s+de\\s+la\\s+fonctionnalit[ée]\\s+permettant\\s+de\\s+"forcer"\\s+un\\s+placement', label: 'Règle Surbooking & Forçage' },
+      { pattern: 'l\'outil\\s+a\\s+[ée]t[ée]\\s+adapt[ée]\\s+avec\\s+un\\s+onglet\\s+permettant\\s+d\'inclure\\s+ou\\s+d\'exclure', label: 'Filtre Annonces / Pré-admissions' },
+      { pattern: 'à\\s+terme,\\s+l\'outil\\s+pourrait\\s+offrir\\s+un\\s+accès\\s+en\\s+lecture\\s+seule', label: 'Visibilité Praticiens' }
+    ],
+    tagRules: [
+      { tag: 'hm-sync', keywords: ['hm', 'hôpital manager', 'hopital manager'] },
+      { tag: 'foundry', keywords: ['foundry'] },
+      { tag: 'vacations', keywords: ['vacation'] },
+      { tag: 'annonces', keywords: ['annonce'] },
+      { tag: 'modeling', keywords: ['modélis', 'parcours'] },
+      { tag: 'alerting', keywords: ['alerte', 'alerting'] },
+      { tag: 'analytics', keywords: ['case mix', 'budget'] }
+    ],
+    ownerOrgRules: [
+      { org: 'Artefact', keywords: ['artefact', 'ayrton', 'benjamin'] },
+      { org: 'Les Arbelles', keywords: ['arbelles', 'fabien', 'delphine'] },
+      { org: 'Mariéna', keywords: ['mariena', 'mariéna', 'claire'] },
+      { org: 'Client', keywords: ['clariane', 'inicea'] }
+    ]
+  }
+};
+
+const MO_PROJECT = {
+  id: 'clariane-mo',
+  name: 'Molécules Onéreuses (Clariane)',
+  clientMatch: ['[molécules onéreuses]', '[mo]', 'molécules onéreuses', 'molecules onereuses', 'mo -', 'mo:', 'passation molécules', 'point tests mo', 'questions mo'],
+  docSources: [],
+  workstreams: [
+    {
+      id: 'ws-mo-copil',
+      title: 'Pilotage & COPIL Déploiement',
+      badge: 'COPIL',
+      status: 'Actif',
+      summary: 'Gouvernance, validation des jalons et coordination du déploiement opérationnel.',
+      facilities: ['Clariane'],
+      tags: ['copil', 'pilotage'],
+      keyRules: ['Suivi hebdomadaire des indicateurs de déploiement']
+    },
+    {
+      id: 'ws-mo-anomalies',
+      title: 'Suivi Anomalies & Évolutions',
+      badge: 'Run & MCO',
+      status: 'En cours',
+      summary: 'Traitement des anomalies de remontée et suivi des évolutions applicatives.',
+      facilities: ['Clariane'],
+      tags: ['anomalies', 'run'],
+      keyRules: ['Priorisation des tickets bloquants sur les flux']
+    },
+    {
+      id: 'ws-mo-formation',
+      title: 'Formation & Accompagnement Pilotes',
+      badge: 'Change',
+      status: 'En déploiement',
+      summary: 'Organisation des vagues de formation (options 1 & 2) et sessions pilotes.',
+      facilities: ['Clariane'],
+      tags: ['formation', 'pilotes'],
+      keyRules: ['Validation des acquis avant bascule en production']
+    },
+    {
+      id: 'ws-mo-passation',
+      title: 'Passation & Transition Opérationnelle',
+      badge: 'Transition',
+      status: 'Planifié',
+      summary: 'Documentation, transfert de compétences et kick-off de passation.',
+      facilities: ['Clariane'],
+      tags: ['passation', 'kick-off'],
+      keyRules: ['Livrables de transition signés']
+    }
+  ],
+  parserHints: {
+    tools: [
+      { name: 'Palantir Foundry', keywords: ['foundry'], type: 'Plateforme Data' },
+      { name: 'Netsoins', keywords: ['netsoins'], type: 'SIH Établissements' },
+      { name: 'Traçabilité Palantir', keywords: ['tracabilité', 'traçabilité'], type: 'Module SI' }
+    ],
+    concepts: [
+      { name: 'Molécules Onéreuses', keywords: ['molécules onéreuses', 'mo'], desc: 'Gestion et facturation des molécules à statut onéreux' },
+      { name: 'Vagues de Formation', keywords: ['vague 1', 'vague 2', 'formation'], desc: 'Déploiement progressif auprès des utilisateurs' }
+    ],
+    facilities: ['Clariane'],
+    decisionTriggers: [
+      { pattern: 'validation\\s+du\\s+copil\\s*:\\s*(.+)', label: 'Décision COPIL' },
+      { pattern: 'la\\s+date\\s+de\\s+bascule\\s+est\\s+(.+)', label: 'Calendrier Déploiement' }
+    ],
+    tagRules: [
+      { tag: 'copil', keywords: ['copil'] },
+      { tag: 'anomalies', keywords: ['anomalie'] },
+      { tag: 'formation', keywords: ['formation'] }
+    ],
+    ownerOrgRules: [
+      { org: 'Artefact', keywords: ['artefact', 'ayrton'] },
+      { org: 'Clariane', keywords: ['clariane'] }
+    ]
+  }
+};
+
+const INVOICING_PROJECT = {
+  id: 'clariane-invoicing',
+  name: 'Invoicing & Facturation (Clariane)',
+  clientMatch: ['[invoicing]', 'invoicing', 'facturation'],
+  docSources: [],
+  workstreams: [
+    {
+      id: 'ws-weekly-facturation',
+      title: 'Weekly Facturation x Data',
+      badge: 'Facturation',
+      status: 'Actif',
+      summary: 'Alignement hebdomadaire sur le traitement des flux de facturation et rapprochements.',
+      facilities: ['Clariane'],
+      tags: ['invoicing', 'facturation'],
+      keyRules: ['Contrôle qualité des flux de facturation']
+    }
+  ],
+  parserHints: {
+    tools: [],
+    concepts: [{ name: 'Facturation x Data', keywords: ['facturation', 'invoicing'], desc: 'Suivi des données de facturation' }],
+    facilities: ['Clariane'],
+    decisionTriggers: [],
+    tagRules: [{ tag: 'invoicing', keywords: ['invoicing', 'facturation'] }],
+    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }, { org: 'Clariane', keywords: ['clariane'] }]
+  }
+};
+
+const F360_PROJECT = {
+  id: 'clariane-f360',
+  name: 'F360 Médical (Clariane)',
+  clientMatch: ['[f360', 'f360'],
+  docSources: [],
+  workstreams: [
+    {
+      id: 'ws-dashboard-v2',
+      title: 'Revue Dashboard Médical V2',
+      badge: 'Dashboard',
+      status: 'Actif',
+      summary: 'Itération et retours RS sur le tableau de bord médical F360.',
+      facilities: ['Clariane'],
+      tags: ['dashboard', 'médical'],
+      keyRules: ['Intégration des retours médecins et soignants']
+    }
+  ],
+  parserHints: {
+    tools: [{ name: 'F360', keywords: ['f360'], type: 'Plateforme Médicale' }],
+    concepts: [{ name: 'Dashboard Médical', keywords: ['dashboard', 'médical'], desc: 'Pilotage de l’activité médicale' }],
+    facilities: ['Clariane'],
+    decisionTriggers: [],
+    tagRules: [{ tag: 'f360', keywords: ['f360'] }],
+    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }, { org: 'Clariane', keywords: ['clariane'] }]
+  }
+};
+
+const CLARIANE_DATA_PROJECT = {
+  id: 'clariane-data',
+  name: 'Clariane Data & Coproj',
+  clientMatch: ['[coproj data inicea]', 'coproj', '[clariane] - weekly sync', 'équipe parisienne', 'connexion mensuel ordinateur', '[artefact team] - bi-weekly'],
+  docSources: [],
+  workstreams: [
+    {
+      id: 'ws-coproj-inicea',
+      title: 'Coproj Data Inicea',
+      badge: 'Coproj',
+      status: 'Actif',
+      summary: 'Comité de projet data transverse Inicea / Clariane.',
+      facilities: ['Clariane'],
+      tags: ['coproj', 'inicea'],
+      keyRules: ['Suivi transverse du portefeuille de projets data']
+    },
+    {
+      id: 'ws-equipe-sync',
+      title: 'Weekly Sync & Vie d’Équipe',
+      badge: 'Équipe',
+      status: 'Actif',
+      summary: 'Synchronisation d’équipe parisienne et alignement bimensuel Artefact.',
+      facilities: ['Clariane'],
+      tags: ['sync', 'équipe'],
+      keyRules: ['Partage d’informations et coordination']
+    }
+  ],
+  parserHints: {
+    tools: [],
+    concepts: [{ name: 'Coproj Data', keywords: ['coproj'], desc: 'Gouvernance data Inicea' }],
+    facilities: ['Clariane'],
+    decisionTriggers: [],
+    tagRules: [{ tag: 'coproj', keywords: ['coproj'] }],
+    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }, { org: 'Clariane', keywords: ['clariane'] }]
+  }
+};
+
+const GE_UC_WIZARD_PROJECT = {
+  id: 'ge-uc-wizard',
+  name: 'GE Enterprise / UC Wizard (Artefact)',
+  clientMatch: ['ge enterprise', 'uc wizard', 'datastore ge drive'],
+  docSources: [],
+  workstreams: [
+    {
+      id: 'ws-ge-sync',
+      title: 'GE Enterprise Stream',
+      badge: 'GE',
+      status: 'Actif',
+      summary: 'Synchronisation hebdomadaire et architecture datastore GE Drive.',
+      facilities: ['Artefact'],
+      tags: ['ge-enterprise'],
+      keyRules: ['Alignement hebdomadaire']
+    },
+    {
+      id: 'ws-uc-wizard',
+      title: 'UC Wizard Development',
+      badge: 'UC Wizard',
+      status: 'Actif',
+      summary: 'Catchup et sprint sync pour l’application UC Wizard.',
+      facilities: ['Artefact'],
+      tags: ['uc-wizard'],
+      keyRules: ['Revue des use cases et avancement technique']
+    }
+  ],
+  parserHints: {
+    tools: [{ name: 'GE Drive', keywords: ['ge drive'], type: 'Storage' }],
+    concepts: [{ name: 'UC Wizard', keywords: ['uc wizard'], desc: 'Wizard de cadrage des cas d’usage' }],
+    facilities: ['Artefact'],
+    decisionTriggers: [],
+    tagRules: [{ tag: 'ge', keywords: ['ge enterprise'] }, { tag: 'uc-wizard', keywords: ['uc wizard'] }],
+    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }]
+  }
+};
+
+const HEALTHCARE_PROJECT = {
+  id: 'healthcare-mandate',
+  name: 'Healthcare Mandate & Care Dispensing',
+  clientMatch: ['[care dispensing]', 'care dispensing', 'healthoween', 'healthcare'],
+  docSources: [],
+  workstreams: [
+    {
+      id: 'ws-care-dispensing',
+      title: 'Care Dispensing Framework',
+      badge: 'Care Dispensing',
+      status: 'Actif',
+      summary: 'Sessions hebdomadaires le vendredi sur la conception des supports et de l’offre Care Dispensing.',
+      facilities: ['Artefact'],
+      tags: ['care-dispensing'],
+      keyRules: ['Livrables hebdomadaires de présentation']
+    },
+    {
+      id: 'ws-healthcare-team',
+      title: 'Healthcare Mandate & Community',
+      badge: 'Mandat',
+      status: 'Actif',
+      summary: 'Animation de la communauté santé Artefact et événements dédiés (Healthoween).',
+      facilities: ['Artefact'],
+      tags: ['healthcare', 'mandat'],
+      keyRules: ['Renforcement de la culture santé interne']
+    }
+  ],
+  parserHints: {
+    tools: [],
+    concepts: [{ name: 'Care Dispensing', keywords: ['care dispensing'], desc: 'Offre et processus de dispensation des soins' }],
+    facilities: ['Artefact'],
+    decisionTriggers: [],
+    tagRules: [{ tag: 'care-dispensing', keywords: ['care dispensing'] }],
+    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }]
+  }
+};
+
+const PRIDEFACT_PROJECT = {
+  id: 'pridefact',
+  name: 'PrideFact - Mandat RSE (Artefact)',
+  clientMatch: ['[pridefact]', 'pridefact', 'mandat rse', 'women@artefact'],
+  docSources: [],
+  workstreams: [
+    {
+      id: 'ws-pridefact-synchro',
+      title: 'Synchro Mandat RSE',
+      badge: 'Mandat RSE',
+      status: 'Actif',
+      summary: 'Coordination bimensuelle des actions RSE et inclusion.',
+      facilities: ['Artefact'],
+      tags: ['rse', 'inclusion'],
+      keyRules: ['Suivi des engagements RSE']
+    },
+    {
+      id: 'ws-pridefact-travail',
+      title: 'Sessions de Travail & Événements',
+      badge: 'Ateliers',
+      status: 'Actif',
+      summary: 'Ateliers de travail, intégration avec Women@Artefact et sensibilisation.',
+      facilities: ['Artefact'],
+      tags: ['ateliers', 'sensibilisation'],
+      keyRules: ['Préparation des livrables de communication interne']
+    }
+  ],
+  parserHints: {
+    tools: [],
+    concepts: [{ name: 'Mandat RSE', keywords: ['rse', 'pridefact'], desc: 'Engagement sociétal et inclusion' }],
+    facilities: ['Artefact'],
+    decisionTriggers: [],
+    tagRules: [{ tag: 'pridefact', keywords: ['pridefact'] }],
+    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }]
+  }
+};
+
+const COUNSELING_PROJECT = {
+  id: 'counseling',
+  name: 'Counseling & Talent Review (Artefact)',
+  clientMatch: ['[itw]', 'counselling', 'counseling', 'counselor', 'comités d\'évaluation', 'eval h2', 'peer selection', 'self & peer review'],
+  docSources: [],
+  workstreams: [
+    {
+      id: 'ws-eval-h2',
+      title: 'Comités d’Évaluation & Peer Reviews',
+      badge: 'Évaluations H2',
+      status: 'Actif',
+      summary: 'Campagne d’évaluation H2 2026, comités d’arbitrage et sélection des pairs.',
+      facilities: ['Artefact'],
+      tags: ['evaluations', 'comites'],
+      keyRules: ['Respect des échéances de recueil des feedbacks']
+    },
+    {
+      id: 'ws-counseling-1to1',
+      title: 'Counseling & Accompagnement Carrière',
+      badge: 'Counseling',
+      status: 'Actif',
+      summary: 'Entretiens réguliers de counseling et suivi du plan de développement.',
+      facilities: ['Artefact'],
+      tags: ['counseling', '1to1'],
+      keyRules: ['Suivi des objectifs semestriels']
+    }
+  ],
+  parserHints: {
+    tools: [],
+    concepts: [{ name: 'Counseling', keywords: ['counseling', 'counselling'], desc: 'Accompagnement et mentorat RH' }],
+    facilities: ['Artefact'],
+    decisionTriggers: [],
+    tagRules: [{ tag: 'counseling', keywords: ['counseling', 'counselling'] }],
+    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }]
+  }
+};
+
+const DEFAULT_PROJECTS = [
+  DEFAULT_CLARIANE_PROJECT,
+  MO_PROJECT,
+  INVOICING_PROJECT,
+  F360_PROJECT,
+  CLARIANE_DATA_PROJECT,
+  GE_UC_WIZARD_PROJECT,
+  HEALTHCARE_PROJECT,
+  PRIDEFACT_PROJECT,
+  COUNSELING_PROJECT
+];
+
+class ProjectModel {
+  static createDefault(name, clientMatch = []) {
+    const slug = (name || 'project').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const clientList = clientMatch.length > 0 ? clientMatch : [name];
+    return {
+      id: slug || `proj-${Date.now()}`,
+      name: name || 'New Project',
+      clientMatch: clientList,
+      docSources: [],
+      workstreams: [],
+      parserHints: {
+        tools: [],
+        concepts: [],
+        facilities: [],
+        decisionTriggers: [],
+        tagRules: [],
+        ownerOrgRules: []
+      }
+    };
+  }
+
+  static validate(project) {
+    if (!project || typeof project !== 'object') return false;
+    if (!project.id || typeof project.id !== 'string') return false;
+    if (!project.name || typeof project.name !== 'string') return false;
+    if (!Array.isArray(project.clientMatch)) project.clientMatch = [];
+    if (!Array.isArray(project.docSources)) project.docSources = [];
+    if (!Array.isArray(project.workstreams)) project.workstreams = [];
+    if (!project.parserHints || typeof project.parserHints !== 'object') {
+      project.parserHints = {
+        tools: [],
+        concepts: [],
+        facilities: [],
+        decisionTriggers: [],
+        tagRules: [],
+        ownerOrgRules: []
+      };
+    }
+    return true;
+  }
+}
+
+MeetingHub.ProjectModel = ProjectModel;
+MeetingHub.DEFAULT_CLARIANE_PROJECT = DEFAULT_CLARIANE_PROJECT;
+MeetingHub.MO_PROJECT = MO_PROJECT;
+MeetingHub.INVOICING_PROJECT = INVOICING_PROJECT;
+MeetingHub.F360_PROJECT = F360_PROJECT;
+MeetingHub.CLARIANE_DATA_PROJECT = CLARIANE_DATA_PROJECT;
+MeetingHub.GE_UC_WIZARD_PROJECT = GE_UC_WIZARD_PROJECT;
+MeetingHub.HEALTHCARE_PROJECT = HEALTHCARE_PROJECT;
+MeetingHub.PRIDEFACT_PROJECT = PRIDEFACT_PROJECT;
+MeetingHub.COUNSELING_PROJECT = COUNSELING_PROJECT;
+MeetingHub.DEFAULT_PROJECTS = DEFAULT_PROJECTS;
+
 /* === Module: model/minutes_engine.js === */
 /**
  * Meeting Minutes Intelligence Engine
  * 
- * High-precision parser for structured meeting minutes (such as Google Docs notes).
- * Extracts:
- * - Metadata (Date, Title, Facility/Site)
- * - Participants (Name, Role, Organization)
- * - Discussion Topics & Sub-points
- * - Action Items with Owner, Due Timing, and Tags
- * - Architecture & Operational Decisions
- * - Domain Knowledge Entities & Tools
+ * Generic high-precision parser for structured meeting minutes.
+ * Decoupled from any domain knowledge or client-specific vocabulary.
+ * All clinical/business concepts, tools, workstream tags, and decision triggers
+ * are driven dynamically by the project configuration.
  */
 
 class MinutesEngine {
   /**
    * Main parsing entry point.
    * @param {string} rawText Raw plain text or markdown from Google Doc / notes
-   * @param {object} meta Optional contextual metadata (e.g. event summary, date)
+   * @param {object} meta Optional contextual metadata (e.g. event summary, date, meetingId)
+   * @param {object} projectConfig Optional Project configuration object containing parserHints
    * @returns {object} Structured minutes intelligence
    */
-  static parseMinutes(rawText, meta = {}) {
+  static parseMinutes(rawText, meta = {}, projectConfig = null) {
     if (!rawText || typeof rawText !== 'string') {
       return {
         title: meta.title || 'Untitled Meeting',
         date: meta.date || '',
         facility: meta.facility || '',
+        meetingId: meta.meetingId || '',
         participants: [],
         topics: [],
         actions: [],
         decisions: [],
-        knowledge: { tools: [], concepts: [], facilities: [] }
+        knowledge: { tools: [], concepts: [], facilities: [] },
+        rawLength: 0
       };
     }
 
@@ -1109,19 +1611,21 @@ class MinutesEngine {
     const cleanText = rawText.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     const lines = cleanText.split('\n');
 
+    const hints = projectConfig?.parserHints || {};
     const date = MinutesEngine.extractDate(cleanText, meta.date);
-    const facility = MinutesEngine.extractFacility(cleanText, meta.title);
+    const facility = MinutesEngine.extractFacility(cleanText, meta.title, hints.facilities);
     const title = MinutesEngine.extractTitle(cleanText, meta.title);
-    const participants = MinutesEngine.extractParticipants(lines);
+    const participants = MinutesEngine.extractParticipants(lines, hints.ownerOrgRules);
     const topics = MinutesEngine.extractTopics(lines);
-    const actions = MinutesEngine.extractActions(lines, date);
-    const decisions = MinutesEngine.extractDecisions(cleanText, topics);
-    const knowledge = MinutesEngine.extractKnowledge(cleanText, facility);
+    const actions = MinutesEngine.extractActions(lines, date, hints, meta);
+    const decisions = MinutesEngine.extractDecisions(cleanText, topics, hints, meta);
+    const knowledge = MinutesEngine.extractKnowledge(cleanText, facility, hints);
 
     return {
       title,
       date,
       facility,
+      meetingId: meta.meetingId || '',
       participants,
       topics,
       actions,
@@ -1134,44 +1638,50 @@ class MinutesEngine {
   /* ================= Metadata Extraction ================= */
 
   static extractDate(text, fallbackDate = '') {
-    // Check "Date | 26 Octobre 2026" or "Date : 21/10/2026"
     const match = text.match(/Date\s*[:|]\s*([^\n\r]+)/i);
     if (match && match[1].trim()) {
       return match[1].trim();
     }
-    // Check regex for date in French format
     const frDateMatch = text.match(/\b(\d{1,2})\s+(Janvier|Février|Mars|Avril|Mai|Juin|Juillet|Août|Septembre|Octobre|Novembre|Décembre)\s+(\d{4})\b/i);
     if (frDateMatch) {
       return frDateMatch[0];
     }
+    const isoMatch = text.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+    if (isoMatch) {
+      return isoMatch[1];
+    }
     return fallbackDate || '';
   }
 
-  static extractFacility(text, fallbackTitle = '') {
-    const combined = `${text.slice(0, 500)} ${fallbackTitle}`.toLowerCase();
-    if (combined.includes('mariénia') || combined.includes('marienia')) return 'Mariéna';
-    if (combined.includes('arbelles') || combined.includes('les arbelles')) return 'Les Arbelles';
-    if (combined.includes('glanum')) return 'Glanum';
-    if (combined.includes('inicea')) return 'Inicea';
-    if (combined.includes('clariane')) return 'Clariane';
+  static extractFacility(text, fallbackTitle = '', configuredFacilities = []) {
+    const combined = `${text.slice(0, 600)} ${fallbackTitle}`.toLowerCase();
+    
+    // Check against configured project facilities
+    if (Array.isArray(configuredFacilities) && configuredFacilities.length > 0) {
+      for (const fac of configuredFacilities) {
+        if (fac && combined.includes(fac.toLowerCase())) {
+          return fac;
+        }
+      }
+    }
+
     return '';
   }
 
   static extractTitle(text, fallbackTitle = '') {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    // Find lines before horizontal separator or greeting
     for (let i = 0; i < Math.min(lines.length, 5); i++) {
       const line = lines[i];
-      if (line.includes('HDJ Planning Manager') || line.includes('Paramétrage') || line.includes('Atelier') || line.includes('Compte Rendu')) {
+      if (/compte\s*rendu|minutes|ordre\s+du\s+jour|meeting|reunion|réunion|atelier/i.test(line)) {
         return line.replace(/^#+\s*/, '').trim();
       }
     }
-    return fallbackTitle || (lines[0] || 'Meeting Minutes');
+    return fallbackTitle || (lines[0] ? lines[0].replace(/^#+\s*/, '').trim() : 'Meeting Minutes');
   }
 
   /* ================= Participants Extraction ================= */
 
-  static extractParticipants(lines) {
+  static extractParticipants(lines, ownerOrgRules = []) {
     const participants = [];
     let inSection = false;
 
@@ -1179,18 +1689,17 @@ class MinutesEngine {
       const line = lines[i].trim();
       if (!line) continue;
 
-      if (/^#*\s*Participants\b/i.test(line)) {
+      if (/^#*\s*(Participants|Attendees|Présents|Presences|Présences)\b/i.test(line)) {
         inSection = true;
         continue;
       }
 
       if (inSection) {
-        // If we reach the next header, break out
-        if (/^#*\s*(Points\s+abord[ée]s|(?:Les\s+)?prochaines\s+[ée]tapes|Actions|Ordre\s+du\s+jour|Agenda|Minutes)/i.test(line)) {
+        // Break out on next major header
+        if (/^#*\s*(Points\s+abord[ée]s|Prochaines\s+[ée]tapes|Actions|Ordre\s+du\s+jour|Agenda|Minutes|Next\s+steps)/i.test(line)) {
           break;
         }
 
-        // Parse bullet participant line
         if (/^[*\-•]/.test(line)) {
           const raw = line.replace(/^[*\-•]\s*/, '').trim();
           let name = raw;
@@ -1213,12 +1722,18 @@ class MinutesEngine {
             }
           }
 
-          // Detect organization
+          // Classify organization from rules
           const lowerRole = role.toLowerCase();
-          if (lowerRole.includes('marienia') || lowerRole.includes('mariéna')) org = 'Mariéna';
-          else if (lowerRole.includes('arbelles')) org = 'Les Arbelles';
-          else if (lowerRole.includes('artefact') || lowerRole.includes('data analyst')) org = 'Artefact';
-          else if (lowerRole.includes('clariane')) org = 'Clariane';
+          const lowerName = name.toLowerCase();
+          if (Array.isArray(ownerOrgRules)) {
+            for (const rule of ownerOrgRules) {
+              const kws = rule.keywords || rule.match || [];
+              if (kws.some(k => lowerRole.includes(k.toLowerCase()) || lowerName.includes(k.toLowerCase()))) {
+                org = rule.org;
+                break;
+              }
+            }
+          }
 
           participants.push({ name, role, org, raw });
         }
@@ -1240,22 +1755,17 @@ class MinutesEngine {
       const trimmed = rawLine.trim();
       if (!trimmed) continue;
 
-      if (/^#*\s*Points\s+abord[ée]s/i.test(trimmed)) {
+      if (/^#*\s*(Points\s+abord[ée]s|Discussion|Topics|Ordre\s+du\s+jour|Notes)/i.test(trimmed)) {
         inSection = true;
         continue;
       }
 
       if (inSection) {
-        // Stop if we hit Next steps or footer
+        // Stop on next steps / actions header
         if (/^#*\s*((?:Les\s+)?prochaines\s+[ée]tapes|Actions|Next\s+Steps)/i.test(trimmed)) {
           break;
         }
 
-        // Determine if line is a new topic header
-        // Examples:
-        // "Contexte et Approche du projet" (no bullet, or markdown header)
-        // "* Vue Vacations et Visibilité :"
-        // "* Processus d'Admission et flux "Annonce" :"
         const isBullet = /^[*\-•]/.test(trimmed);
         const hasColonEnd = /:\s*$/.test(trimmed);
         const indentLevel = rawLine.search(/\S|$/);
@@ -1281,16 +1791,14 @@ class MinutesEngine {
           continue;
         }
 
-        // Otherwise it's a point inside current topic
         if (currentTopic) {
           const cleanPoint = trimmed.replace(/^[*\-•]\s*/, '').trim();
           if (cleanPoint) {
             currentTopic.points.push(cleanPoint);
           }
         } else if (trimmed) {
-          // Fallback initial topic
           currentTopic = {
-            title: 'Points Principaux',
+            title: 'General',
             points: [trimmed.replace(/^[*\-•]\s*/, '').trim()]
           };
         }
@@ -1306,9 +1814,13 @@ class MinutesEngine {
 
   /* ================= Actions Extraction ================= */
 
-  static extractActions(lines, contextDate = '') {
+  static extractActions(lines, contextDate = '', hints = {}, meta = {}) {
     const actions = [];
     let inSection = false;
+    const meetingLink = meta.meetingId ? `#/meeting/${encodeURIComponent(meta.meetingId)}` : '';
+
+    const tagRules = hints.tagRules || [];
+    const ownerOrgRules = hints.ownerOrgRules || [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -1320,26 +1832,35 @@ class MinutesEngine {
       }
 
       if (inSection) {
-        // Stop if hitting a new major header
+        // Stop if hitting a major new section
         if (/^#+\s+[A-Z]/.test(line) && !line.includes('étape') && !line.includes('action')) {
           break;
         }
 
         if (/^[*\-•]/.test(line)) {
-          const raw = line.replace(/^[*\-•]\s*/, '').trim();
-          let owner = 'Équipe';
+          let raw = line.replace(/^[*\-•]\s*/, '').trim();
+          let isDone = false;
+
+          // Strip checkbox markdown if present: [ ] or [x] or [X]
+          if (/^\[([ xX])\]\s*/.test(raw)) {
+            const cbMatch = raw.match(/^\[([ xX])\]\s*/);
+            if (cbMatch[1].toLowerCase() === 'x') isDone = true;
+            raw = raw.replace(/^\[([ xX])\]\s*/, '').trim();
+          }
+
+          let owner = 'Team';
           let text = raw;
           let dueDate = '';
 
           // Look for "Owner : Action" or "Owner | Action"
-          const colonMatch = raw.match(/^([A-Za-zÀ-ÿ0-9\s/]+)\s*[:|]\s*(.+)$/);
+          const colonMatch = raw.match(/^([A-Za-zÀ-ÿ0-9\s/.'-]+)\s*[:|]\s*(.+)$/);
           if (colonMatch) {
             const potentialOwner = colonMatch[1].trim();
             const actionText = colonMatch[2].trim();
 
-            if (potentialOwner.toLowerCase().includes('prochain point') || potentialOwner.toLowerCase().includes('suivi')) {
-              owner = 'Équipe';
-              text = `Prochain point de suivi : ${actionText}`;
+            if (potentialOwner.toLowerCase().includes('prochain point') || potentialOwner.toLowerCase().includes('suivi') || potentialOwner.toLowerCase().includes('next sync')) {
+              owner = 'Team';
+              text = `${potentialOwner} : ${actionText}`;
               dueDate = actionText;
             } else {
               owner = potentialOwner;
@@ -1347,33 +1868,50 @@ class MinutesEngine {
             }
           }
 
-          // Due date inference
-          const lowerText = text.toLowerCase();
-          if (lowerText.includes('mardi matin') || lowerText.includes('semaine prochaine')) {
-            dueDate = 'Semaine prochaine';
-          } else if (lowerText.includes('dans la semaine')) {
-            dueDate = 'Cette semaine';
-          } else if (lowerText.includes('dès que') || lowerText.includes('urgent')) {
-            dueDate = 'Prioritaire';
+          // Due timing inference
+          const contextYear = contextDate ? (contextDate.match(/\b(\d{4})\b/) ? contextDate.match(/\b(\d{4})\b/)[1] : new Date().getFullYear()) : new Date().getFullYear();
+          const isoDateMatch = text.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+          const slashDateMatch = text.match(/(?:avant le|pour le|le|by|due|before)?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/i);
+
+          if (isoDateMatch) {
+            dueDate = isoDateMatch[1];
+          } else if (slashDateMatch) {
+            const d = slashDateMatch[1].padStart(2, '0');
+            const m = slashDateMatch[2].padStart(2, '0');
+            const y = slashDateMatch[3] ? (slashDateMatch[3].length === 2 ? `20${slashDateMatch[3]}` : slashDateMatch[3]) : contextYear;
+            dueDate = `${y}-${m}-${d}`;
           }
 
-          // Identify workstream tag
-          const tags = [];
-          if (lowerText.includes('hm') || lowerText.includes('hôpital manager')) tags.push('hm-sync');
-          if (lowerText.includes('foundry')) tags.push('foundry');
-          if (lowerText.includes('vacation')) tags.push('vacations');
-          if (lowerText.includes('annonce')) tags.push('annonces');
-          if (lowerText.includes('modélis') || lowerText.includes('parcours')) tags.push('modeling');
-          if (lowerText.includes('alerte') || lowerText.includes('alerting')) tags.push('alerting');
-          if (lowerText.includes('case mix') || lowerText.includes('budget')) tags.push('analytics');
+          if (!dueDate) {
+            const lowerText = text.toLowerCase();
+            if (lowerText.includes('mardi matin') || lowerText.includes('semaine prochaine') || lowerText.includes('next week')) {
+              dueDate = 'Next week';
+            } else if (lowerText.includes('dans la semaine') || lowerText.includes('this week')) {
+              dueDate = 'This week';
+            } else if (lowerText.includes('dès que') || lowerText.includes('urgent') || lowerText.includes('prioritaire')) {
+              dueDate = 'Priority';
+            }
+          }
 
-          // Infer owner organization
-          let ownerOrg = 'Transversal';
+          // Dynamic workstream tags from project parser hints
+          const tags = [];
+          const lowerText = text.toLowerCase();
+          for (const rule of tagRules) {
+            const kws = rule.keywords || rule.match || [];
+            if (kws.some(k => lowerText.includes(k.toLowerCase()))) {
+              tags.push(rule.tag);
+            }
+          }
+
+          // Dynamic owner organization from project parser hints
+          let ownerOrg = 'Team';
           const lowerOwner = owner.toLowerCase();
-          if (lowerOwner.includes('artefact') || lowerOwner.includes('ayrton') || lowerOwner.includes('benjamin')) {
-            ownerOrg = 'Artefact';
-          } else if (lowerOwner.includes('arbelles') || lowerOwner.includes('mariena') || lowerOwner.includes('mariéna') || lowerOwner.includes('claire') || lowerOwner.includes('fabien') || lowerOwner.includes('delphine') || lowerOwner.includes('clariane')) {
-            ownerOrg = 'Client';
+          for (const rule of ownerOrgRules) {
+            const kws = rule.keywords || rule.match || [];
+            if (kws.some(k => lowerOwner.includes(k.toLowerCase()) || lowerText.includes(k.toLowerCase()))) {
+              ownerOrg = rule.org;
+              break;
+            }
           }
 
           actions.push({
@@ -1383,8 +1921,10 @@ class MinutesEngine {
             text,
             dueDate,
             tags,
-            done: false,
-            source: 'minutes'
+            done: isDone,
+            source: 'minutes',
+            quote: line,
+            meetingLink
           });
         }
       }
@@ -1395,32 +1935,51 @@ class MinutesEngine {
 
   /* ================= Decisions Extraction ================= */
 
-  static extractDecisions(cleanText, topics = []) {
+  static extractDecisions(cleanText, topics = [], hints = {}, meta = {}) {
     const decisions = [];
     const lines = cleanText.split('\n').map(l => l.trim()).filter(Boolean);
+    const meetingLink = meta.meetingId ? `#/meeting/${encodeURIComponent(meta.meetingId)}` : '';
 
-    // Heuristic patterns for decisions in French meeting minutes
-    const decisionTriggers = [
-      { regex: /workflow\s+de\s+validation\s*:\s*(.+)/i, label: 'Workflow de Validation' },
-      { regex: /la\s+solution\s+retenue\s+est\s+(.+)/i, label: 'Solution Retenue' },
-      { regex: /politique\s+z[ée]ro\s+temps\s+mort\s*:\s*(.+)/i, label: 'Politique Zéro Temps Mort' },
-      { regex: /il\s+a\s+[ée]t[ée]\s+propos[ée]\s+de\s+(.+)/i, label: 'Processus Validé' },
-      { regex: /les\s+bilans\s+d'entr[ée]e\s+et\s+de\s+sortie\s+se\s+font\s+en\s+individuel/i, label: 'Règle Bilans' },
-      { regex: /d[ée]monstration\s+de\s+la\s+fonctionnalit[ée]\s+permettant\s+de\s+"forcer"\s+un\s+placement/i, label: 'Règle Surbooking & Forçage' },
-      { regex: /l'outil\s+a\s+[ée]t[ée]\s+adapt[ée]\s+avec\s+un\s+onglet\s+permettant\s+d'inclure\s+ou\s+d'exclure/i, label: 'Filtre Annonces / Pré-admissions' },
-      { regex: /à\s+terme,\s+l'outil\s+pourrait\s+offrir\s+un\s+accès\s+en\s+lecture\s+seule/i, label: 'Visibilité Praticiens' }
+    // Project-configured decision triggers
+    const configuredTriggers = (hints.decisionTriggers || []).map(t => {
+      try {
+        if (typeof t === 'string') {
+          const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return { regex: new RegExp(`(?:\\b${escaped}\\b)\\s*[:|]?\\s*(.+)`, 'i'), label: t };
+        }
+        return { regex: new RegExp(t.pattern, 'i'), label: t.label || 'Decision' };
+      } catch (e) {
+        return null;
+      }
+    }).filter(Boolean);
+
+    // Generic fallback triggers if none configured or alongside
+    const genericTriggers = [
+      { regex: /(?:\bdécision\b|\bdecision\b)\s*[:|]\s*(.+)/i, label: 'Decision' },
+      { regex: /(?:\bdécidé\s+que\b|\bdecided\s+that\b|\bconvenu\s+de\b|\bagreed\s+to\b)\s+(.+)/i, label: 'Agreement' },
+      { regex: /(?:\bsolution\s+retenue\b|\bsolution\s+adoptée\b)\s*[:|]?\s*(.+)/i, label: 'Adopted Solution' }
     ];
 
+    const decisionTriggers = configuredTriggers.length > 0
+      ? [...configuredTriggers, ...genericTriggers]
+      : genericTriggers;
+
     for (const line of lines) {
+      // Skip section headers like "Décisions prises:" or "Décisions :"
+      if (/^(?:#+\s*)?(?:décisions?(?:\s+prises)?|decisions?)\s*:\s*$/i.test(line)) {
+        continue;
+      }
+
       for (const trigger of decisionTriggers) {
         if (trigger.regex.test(line)) {
-          const match = line.match(trigger.regex);
           const statement = line.replace(/^[*\-•]\s*/, '').trim();
           decisions.push({
             id: `dec-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
             label: trigger.label,
             statement,
-            context: MinutesEngine.findContextTopic(line, topics)
+            context: MinutesEngine.findContextTopic(line, topics),
+            quote: line,
+            meetingLink
           });
           break;
         }
@@ -1436,37 +1995,45 @@ class MinutesEngine {
         return t.title;
       }
     }
-    return 'Général';
+    return 'General';
   }
 
   /* ================= Knowledge Extraction ================= */
 
-  static extractKnowledge(text, facility = '') {
+  static extractKnowledge(text, facility = '', hints = {}) {
     const lower = text.toLowerCase();
     const tools = [];
     const concepts = [];
     const facilities = [];
 
-    // Tools & Systems
-    if (lower.includes('foundry')) tools.push({ name: 'Foundry (Palantir)', type: 'Data & Engine Platform' });
-    if (lower.includes('hm') || lower.includes('hôpital manager')) tools.push({ name: 'Hôpital Manager (HM)', type: 'SIH / Dossier Patient' });
-    if (lower.includes('rtms') || lower.includes('tdcs')) tools.push({ name: 'rTMS / tDCS', type: 'Protocole Thérapeutique' });
-    if (lower.includes('balnéo') || lower.includes('balneo')) tools.push({ name: 'Balnéothérapie', type: 'Plateau Technique' });
-    if (lower.includes('kiné') || lower.includes('kine')) tools.push({ name: 'Kinésithérapie', type: 'Soin Rééducation' });
-    if (lower.includes('ergo')) tools.push({ name: 'Ergothérapie', type: 'Soin Rééducation' });
+    // Driven dynamically by project parser hints
+    const configuredTools = hints.tools || [];
+    for (const t of configuredTools) {
+      const name = typeof t === 'string' ? t : t.name;
+      const keywords = typeof t === 'string' ? [t.toLowerCase()] : (t.keywords || [t.name.toLowerCase()]);
+      if (keywords.some(k => lower.includes(k.toLowerCase()))) {
+        tools.push({ name, type: (typeof t === 'object' && t.type) || 'Tool' });
+      }
+    }
 
-    // Concepts
-    if (lower.includes('annonce')) concepts.push({ name: 'Flux Annonces', desc: 'Gestion des pré-admissions et patients potentiels dans HM vers Foundry' });
-    if (lower.includes('zéro temps mort') || lower.includes('zero temps mort')) concepts.push({ name: 'Politique Zéro Temps Mort', desc: 'Optimisation continue sans temps d’attente inter-séances pour les patients' });
-    if (lower.includes('case mix')) concepts.push({ name: 'Analytique Case Mix', desc: 'Répartition de l’activité Neuro vs Locomoteur pour le pilotage budgétaire' });
-    if (lower.includes('surbooking') || lower.includes('forcer')) concepts.push({ name: 'Gestion Surbooking & Forçage', desc: 'Remplacement manuel et dépassement de capacité contrôlé' });
-    if (lower.includes('vacation')) concepts.push({ name: 'Vue Vacations & Disponibilité', desc: 'Planification centralisée par salle, soignant et créneau' });
+    const configuredConcepts = hints.concepts || [];
+    for (const c of configuredConcepts) {
+      const name = typeof c === 'string' ? c : c.name;
+      const keywords = typeof c === 'string' ? [c.toLowerCase()] : (c.keywords || [c.name.toLowerCase()]);
+      if (keywords.some(k => lower.includes(k.toLowerCase()))) {
+        concepts.push({ name, desc: (typeof c === 'object' && c.desc) || '' });
+      }
+    }
 
-    // Facilities
-    if (facility) facilities.push(facility);
-    if (lower.includes('mariénia') || lower.includes('marienia')) facilities.push('Mariéna');
-    if (lower.includes('arbelles')) facilities.push('Les Arbelles');
-    if (lower.includes('glanum')) facilities.push('Glanum');
+    const configuredFacilities = hints.facilities || [];
+    for (const f of configuredFacilities) {
+      if (lower.includes(f.toLowerCase())) {
+        facilities.push(f);
+      }
+    }
+    if (facility && !facilities.includes(facility)) {
+      facilities.push(facility);
+    }
 
     return {
       tools: Array.from(new Map(tools.map(t => [t.name, t])).values()),
@@ -1491,10 +2058,13 @@ class MinutesEngine {
           kind: 'action',
           text: act.text,
           owner: act.owner || '',
+          ownerOrg: act.ownerOrg || '',
           dueDate: act.dueDate || '',
           done: false,
           tags: act.tags || [],
-          source: 'minutes'
+          source: 'minutes',
+          quote: act.quote || '',
+          meetingLink: act.meetingLink || ''
         });
       }
     }
@@ -1506,8 +2076,12 @@ class MinutesEngine {
           id: dec.id || `item-dec-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
           kind: 'decision',
           text: `[${dec.label}] ${dec.statement}`,
+          label: dec.label,
+          statement: dec.statement,
           context: dec.context,
-          source: 'minutes'
+          source: 'minutes',
+          quote: dec.quote || '',
+          meetingLink: dec.meetingLink || ''
         });
       }
     }
@@ -1523,37 +2097,74 @@ MeetingHub.MinutesEngine = MinutesEngine;
  * Project Base & Minutes Synthesis Engine
  * 
  * Aggregates meeting minutes, decisions, actions, and connected documents across
- * a client or project initiative (e.g. Clariane HDJ Planning Manager).
+ * any configured project initiative.
  * 
- * Provides:
- * - Cumulative Decision Register
- * - Cross-Meeting Action Matrix (filtered by Owner & Status)
- * - Stakeholder Directory across facilities & teams
- * - Living Executive Context & Active Workstreams
- * - Connected Docs & Artifacts Library
+ * Completely generic and driven by Project configuration:
+ * - Honest coverage metrics ("X of Y meetings have minutes")
+ * - Cross-meeting decision deduplication ("first decided on" & "restated on")
+ * - Source quotes and meeting links on every action and decision
+ * - Dynamic workstream synthesis with open action counts
+ * - Stakeholder directory and connected document library
  */
+
 
 
 
 class ProjectEngine {
   /**
-   * Builds the comprehensive Project Base for a given client / project.
-   * @param {string} clientId e.g. 'Clariane'
+   * Builds the comprehensive Project Base for a given project ID or client name.
+   * @param {string} projectIdOrClient e.g. 'clariane' or 'Clariane'
    * @param {object} store The MeetingHubStore instance
    * @returns {Promise<object>} Consolidated Project Base data
    */
-  static async buildProjectBase(clientId = 'Clariane', store) {
+  static async buildProjectBase(projectIdOrClient = 'clariane', store) {
     const allEvents = store.getAllEvents ? store.getAllEvents() : [];
-    
-    // Filter events for this client or project
+
+    // 1. Resolve project configuration
+    let project = null;
+    if (store.getProject) {
+      project = await store.getProject(projectIdOrClient);
+    }
+    if (!project && store.getAllProjects) {
+      const allProjects = await store.getAllProjects();
+      project = allProjects.find(p => 
+        p.id.toLowerCase() === projectIdOrClient.toLowerCase() ||
+        p.name.toLowerCase() === projectIdOrClient.toLowerCase() ||
+        (Array.isArray(p.clientMatch) && p.clientMatch.some(m => m.toLowerCase() === projectIdOrClient.toLowerCase()))
+      );
+    }
+    if (!project) {
+      // Fallback to default Clariane if matching, else generic project
+      if (projectIdOrClient.toLowerCase() === 'clariane') {
+        project = DEFAULT_CLARIANE_PROJECT;
+      } else {
+        project = ProjectModel.createDefault(projectIdOrClient, [projectIdOrClient]);
+      }
+    }
+
+    const clientMatches = (project.clientMatch || [project.name, project.id]).map(m => m.toLowerCase());
+
+    // 2. Filter events belonging to this project
     const projectEvents = allEvents.filter(e => {
-      const matchClient = (e.client || '').toLowerCase() === clientId.toLowerCase();
-      const matchTitle = (e.title || '').toLowerCase().includes(clientId.toLowerCase());
-      const matchTags = Array.isArray(e.tags) && e.tags.some(t => t.toLowerCase() === clientId.toLowerCase() || t === 'hdj');
-      return matchClient || matchTitle || matchTags;
+      if (store && typeof store.getProjectForMeeting === 'function') {
+        const assignedProj = store.getProjectForMeeting(e);
+        if (assignedProj) {
+          return assignedProj.id === project.id;
+        }
+      }
+      const client = (e.client || '').toLowerCase();
+      const title = (e.title || '').toLowerCase();
+      const tags = (e.tags || []).map(t => t.toLowerCase());
+
+      return clientMatches.some(match => 
+        client === match ||
+        client.includes(match) ||
+        title.includes(match) ||
+        tags.includes(match)
+      );
     }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-    // Collect all meeting_data for these events
+    // 3. Collect meeting data for these events
     const meetingDataList = [];
     for (const evt of projectEvents) {
       const mData = await store.getMeetingData(evt.id);
@@ -1563,15 +2174,11 @@ class ProjectEngine {
       });
     }
 
-    // 1. Compile Actions Matrix
+    // 4. Compile Actions, Decisions, Stakeholders, Docs
     const actionMatrix = [];
-    // 2. Compile Decision Register
-    const decisionRegister = [];
-    // 3. Compile Stakeholders
+    const rawDecisions = [];
     const stakeholderMap = new Map();
-    // 4. Compile Connected Docs
     const connectedDocs = [];
-    // 5. Compile Knowledge Entities
     const toolSet = new Set();
     const conceptSet = new Map();
 
@@ -1579,17 +2186,18 @@ class ProjectEngine {
       const { event, data } = item;
       const rawMinutes = data.minutes || '';
 
-      // Parse minutes if present or extract from items
+      // Parse minutes if present
       let parsed = null;
       if (rawMinutes.trim()) {
         parsed = MinutesEngine.parseMinutes(rawMinutes, {
           title: event.title,
           date: event.date,
-          facility: event.facility
-        });
+          facility: event.facility,
+          meetingId: event.id
+        }, project);
       }
 
-      // Check for attached Google Doc in event or data
+      // Track attached Google Doc
       const docUrl = data.googleDocUrl || event.googleDocUrl || ProjectEngine.findDocUrl(event.description || '');
       if (docUrl) {
         const docIdMatch = docUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
@@ -1599,17 +2207,16 @@ class ProjectEngine {
           title: (parsed && parsed.title) || event.title,
           meetingId: event.id,
           meetingDate: event.date,
-          facility: (parsed && parsed.facility) || event.facility || ProjectEngine.detectFacility(event.title),
+          facility: (parsed && parsed.facility) || event.facility || '',
           url: docUrl,
           hasMinutes: Boolean(rawMinutes.trim()),
           minutesLength: rawMinutes.length
         });
       }
 
-      // Collect items (actions & decisions) from saved data.items first
+      // Collect items from saved data.items first
       const savedItems = Array.isArray(data.items) ? data.items : [];
       
-      // If no saved items but parsed minutes exist, synthesize them for the matrix
       const effectiveActions = savedItems.filter(i => i.kind === 'action').length > 0
         ? savedItems.filter(i => i.kind === 'action')
         : (parsed ? parsed.actions : []);
@@ -1618,44 +2225,54 @@ class ProjectEngine {
         ? savedItems.filter(i => i.kind === 'decision')
         : (parsed ? parsed.decisions : []);
 
-      // Register actions
+      // Register actions with source quote and meeting link
       for (const act of effectiveActions) {
-        const owner = act.owner || 'Équipe';
-        const ownerOrg = ProjectEngine.classifyOwnerOrg(owner);
+        const owner = act.owner || 'Team';
+        const ownerOrg = act.ownerOrg || ProjectEngine.classifyOwnerOrg(owner, project);
+        const quote = act.quote || act.text || '';
+        const meetingLink = act.meetingLink || `#/meeting/${encodeURIComponent(event.id)}`;
+
         actionMatrix.push({
           id: act.id || `act-${Math.random().toString(36).substr(2, 6)}`,
           meetingId: event.id,
           meetingTitle: event.title,
           meetingDate: event.date,
-          facility: (parsed && parsed.facility) || ProjectEngine.detectFacility(event.title),
+          facility: (parsed && parsed.facility) || event.facility || '',
           owner,
           ownerOrg,
           text: act.text || act.title || '',
           dueDate: act.dueDate || '',
           done: Boolean(act.done),
           tags: act.tags || [],
-          source: act.source || 'meeting'
+          source: act.source || 'minutes',
+          quote,
+          meetingLink
         });
       }
 
-      // Register decisions
+      // Collect raw decisions for deduplication
       for (const dec of effectiveDecisions) {
-        const statement = dec.statement || dec.text || '';
-        const label = dec.label || ProjectEngine.deriveDecisionLabel(statement);
-        decisionRegister.push({
+        const statement = (dec.statement || dec.text || '').replace(/^\[.*?\]\s*/, '').trim();
+        const label = dec.label || ProjectEngine.deriveDecisionLabel(statement, project);
+        const quote = dec.quote || statement;
+        const meetingLink = dec.meetingLink || `#/meeting/${encodeURIComponent(event.id)}`;
+
+        rawDecisions.push({
           id: dec.id || `dec-${Math.random().toString(36).substr(2, 6)}`,
           meetingId: event.id,
           meetingTitle: event.title,
           meetingDate: event.date,
-          facility: (parsed && parsed.facility) || ProjectEngine.detectFacility(event.title),
+          facility: (parsed && parsed.facility) || event.facility || '',
           label,
-          statement: statement.replace(/^\[.*?\]\s*/, ''),
-          context: dec.context || 'Général'
+          statement,
+          context: dec.context || 'General',
+          quote,
+          meetingLink
         });
       }
 
-      // Register stakeholders from parsed participants or event attendees
-      if (parsed && Array.isArray(parsed.participants)) {
+      // Register stakeholders
+      if (parsed && Array.isArray(parsed.participants) && parsed.participants.length > 0) {
         for (const p of parsed.participants) {
           if (!p.name) continue;
           const key = p.name.toLowerCase();
@@ -1663,7 +2280,25 @@ class ProjectEngine {
             stakeholderMap.set(key, {
               name: p.name,
               role: p.role || 'Participant',
-              org: p.org || ProjectEngine.classifyOwnerOrg(p.role || p.name),
+              org: p.org || ProjectEngine.classifyOwnerOrg(p.role || p.name, project),
+              meetingCount: 1,
+              lastSeen: event.date
+            });
+          } else {
+            const existing = stakeholderMap.get(key);
+            existing.meetingCount += 1;
+            if (event.date > existing.lastSeen) existing.lastSeen = event.date;
+          }
+        }
+      } else if (Array.isArray(event.attendees)) {
+        for (const att of event.attendees) {
+          if (!att) continue;
+          const key = att.toLowerCase();
+          if (!stakeholderMap.has(key)) {
+            stakeholderMap.set(key, {
+              name: att,
+              role: 'Attendee',
+              org: ProjectEngine.classifyOwnerOrg(att, project),
               meetingCount: 1,
               lastSeen: event.date
             });
@@ -1684,35 +2319,44 @@ class ProjectEngine {
       }
     }
 
-    // Sort decision register chronologically (latest first)
-    decisionRegister.sort((a, b) => (b.meetingDate || '').localeCompare(a.meetingDate || ''));
+    // 5. Deduplicate decisions across meetings
+    const decisionRegister = ProjectEngine.deduplicateDecisions(rawDecisions);
 
-    // Sort action matrix: open first, then date
+    // 6. Action matrix sorting
     actionMatrix.sort((a, b) => {
       if (a.done !== b.done) return a.done ? 1 : -1;
       return (b.meetingDate || '').localeCompare(a.meetingDate || '');
     });
 
-    // Stakeholders list sorted by organization and name
+    // 7. Stakeholders sorting
     const stakeholders = Array.from(stakeholderMap.values()).sort((a, b) => {
       if (a.org !== b.org) return a.org.localeCompare(b.org);
       return a.name.localeCompare(b.name);
     });
 
+    // 8. Workstreams compilation from project configuration
+    const workstreams = ProjectEngine.synthesizeWorkstreams(project, decisionRegister, actionMatrix);
+
+    // 9. Honest coverage calculation
+    const totalMeetings = projectEvents.length;
+    const meetingsWithMinutes = meetingDataList.filter(m => (m.data.minutes || '').trim().length > 0).length;
+    const coveragePercent = totalMeetings > 0 ? Math.round((meetingsWithMinutes / totalMeetings) * 100) : 0;
+    const coverageText = `${meetingsWithMinutes} of ${totalMeetings} meetings have minutes`;
+
     // Action counts breakdown
     const openActions = actionMatrix.filter(a => !a.done);
     const closedActions = actionMatrix.filter(a => a.done);
-    const artefactActions = openActions.filter(a => a.ownerOrg === 'Artefact');
-    const clientActions = openActions.filter(a => a.ownerOrg !== 'Artefact');
-
-    // Strategic Workstreams Synthesis for Clariane / Project
-    const workstreams = ProjectEngine.generateWorkstreams(clientId, decisionRegister, actionMatrix);
+    const artefactActions = openActions.filter(a => a.ownerOrg.toLowerCase().includes('artefact'));
+    const clientActions = openActions.filter(a => !a.ownerOrg.toLowerCase().includes('artefact'));
 
     return {
-      clientId,
-      projectName: clientId === 'Clariane' ? 'HDJ Planning Manager (Inicea / Clariane)' : `${clientId} Project Base`,
-      totalMeetings: projectEvents.length,
-      meetingsWithMinutes: meetingDataList.filter(m => (m.data.minutes || '').trim()).length,
+      projectId: project.id,
+      projectName: project.name,
+      projectConfig: project,
+      totalMeetings,
+      meetingsWithMinutes,
+      coveragePercent,
+      coverageText,
       actionStats: {
         total: actionMatrix.length,
         open: openActions.length,
@@ -1721,7 +2365,9 @@ class ProjectEngine {
         clientOpen: clientActions.length
       },
       decisionStats: {
-        total: decisionRegister.length
+        total: decisionRegister.length,
+        uniqueCount: decisionRegister.length,
+        rawCount: rawDecisions.length
       },
       workstreams,
       actionMatrix,
@@ -1734,7 +2380,131 @@ class ProjectEngine {
     };
   }
 
-  /* ================= Helper Utilities ================= */
+  /**
+   * Deduplicates decisions across meetings.
+   * Tracks "first decided on" and "restated on" instances.
+   */
+  static deduplicateDecisions(rawDecisions) {
+    if (!Array.isArray(rawDecisions) || rawDecisions.length === 0) return [];
+
+    // Sort chronologically ascending to establish initial decision first
+    const sorted = [...rawDecisions].sort((a, b) => (a.meetingDate || '').localeCompare(b.meetingDate || ''));
+
+    const deduplicated = [];
+
+    for (const dec of sorted) {
+      const normText = ProjectEngine._normalizeStatement(dec.statement);
+
+      // Check for existing matching decision
+      const match = deduplicated.find(existing => {
+        const existingNorm = ProjectEngine._normalizeStatement(existing.statement);
+        if (normText === existingNorm) return true;
+        // Check for matching label and high text similarity
+        if (existing.label && dec.label && existing.label.toLowerCase() === dec.label.toLowerCase()) {
+          const overlap = ProjectEngine._calculateSimilarity(normText, existingNorm);
+          if (overlap >= 0.70) return true;
+        }
+        return false;
+      });
+
+      if (match) {
+        // Record as restated
+        match.restatedOn.push({
+          meetingId: dec.meetingId,
+          meetingTitle: dec.meetingTitle,
+          meetingDate: dec.meetingDate,
+          facility: dec.facility,
+          quote: dec.quote,
+          meetingLink: dec.meetingLink
+        });
+        match.restatedCount = match.restatedOn.length;
+      } else {
+        // New canonical decision
+        deduplicated.push({
+          id: dec.id,
+          label: dec.label,
+          statement: dec.statement,
+          context: dec.context,
+          quote: dec.quote,
+          meetingLink: dec.meetingLink,
+          firstDecidedOn: {
+            meetingId: dec.meetingId,
+            meetingTitle: dec.meetingTitle,
+            meetingDate: dec.meetingDate,
+            facility: dec.facility,
+            quote: dec.quote,
+            meetingLink: dec.meetingLink
+          },
+          restatedOn: [],
+          restatedCount: 0
+        });
+      }
+    }
+
+    // Sort final decision register latest first
+    return deduplicated.sort((a, b) => 
+      (b.firstDecidedOn.meetingDate || '').localeCompare(a.firstDecidedOn.meetingDate || '')
+    );
+  }
+
+  static _normalizeStatement(str) {
+    return (str || '')
+      .toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"\[\]]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  static _calculateSimilarity(s1, s2) {
+    if (!s1 || !s2) return 0;
+    if (s1 === s2) return 1;
+    const words1 = new Set(s1.split(' '));
+    const words2 = new Set(s2.split(' '));
+    let intersection = 0;
+    for (const w of words1) {
+      if (words2.has(w)) intersection++;
+    }
+    return (2.0 * intersection) / (words1.size + words2.size);
+  }
+
+  /**
+   * Synthesizes workstreams from project configuration.
+   */
+  static synthesizeWorkstreams(project, decisions, actions) {
+    const configured = project.workstreams || [];
+    if (configured.length > 0) {
+      return configured.map(ws => {
+        const wsTags = (ws.tags || []).map(t => t.toLowerCase());
+        const openActionsCount = actions.filter(a => {
+          if (a.done) return false;
+          if (wsTags.length > 0 && Array.isArray(a.tags) && a.tags.some(t => wsTags.includes(t.toLowerCase()))) {
+            return true;
+          }
+          const lowerText = (a.text || '').toLowerCase();
+          return wsTags.some(t => lowerText.includes(t));
+        }).length;
+
+        return {
+          ...ws,
+          openActionsCount
+        };
+      });
+    }
+
+    // Default generic workstream if none configured
+    return [
+      {
+        id: 'ws-core',
+        title: 'Core Delivery & Synchronization',
+        badge: 'General',
+        status: 'Active',
+        summary: `Progress tracking and action execution for ${project.name}.`,
+        facilities: ['All'],
+        openActionsCount: actions.filter(a => !a.done).length,
+        keyRules: ['Document all decisions in minutes', 'Track action items to completion']
+      }
+    ];
+  }
 
   static findDocUrl(text) {
     if (!text) return '';
@@ -1742,106 +2512,29 @@ class ProjectEngine {
     return match ? match[0] : '';
   }
 
-  static detectFacility(title = '') {
-    const lower = title.toLowerCase();
-    if (lower.includes('mariénia') || lower.includes('marienia')) return 'Mariéna';
-    if (lower.includes('arbelles')) return 'Les Arbelles';
-    if (lower.includes('glanum')) return 'Glanum';
-    return 'Transversal';
-  }
-
-  static classifyOwnerOrg(owner = '') {
-    const lower = owner.toLowerCase();
-    if (lower.includes('artefact') || lower.includes('ayrton') || lower.includes('benjamin')) return 'Artefact';
-    if (lower.includes('mariénia') || lower.includes('marienia') || lower.includes('claire')) return 'Mariéna';
-    if (lower.includes('arbelles') || lower.includes('fabien') || lower.includes('delphine')) return 'Les Arbelles';
-    if (lower.includes('glanum')) return 'Glanum';
-    return 'Client / Équipe';
-  }
-
-  static deriveDecisionLabel(statement = '') {
-    const lower = statement.toLowerCase();
-    if (lower.includes('workflow') || lower.includes('validation')) return 'Workflow de Validation';
-    if (lower.includes('temps mort')) return 'Politique Zéro Temps Mort';
-    if (lower.includes('annonce')) return 'Processus Annonces HM';
-    if (lower.includes('bilan')) return 'Règle Bilans';
-    if (lower.includes('surbooking') || lower.includes('forcer')) return 'Surbooking & Forçage';
-    if (lower.includes('solution')) return 'Solution Retenue';
-    return 'Décision Structurante';
-  }
-
-  static generateWorkstreams(clientId, decisions, actions) {
-    if (clientId.toLowerCase() === 'clariane') {
-      return [
-        {
-          id: 'ws-admission',
-          title: 'Flux Annonces & Processus d’Admission',
-          badge: 'HM → Foundry',
-          status: 'En déploiement',
-          summary: 'Basculement de la gestion des listes d’attente papier vers le statut "Annonce" dans Hôpital Manager dès accord médical pour alimenter la disponibilité Foundry.',
-          facilities: ['Les Arbelles', 'Mariéna'],
-          openActionsCount: actions.filter(a => a.tags.includes('annonces') && !a.done).length,
-          keyRules: [
-            'Saisie directe des patients au statut Annonce dans HM pour remonter dans Foundry',
-            'Onglet dédié dans l’outil pour filtrer et isoler les annonces HDJ vs HC'
-          ]
-        },
-        {
-          id: 'ws-parcours',
-          title: 'Modélisation des Programmes Thérapeutiques',
-          badge: 'Moteur & Contraintes',
-          status: 'Actif',
-          summary: 'Paramétrage des programmes standardisés (Dos, Parkinson) et parcours complexes (Neuro, rTMS aux 3 semaines, séances ponctuelles de Diététique/Neuropsy).',
-          facilities: ['Les Arbelles', 'Mariéna', 'Glanum'],
-          openActionsCount: actions.filter(a => a.tags.includes('modeling') && !a.done).length,
-          keyRules: [
-            'Politique zéro temps mort : aucun trou inter-séance sans attente',
-            'Bilans d’entrée et de sortie isolés en séances individuelles',
-            'Séances espacées (rTMS) modélisées avec des vacations dédiées à fréquence 3 semaines'
-          ]
-        },
-        {
-          id: 'ws-sync',
-          title: 'Synchronisation SIH & Circuit de Validation',
-          badge: 'Foundry ↔ HM',
-          status: 'En cours',
-          summary: 'Boucle de validation bilatérale : proposition de circuit dans Foundry -> statut "En attente HM" -> saisie créneau HM -> rapprochement automatique en statut "Réel".',
-          facilities: ['Transversal'],
-          openActionsCount: actions.filter(a => (a.tags.includes('hm-sync') || a.tags.includes('vacations')) && !a.done).length,
-          keyRules: [
-            'Circuit Foundry passe en "En attente HM" puis réconciliation en "Réel"',
-            'Résolution du connecteur pour la remontée des vacations collectives (Kiné, Balnéo, Ergo)'
-          ]
-        },
-        {
-          id: 'ws-analytics',
-          title: 'Analytique, Alerting & Case Mix',
-          badge: 'Reporting & Pilotage',
-          status: 'Planifié',
-          summary: 'Extraction du case mix réel (% Neuro vs Locomoteur) pour la construction budgétaire et développement du module d’alerting pour double positionnement de patient.',
-          facilities: ['Les Arbelles', 'Mariéna'],
-          openActionsCount: actions.filter(a => (a.tags.includes('analytics') || a.tags.includes('alerting')) && !a.done).length,
-          keyRules: [
-            'Indicateur budgétaire case mix (tarifs de journée différenciés par segment)',
-            'Alerte automatique si un patient est positionné simultanément sur deux vacations'
-          ]
-        }
-      ];
-    }
-
-    // Default generic workstreams
-    return [
-      {
-        id: 'ws-core',
-        title: 'Core Delivery & Synchronization',
-        badge: 'Transversal',
-        status: 'Actif',
-        summary: `Suivi d’avancement et exécution des actions pour ${clientId}.`,
-        facilities: ['Global'],
-        openActionsCount: actions.filter(a => !a.done).length,
-        keyRules: ['Exécution des engagements bilatéraux', 'Documentation systématique des décisions']
+  static classifyOwnerOrg(owner = '', project = null) {
+    const lower = (owner || '').toLowerCase();
+    const rules = project?.parserHints?.ownerOrgRules || [];
+    for (const rule of rules) {
+      if (rule.keywords && rule.keywords.some(k => lower.includes(k.toLowerCase()))) {
+        return rule.org;
       }
-    ];
+    }
+    if (lower.includes('artefact')) return 'Artefact';
+    return 'Client / Team';
+  }
+
+  static deriveDecisionLabel(statement = '', project = null) {
+    const lower = (statement || '').toLowerCase();
+    const triggers = project?.parserHints?.decisionTriggers || [];
+    for (const tr of triggers) {
+      try {
+        if (new RegExp(tr.pattern, 'i').test(statement)) {
+          return tr.label;
+        }
+      } catch (e) {}
+    }
+    return 'Decision';
   }
 }
 
@@ -2448,6 +3141,36 @@ class PrepScoreCalculator {
       badgeText = `Prep ${metCount}/${totalCount}`;
     }
 
+    // Missing items checklist
+    const missingItems = [
+      {
+        key: 'agenda',
+        label: 'Agenda',
+        ok: agenda.ok,
+        statusText: agenda.ok ? 'Agenda drafted' : 'Missing agenda',
+        detail: agenda.detail
+      },
+      {
+        key: 'lastMinutes',
+        label: 'Prior minutes',
+        ok: lastMinutes.ok,
+        statusText: lastMinutes.ok ? 'Prior minutes connected' : 'Missing prior minutes',
+        detail: lastMinutes.detail
+      },
+      {
+        key: 'openActions',
+        label: 'Open actions',
+        ok: openActions.ok,
+        statusText: openActions.ok ? 'Open actions reviewed' : 'Missing action review',
+        detail: openActions.detail
+      }
+    ];
+
+    const missingCount = missingItems.filter(i => !i.ok).length;
+    const missingSummary = missingCount === 0
+      ? 'All items prepared'
+      : `Missing: ${missingItems.filter(i => !i.ok).map(i => i.label).join(' · ')}`;
+
     return {
       scorePercent,
       metCount,
@@ -2458,8 +3181,27 @@ class PrepScoreCalculator {
       agenda,
       lastMinutes,
       openActions,
-      people
+      people,
+      missingItems,
+      missingCount,
+      missingSummary
     };
+  }
+
+  /**
+   * Helper to check if a meeting is scheduled within the next 48 hours.
+   */
+  static isWithin48Hours(meetingDate, meetingStart = '00:00', refDateStr = '2026-10-28', refTimeStr = '00:00') {
+    if (!meetingDate) return false;
+    try {
+      const meetTime = new Date(`${meetingDate}T${meetingStart || '00:00'}:00`).getTime();
+      const refTime = new Date(`${refDateStr}T${refTimeStr || '00:00'}:00`).getTime();
+      const diffMs = meetTime - refTime;
+      const diffHours = diffMs / (1000 * 60 * 60);
+      return diffHours >= 0 && diffHours <= 48;
+    } catch (e) {
+      return true;
+    }
   }
 
   /**
@@ -2521,8 +3263,9 @@ MeetingHub.PrepScoreCalculator = PrepScoreCalculator;
  * 
  * Bridges IndexedDB via the database adapter to the UI components.
  * Manages caching, query filtering, meeting notes persistence, minutes intelligence,
- * and reactive subscribers.
+ * dynamic project configuration, and reactive subscribers.
  */
+
 
 
 
@@ -2534,6 +3277,8 @@ class MeetingHubStore {
     this.db = null;
     this.eventsCache = [];
     this.seriesCache = [];
+    this.projectsCache = [];
+    this.activeProjectId = 'clariane';
     this.subscribers = new Set();
     this.initialized = false;
   }
@@ -2543,18 +3288,48 @@ class MeetingHubStore {
 
     this.db = await getDatabase();
     
-    // Idempotent initial import of the 259 events
+    // Idempotent initial import of the calendar events
     await EventsImporter.importInitialData(this.db, options);
 
     // Warm in-memory cache for fast UI updates
     await this.refreshCache();
     this.initialized = true;
-    this.notify();
+    this.notify({ type: 'store_initialized' });
   }
 
   async refreshCache() {
     this.eventsCache = await this.db.getAll('events');
     this.seriesCache = await this.db.getAll('series');
+
+    // Load projects and ensure default projects are seeded
+    let projects = await this.db.getAll('projects');
+    if (!projects || projects.length === 0) {
+      for (const p of DEFAULT_PROJECTS) {
+        await this.db.put('projects', p);
+      }
+      projects = await this.db.getAll('projects');
+    } else {
+      // Ensure all DEFAULT_PROJECTS are seeded if missing, or updated
+      const existingIds = new Set(projects.map(p => p.id));
+      let updated = false;
+      for (const defProj of DEFAULT_PROJECTS) {
+        if (!existingIds.has(defProj.id)) {
+          await this.db.put('projects', defProj);
+          updated = true;
+        } else if (defProj.id === 'clariane') {
+          // If clariane has old clientMatch containing 'Clariane', update it to HDJ specific matches
+          const existing = projects.find(p => p.id === 'clariane');
+          if (existing && Array.isArray(existing.clientMatch) && existing.clientMatch.includes('Clariane')) {
+            await this.db.put('projects', { ...existing, clientMatch: defProj.clientMatch, name: defProj.name });
+            updated = true;
+          }
+        }
+      }
+      if (updated) {
+        projects = await this.db.getAll('projects');
+      }
+    }
+    this.projectsCache = projects;
   }
 
   subscribe(callback) {
@@ -2600,6 +3375,203 @@ class MeetingHubStore {
 
   getAllSeries() {
     return this.seriesCache;
+  }
+
+  /* ================= Project Management Methods ================= */
+
+  async getAllProjects() {
+    if (!this.db) await this.init();
+    let list = await this.db.getAll('projects');
+    if (!list || list.length === 0) {
+      for (const p of DEFAULT_PROJECTS) {
+        await this.db.put('projects', p);
+      }
+      list = await this.db.getAll('projects');
+      this.projectsCache = list;
+      return list;
+    }
+    const existingIds = new Set(list.map(p => p.id));
+    let updated = false;
+    for (const defProj of DEFAULT_PROJECTS) {
+      if (!existingIds.has(defProj.id)) {
+        await this.db.put('projects', defProj);
+        updated = true;
+      }
+    }
+    if (updated) {
+      list = await this.db.getAll('projects');
+      this.projectsCache = list;
+    }
+    return list;
+  }
+
+  async getProject(id) {
+    if (!this.db) await this.init();
+    if (!id) return null;
+    const direct = await this.db.get('projects', id);
+    if (direct) return direct;
+    const all = await this.getAllProjects();
+    return all.find(p => 
+      p.id.toLowerCase() === id.toLowerCase() ||
+      p.name.toLowerCase() === id.toLowerCase() ||
+      (Array.isArray(p.clientMatch) && p.clientMatch.some(m => m.toLowerCase() === id.toLowerCase()))
+    ) || null;
+  }
+
+  async saveProject(project) {
+    if (!this.db) await this.init();
+    if (!ProjectModel.validate(project)) {
+      throw new Error('Invalid project structure');
+    }
+    await this.db.put('projects', project);
+    await this.refreshCache();
+    this.notify({ type: 'project_updated', projectId: project.id });
+    return project;
+  }
+
+  async deleteProject(id) {
+    if (!this.db) await this.init();
+    await this.db.delete('projects', id);
+    if (this.activeProjectId === id) {
+      const remaining = await this.getAllProjects();
+      this.activeProjectId = remaining[0]?.id || 'clariane';
+    }
+    await this.refreshCache();
+    this.notify({ type: 'project_deleted', projectId: id });
+  }
+
+  getActiveProjectId() {
+    return this.activeProjectId;
+  }
+
+  setActiveProjectId(id) {
+    this.activeProjectId = id;
+    this.notify({ type: 'active_project_changed', projectId: id });
+  }
+
+  getProjectForMeeting(meeting) {
+    if (!meeting) return null;
+    const client = (meeting.client || '').toLowerCase().trim();
+    const title = (meeting.title || '').toLowerCase().trim();
+    const tags = (meeting.tags || []).map(t => t.toLowerCase().trim());
+    const projects = this.projectsCache || [];
+
+    // 1. First priority: Check if title bracket tags match a project (e.g. [MO], [HDJ], [Invoicing])
+    const bracketMatches = (meeting.title || '').match(/\[(.*?)\]/g) || [];
+    for (const rawBracket of bracketMatches) {
+      const bracketClean = rawBracket.toLowerCase().trim(); // e.g. '[mo]'
+      const bracketInner = bracketClean.replace(/[\[\]]/g, '').trim(); // e.g. 'mo'
+      for (const p of projects) {
+        const pMatches = (p.clientMatch || [p.name, p.id]).map(m => m.toLowerCase().trim());
+        if (pMatches.some(m => m === bracketClean || m === bracketInner || (m.startsWith('[') && m.replace(/[\[\]]/g, '') === bracketInner))) {
+          return p;
+        }
+      }
+    }
+
+    // 2. Second priority: Specific title match or event tags match
+    for (const p of projects) {
+      const pMatches = (p.clientMatch || [p.name, p.id]).map(m => m.toLowerCase().trim());
+      if (pMatches.some(m => m && (title.includes(m) || tags.includes(m)))) {
+        return p;
+      }
+    }
+
+    // 3. Third priority: Client field match
+    for (const p of projects) {
+      const pMatches = (p.clientMatch || [p.name, p.id]).map(m => m.toLowerCase().trim());
+      if (pMatches.some(m => m && (client === m || client.includes(m)))) {
+        return p;
+      }
+    }
+
+    return null;
+  }
+
+  async getSuggestedProjects() {
+    if (!this.db) await this.init();
+    const existing = await this.getAllProjects();
+    const existingMatches = new Set();
+    for (const p of existing) {
+      existingMatches.add(p.id.toLowerCase());
+      existingMatches.add(p.name.toLowerCase());
+      (p.clientMatch || []).forEach(m => {
+        const clean = m.toLowerCase().trim();
+        existingMatches.add(clean);
+        existingMatches.add(clean.replace(/[\[\]]/g, '').trim());
+      });
+    }
+
+    const suggestions = new Map();
+
+    // 1. Scan title brackets [TAG] for auto-discovery
+    for (const e of this.eventsCache) {
+      if (e.stream === 'life') continue;
+      const bracketMatches = (e.title || '').match(/\[(.*?)\]/g) || [];
+      for (const b of bracketMatches) {
+        const tag = b.replace(/[\[\]]/g, '').trim();
+        if (!tag || tag.length < 2) continue;
+        const tagLower = tag.toLowerCase();
+        // Ignore generic or status bracket tags
+        if (['visio', 'zoom', 'teams', 'call', 'sync', 'point', 'urgent'].includes(tagLower)) continue;
+        
+        let matched = false;
+        for (const em of existingMatches) {
+          if (em === tagLower || em.includes(tagLower) || tagLower.includes(em)) {
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          const key = tagLower;
+          if (!suggestions.has(key)) {
+            suggestions.set(key, {
+              id: key.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+              name: tag,
+              clientMatch: [`[${tagLower}]`, tagLower],
+              meetingCount: 0
+            });
+          }
+          suggestions.get(key).meetingCount += 1;
+        }
+      }
+    }
+
+    // 2. Scan client tags
+    for (const e of this.eventsCache) {
+      if (!e.client) continue;
+      const c = e.client.trim();
+      if (e.stream === 'life' || c === 'Personal' || c === 'ATHX') continue;
+      const cLower = c.toLowerCase();
+      let matched = false;
+      for (const em of existingMatches) {
+        if (em === cLower || em.includes(cLower) || cLower.includes(em)) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        const key = cLower;
+        if (!suggestions.has(key)) {
+          suggestions.set(key, {
+            id: cLower.replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+            name: c,
+            clientMatch: [c],
+            meetingCount: 0
+          });
+        }
+        suggestions.get(key).meetingCount += 1;
+      }
+    }
+
+    return Array.from(suggestions.values()).filter(s => s.meetingCount > 0);
+  }
+
+  async confirmSuggestedProject(candidate) {
+    const project = ProjectModel.createDefault(candidate.name, candidate.clientMatch);
+    project.id = candidate.id || project.id;
+    await this.saveProject(project);
+    return project;
   }
 
   /* ================= Meeting Notes & Actions Persistence ================= */
@@ -2721,19 +3693,22 @@ class MeetingHubStore {
   }
 
   /**
-   * Runs the MinutesEngine on raw text with meeting metadata.
+   * Runs the MinutesEngine on raw text with meeting metadata and project configuration.
    */
   async extractMinutes(meetingId, text) {
     const meeting = this.getEvent(meetingId);
+    const project = meeting ? this.getProjectForMeeting(meeting) : await this.getProject(this.activeProjectId);
     return MinutesEngine.parseMinutes(text, {
       title: meeting ? meeting.title : '',
       date: meeting ? meeting.date : '',
-      facility: meeting ? meeting.facility : ''
-    });
+      facility: meeting ? meeting.facility : '',
+      meetingId
+    }, project);
   }
 
   /**
-   * Commits confirmed actions and decisions to meeting items in storage.
+   * Commits confirmed actions and decisions to meeting items in storage,
+   * preserving source quotes and meeting links.
    */
   async applyExtractedItems(meetingId, { actions = [], decisions = [] }) {
     const meetingData = await this.getMeetingData(meetingId);
@@ -2747,10 +3722,13 @@ class MeetingHubStore {
           kind: 'action',
           text: act.text,
           owner: act.owner || '',
+          ownerOrg: act.ownerOrg || '',
           dueDate: act.dueDate || '',
           done: false,
           tags: act.tags || [],
-          source: 'minutes'
+          source: 'minutes',
+          quote: act.quote || act.text || '',
+          meetingLink: act.meetingLink || `#/meeting/${encodeURIComponent(meetingId)}`
         });
       }
     }
@@ -2762,8 +3740,12 @@ class MeetingHubStore {
           id: dec.id || `item-dec-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
           kind: 'decision',
           text: decText,
+          label: dec.label || 'Décision',
+          statement: dec.statement,
           context: dec.context,
-          source: 'minutes'
+          source: 'minutes',
+          quote: dec.quote || dec.statement || '',
+          meetingLink: dec.meetingLink || `#/meeting/${encodeURIComponent(meetingId)}`
         });
       }
     }
@@ -2774,10 +3756,11 @@ class MeetingHubStore {
   }
 
   /**
-   * Computes the aggregated Project Base for a given client (e.g. Clariane).
+   * Computes the aggregated Project Base for a given project ID or client name.
    */
-  async getProjectBase(clientId = 'Clariane') {
-    return ProjectEngine.buildProjectBase(clientId, this);
+  async getProjectBase(projectIdOrClient = null) {
+    const targetId = projectIdOrClient || this.activeProjectId || 'clariane';
+    return ProjectEngine.buildProjectBase(targetId, this);
   }
 
   /* ================= Minutes Intelligence Seam ================= */
@@ -2797,7 +3780,6 @@ class MeetingHubStore {
   async suggestLinks(meeting, options = {}) {
     if (!meeting) return [];
     const linkData = await this.getMeetingLinks(meeting, options);
-    // Return accepted links first with status, then suggested links
     return [
       ...linkData.accepted.map(a => ({ ...a, status: 'accepted' })),
       ...linkData.suggestions.map(s => ({ ...s, status: 'suggested' }))
@@ -2898,18 +3880,20 @@ class MeetingHubStore {
   }
 
   /**
-   * Exports all user notes, items, decisions, links, and cart state to a JSON string.
+   * Exports all user notes, items, decisions, links, projects, and cart state to a JSON string.
    */
   async exportUserDataJson() {
     if (!this.db) await this.init();
     const meetingData = await this.db.getAll('meeting_data');
     const cartData = await this.db.getAll('cart');
+    const projectsData = await this.db.getAll('projects');
     const metaList = await this.db.getAll('meta');
     
     const payload = {
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       storageEngine: this.getStorageEngineName(),
+      projects: projectsData || [],
       meetingData: meetingData || [],
       cart: cartData || [],
       meta: metaList || []
@@ -2918,7 +3902,7 @@ class MeetingHubStore {
   }
 
   /**
-   * Idempotently imports user notes, items, decisions, and links from JSON data.
+   * Idempotently imports user notes, items, decisions, links, and projects from JSON data.
    * Does not wipe existing calendar events.
    * @param {string|Object} jsonInput
    */
@@ -2939,8 +3923,17 @@ class MeetingHubStore {
       throw new Error('Import data must be a valid JSON object');
     }
 
+    const projects = Array.isArray(data.projects) ? data.projects : [];
     const meetingData = Array.isArray(data.meetingData) ? data.meetingData : (Array.isArray(data.meeting_data) ? data.meeting_data : []);
     const cart = Array.isArray(data.cart) ? data.cart : [];
+
+    let projectCount = 0;
+    for (const proj of projects) {
+      if (proj && proj.id) {
+        await this.db.put('projects', proj);
+        projectCount++;
+      }
+    }
 
     let meetingDataCount = 0;
     for (const record of meetingData) {
@@ -2958,14 +3951,18 @@ class MeetingHubStore {
       }
     }
 
+    await this.refreshCache();
+
     this.notify({
       type: 'user_data_imported',
+      projectCount,
       meetingDataCount,
       cartCount
     });
 
     return {
       success: true,
+      projectCount,
       meetingDataCount,
       cartCount
     };
@@ -3011,7 +4008,13 @@ const Icons = {
   fileText: `<svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
   download: `<svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
   upload: `<svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
-  database: `<svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`
+  database: `<svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
+  chevronDown: `<svg class="i" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>`,
+  edit: `<svg class="i" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  folder: `<svg class="i" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+  panelRightClose: `<svg class="i" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/><path d="m8 9 3 3-3 3"/></svg>`,
+  panelRightOpen: `<svg class="i" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/><path d="m11 15-3-3 3-3"/></svg>`,
+  chevronRight: `<svg class="i" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>`
 };
 
 MeetingHub.Icons = Icons;
@@ -3022,12 +4025,29 @@ MeetingHub.Icons = Icons;
  * 
  * Renders the persistent dark navy sidebar and sticky header,
  * manages view/mode switching, handles dark/light theme toggle,
- * and displays live calendar source sync status with trigger.
+ * sidebar project switcher with suggestions, and live calendar source sync status.
  */
 
 
 class ShellUI {
-  constructor({ onNavigate, onModeChange, onNewMeeting, onTodayClick, onSyncTrigger, onSearch, onExportData, onImportData, getStorageEngine }) {
+  constructor({
+    onNavigate,
+    onModeChange,
+    onNewMeeting,
+    onTodayClick,
+    onSyncTrigger,
+    onSearch,
+    onExportData,
+    onImportData,
+    getStorageEngine,
+    onProjectChange,
+    onConfirmSuggestedProject,
+    onCreateProject,
+    onTogglePanel,
+    projects = [],
+    activeProjectId = 'clariane',
+    suggestedProjects = []
+  }) {
     this.onNavigate = onNavigate;
     this.onModeChange = onModeChange;
     this.onNewMeeting = onNewMeeting;
@@ -3037,6 +4057,17 @@ class ShellUI {
     this.onExportData = onExportData;
     this.onImportData = onImportData;
     this.getStorageEngine = getStorageEngine || (() => 'IndexedDB');
+    this.onProjectChange = onProjectChange;
+    this.onConfirmSuggestedProject = onConfirmSuggestedProject;
+    this.onCreateProject = onCreateProject;
+    this.onTogglePanel = onTogglePanel;
+
+    this.projects = projects;
+    this.activeProjectId = activeProjectId;
+    this.suggestedProjects = suggestedProjects;
+    this.isProjectDropdownOpen = false;
+    this.isPanelCollapsed = false;
+
     this.currentView = 'today';
     this.currentMode = 'all';
     this.isSyncing = false;
@@ -3044,6 +4075,17 @@ class ShellUI {
     this.theme = this.getInitialTheme();
 
     this.applyTheme(this.theme);
+
+    // Global click listener to close project dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (this.isProjectDropdownOpen) {
+        const selector = document.querySelector('.sidebar-project-selector');
+        if (selector && !selector.contains(e.target)) {
+          this.isProjectDropdownOpen = false;
+          this.renderProjectSwitcher();
+        }
+      }
+    });
   }
 
   getInitialTheme() {
@@ -3051,7 +4093,6 @@ class ShellUI {
       const saved = localStorage.getItem('mhub_theme');
       if (saved) return saved;
     } catch (e) {}
-    // Default to dark mode as requested
     return 'dark';
   }
 
@@ -3081,6 +4122,13 @@ class ShellUI {
     this.renderSyncSection();
   }
 
+  setProjects(projects, activeProjectId, suggestedProjects = []) {
+    this.projects = projects || [];
+    if (activeProjectId) this.activeProjectId = activeProjectId;
+    this.suggestedProjects = suggestedProjects || [];
+    this.renderProjectSwitcher();
+  }
+
   setSyncing(syncing) {
     this.isSyncing = syncing;
     const syncBtn = document.querySelector('#sidebarSyncBtn');
@@ -3103,6 +4151,11 @@ class ShellUI {
       <div class="brand">
         <b>M</b>
         <div>Meeting Hub<small>Prep · Capture · Link</small></div>
+      </div>
+
+      <!-- Project Switcher & Initiative Scope -->
+      <div class="sidebar-project-block" id="sidebarProjectContainer">
+        <!-- Rendered by renderProjectSwitcher -->
       </div>
 
       <div class="grp">Work</div>
@@ -3158,9 +4211,116 @@ class ShellUI {
       });
     });
 
+    this.renderProjectSwitcher();
     this.renderSyncSection();
     this.renderStorageSection();
     this.renderThemeButton();
+  }
+
+  renderProjectSwitcher() {
+    const container = document.querySelector('#sidebarProjectContainer');
+    if (!container) return;
+
+    const activeProject = (this.projects && this.projects.length > 0)
+      ? (this.projects.find(p => p.id === this.activeProjectId) || this.projects[0])
+      : { id: 'clariane', name: 'Clariane' };
+
+    container.innerHTML = `
+      <div class="sidebar-project-selector">
+        <button class="sidebar-project-trigger" id="sidebarProjectTrigger" title="Switch active project initiative">
+          <span class="sidebar-project-icon">${Icons.layers}</span>
+          <span class="sidebar-project-name">${this._escape(activeProject.name)}</span>
+          <span class="sidebar-project-chevron ${this.isProjectDropdownOpen ? 'open' : ''}">${Icons.chevronDown || '▾'}</span>
+        </button>
+
+        ${this.isProjectDropdownOpen ? `
+          <div class="sidebar-project-dropdown" id="sidebarProjectDropdown">
+            <div class="sidebar-project-section-title">Projects</div>
+            <div class="sidebar-project-list">
+              ${(this.projects || []).map(p => `
+                <button class="sidebar-project-option ${p.id === this.activeProjectId ? 'active' : ''}" data-project-id="${this._escape(p.id)}">
+                  <span class="sidebar-project-opt-name">${this._escape(p.name)}</span>
+                  ${p.id === this.activeProjectId ? `<span class="badge ok" style="font-size: 10px;">Active</span>` : ''}
+                </button>
+              `).join('')}
+            </div>
+
+            ${(this.suggestedProjects && this.suggestedProjects.length > 0) ? `
+              <div class="sidebar-project-section-title" style="margin-top: 8px;">Suggested from Tags</div>
+              <div class="sidebar-project-suggestions">
+                ${this.suggestedProjects.map(sp => `
+                  <div class="sidebar-project-suggest-row">
+                    <div style="min-width: 0;">
+                      <div class="sidebar-project-opt-name" style="font-weight: 500;">${this._escape(sp.name)}</div>
+                      <div class="sub" style="font-size: 10px;">${sp.meetingCount} meeting${sp.meetingCount !== 1 ? 's' : ''}</div>
+                    </div>
+                    <button class="btn sm pink" data-confirm-suggested="${this._escape(sp.name)}" data-suggest-id="${this._escape(sp.id)}" style="font-size: 10px; padding: 2px 7px;">
+                      Confirm
+                    </button>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <div class="sidebar-project-actions">
+              <button class="btn sm" id="sidebarNewProjectBtn" style="width: 100%; justify-content: center; font-size: 11px;">
+                ${Icons.plus} New Project
+              </button>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    // Trigger toggle
+    container.querySelector('#sidebarProjectTrigger')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.isProjectDropdownOpen = !this.isProjectDropdownOpen;
+      this.renderProjectSwitcher();
+    });
+
+    // Project selection
+    container.querySelectorAll('[data-project-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.projectId;
+        this.activeProjectId = id;
+        this.isProjectDropdownOpen = false;
+        this.renderProjectSwitcher();
+        if (this.onProjectChange) this.onProjectChange(id);
+      });
+    });
+
+    // Confirm suggested project
+    container.querySelectorAll('[data-confirm-suggested]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.suggestId;
+        const name = btn.dataset.confirmSuggested;
+        const suggestion = (this.suggestedProjects || []).find(s => s.id === id) || { id, name, clientMatch: [name] };
+        if (this.onConfirmSuggestedProject) {
+          this.onConfirmSuggestedProject(suggestion);
+        }
+        this.isProjectDropdownOpen = false;
+      });
+    });
+
+    // New project action
+    container.querySelector('#sidebarNewProjectBtn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.isProjectDropdownOpen = false;
+      if (this.onCreateProject) {
+        this.onCreateProject();
+      } else {
+        const name = prompt('Enter new project name:');
+        if (name && name.trim()) {
+          const clientTag = prompt('Enter primary client/meeting tag for this project (optional):', name.trim()) || name.trim();
+          if (this.onConfirmSuggestedProject) {
+            this.onConfirmSuggestedProject({ name: name.trim(), clientMatch: [clientTag.trim()] });
+          }
+        }
+      }
+    });
   }
 
   _escape(str) {
@@ -3281,7 +4441,6 @@ class ShellUI {
       btn.title = 'Switch to Dark Theme';
     }
 
-    // Replace event listener cleanly
     btn.onclick = () => this.toggleTheme();
   }
 
@@ -3307,9 +4466,12 @@ class ShellUI {
 
       <button class="btn sm" id="todayNavBtn" style="font-family: var(--font-mono); font-size: 11.5px;">Today</button>
       <button class="btn sm pink" id="newMeetingBtn">${Icons.plus} New Meeting</button>
+      <button class="btn sm" id="togglePanelBtn" title="${this.isPanelCollapsed ? 'Expand meeting panel' : 'Collapse meeting panel'}" style="display: inline-flex; align-items: center; gap: 5px;">
+        ${this.isPanelCollapsed ? Icons.panelRightOpen : Icons.panelRightClose}
+        <span class="btn-text">Panel</span>
+      </button>
     `;
 
-    // Search input handler
     const searchInput = header.querySelector('#quickSearch');
     if (searchInput) {
       searchInput.addEventListener('input', (e) => {
@@ -3324,7 +4486,6 @@ class ShellUI {
       });
     }
 
-    // Mode switch handler
     header.querySelectorAll('.seg button').forEach(btn => {
       btn.addEventListener('click', () => {
         header.querySelectorAll('.seg button').forEach(b => b.classList.remove('on'));
@@ -3334,15 +4495,31 @@ class ShellUI {
       });
     });
 
-    // Today jump
     header.querySelector('#todayNavBtn')?.addEventListener('click', () => {
       if (this.onTodayClick) this.onTodayClick();
     });
 
-    // New meeting trigger
     header.querySelector('#newMeetingBtn')?.addEventListener('click', () => {
       if (this.onNewMeeting) this.onNewMeeting();
     });
+
+    header.querySelector('#togglePanelBtn')?.addEventListener('click', () => {
+      if (this.onTogglePanel) this.onTogglePanel();
+    });
+  }
+
+  updatePanelToggle(isCollapsed) {
+    this.isPanelCollapsed = isCollapsed;
+    const btn = document.querySelector('#togglePanelBtn');
+    if (btn) {
+      btn.title = isCollapsed ? 'Expand meeting panel' : 'Collapse meeting panel';
+      btn.innerHTML = `${isCollapsed ? Icons.panelRightOpen : Icons.panelRightClose} <span class="btn-text">Panel</span>`;
+      if (isCollapsed) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    }
   }
 
   updateActionsBadge(count) {
@@ -3372,11 +4549,12 @@ MeetingHub.ShellUI = ShellUI;
 
 
 class MeetingPanelUI {
-  constructor({ container, store, onOpenMeeting, onClose }) {
+  constructor({ container, store, onOpenMeeting, onClose, onCollapse }) {
     this.container = container;
     this.store = store;
     this.onOpenMeeting = onOpenMeeting;
     this.onClose = onClose;
+    this.onCollapse = onCollapse;
     this.currentMeetingId = null;
     this.currentTab = 'agenda';
     this.llmActiveForMeeting = {};
@@ -3411,11 +4589,19 @@ class MeetingPanelUI {
 
     if (!this.currentMeetingId) {
       this.container.innerHTML = `
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+          <button class="btn sm" id="collapsePanelEmptyBtn" title="Collapse meeting panel">
+            ${Icons.panelRightClose} Collapse
+          </button>
+        </div>
         <div class="empty" style="padding-top: 60px;">
           ${Icons.calendar}
           <div style="margin-top: 8px;">Select a meeting from the timeline or press <code>j/k</code> to navigate.</div>
         </div>
       `;
+      this.container.querySelector('#collapsePanelEmptyBtn')?.addEventListener('click', () => {
+        if (this.onCollapse) this.onCollapse();
+      });
       return;
     }
 
@@ -3471,8 +4657,8 @@ class MeetingPanelUI {
                     ${docUrl ? 'Connected Google Doc' : 'No Google Doc Linked'}
                   </div>
                   ${docUrl ? `
-                    <a href="${this._escape(docUrl)}" target="_blank" rel="noopener" class="sub" style="color: var(--pink-600); text-decoration: underline; font-size: 11px; display: inline-flex; align-items: center; gap: 3px;">
-                      Open document ${Icons.externalLink}
+                    <a href="${this._escape(docUrl)}" target="_blank" rel="noopener" class="sub" style="color: var(--pink-600); text-decoration: underline; font-size: 11px;">
+                      Open document
                     </a>
                   ` : `
                     <div class="sub" style="font-size: 11px;">Link a collaborative doc to ingest minutes</div>
@@ -3561,6 +4747,11 @@ class MeetingPanelUI {
                             ${(act.tags || []).map(t => `<span class="badge" style="font-size: 10px;">#${this._escape(t)}</span>`).join('')}
                           </div>
                           <div style="margin-top: 3px; color: var(--foreground);">${this._escape(act.text)}</div>
+                          ${act.quote ? `
+                            <div class="quote-box" style="margin-top: 4px;">
+                              “${this._escape(act.quote)}”
+                            </div>
+                          ` : ''}
                         </div>
                       </label>
                     `).join('')}
@@ -3586,6 +4777,11 @@ class MeetingPanelUI {
                             <span class="sub" style="font-size: 11px;">${this._escape(dec.context || 'Général')}</span>
                           </div>
                           <div style="margin-top: 3px; color: var(--foreground);">${this._escape(dec.statement)}</div>
+                          ${dec.quote ? `
+                            <div class="quote-box decision" style="margin-top: 4px;">
+                              “${this._escape(dec.quote)}”
+                            </div>
+                          ` : ''}
                         </div>
                       </label>
                     `).join('')}
@@ -3608,7 +4804,7 @@ class MeetingPanelUI {
 
               <div style="display: flex; gap: 8px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
                 <button class="btn sm pink" id="applyExtractionBtn" style="flex: 1; justify-content: center;">
-                  ${Icons.check} Apply to Meeting Items &amp; Project Base
+                  Apply to Meeting Items &amp; Project Base
                 </button>
                 <button class="btn sm" id="cancelExtractionBtn">Dismiss</button>
               </div>
@@ -3664,6 +4860,11 @@ class MeetingPanelUI {
               <span class="kind-badge ${item.kind}">${item.kind}</span>
               <div class="item-body">
                 <span class="tx ${item.done ? 'done' : ''}">${this._escape(item.text)}</span>
+                ${item.quote ? `
+                  <div class="quote-box ${item.kind === 'decision' ? 'decision' : ''}" style="margin-top: 4px; font-size: 11px;">
+                    “${this._escape(item.quote)}”
+                  </div>
+                ` : ''}
                 <div class="item-meta">
                   ${item.owner ? `<span class="chip-owner">${this._escape(item.owner)}</span>` : ''}
                   ${item.dueDate ? `<span class="chip-due">${Icons.clock} ${this._formatDue(item.dueDate)}</span>` : ''}
@@ -3797,9 +4998,14 @@ class MeetingPanelUI {
           ${prep.badgeText} · ${prep.scorePercent}%
         </span>
         ${videoBadge}
-        <button class="btn sm" id="closePanelBtn" title="Close meeting drawer (Esc)" style="margin-left: ${meeting.link ? '6px' : 'auto'}; padding: 0 6px;">
-          ${Icons.x}
-        </button>
+        <div style="margin-left: ${meeting.link ? '6px' : 'auto'}; display: flex; align-items: center; gap: 4px;">
+          <button class="btn sm" id="collapsePanelBtn" title="Collapse meeting panel" style="padding: 0 6px;">
+            ${Icons.panelRightClose}
+          </button>
+          <button class="btn sm" id="closePanelBtn" title="Close meeting drawer (Esc)" style="padding: 0 6px;">
+            ${Icons.x}
+          </button>
+        </div>
       </div>
 
       <h2 style="font: 600 20px/1.25 var(--font-sans); margin: 6px 0;">${this._escape(meeting.title)}</h2>
@@ -3831,6 +5037,11 @@ class MeetingPanelUI {
   }
 
   _bindEvents(meeting, meetingData) {
+    // Collapse button
+    this.container.querySelector('#collapsePanelBtn')?.addEventListener('click', () => {
+      if (this.onCollapse) this.onCollapse();
+    });
+
     // Close button
     this.container.querySelector('#closePanelBtn')?.addEventListener('click', () => {
       if (this.onClose) this.onClose();
@@ -4187,8 +5398,9 @@ MeetingHub.MeetingPanelUI = MeetingPanelUI;
  * 
  * Renders the Today agenda timeline with:
  * 1. Thin all-day event strip above the timeline.
- * 2. Next up card with computed prep status (agenda, last minutes, open actions, attendees).
- * 3. Daily timeline with Life-mode training overlay.
+ * 2. Next up card with 48-hour missing items checklist (agenda, last minutes, open actions)
+ *    and wired Project Base context strip (open actions and decisions for this project).
+ * 3. Daily timeline with missing checklist status and Life-mode training overlay.
  * 4. Step 3 Keyboard-First navigation helpers: getVisibleTimedEvents(), selectNextMeeting(), selectPreviousMeeting().
  * 5. Instant search filtering with `/` shortcut.
  */
@@ -4196,10 +5408,11 @@ MeetingHub.MeetingPanelUI = MeetingPanelUI;
 
 
 class TodayView {
-  constructor({ container, store, onSelectMeeting }) {
+  constructor({ container, store, onSelectMeeting, onNavigateProject }) {
     this.container = container;
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
+    this.onNavigateProject = onNavigateProject;
     this.selectedEventId = null;
     this.currentDate = '2026-10-28';
     this.currentMode = 'all'; // 'all' | 'work' | 'life'
@@ -4322,15 +5535,29 @@ class TodayView {
     const workMeetings = timedEvents.filter(e => e.stream === 'work');
     const nextMeeting = workMeetings.find(e => e.start >= '09:00') || workMeetings[0] || timedEvents[0];
 
-    // Compute dynamic prep score across all visible work meetings
+    // Compute dynamic prep evaluations across all visible work meetings
     const collectionPrep = await PrepScoreCalculator.computeCollectionPrep(workMeetings, this.store);
 
-    // Dynamic prep evaluation for Next up meeting
+    // Dynamic prep evaluation & Project Base wiring for Next up meeting
     let nextPrep = null;
+    let nextProjectBase = null;
+    let isNextWithin48h = false;
+
     if (nextMeeting) {
       const data = await this.store.getMeetingData(nextMeeting.id);
       const links = await this.store.suggestLinks(nextMeeting);
       nextPrep = PrepScoreCalculator.computeMeetingPrep(nextMeeting, data, links);
+      isNextWithin48h = PrepScoreCalculator.isWithin48Hours(nextMeeting.date, nextMeeting.start, this.currentDate, '00:00');
+
+      // Wire Project Base into Next up
+      const project = this.store.getProjectForMeeting(nextMeeting);
+      if (project) {
+        try {
+          nextProjectBase = await this.store.getProjectBase(project.id);
+        } catch (e) {
+          console.warn('[TodayView] Could not load project base for next meeting:', e);
+        }
+      }
 
       if (this.selectedEventId === undefined) {
         this.selectedEventId = nextMeeting.id;
@@ -4360,49 +5587,66 @@ class TodayView {
 
       ${nextMeeting && !this.searchQuery && nextPrep ? `
         <div class="card next">
-          <div style="display: flex; gap: 8px; align-items: center;">
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <span class="label">Next up</span>
             <span class="badge info">${nextMeeting.start}–${nextMeeting.end}</span>
             ${nextMeeting.client ? `<span class="badge">${this._escape(nextMeeting.client)}</span>` : ''}
-            <span class="badge ${nextPrep.badgeClass}" style="margin-left: auto;">${nextPrep.badgeText} · ${nextPrep.scorePercent}%</span>
+            <span class="badge ${nextPrep.missingCount === 0 ? 'ok' : 'warn'}" style="margin-left: auto;">
+              ${nextPrep.missingCount === 0 ? 'Prepared' : `${nextPrep.missingCount} missing item${nextPrep.missingCount > 1 ? 's' : ''}`}
+            </span>
           </div>
 
           <h2>${this._escape(nextMeeting.title)}</h2>
 
-          <div class="prep-score-row">
-            <div class="prep-score-label">
-              <b>Prep Score</b>
-              <span>${nextPrep.scorePercent}% (${nextPrep.metCount} of ${nextPrep.totalCount} criteria met)</span>
-            </div>
-            <div class="prep-bar-track">
-              <div class="prep-bar-fill ${nextPrep.badgeClass}" style="width: ${nextPrep.scorePercent}%;"></div>
-            </div>
-          </div>
+          <!-- 48h Missing Items Checklist -->
+          ${isNextWithin48h ? `
+            <div class="prep-checklist-block" style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--r-sm); margin: 6px 0;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="label" style="margin-bottom: 0;">48h Prep Checklist</span>
+                <span class="sub" style="font-size: 11px; font-weight: 500;">
+                  ${nextPrep.missingCount === 0 ? 'All 3 criteria satisfied' : `${nextPrep.missingCount} item${nextPrep.missingCount > 1 ? 's' : ''} to complete before meeting`}
+                </span>
+              </div>
 
-          <div class="prep">
-            <div class="${nextPrep.agenda.ok ? '' : 'miss'}">
-              <b>Agenda</b>
-              <span>${this._escape(nextPrep.agenda.label)}</span>
-              <span class="sub" style="font-size: 11px;">${this._escape(nextPrep.agenda.detail)}</span>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-top: 4px;">
+                ${nextPrep.missingItems.map(item => `
+                  <div style="display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; padding: 6px 8px; border-radius: var(--r-sm); background: var(--card); border: 1px solid ${item.ok ? 'color-mix(in oklab, var(--ok) 30%, var(--border))' : 'color-mix(in oklab, var(--destructive) 30%, var(--border))'};">
+                    <span style="color: ${item.ok ? 'var(--ok)' : 'var(--destructive)'}; flex-shrink: 0; margin-top: 1px;">
+                      ${item.ok ? Icons.check : Icons.alertCircle}
+                    </span>
+                    <div style="min-width: 0;">
+                      <div style="font-weight: 600; color: var(--foreground);">${this._escape(item.label)}</div>
+                      <div class="sub" style="font-size: 10.5px;">${this._escape(item.detail)}</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
             </div>
-            <div class="${nextPrep.lastMinutes.ok ? '' : 'miss'}">
-              <b>Last minutes</b>
-              <span>${this._escape(nextPrep.lastMinutes.label)}</span>
-              <span class="sub" style="font-size: 11px;">${this._escape(nextPrep.lastMinutes.detail)}</span>
+          ` : `
+            <div class="sub" style="font-size: 12px; margin: 6px 0;">
+              Scheduled for ${this._escape(nextMeeting.date || 'later')} · Prep checklist activates 48 hours prior to start
             </div>
-            <div class="${nextPrep.openActions.ok ? '' : 'miss'}">
-              <b>Open actions</b>
-              <span>${this._escape(nextPrep.openActions.label)}</span>
-              <span class="sub" style="font-size: 11px;">${this._escape(nextPrep.openActions.detail)}</span>
-            </div>
-            <div>
-              <b>People</b>
-              <span>${nextPrep.people.label}</span>
-              <span class="sub" style="font-size: 11px;">${this._escape(nextMeeting.client || 'Work stream')}</span>
-            </div>
-          </div>
+          `}
 
-          <div style="display: flex; gap: 8px; margin-top: 4px;">
+          <!-- Wired Project Base Intelligence Strip -->
+          ${nextProjectBase ? `
+            <div class="next-project-strip">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0;">
+                <span style="color: var(--pink-600); flex-shrink: 0;">${Icons.layers}</span>
+                <div style="min-width: 0;">
+                  <span style="font-weight: 600; color: var(--foreground);">${this._escape(nextProjectBase.projectName)}:</span>
+                  <span class="sub" style="font-size: 11.5px; margin-left: 4px;">
+                    Open actions and decisions for this project: <b>${nextProjectBase.actionStats.open}</b> open action${nextProjectBase.actionStats.open === 1 ? '' : 's'} · <b>${nextProjectBase.decisionStats.total}</b> validated decision${nextProjectBase.decisionStats.total === 1 ? '' : 's'}
+                  </span>
+                </div>
+              </div>
+              <button class="btn sm" data-open-project="${this._escape(nextProjectBase.projectId)}" style="font-size: 11px; padding: 2px 8px; flex-shrink: 0; margin-left: 8px;">
+                View Project Hub
+              </button>
+            </div>
+          ` : ''}
+
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
             ${!nextPrep.agenda.ok ? `
               <button class="btn pink" data-open-prep="${nextMeeting.id}">Draft agenda</button>
             ` : !nextPrep.openActions.ok ? `
@@ -4426,7 +5670,7 @@ class TodayView {
           </div>
         ` : collectionPrep.total > 0 ? `
           <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted-foreground);">
-            <span style="font-family: var(--font-mono);">Day Prep: ${collectionPrep.preparedCount}/${collectionPrep.total} prepared (${collectionPrep.averagePercent}%)</span>
+            <span style="font-family: var(--font-mono);">${collectionPrep.preparedCount} of ${collectionPrep.total} prepared</span>
           </div>
         ` : ''}
       </div>
@@ -4453,8 +5697,8 @@ class TodayView {
                 <div class="meta">${this._escape(metaParts.join(' · '))}</div>
               </span>
               ${m.stream === 'work' ? (mPrep ? `
-                <span class="badge ${mPrep.badgeClass}" title="Prep score: ${mPrep.scorePercent}% (${mPrep.metCount}/${mPrep.totalCount} criteria met)">
-                  ${mPrep.badgeText}
+                <span class="badge ${mPrep.missingCount === 0 ? 'ok' : 'warn'}" title="${mPrep.missingSummary}">
+                  ${mPrep.missingCount === 0 ? 'Prepared' : `${mPrep.missingCount} missing`}
                 </span>
               ` : `
                 <span class="badge ${isSelected ? 'info' : ''}">Work</span>
@@ -4466,7 +5710,10 @@ class TodayView {
             </button>
           `;
         }).join('') : `
-          <div class="empty">No scheduled meetings matching your filter for this mode.</div>
+          <div class="empty" style="padding: 40px 0;">
+            ${Icons.calendar}
+            <div style="margin-top: 8px;">No scheduled events matching current criteria.</div>
+          </div>
         `}
       </div>
     `;
@@ -4475,11 +5722,11 @@ class TodayView {
   }
 
   _bindEvents() {
-    // Clear search filter
+    // Clear filter
     this.container.querySelector('#clearFilterBtn')?.addEventListener('click', () => {
       this.searchQuery = '';
-      const searchIn = document.querySelector('#quickSearch');
-      if (searchIn) searchIn.value = '';
+      const input = document.querySelector('#quickSearch');
+      if (input) input.value = '';
       this.render();
     });
 
@@ -4512,6 +5759,19 @@ class TodayView {
         const id = openRelatedBtn.dataset.openRelated;
         if (id && this.onSelectMeeting) {
           this.onSelectMeeting(id, 'related');
+        }
+      });
+    }
+
+    // Open project base button
+    const openProjectBtn = this.container.querySelector('[data-open-project]');
+    if (openProjectBtn) {
+      openProjectBtn.addEventListener('click', () => {
+        const projectId = openProjectBtn.dataset.openProject;
+        if (this.onNavigateProject) {
+          this.onNavigateProject(projectId);
+        } else {
+          window.location.hash = '#/projects';
         }
       });
     }
@@ -5471,9 +6731,16 @@ MeetingHub.SeriesView = SeriesView;
  * Project Base & Knowledge View Component
  * 
  * Aggregates all meeting minutes, decisions, cross-meeting action matrix,
- * strategic workstreams, and connected Google Docs for a client initiative
- * (e.g. Clariane HDJ Planning Manager).
+ * strategic workstreams, and connected Google Docs for any configured initiative.
+ * 
+ * Features:
+ * - Completely generic: driven by project configuration in DB
+ * - Honest coverage bars ("X of Y meetings have minutes")
+ * - Deduplicated decisions across meetings with "first decided on" and "restated on"
+ * - Source quotes and meeting links on every action and decision
+ * - Project Settings editor to view and edit project configuration
  */
+
 
 
 class ProjectsView {
@@ -5481,11 +6748,12 @@ class ProjectsView {
     this.container = container;
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
-    this.clientId = 'Clariane';
-    this.currentSubTab = 'workstreams'; // 'workstreams' | 'decisions' | 'actions' | 'docs'
+    this.currentProjectId = 'clariane';
+    this.currentSubTab = 'workstreams'; // 'workstreams' | 'decisions' | 'actions' | 'docs' | 'settings'
     this.actionOwnerFilter = 'all';
     this.actionStatusFilter = 'open';
     this.searchQuery = '';
+    this.settingsFeedback = null;
   }
 
   setSearchQuery(q) {
@@ -5493,17 +6761,28 @@ class ProjectsView {
     this.render();
   }
 
-  setClient(clientId) {
-    this.clientId = clientId;
+  setProject(projectId) {
+    this.currentProjectId = projectId;
+    this.settingsFeedback = null;
     this.render();
+  }
+
+  // Alias for backward compatibility
+  setClient(clientId) {
+    this.setProject(clientId);
   }
 
   async render() {
     if (!this.container) return;
 
+    // Load all projects
+    const allProjects = await this.store.getAllProjects();
+    if (!allProjects.some(p => p.id === this.currentProjectId)) {
+      this.currentProjectId = allProjects[0]?.id || 'clariane';
+    }
+
     // Build project base from store
-    const project = await this.store.getProjectBase(this.clientId);
-    const clients = ['Clariane', 'Artefact'];
+    const project = await this.store.getProjectBase(this.currentProjectId);
 
     // Filter actions for matrix
     let matrixActions = project.actionMatrix || [];
@@ -5513,11 +6792,14 @@ class ProjectsView {
       matrixActions = matrixActions.filter(a => a.done);
     }
     if (this.actionOwnerFilter !== 'all') {
-      matrixActions = matrixActions.filter(a => a.ownerOrg.toLowerCase() === this.actionOwnerFilter.toLowerCase() || a.owner.toLowerCase().includes(this.actionOwnerFilter.toLowerCase()));
+      matrixActions = matrixActions.filter(a => 
+        (a.ownerOrg || '').toLowerCase() === this.actionOwnerFilter.toLowerCase() || 
+        (a.owner || '').toLowerCase().includes(this.actionOwnerFilter.toLowerCase())
+      );
     }
     if (this.searchQuery) {
       matrixActions = matrixActions.filter(a => {
-        const text = `${a.text} ${a.owner} ${a.facility} ${a.meetingTitle}`.toLowerCase();
+        const text = `${a.text} ${a.owner} ${a.facility || ''} ${a.meetingTitle || ''} ${a.quote || ''}`.toLowerCase();
         return text.includes(this.searchQuery);
       });
     }
@@ -5526,41 +6808,61 @@ class ProjectsView {
     let decisions = project.decisionRegister || [];
     if (this.searchQuery) {
       decisions = decisions.filter(d => {
-        const text = `${d.statement} ${d.label} ${d.facility} ${d.context} ${d.meetingTitle}`.toLowerCase();
+        const text = `${d.statement} ${d.label || ''} ${d.facility || ''} ${d.context || ''} ${d.quote || ''}`.toLowerCase();
         return text.includes(this.searchQuery);
       });
     }
 
     this.container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
-        <!-- Header & Project Switcher -->
+        <!-- Header & Project Selector -->
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="label">Project Base &amp; Intelligence Hub</span>
               <span class="badge ok" style="font-weight: 600;">Active Deployment</span>
-              <span class="badge" style="font-family: var(--font-mono); font-size: 11px;">Foundry ↔ HM</span>
+              <span class="badge" style="font-family: var(--font-mono); font-size: 11px;">${this._escape(project.projectId)}</span>
             </div>
             <h1 style="font: 600 24px/1.2 var(--font-sans); margin: 4px 0;">${this._escape(project.projectName)}</h1>
             <div class="sub" style="font-size: 12px;">
-              Cross-meeting synthesis of minutes, cumulative decision register, and action matrix from Google Docs
+              Cross-meeting synthesis of minutes, cumulative decision register, and action matrix from local client data
             </div>
           </div>
 
-          <!-- Project / Client Selector -->
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <span class="sub" style="font-size: 11px;">Initiative:</span>
-            <div style="display: flex; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;">
-              ${clients.map(c => `
-                <button class="btn sm ${this.clientId.toLowerCase() === c.toLowerCase() ? 'pink' : ''}" data-select-client="${c}" style="border: 0; border-radius: 0; font-weight: 500;">
-                  ${c}
-                </button>
+          <!-- Project Initiative Selector Dropdown -->
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label for="projectSelectDropdown" class="sub" style="font-size: 12px; font-weight: 500;">Initiative:</label>
+            <select id="projectSelectDropdown" class="input" style="font-size: 13px; font-weight: 600; height: 34px; padding: 4px 10px; border-radius: var(--r-sm); min-width: 260px; cursor: pointer;">
+              ${allProjects.map(p => `
+                <option value="${this._escape(p.id)}" ${this.currentProjectId.toLowerCase() === p.id.toLowerCase() ? 'selected' : ''}>
+                  ${this._escape(p.name)}
+                </option>
               `).join('')}
-            </div>
+            </select>
           </div>
         </div>
 
-        <!-- Top KPI Metric Strip -->
+        <!-- Honest Coverage Card -->
+        <div class="honest-coverage-card">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+            <span class="label" style="margin-bottom: 0;">Minutes Coverage</span>
+            <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 600;">
+              ${this._escape(project.coverageText)} (${project.coveragePercent}%)
+            </span>
+          </div>
+          <div class="coverage-track">
+            <div class="coverage-fill ${project.coveragePercent === 100 ? 'complete' : ''}" style="width: ${project.coveragePercent}%;"></div>
+          </div>
+          <div class="sub" style="font-size: 11.5px;">
+            ${project.meetingsWithMinutes < project.totalMeetings ? `
+              ${project.totalMeetings - project.meetingsWithMinutes} of ${project.totalMeetings} meetings do not have ingested minutes yet. Action matrix and decision register reflect only meetings with ingested minutes.
+            ` : `
+              All ${project.totalMeetings} meetings across this initiative have ingested minutes.
+            `}
+          </div>
+        </div>
+
+        <!-- KPI Metric Strip -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
           <div class="kpi-cell">
             <span class="kpi-num">${project.totalMeetings}</span>
@@ -5594,6 +6896,9 @@ class ProjectsView {
           <button data-subtab="docs" class="${this.currentSubTab === 'docs' ? 'on' : ''}">
             Connected Docs (${project.connectedDocs.length})
           </button>
+          <button data-subtab="settings" class="${this.currentSubTab === 'settings' ? 'on' : ''}">
+            Project Settings
+          </button>
         </div>
 
         <!-- Sub-Tab Content -->
@@ -5625,19 +6930,23 @@ class ProjectsView {
                 </div>
                 <div class="sub" style="font-size: 12px; color: var(--foreground);">${this._escape(ws.summary)}</div>
                 
-                <div style="margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--border);">
-                  <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 4px;">
-                    Governing Architectural Rules:
+                ${(ws.keyRules && ws.keyRules.length > 0) ? `
+                  <div style="margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--border);">
+                    <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 4px;">
+                      Governing Architectural Rules:
+                    </div>
+                    <ul style="margin: 0; padding-left: 16px; font-size: 11.5px; color: var(--muted-foreground); display: grid; gap: 3px;">
+                      ${ws.keyRules.map(r => `<li>${this._escape(r)}</li>`).join('')}
+                    </ul>
                   </div>
-                  <ul style="margin: 0; padding-left: 16px; font-size: 11.5px; color: var(--muted-foreground); display: grid; gap: 3px;">
-                    ${ws.keyRules.map(r => `<li>${this._escape(r)}</li>`).join('')}
-                  </ul>
-                </div>
+                ` : ''}
 
-                <div style="display: flex; gap: 4px; align-items: center; margin-top: auto; padding-top: 8px;">
-                  <span class="sub" style="font-size: 11px;">Sites:</span>
-                  ${ws.facilities.map(f => `<span class="badge" style="font-size: 10px;">${this._escape(f)}</span>`).join('')}
-                </div>
+                ${(ws.facilities && ws.facilities.length > 0) ? `
+                  <div style="display: flex; gap: 4px; align-items: center; margin-top: auto; padding-top: 8px;">
+                    <span class="sub" style="font-size: 11px;">Sites:</span>
+                    ${ws.facilities.map(f => `<span class="badge" style="font-size: 10px;">${this._escape(f)}</span>`).join('')}
+                  </div>
+                ` : ''}
               </div>
             `).join('')}
           </div>
@@ -5650,7 +6959,7 @@ class ProjectsView {
                 Stakeholders Directory (${project.stakeholders.length})
               </div>
               <div style="display: grid; gap: 6px; max-height: 220px; overflow-y: auto;">
-                ${project.stakeholders.map(s => `
+                ${project.stakeholders.length > 0 ? project.stakeholders.map(s => `
                   <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-radius: var(--r-sm); background: var(--muted);">
                     <div>
                       <div style="font-size: 12px; font-weight: 500;">${this._escape(s.name)}</div>
@@ -5661,30 +6970,30 @@ class ProjectsView {
                       <div style="font-size: 10px; color: var(--muted-foreground); margin-top: 2px;">${s.meetingCount} session${s.meetingCount > 1 ? 's' : ''}</div>
                     </div>
                   </div>
-                `).join('')}
+                `).join('') : '<div class="sub" style="font-size: 12px;">No attendees registered yet</div>'}
               </div>
             </div>
 
             <!-- Platform Architecture & Entities -->
             <div class="card" style="padding: 14px;">
               <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 10px;">
-                Platform Architecture &amp; Clinical Concepts
+                Project Vocabulary &amp; Parser Hints
               </div>
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 <div>
-                  <div style="font-size: 11px; color: var(--muted-foreground); margin-bottom: 4px;">Connected Systems:</div>
+                  <div style="font-size: 11px; color: var(--muted-foreground); margin-bottom: 4px;">Connected Systems &amp; Tools:</div>
                   <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                    ${project.tools.map(t => `<span class="badge info" style="font-family: var(--font-mono); font-size: 11px;">${this._escape(t)}</span>`).join('')}
+                    ${project.tools.length > 0 ? project.tools.map(t => `<span class="badge info" style="font-family: var(--font-mono); font-size: 11px;">${this._escape(t)}</span>`).join('') : '<span class="sub" style="font-size: 11px;">None configured</span>'}
                   </div>
                 </div>
                 <div>
                   <div style="font-size: 11px; color: var(--muted-foreground); margin-bottom: 4px;">Domain Protocols &amp; Concepts:</div>
                   <div style="display: grid; gap: 4px;">
-                    ${project.concepts.map(c => `
+                    ${project.concepts.length > 0 ? project.concepts.map(c => `
                       <div style="font-size: 11.5px; padding: 4px 6px; border-radius: var(--r-sm); background: var(--muted);">
                         <b>${this._escape(c.name)}:</b> <span style="color: var(--muted-foreground);">${this._escape(c.desc)}</span>
                       </div>
-                    `).join('')}
+                    `).join('') : '<span class="sub" style="font-size: 11px;">None configured</span>'}
                   </div>
                 </div>
               </div>
@@ -5699,41 +7008,75 @@ class ProjectsView {
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div class="sub" style="font-size: 12px;">
-              Showing ${decisions.length} validated architecture and operational decisions from meeting minutes
+              Showing ${decisions.length} validated architecture and operational decisions from meeting minutes (deduplicated across meetings)
             </div>
           </div>
 
-          <div style="display: grid; gap: 8px;">
-            ${decisions.map(d => `
-              <div class="card" style="padding: 12px 14px; border-left: 3px solid var(--ok); display: flex; flex-direction: column; gap: 6px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                  <div style="display: flex; align-items: center; gap: 6px;">
-                    <span class="badge ok" style="font-weight: 600; font-size: 11px;">${this._escape(d.label)}</span>
-                    <span class="badge" style="font-size: 10px;">${this._escape(d.facility)}</span>
-                    <span class="sub" style="font-size: 11px;">${this._escape(d.context)}</span>
+          <div style="display: grid; gap: 10px;">
+            ${decisions.length > 0 ? decisions.map(d => {
+              const firstMeeting = d.firstDecidedOn || {};
+              const restatedList = d.restatedOn || [];
+
+              return `
+                <div class="card" style="padding: 12px 14px; border-left: 3px solid var(--ok); display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span class="badge ok" style="font-weight: 600; font-size: 11px;">${this._escape(d.label || 'Decision')}</span>
+                      ${d.facility ? `<span class="badge" style="font-size: 10px;">${this._escape(d.facility)}</span>` : ''}
+                      ${d.context ? `<span class="sub" style="font-size: 11px;">${this._escape(d.context)}</span>` : ''}
+                    </div>
+                    ${firstMeeting.meetingId ? `
+                      <div style="display: flex; gap: 6px; align-items: center;">
+                        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground);">${firstMeeting.meetingDate || ''}</span>
+                        <button class="btn sm" data-open-meeting="${this._escape(firstMeeting.meetingId)}" style="padding: 2px 8px; font-size: 11px;">
+                          View Meeting
+                        </button>
+                      </div>
+                    ` : ''}
                   </div>
-                  <div style="display: flex; gap: 6px; align-items: center;">
-                    <span style="font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground);">${d.meetingDate}</span>
-                    <button class="btn sm" data-open-meeting="${d.meetingId}" style="padding: 2px 8px; font-size: 11px;">
-                      View Meeting ${Icons.externalLink}
-                    </button>
+
+                  <div style="font-size: 13px; font-weight: 500; color: var(--foreground); line-height: 1.4;">
+                    ${this._escape(d.statement)}
+                  </div>
+
+                  ${d.quote ? `
+                    <div class="quote-box decision">
+                      “${this._escape(d.quote)}”
+                    </div>
+                  ` : ''}
+
+                  <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted-foreground); border-top: 1px solid var(--border); padding-top: 6px; margin-top: 2px;">
+                    <div>
+                      <b>First decided on:</b> ${this._escape(firstMeeting.meetingDate || 'Unknown')} · <i>${this._escape(firstMeeting.meetingTitle || 'Meeting')}</i>
+                    </div>
+
+                    ${restatedList.length > 0 ? `
+                      <div style="margin-top: 2px;">
+                        <b>Restated on ${restatedList.length} subsequent meeting${restatedList.length > 1 ? 's' : ''}:</b>
+                        <ul style="margin: 2px 0 0 16px; padding: 0; display: grid; gap: 2px;">
+                          ${restatedList.map(r => `
+                            <li>
+                              ${this._escape(r.meetingDate)} · <i>${this._escape(r.meetingTitle)}</i>
+                              ${r.quote ? `<span style="font-style: italic; color: var(--foreground);"> — “${this._escape(r.quote)}”</span>` : ''}
+                              <button class="btn sm" data-open-meeting="${this._escape(r.meetingId)}" style="padding: 1px 6px; font-size: 10px; margin-left: 4px;">
+                                View
+                              </button>
+                            </li>
+                          `).join('')}
+                        </ul>
+                      </div>
+                    ` : ''}
                   </div>
                 </div>
-                <div style="font-size: 13px; font-weight: 500; color: var(--foreground); line-height: 1.4;">
-                  ${this._escape(d.statement)}
-                </div>
-                <div class="sub" style="font-size: 11px;">
-                  Source: <i>${this._escape(d.meetingTitle)}</i>
-                </div>
-              </div>
-            `).join('')}
+              `;
+            }).join('') : '<div class="empty">No validated decisions extracted for this project yet.</div>'}
           </div>
         </div>
       `;
     }
 
     if (this.currentSubTab === 'actions') {
-      const owners = ['All', 'Artefact', 'Les Arbelles', 'Mariéna', 'Client / Équipe'];
+      const owners = ['All', 'Artefact', 'Client'];
 
       return `
         <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -5762,9 +7105,9 @@ class ProjectsView {
 
           <!-- Actions List -->
           <div style="display: grid; gap: 6px;">
-            ${matrixActions.map(act => `
-              <div class="card" style="padding: 10px 12px; display: flex; align-items: center; gap: 10px; transition: border-color 0.15s;">
-                <button class="item-check-btn ${act.done ? 'checked' : ''}" data-action-id="${act.id}" data-meeting-id="${act.meetingId}" title="${act.done ? 'Mark open' : 'Mark done'}">
+            ${matrixActions.length > 0 ? matrixActions.map(act => `
+              <div class="card" style="padding: 10px 12px; display: flex; align-items: flex-start; gap: 10px; transition: border-color 0.15s;">
+                <button class="item-check-btn ${act.done ? 'checked' : ''}" data-action-id="${this._escape(act.id)}" data-meeting-id="${this._escape(act.meetingId)}" title="${act.done ? 'Mark open' : 'Mark done'}" style="margin-top: 3px;">
                   ${act.done ? Icons.check : ''}
                 </button>
 
@@ -5772,23 +7115,28 @@ class ProjectsView {
                   <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                     <span class="chip-owner" style="font-weight: 600;">${this._escape(act.owner)}</span>
                     <span class="badge" style="font-size: 10px;">${this._escape(act.ownerOrg)}</span>
-                    <span class="badge" style="font-size: 10px;">${this._escape(act.facility)}</span>
+                    ${act.facility ? `<span class="badge" style="font-size: 10px;">${this._escape(act.facility)}</span>` : ''}
                     ${act.dueDate ? `<span class="chip-due" style="font-size: 10px;">${Icons.clock} ${this._escape(act.dueDate)}</span>` : ''}
                     ${(act.tags || []).map(t => `<span class="badge" style="font-size: 10px;">#${this._escape(t)}</span>`).join('')}
                   </div>
                   <div class="tx ${act.done ? 'done' : ''}" style="margin-top: 4px; font-size: 12.5px; line-height: 1.4;">
                     ${this._escape(act.text)}
                   </div>
-                  <div class="sub" style="font-size: 11px; margin-top: 2px;">
+                  ${act.quote ? `
+                    <div class="quote-box" style="margin-top: 6px;">
+                      “${this._escape(act.quote)}”
+                    </div>
+                  ` : ''}
+                  <div class="sub" style="font-size: 11px; margin-top: 4px;">
                     ${act.meetingDate} · <i>${this._escape(act.meetingTitle)}</i>
                   </div>
                 </div>
 
-                <button class="btn sm" data-open-meeting="${act.meetingId}" style="flex-shrink: 0; font-size: 11px;">
+                <button class="btn sm" data-open-meeting="${this._escape(act.meetingId)}" style="flex-shrink: 0; font-size: 11px; margin-top: 2px;">
                   Open Meeting
                 </button>
               </div>
-            `).join('')}
+            `).join('') : '<div class="empty">No matching actions found.</div>'}
           </div>
         </div>
       `;
@@ -5802,7 +7150,7 @@ class ProjectsView {
           </div>
 
           <div style="display: grid; gap: 8px;">
-            ${project.connectedDocs.map(doc => `
+            ${project.connectedDocs.length > 0 ? project.connectedDocs.map(doc => `
               <div class="card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                 <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
                   <span class="doc-icon">${Icons.fileText}</span>
@@ -5816,15 +7164,95 @@ class ProjectsView {
 
                 <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
                   <a href="${this._escape(doc.url)}" target="_blank" rel="noopener" class="btn sm pink">
-                    Open in Google Docs ${Icons.externalLink}
+                    Open in Google Docs
                   </a>
-                  <button class="btn sm" data-open-meeting="${doc.meetingId}">
+                  <button class="btn sm" data-open-meeting="${this._escape(doc.meetingId)}">
                     View Meeting
                   </button>
                 </div>
               </div>
-            `).join('')}
+            `).join('') : '<div class="empty">No connected Google Docs found for this initiative.</div>'}
           </div>
+        </div>
+      `;
+    }
+
+    if (this.currentSubTab === 'settings') {
+      const cfg = project.projectConfig || {};
+      const clientMatchesStr = (cfg.clientMatch || []).join(', ');
+      const toolsStr = ((cfg.parserHints && cfg.parserHints.tools) || []).join(', ');
+      const decisionTriggersStr = ((cfg.parserHints && cfg.parserHints.decisionTriggers) || []).join(', ');
+
+      return `
+        <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h2 style="font-size: 16px; margin-bottom: 2px;">Project Configuration: ${this._escape(cfg.name || project.projectName)}</h2>
+              <div class="sub" style="font-size: 12px;">Stored locally in IndexedDB projects database. Modify vocabulary and workstreams dynamically.</div>
+            </div>
+            ${this.settingsFeedback ? `
+              <span class="badge ok" style="font-size: 11px; font-weight: 600;">${this._escape(this.settingsFeedback)}</span>
+            ` : ''}
+          </div>
+
+          <form id="projectSettingsForm" style="display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
+              <div>
+                <label class="label">Project ID</label>
+                <input class="in" id="cfgProjectId" value="${this._escape(cfg.id || '')}" disabled style="font-family: var(--font-mono); opacity: 0.7;" />
+              </div>
+              <div>
+                <label class="label">Project Name</label>
+                <input class="in" id="cfgProjectName" value="${this._escape(cfg.name || '')}" required />
+              </div>
+            </div>
+
+            <div>
+              <label class="label">Client Match Tags (Comma-separated)</label>
+              <input class="in" id="cfgClientMatch" value="${this._escape(clientMatchesStr)}" placeholder="e.g. Clariane, Les Arbelles, Mariéna" />
+              <div class="sub" style="font-size: 11px; margin-top: 3px;">Events whose client or tags match any of these will associate with this project.</div>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 12px;">
+              <div class="label" style="margin-bottom: 6px;">Strategic Workstreams (${(cfg.workstreams || []).length})</div>
+              <div id="workstreamsEditorList" style="display: flex; flex-direction: column; gap: 8px;">
+                ${(cfg.workstreams || []).map((ws, idx) => `
+                  <div class="card" style="padding: 10px; background: var(--muted); display: flex; flex-direction: column; gap: 6px;" data-ws-index="${idx}">
+                    <div style="display: grid; grid-template-columns: 120px 1fr 60px; gap: 8px; align-items: center;">
+                      <input class="in sm ws-badge" value="${this._escape(ws.badge)}" placeholder="Badge" />
+                      <input class="in sm ws-title" value="${this._escape(ws.title)}" placeholder="Title" />
+                      <button type="button" class="btn sm delete-ws-btn" data-del-idx="${idx}" style="justify-content: center; color: var(--destructive);">${Icons.trash || 'Delete'}</button>
+                    </div>
+                    <input class="in sm ws-summary" value="${this._escape(ws.summary)}" placeholder="Summary statement" />
+                    <textarea class="in sm ws-rules" style="min-height: 50px; font-size: 11.5px;" placeholder="Governing rules (one per line)">${(ws.keyRules || []).join('\n')}</textarea>
+                  </div>
+                `).join('')}
+              </div>
+              <button type="button" class="btn sm" id="addWorkstreamBtn" style="margin-top: 8px;">
+                ${Icons.plus} Add Workstream
+              </button>
+            </div>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 12px;">
+              <div class="label" style="margin-bottom: 6px;">Domain Parser Hints &amp; Vocabulary</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <label class="label" style="font-size: 11px;">Tools &amp; Clinical Systems (Comma-separated)</label>
+                  <input class="in" id="cfgParserTools" value="${this._escape(toolsStr)}" placeholder="e.g. Foundry, HM, rTMS, Balnéo, Kiné, Ergo" />
+                </div>
+                <div>
+                  <label class="label" style="font-size: 11px;">Decision Trigger Phrases (Comma-separated)</label>
+                  <input class="in" id="cfgDecisionTriggers" value="${this._escape(decisionTriggersStr)}" placeholder="e.g. Arbitrage, Décision, Validé, Zéro Temps Mort" />
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+              <button type="submit" class="btn pink" id="saveProjectSettingsBtn">
+                Save Project Configuration
+              </button>
+            </div>
+          </form>
         </div>
       `;
     }
@@ -5833,10 +7261,22 @@ class ProjectsView {
   }
 
   _bindEvents(project) {
-    // Client selection
-    this.container.querySelectorAll('[data-select-client]').forEach(btn => {
+    // Project selection dropdown
+    const projDropdown = this.container.querySelector('#projectSelectDropdown');
+    if (projDropdown) {
+      projDropdown.addEventListener('change', (e) => {
+        const nextId = e.target.value;
+        this.setProject(nextId);
+        if (this.store && typeof this.store.setActiveProjectId === 'function') {
+          this.store.setActiveProjectId(nextId);
+        }
+      });
+    }
+
+    // Project selection buttons (if any)
+    this.container.querySelectorAll('[data-select-project]').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.setClient(btn.dataset.selectClient);
+        this.setProject(btn.dataset.selectProject);
       });
     });
 
@@ -5844,6 +7284,7 @@ class ProjectsView {
     this.container.querySelectorAll('.tabs button[data-subtab]').forEach(btn => {
       btn.addEventListener('click', () => {
         this.currentSubTab = btn.dataset.subtab;
+        this.settingsFeedback = null;
         this.render();
       });
     });
@@ -5887,6 +7328,101 @@ class ProjectsView {
         this.render();
       });
     });
+
+    // Project settings form submission
+    const settingsForm = this.container.querySelector('#projectSettingsForm');
+    if (settingsForm) {
+      // Add workstream
+      this.container.querySelector('#addWorkstreamBtn')?.addEventListener('click', () => {
+        const list = this.container.querySelector('#workstreamsEditorList');
+        if (!list) return;
+        const newCard = document.createElement('div');
+        newCard.className = 'card';
+        newCard.style.cssText = 'padding: 10px; background: var(--muted); display: flex; flex-direction: column; gap: 6px;';
+        newCard.innerHTML = `
+          <div style="display: grid; grid-template-columns: 120px 1fr 60px; gap: 8px; align-items: center;">
+            <input class="in sm ws-badge" value="WS" placeholder="Badge" />
+            <input class="in sm ws-title" value="New Workstream" placeholder="Title" />
+            <button type="button" class="btn sm delete-ws-btn" style="justify-content: center; color: var(--destructive);">${Icons.trash || 'Delete'}</button>
+          </div>
+          <input class="in sm ws-summary" value="" placeholder="Summary statement" />
+          <textarea class="in sm ws-rules" style="min-height: 50px; font-size: 11.5px;" placeholder="Governing rules (one per line)"></textarea>
+        `;
+        newCard.querySelector('.delete-ws-btn')?.addEventListener('click', () => newCard.remove());
+        list.appendChild(newCard);
+      });
+
+      // Delete workstream
+      this.container.querySelectorAll('.delete-ws-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          btn.closest('.card')?.remove();
+        });
+      });
+
+      settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const baseProject = project.projectConfig || ProjectModel.createDefault(this.currentProjectId);
+        
+        const updatedName = this.container.querySelector('#cfgProjectName')?.value.trim() || baseProject.name;
+        const clientMatches = (this.container.querySelector('#cfgClientMatch')?.value || '')
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        const tools = (this.container.querySelector('#cfgParserTools')?.value || '')
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        const decisionTriggers = (this.container.querySelector('#cfgDecisionTriggers')?.value || '')
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        // Collect workstreams from UI
+        const wsCards = this.container.querySelectorAll('#workstreamsEditorList .card');
+        const updatedWorkstreams = [];
+        wsCards.forEach(card => {
+          const badge = card.querySelector('.ws-badge')?.value.trim() || 'WS';
+          const title = card.querySelector('.ws-title')?.value.trim() || 'Workstream';
+          const summary = card.querySelector('.ws-summary')?.value.trim() || '';
+          const rules = (card.querySelector('.ws-rules')?.value || '')
+            .split('\n')
+            .map(r => r.trim())
+            .filter(Boolean);
+
+          updatedWorkstreams.push({
+            id: badge.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            badge,
+            title,
+            summary,
+            keyRules: rules,
+            facilities: []
+          });
+        });
+
+        const updated = {
+          ...baseProject,
+          name: updatedName,
+          clientMatch: clientMatches.length > 0 ? clientMatches : [updatedName],
+          workstreams: updatedWorkstreams,
+          parserHints: {
+            ...(baseProject.parserHints || {}),
+            tools: tools.length > 0 ? tools : (baseProject.parserHints?.tools || []),
+            decisionTriggers: decisionTriggers.length > 0 ? decisionTriggers : (baseProject.parserHints?.decisionTriggers || [])
+          }
+        };
+
+        try {
+          await this.store.saveProject(updated);
+          this.settingsFeedback = 'Project configuration saved successfully.';
+          this.render();
+        } catch (err) {
+          console.error('[ProjectsView] Failed to save project:', err);
+          alert('Failed to save project: ' + err.message);
+        }
+      });
+    }
   }
 
   _escape(str) {
@@ -5908,7 +7444,8 @@ const AppState = {
   date: '2026-10-28',
   view: 'today',
   mode: 'all',
-  selectedEventId: null
+  selectedEventId: null,
+  isPanelCollapsed: false
 };
 
 let todayView;
@@ -5920,11 +7457,30 @@ let projectsView;
 let meetingPanel;
 let openActionsCount = 0;
 
+function setPanelCollapsed(collapsed) {
+  AppState.isPanelCollapsed = Boolean(collapsed);
+  const bodyEl = document.querySelector('.body');
+  if (bodyEl) {
+    if (AppState.isPanelCollapsed) {
+      bodyEl.classList.add('collapsed');
+    } else {
+      bodyEl.classList.remove('collapsed');
+    }
+  }
+  if (shell && typeof shell.updatePanelToggle === 'function') {
+    shell.updatePanelToggle(AppState.isPanelCollapsed);
+  }
+  try {
+    localStorage.setItem('mhub_panel_collapsed', AppState.isPanelCollapsed ? 'true' : 'false');
+  } catch (e) {}
+}
+
 function selectMeeting(eventId, tab = null) {
   if (tab && meetingPanel) {
     meetingPanel.currentTab = tab;
   }
   AppState.selectedEventId = eventId;
+  setPanelCollapsed(false);
   const targetHash = '#/meeting/' + encodeURIComponent(eventId);
   if (window.location.hash !== targetHash) {
     window.location.hash = targetHash;
@@ -5999,6 +7555,9 @@ function renderActiveView() {
 
 // Instantiate App Shell
 const shell = new MeetingHub.ShellUI({
+  onTogglePanel: () => {
+    setPanelCollapsed(!AppState.isPanelCollapsed);
+  },
   onNavigate: (viewName) => {
     AppState.view = viewName;
     if (viewName === 'today') {
@@ -6007,6 +7566,33 @@ const shell = new MeetingHub.ShellUI({
       window.location.hash = '#/' + viewName;
     }
     renderActiveView();
+  },
+  onProjectChange: async (projectId) => {
+    MeetingHub.store.setActiveProjectId(projectId);
+    if (projectsView) projectsView.setProject(projectId);
+    if (AppState.view === 'projects') renderActiveView();
+  },
+  onConfirmSuggestedProject: async (suggestion) => {
+    const p = await MeetingHub.store.confirmSuggestedProject(suggestion);
+    MeetingHub.store.setActiveProjectId(p.id);
+    const all = await MeetingHub.store.getAllProjects();
+    const sug = await MeetingHub.store.getSuggestedProjects();
+    shell.setProjects(all, p.id, sug);
+    if (projectsView) projectsView.setProject(p.id);
+    renderActiveView();
+  },
+  onCreateProject: async () => {
+    const name = prompt('Enter new project name:');
+    if (name && name.trim()) {
+      const tag = prompt('Enter primary client or meeting tag to match events:', name.trim()) || name.trim();
+      const p = await MeetingHub.store.confirmSuggestedProject({ name: name.trim(), clientMatch: [tag.trim()] });
+      MeetingHub.store.setActiveProjectId(p.id);
+      const all = await MeetingHub.store.getAllProjects();
+      const sug = await MeetingHub.store.getSuggestedProjects();
+      shell.setProjects(all, p.id, sug);
+      if (projectsView) projectsView.setProject(p.id);
+      renderActiveView();
+    }
   },
   onModeChange: (newMode) => {
     AppState.mode = newMode;
@@ -6108,6 +7694,7 @@ function handleHashRoute() {
   if (meetingMatch) {
     const meetingId = decodeURIComponent(meetingMatch[1]);
     AppState.selectedEventId = meetingId;
+    setPanelCollapsed(false);
     if (meetingPanel) meetingPanel.setMeeting(meetingId);
     if (todayView && AppState.view === 'today') todayView.setSelectedEvent(meetingId);
     if (weekView && AppState.view === 'week') weekView.setSelectedEvent(meetingId);
@@ -6137,7 +7724,7 @@ function handleHashRoute() {
   }
 }
 
-// Global Keyboard Navigation (j, k, a, /, Escape)
+// Global Keyboard Navigation (j, k, a, /, Escape, )
 window.addEventListener('keydown', (e) => {
   const activeEl = document.activeElement;
   const isInputActive = activeEl && (
@@ -6147,7 +7734,7 @@ window.addEventListener('keydown', (e) => {
     activeEl.isContentEditable
   );
 
-  // Esc clears quick search or closes drawer
+  // Esc clears quick search, collapses drawer or resets selected meeting
   if (e.key === 'Escape') {
     if (isInputActive) {
       const isSearch = activeEl.id === 'quickSearch';
@@ -6159,6 +7746,8 @@ window.addEventListener('keydown', (e) => {
         if (AppState.view === 'actions' && actionsView) actionsView.setSearchQuery('');
         if (AppState.view === 'series' && seriesView) seriesView.setSearchQuery('');
       }
+    } else if (!AppState.isPanelCollapsed) {
+      setPanelCollapsed(true);
     } else if (AppState.selectedEventId) {
       window.location.hash = AppState.view === 'today' ? '#/today' : '#/' + AppState.view;
     }
@@ -6167,6 +7756,13 @@ window.addEventListener('keydown', (e) => {
 
   // Single-letter shortcuts only fire when not typing in editable fields
   if (isInputActive) return;
+
+  // '\' -> toggle right meeting panel
+  if (e.key === '\\') {
+    e.preventDefault();
+    setPanelCollapsed(!AppState.isPanelCollapsed);
+    return;
+  }
 
   // 'j' or ArrowDown -> next meeting
   if (e.key === 'j' || e.key === 'ArrowDown') {
@@ -6239,10 +7835,22 @@ async function bootstrap() {
       } catch (e) {}
     }, 60000);
 
+    // Initialize projects in shell
+    const allProjects = await MeetingHub.store.getAllProjects();
+    const suggestedProjects = await MeetingHub.store.getSuggestedProjects();
+    const activeProjectId = MeetingHub.store.getActiveProjectId() || (allProjects[0] && allProjects[0].id) || 'clariane';
+    shell.setProjects(allProjects, activeProjectId, suggestedProjects);
+
     todayView = new MeetingHub.TodayView({
       container: leftCol,
       store: MeetingHub.store,
-      onSelectMeeting: (eventId, tab = null) => selectMeeting(eventId, tab)
+      onSelectMeeting: (eventId, tab = null) => selectMeeting(eventId, tab),
+      onNavigateProject: (projectId) => {
+        AppState.view = 'projects';
+        if (projectsView) projectsView.setProject(projectId);
+        window.location.hash = '#/projects';
+        renderActiveView();
+      }
     });
 
     weekView = new MeetingHub.WeekView({
@@ -6282,21 +7890,43 @@ async function bootstrap() {
         selectMeeting(relatedEventId);
       },
       onClose: () => {
+        setPanelCollapsed(true);
         window.location.hash = AppState.view === 'today' ? '#/today' : '#/' + AppState.view;
+      },
+      onCollapse: () => {
+        setPanelCollapsed(true);
       }
     });
+
+    const expandTab = document.querySelector('#expandPanelTab');
+    if (expandTab) {
+      expandTab.addEventListener('click', () => setPanelCollapsed(false));
+    }
 
     // Subscribe to store updates
     MeetingHub.store.subscribe(async (payload) => {
       openActionsCount = await MeetingHub.store.getOpenActionsCount();
       shell.updateActionsBadge(openActionsCount);
-      if (payload.type === 'meeting_data_updated' || payload.type === 'sync_completed') {
+      if (payload.type === 'project_updated' || payload.type === 'project_deleted' || payload.type === 'active_project_changed') {
+        const all = await MeetingHub.store.getAllProjects();
+        const sug = await MeetingHub.store.getSuggestedProjects();
+        shell.setProjects(all, MeetingHub.store.getActiveProjectId(), sug);
+        if (projectsView) projectsView.setProject(MeetingHub.store.getActiveProjectId());
+      }
+      if (payload.type === 'meeting_data_updated' || payload.type === 'sync_completed' || payload.type === 'project_updated') {
         renderActiveView();
         if (meetingPanel && AppState.selectedEventId) {
           meetingPanel.render();
         }
       }
     });
+
+    try {
+      const storedCollapsed = localStorage.getItem('mhub_panel_collapsed');
+      if (storedCollapsed === 'true' && !window.location.hash.startsWith('#/meeting/')) {
+        setPanelCollapsed(true);
+      }
+    } catch (e) {}
 
     // Handle initial route or default flagship meeting
     handleHashRoute();
@@ -6305,7 +7935,7 @@ async function bootstrap() {
     if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '#/today') {
       const todayEvents = MeetingHub.store.getEventsByDate(AppState.date, 'work');
       const defaultMeeting = todayEvents.find(e => e.title.includes('MO - Suivi anomalies')) || todayEvents[0];
-      if (defaultMeeting) {
+      if (defaultMeeting && !AppState.isPanelCollapsed) {
         window.location.hash = '#/meeting/' + encodeURIComponent(defaultMeeting.id);
       }
     }
