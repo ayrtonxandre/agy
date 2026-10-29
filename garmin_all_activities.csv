@@ -1,213 +1,101 @@
-Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect,Notes
-24877418512,2026-10-28,2026-10-28 06:34:47,CrossFit,indoor_cardio,Cardio / Cross-Training,46.0,0.0,490,129.0,183.0,SPEED,"8 rounds 
-12 burpees
-4 legs raises 
-2 toes to bar 
-4 clean 95Lbs"
-24865135471,2026-10-27,2026-10-27 06:48:00,"ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",strength_training,Strength,50.5,0.0,391,114.0,151.0,AEROBIC_BASE,
-24853486904,2026-10-26,2026-10-26 06:40:20,CrossFit,indoor_cardio,Cardio / Cross-Training,44.7,0.0,339,110.0,166.0,ANAEROBIC_CAPACITY,"15 thrusters - 95 Lbs
-15 muscle-ups low bar 
-
-12 thrusters - 95 Lbs
-12 muscle-ups low bar 
-
-9 thrusters - 95 Lbs
-9 muscle-ups low bar"
-24833250042,2026-10-24,2026-10-24 10:36:05,CrossFit,indoor_cardio,Cardio / Cross-Training,50.3,0.0,586,140.0,194.0,SPEED,"5 rounds
-
-15 leg raises
-15 sumo deadlift  high pull 65Lbd"
-24822339601,2026-10-23,2026-10-23 06:36:11,CrossFit,indoor_cardio,Cardio / Cross-Training,40.3,0.0,502,140.0,188.0,SPEED,"4 rounds
-400m run
-10 kettlebell thrusters 32Kg"
-24818402481,2026-10-22,2026-10-22 06:15:00,"Gym Session A (Squat, Quads & Lower Body MEV)",strength_training,Strength,45.0,0.0,300,,,,
-24798737901,2026-10-21,2026-10-21 06:40:43,CrossFit,indoor_cardio,Cardio / Cross-Training,44.4,0.0,544,139.0,186.0,SPEED,"3 rounds
-
-25 single arm dumbbell snatch - 35Lbs
-25 sit-ups
-15 single arm dumbbells devil press - 35Lbs
-10 single leg squats"
-24787048686,2026-10-20,2026-10-20 06:36:17,CrossFit ,indoor_cardio,Cardio / Cross-Training,49.2,0.0,483,126.0,165.0,SPEED,"Strength :
-5 rounds : 
-15 burpees
-4 push press 95Lbs
-
-Core :
-4 rounds : 
-4 strict press 75Lbs
-30s hollow rock"
-24741308773,2026-10-16,2026-10-16 06:35:03,CrossFit,indoor_cardio,Cardio / Cross-Training,49.6,0.0,516,128.0,173.0,SPEED,"Strength :
-5 snatches - 40Lbs
-5 snatches - 50Lbs
-5 snatches - 75Lbs
-5 snatches - 85Lbs
-
-WOD:
-40 hang snatches - 55Lbs
-5 hang snatches - 65Lbs
-
-40 Overheads Lunges - 55Lbs
-5 Overheads Lunges - 65Lbs"
-24729295465,2026-10-15,2026-10-15 06:20:00,"ATHX 2027: 15/10/2026 Gym Session B (Deadlift, Posterior Chain & Upper S2O)",strength_training,Strength,61.4,0.0,495,117.0,171.0,ANAEROBIC_CAPACITY,
-24717072200,2026-10-14,2026-10-14 06:38:00,CrossFit,indoor_cardio,Cardio / Cross-Training,43.4,0.0,524,136.0,170.0,AEROBIC_BASE,"Round 1 : 
-1:30mins rowing - 15Cal 
-15 dumbbells sumo deadlifts high rise - 25Kg
-45s rowing - 13Cal
-
-Round 2 : 
-1:30mins rowing - 15Cal 
-15 dumbbells sumo deadlifts high rise - 25Kg
-45s rowing - 12Cal
-
-Round 3 : 
-1:30mins rowing - 15Cal 
-15 dumbbells sumo deadlifts high rise - 25Kg
-45s rowing - 13Cal
-
-Round 4 : 
-1:30mins rowing - 15Cal 
-15 dumbbells sumo deadlifts high rise - 25Kg
-45s rowing - 12Cal
-
-Round 5 : 
-1:30mins rowing - 15Cal 
-15 dumbbells sumo deadlifts high rise - 25Kg
-45s rowing - 13Cal"
-24704589558,2026-10-13,2026-10-13 06:27:46,Strength,strength_training,Strength,50.5,0.0,450,122.0,156.0,ANAEROBIC_CAPACITY,
-24701028462,2026-10-12,2026-10-12 20:04:43,CrossFit,indoor_cardio,Cardio / Cross-Training,48.5,0.0,547,135.0,176.0,SPEED,"Round 1: 15 burpees - 15 squat cleans, 25 kg (55 Lbs)
- Round 2: 15 burpees - 12 squat cleans, 38.5 kg (85 Lbs)
- Round 3: 15 burpees - 9 squat cleans, 43 kg (95 Lbs)
- Round 4: 15 burpees - 6 squat cleans, 43 kg (95 Lbs)"
-24699090559,2026-10-10,2026-10-10 14:19:48,Triathlon #4 - Rowing,rowing_v2,Workout,34.3,2.34,282,116.0,145.0,RECOVERY,
-24699090129,2026-10-10,2026-10-10 10:56:10,Triathlon #3 - Running,running,Running,9.3,1.84,144,156.0,163.0,TEMPO,
-24699089763,2026-10-10,2026-10-10 10:30:19,Triathlon #2 - Running,running,Running,17.1,3.37,264,159.0,177.0,TEMPO,
-24699089373,2026-10-10,2026-10-10 09:56:26,Triathlon #1 - Running,running,Running,26.4,5.16,384,147.0,163.0,AEROBIC_BASE,
-24659045766,2026-10-09,2026-10-09 06:36:32,CrossFit,indoor_cardio,Cardio / Cross-Training,45.8,0.0,474,129.0,175.0,AEROBIC_BASE,"Alternated single dumbbell snatch overhead
-40 reps - 25kg
-30 reps - 30kg
-20 reps - 30kg
-10 reps - 30kg
-
-Wall Walks - 4 rounds
-4 reps
-
-Jumping cords
-20 reps
-40 reps
-60 reps
-80 reps"
-24647765263,2026-10-08,2026-10-08 07:10:49,CrossFit,indoor_cardio,Cardio / Cross-Training,41.3,0.0,507,140.0,186.0,SPEED,"Strengh - 5 rounds
-5 reps at 106,5Kg
-
-WOD - 4 rounds
-20 Kettle Bell Swings at 16Kg
-15 Push-Ups
-12 Deadlifts at 80Kg"
-24643650981,2026-10-07,2026-10-07 19:33:53,CrossFit,indoor_cardio,Cardio / Cross-Training,49.6,0.0,615,142.0,202.0,SPEED,"5 rounds :
-400m
-10 Hang Power Clean - 30Kg"
-24586876296,2026-10-03,2026-10-03 10:00:21,Paris Running,running,Running,51.4,9.75,708,147.0,167.0,TEMPO,
-24543703107,2026-09-29,2026-09-29 16:42:48,Le Lude Padel,paddelball,Workout,108.8,2.92,753,119.0,168.0,AEROBIC_BASE,
-24536647696,2026-09-29,2026-09-29 06:27:23,Strength,strength_training,Strength,33.7,0.0,202,104.0,148.0,AEROBIC_BASE,
-24533322405,2026-09-28,2026-09-28 20:40:26,CrossFit ,indoor_cardio,Cardio / Cross-Training,43.2,0.0,478,137.0,182.0,SPEED,"4 rounds :
-450m rowing
-30 wall balls - 12kg
-20 ring row"
-24503269582,2026-09-26,2026-09-26 11:42:19,CrossFit,indoor_cardio,Cardio / Cross-Training,41.3,0.0,604,164.0,196.0,VO2MAX,"Strength part
-Deadlifts
-5*60 
-5*70
-5*80
-5*90
-5*100
-
-WOD
-Warmup 
-9 Cleans and Jerks 45Kg
-Then
-4 Rounds
-400m rowing
-9 Cleans and Jerks 45Kg"
-24495020352,2026-09-25,2026-09-25 16:43:00,🏋️ ATHX 2027: Push & Shoulders (S2O) [65kg / 45kg / 20kg],strength_training,Strength,54.5,0.0,469,126.0,169.0,ANAEROBIC_CAPACITY,
-24477635769,2026-09-24,2026-09-24 06:38:00,CrossFit,indoor_cardio,Cardio / Cross-Training,49.9,0.0,604,147.0,198.0,SPEED,"4 rounds
-15 Front Squats : 60Kg
-500m rowing"
-24471892604,2026-09-23,2026-09-23 18:04:39,CrossFit,indoor_cardio,Cardio / Cross-Training,51.8,0.0,366,113.0,179.0,ANAEROBIC_CAPACITY,"Practice 8'
-Handstand Walk
-Puis:
-6 ROUNDS:
-8 Pike Push-Ups
-6 Pull Ups"
-24464848450,2026-09-23,2026-09-23 06:30:00,ATHX 2027: Upper Body Hypertrophy & Strict OHP,strength_training,Strength,53.7,0.0,374,113.0,157.0,AEROBIC_BASE,
-24699087804,2026-09-22,2026-09-22 13:09:12,Strength,strength_training,Strength,0.4,0.0,2,95.0,107.0,UNKNOWN,
-24451660589,2026-09-22,2026-09-22 06:40:00,Lower Body A (Squat Focus) & Vertical Push Press,strength_training,Strength,62.0,0.0,349,109.0,165.0,ANAEROBIC_CAPACITY,
-24447489780,2026-09-21,2026-09-21 20:28:41,Cardio,indoor_cardio,Cardio / Cross-Training,20.6,0.0,137,106.0,149.0,RECOVERY,
-24391806619,2026-09-17,2026-09-17 07:15:12,Cardio,indoor_cardio,Cardio / Cross-Training,32.9,0.0,266,116.0,163.0,ANAEROBIC_CAPACITY,
-24387056282,2026-09-16,2026-09-16 19:07:30,CrossFit ,indoor_cardio,Cardio / Cross-Training,47.3,0.0,483,133.0,171.0,SPEED,"5 round 
-5 snatch barbell 20Kg"
-24379065525,2026-09-16,2026-09-16 06:18:00,Upper-Body,strength_training,Strength,60.0,0.0,430,113.0,160.0,ANAEROBIC_CAPACITY,
-24365724397,2026-09-15,2026-09-15 07:00:57,Treadmill Running,treadmill_running,Running,27.8,5.0,271,126.0,137.0,RECOVERY,
-24353113405,2026-09-14,2026-09-14 06:28:38,Strength,strength_training,Strength,42.0,0.0,264,107.0,153.0,ANAEROBIC_CAPACITY,
-24347510893,2026-09-13,2026-09-13 14:07:59,Squash,squash,Workout,39.2,0.12,379,131.0,160.0,AEROBIC_BASE,
-24319615620,2026-09-11,2026-09-11 11:40:00,ATHX 2027: Lower Body B (Deadlift & Posterior Chain),strength_training,Strength,51.4,0.0,362,114.0,163.0,ANAEROBIC_CAPACITY,
-24292490080,2026-09-09,2026-09-09 06:40:00,Upper-body Day,strength_training,Strength,50.1,0.0,341,112.0,139.0,AEROBIC_BASE,
-24287114557,2026-09-08,2026-09-08 19:03:11,"ATHX 2027: Light Session - S2O Technique, Shoulders Prehab & Core",indoor_cardio,Cardio / Cross-Training,31.5,0.0,319,130.0,169.0,RECOVERY,
-24285053565,2026-09-08,2026-09-08 16:39:20,Paris Running,running,Running,27.6,5.01,420,167.0,185.0,VO2MAX,
-24266663499,2026-09-07,2026-09-07 06:39:00,Push,strength_training,Strength,44.6,0.0,342,115.0,151.0,AEROBIC_BASE,
-24191921542,2026-09-01,2026-09-01 06:35:15,Leg Day,strength_training,Strength,51.5,0.0,372,112.0,164.0,ANAEROBIC_CAPACITY,
-24147367955,2026-08-28,2026-08-28 12:47:00,Pull Day,strength_training,Strength,58.7,0.0,442,118.0,159.0,ANAEROBIC_CAPACITY,
-24131970235,2026-08-27,2026-08-27 06:59:00,Leg Day,strength_training,Strength,42.3,0.0,327,116.0,184.0,ANAEROBIC_CAPACITY,
-24118805692,2026-08-26,2026-08-26 06:43:00,Push day,strength_training,Strength,49.6,0.0,279,102.0,132.0,AEROBIC_BASE,
-24111211775,2026-08-25,2026-08-25 16:01:00,Pull Day,strength_training,Strength,62.4,0.0,461,117.0,152.0,AEROBIC_BASE,
-24031705146,2026-08-19,2026-08-19 07:16:00,Leg Day,strength_training,Strength,44.6,0.0,331,114.0,152.0,AEROBIC_BASE,
-24026445362,2026-08-18,2026-08-18 19:03:36,Cross-training ,indoor_cardio,Cardio / Cross-Training,48.8,0.0,405,120.0,165.0,AEROBIC_BASE,
-24018247989,2026-08-18,2026-08-18 06:55:00,Push Day,strength_training,Strength,61.2,0.0,424,112.0,173.0,ANAEROBIC_CAPACITY,
-24005979319,2026-08-17,2026-08-17 06:53:00,Pull day,strength_training,Strength,77.8,0.0,501,120.0,161.0,ANAEROBIC_CAPACITY,
-23974250400,2026-08-14,2026-08-14 11:39:07,Aurland Hiking,hiking,Workout,168.7,8.45,1036,111.0,157.0,AEROBIC_BASE,
-23950092966,2026-08-12,2026-08-12 08:19:26,Odda Hiking,hiking,Workout,426.9,22.89,2708,117.0,159.0,AEROBIC_BASE,
-23915467561,2026-08-09,2026-08-09 18:46:14,Upper body - [PRE_NORWAY],strength_training,Strength,78.0,0.0,586,122.0,159.0,ANAEROBIC_CAPACITY,
-23894344525,2026-08-08,2026-08-08 07:11:15,Pull Day,strength_training,Strength,50.1,0.0,362,116.0,149.0,AEROBIC_BASE,
-23882839498,2026-08-07,2026-08-07 07:39:41,Cardio,indoor_cardio,Cardio / Cross-Training,12.0,0.0,162,151.0,177.0,TEMPO,
-23882754703,2026-08-07,2026-08-07 07:15:51,Push Day,strength_training,Strength,23.5,0.0,177,114.0,151.0,AEROBIC_BASE,
-23870309286,2026-08-06,2026-08-06 06:51:00,Leg Day,strength_training,Strength,42.4,0.0,327,119.0,162.0,ANAEROBIC_CAPACITY,
-23848672173,2026-08-04,2026-08-04 13:58:00,Pull Day,strength_training,Strength,53.9,0.0,451,124.0,144.0,AEROBIC_BASE,
-23846819928,2026-08-04,2026-08-04 07:28:40,Annecy Walking,walking,Outdoor / Endurance,276.5,18.48,1937,128.0,165.0,AEROBIC_BASE,
-24699090920,2026-08-03,2026-08-03 18:50:22,Stopwatch,stop_watch,Workout,0.5,0.0,0,,,,
-23837062961,2026-08-03,2026-08-03 16:05:00,Push Day,strength_training,Strength,55.9,0.0,493,126.0,160.0,ANAEROBIC_CAPACITY,
-23834518183,2026-08-03,2026-08-03 07:36:59,Annecy Walking,walking,Outdoor / Endurance,323.0,16.8,2473,131.0,174.0,AEROBIC_BASE,
-23812230574,2026-08-01,2026-08-01 14:10:42,Strength,strength_training,Strength,50.6,0.0,342,108.0,148.0,AEROBIC_BASE,
-23791817313,2026-07-30,2026-07-30 19:07:59,Cardio,indoor_cardio,Cardio / Cross-Training,51.0,0.0,515,132.0,176.0,SPEED,
-23786361435,2026-07-30,2026-07-30 11:01:06,Strength,strength_training,Strength,50.6,0.0,437,123.0,157.0,ANAEROBIC_CAPACITY,
-23777701975,2026-07-29,2026-07-29 16:30:01,Strength,strength_training,Strength,61.7,0.0,386,106.0,137.0,AEROBIC_BASE,
-23767850616,2026-07-28,2026-07-28 19:04:29,Cardio,indoor_cardio,Cardio / Cross-Training,48.8,0.0,495,131.0,175.0,SPEED,
-23767849451,2026-07-28,2026-07-28 11:42:28,Strength,strength_training,Strength,49.0,0.0,434,125.0,155.0,ANAEROBIC_CAPACITY,
-23767848801,2026-07-27,2026-07-27 22:11:19,Bouldering,bouldering,Workout,40.3,0.0,355,124.0,159.0,SPEED,
-23706415890,2026-07-23,2026-07-23 19:09:15,Cardio,indoor_cardio,Cardio / Cross-Training,49.2,0.0,590,144.0,185.0,SPEED,
-23698912079,2026-07-23,2026-07-23 07:12:06,Strength,strength_training,Strength,48.0,0.0,385,118.0,150.0,ANAEROBIC_CAPACITY,
-23686021858,2026-07-22,2026-07-22 06:30:38,Strength,strength_training,Strength,52.7,0.0,438,121.0,161.0,ANAEROBIC_CAPACITY,
-23673195620,2026-07-21,2026-07-21 07:32:23,Strength,strength_training,Strength,37.5,0.0,328,121.0,153.0,ANAEROBIC_CAPACITY,
-23660663184,2026-07-20,2026-07-20 06:33:09,Strength,strength_training,Strength,45.1,0.0,272,102.0,149.0,ANAEROBIC_CAPACITY,
-23644231938,2026-07-18,2026-07-18 17:00:17,Strength,strength_training,Strength,54.8,0.0,460,123.0,166.0,ANAEROBIC_CAPACITY,
-23626509121,2026-07-17,2026-07-17 06:51:53,Strength,strength_training,Strength,39.5,0.0,308,115.0,142.0,AEROBIC_BASE,
-23622101963,2026-07-16,2026-07-16 18:57:45,Strength,strength_training,Strength,63.5,0.0,431,111.0,146.0,AEROBIC_BASE,
-23550915169,2026-07-10,2026-07-10 19:30:09,Cardio,indoor_cardio,Cardio / Cross-Training,60.3,0.0,794,151.0,193.0,SPEED,
-23543150524,2026-07-10,2026-07-10 06:35:01,Strength,strength_training,Strength,49.8,0.0,377,115.0,146.0,ANAEROBIC_CAPACITY,
-23538715400,2026-07-09,2026-07-09 19:05:56,Cardio,indoor_cardio,Cardio / Cross-Training,49.9,0.0,471,127.0,184.0,SPEED,
-23524575402,2026-07-08,2026-07-08 08:12:07,Strength,strength_training,Strength,53.0,0.0,429,120.0,160.0,ANAEROBIC_CAPACITY,
-23524574947,2026-07-07,2026-07-07 19:09:02,Cardio,indoor_cardio,Cardio / Cross-Training,46.5,0.0,503,135.0,170.0,SPEED,
-23506509498,2026-07-07,2026-07-07 06:54:58,Strength,strength_training,Strength,74.6,0.0,406,105.0,147.0,AEROBIC_BASE,
-23461274545,2026-07-03,2026-07-03 07:16:20,Strength,strength_training,Strength,64.3,0.0,366,105.0,157.0,ANAEROBIC_CAPACITY,
-23449496719,2026-07-02,2026-07-02 06:48:14,Strength,strength_training,Strength,52.4,0.0,391,113.0,158.0,ANAEROBIC_CAPACITY,
-23449037829,2026-06-26,2026-06-26 17:54:10,Strength,strength_training,Strength,67.0,0.0,497,116.0,157.0,ANAEROBIC_CAPACITY,
-23359886065,2026-06-24,2026-06-24 07:21:44,Strength,strength_training,Strength,41.0,0.0,272,107.0,149.0,AEROBIC_BASE,
-23354764345,2026-06-23,2026-06-23 19:13:55,Cardio,indoor_cardio,Cardio / Cross-Training,45.0,0.0,492,133.0,178.0,SPEED,
-23347530787,2026-06-23,2026-06-23 07:21:24,Strength,strength_training,Strength,41.1,0.0,226,97.0,146.0,AEROBIC_BASE,
-23302120513,2026-06-19,2026-06-19 06:57:48,Strength,strength_training,Strength,53.2,0.0,276,95.0,125.0,UNKNOWN,
-23299267534,2026-06-18,2026-06-18 19:17:26,Cardio,indoor_cardio,Cardio / Cross-Training,33.9,0.0,430,141.0,181.0,SPEED,
-23299267246,2026-06-18,2026-06-18 06:37:51,Strength,strength_training,Strength,50.5,0.0,335,105.0,158.0,ANAEROBIC_CAPACITY,
-23273074568,2026-06-16,2026-06-16 19:13:52,Cardio,indoor_cardio,Cardio / Cross-Training,39.2,0.0,433,134.0,180.0,AEROBIC_BASE,
-23265450999,2026-06-16,2026-06-16 07:04:49,Strength,strength_training,Strength,62.8,0.0,463,113.0,162.0,ANAEROBIC_CAPACITY,
-23214813700,2026-06-11,2026-06-11 19:06:30,Cardio,indoor_cardio,Cardio / Cross-Training,51.2,0.0,639,143.0,195.0,SPEED,
-23207612015,2026-06-11,2026-06-11 06:36:37,Strength,strength_training,Strength,48.4,0.0,304,103.0,153.0,AEROBIC_BASE,
-23195546767,2026-06-10,2026-06-10 06:19:28,Strength,strength_training,Strength,55.1,0.0,302,98.0,129.0,AEROBIC_BASE,
-23183201056,2026-06-09,2026-06-09 06:55:06,Strength,strength_training,Strength,51.5,0.0,350,110.0,158.0,ANAEROBIC_CAPACITY,
+Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect
+24889455619,2026-10-29,2026-10-29 06:52:46,Strength,strength_training,Strength,47.6,0.0,449,126.0,163.0,ANAEROBIC_CAPACITY
+24877418512,2026-10-28,2026-10-28 06:34:47,CrossFit,indoor_cardio,Cardio / Cross-Training,46.0,0.0,490,129.0,183.0,SPEED
+24865135471,2026-10-27,2026-10-27 06:48:00,"ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",strength_training,Strength,50.5,0.0,391,114.0,151.0,AEROBIC_BASE
+24853486904,2026-10-26,2026-10-26 06:40:20,CrossFit,indoor_cardio,Cardio / Cross-Training,44.7,0.0,339,110.0,166.0,ANAEROBIC_CAPACITY
+24833250042,2026-10-24,2026-10-24 10:36:05,CrossFit,indoor_cardio,Cardio / Cross-Training,50.3,0.0,586,140.0,194.0,SPEED
+24822339601,2026-10-23,2026-10-23 06:36:11,CrossFit,indoor_cardio,Cardio / Cross-Training,40.3,0.0,502,140.0,188.0,SPEED
+24818402481,2026-10-22,2026-10-22 06:15:00,"Gym Session A (Squat, Quads & Lower Body MEV)",strength_training,Strength,45.0,0.0,300,,,
+24798737901,2026-10-21,2026-10-21 06:40:43,CrossFit,indoor_cardio,Cardio / Cross-Training,44.4,0.0,544,139.0,186.0,SPEED
+24787048686,2026-10-20,2026-10-20 06:36:17,CrossFit ,indoor_cardio,Cardio / Cross-Training,49.2,0.0,483,126.0,165.0,SPEED
+24741308773,2026-10-16,2026-10-16 06:35:03,CrossFit,indoor_cardio,Cardio / Cross-Training,49.6,0.0,516,128.0,173.0,SPEED
+24729295465,2026-10-15,2026-10-15 06:20:00,"ATHX 2027: 15/10/2026 Gym Session B (Deadlift, Posterior Chain & Upper S2O)",strength_training,Strength,61.4,0.0,495,117.0,171.0,ANAEROBIC_CAPACITY
+24717072200,2026-10-14,2026-10-14 06:38:00,CrossFit,indoor_cardio,Cardio / Cross-Training,43.4,0.0,524,136.0,170.0,AEROBIC_BASE
+24704589558,2026-10-13,2026-10-13 06:27:46,Strength,strength_training,Strength,50.5,0.0,450,122.0,156.0,ANAEROBIC_CAPACITY
+24701028462,2026-10-12,2026-10-12 20:04:43,CrossFit,indoor_cardio,Cardio / Cross-Training,48.5,0.0,547,135.0,176.0,SPEED
+24699090559,2026-10-10,2026-10-10 14:19:48,Triathlon #4 - Rowing,rowing_v2,Workout,34.3,2.34,282,116.0,145.0,RECOVERY
+24699090129,2026-10-10,2026-10-10 10:56:10,Triathlon #3 - Running,running,Running,9.3,1.84,144,156.0,163.0,TEMPO
+24699089763,2026-10-10,2026-10-10 10:30:19,Triathlon #2 - Running,running,Running,17.1,3.37,264,159.0,177.0,TEMPO
+24699089373,2026-10-10,2026-10-10 09:56:26,Triathlon #1 - Running,running,Running,26.4,5.16,384,147.0,163.0,AEROBIC_BASE
+24659045766,2026-10-09,2026-10-09 06:36:32,CrossFit,indoor_cardio,Cardio / Cross-Training,45.8,0.0,474,129.0,175.0,AEROBIC_BASE
+24647765263,2026-10-08,2026-10-08 07:10:49,CrossFit,indoor_cardio,Cardio / Cross-Training,41.3,0.0,507,140.0,186.0,SPEED
+24643650981,2026-10-07,2026-10-07 19:33:53,CrossFit,indoor_cardio,Cardio / Cross-Training,49.6,0.0,615,142.0,202.0,SPEED
+24586876296,2026-10-03,2026-10-03 10:00:21,Paris Running,running,Running,51.4,9.75,708,147.0,167.0,TEMPO
+24543703107,2026-09-29,2026-09-29 16:42:48,Le Lude Padel,paddelball,Workout,108.8,2.92,753,119.0,168.0,AEROBIC_BASE
+24536647696,2026-09-29,2026-09-29 06:27:23,Strength,strength_training,Strength,33.7,0.0,202,104.0,148.0,AEROBIC_BASE
+24533322405,2026-09-28,2026-09-28 20:40:26,CrossFit ,indoor_cardio,Cardio / Cross-Training,43.2,0.0,478,137.0,182.0,SPEED
+24503269582,2026-09-26,2026-09-26 11:42:19,CrossFit,indoor_cardio,Cardio / Cross-Training,41.3,0.0,604,164.0,196.0,VO2MAX
+24495020352,2026-09-25,2026-09-25 16:43:00,🏋️ ATHX 2027: Push & Shoulders (S2O) [65kg / 45kg / 20kg],strength_training,Strength,54.5,0.0,469,126.0,169.0,ANAEROBIC_CAPACITY
+24477635769,2026-09-24,2026-09-24 06:38:00,CrossFit,indoor_cardio,Cardio / Cross-Training,49.9,0.0,604,147.0,198.0,SPEED
+24471892604,2026-09-23,2026-09-23 18:04:39,CrossFit,indoor_cardio,Cardio / Cross-Training,51.8,0.0,366,113.0,179.0,ANAEROBIC_CAPACITY
+24464848450,2026-09-23,2026-09-23 06:30:00,ATHX 2027: Upper Body Hypertrophy & Strict OHP,strength_training,Strength,53.7,0.0,374,113.0,157.0,AEROBIC_BASE
+24699087804,2026-09-22,2026-09-22 13:09:12,Strength,strength_training,Strength,0.4,0.0,2,95.0,107.0,UNKNOWN
+24451660589,2026-09-22,2026-09-22 06:40:00,Lower Body A (Squat Focus) & Vertical Push Press,strength_training,Strength,62.0,0.0,349,109.0,165.0,ANAEROBIC_CAPACITY
+24447489780,2026-09-21,2026-09-21 20:28:41,Cardio,indoor_cardio,Cardio / Cross-Training,20.6,0.0,137,106.0,149.0,RECOVERY
+24391806619,2026-09-17,2026-09-17 07:15:12,Cardio,indoor_cardio,Cardio / Cross-Training,32.9,0.0,266,116.0,163.0,ANAEROBIC_CAPACITY
+24387056282,2026-09-16,2026-09-16 19:07:30,CrossFit ,indoor_cardio,Cardio / Cross-Training,47.3,0.0,483,133.0,171.0,SPEED
+24379065525,2026-09-16,2026-09-16 06:18:00,Upper-Body,strength_training,Strength,60.0,0.0,430,113.0,160.0,ANAEROBIC_CAPACITY
+24365724397,2026-09-15,2026-09-15 07:00:57,Treadmill Running,treadmill_running,Running,27.8,5.0,271,126.0,137.0,RECOVERY
+24353113405,2026-09-14,2026-09-14 06:28:38,Strength,strength_training,Strength,42.0,0.0,264,107.0,153.0,ANAEROBIC_CAPACITY
+24347510893,2026-09-13,2026-09-13 14:07:59,Squash,squash,Workout,39.2,0.12,379,131.0,160.0,AEROBIC_BASE
+24319615620,2026-09-11,2026-09-11 11:40:00,ATHX 2027: Lower Body B (Deadlift & Posterior Chain),strength_training,Strength,51.4,0.0,362,114.0,163.0,ANAEROBIC_CAPACITY
+24292490080,2026-09-09,2026-09-09 06:40:00,Upper-body Day,strength_training,Strength,50.1,0.0,341,112.0,139.0,AEROBIC_BASE
+24287114557,2026-09-08,2026-09-08 19:03:11,"ATHX 2027: Light Session - S2O Technique, Shoulders Prehab & Core",indoor_cardio,Cardio / Cross-Training,31.5,0.0,319,130.0,169.0,RECOVERY
+24285053565,2026-09-08,2026-09-08 16:39:20,Paris Running,running,Running,27.6,5.01,420,167.0,185.0,VO2MAX
+24266663499,2026-09-07,2026-09-07 06:39:00,Push,strength_training,Strength,44.6,0.0,342,115.0,151.0,AEROBIC_BASE
+24191921542,2026-09-01,2026-09-01 06:35:15,Leg Day,strength_training,Strength,51.5,0.0,372,112.0,164.0,ANAEROBIC_CAPACITY
+24147367955,2026-08-28,2026-08-28 12:47:00,Pull Day,strength_training,Strength,58.7,0.0,442,118.0,159.0,ANAEROBIC_CAPACITY
+24131970235,2026-08-27,2026-08-27 06:59:00,Leg Day,strength_training,Strength,42.3,0.0,327,116.0,184.0,ANAEROBIC_CAPACITY
+24118805692,2026-08-26,2026-08-26 06:43:00,Push day,strength_training,Strength,49.6,0.0,279,102.0,132.0,AEROBIC_BASE
+24111211775,2026-08-25,2026-08-25 16:01:00,Pull Day,strength_training,Strength,62.4,0.0,461,117.0,152.0,AEROBIC_BASE
+24031705146,2026-08-19,2026-08-19 07:16:00,Leg Day,strength_training,Strength,44.6,0.0,331,114.0,152.0,AEROBIC_BASE
+24026445362,2026-08-18,2026-08-18 19:03:36,Cross-training ,indoor_cardio,Cardio / Cross-Training,48.8,0.0,405,120.0,165.0,AEROBIC_BASE
+24018247989,2026-08-18,2026-08-18 06:55:00,Push Day,strength_training,Strength,61.2,0.0,424,112.0,173.0,ANAEROBIC_CAPACITY
+24005979319,2026-08-17,2026-08-17 06:53:00,Pull day,strength_training,Strength,77.8,0.0,501,120.0,161.0,ANAEROBIC_CAPACITY
+23974250400,2026-08-14,2026-08-14 11:39:07,Aurland Hiking,hiking,Workout,168.7,8.45,1036,111.0,157.0,AEROBIC_BASE
+23950092966,2026-08-12,2026-08-12 08:19:26,Odda Hiking,hiking,Workout,426.9,22.89,2708,117.0,159.0,AEROBIC_BASE
+23915467561,2026-08-09,2026-08-09 18:46:14,Upper body - [PRE_NORWAY],strength_training,Strength,78.0,0.0,586,122.0,159.0,ANAEROBIC_CAPACITY
+23894344525,2026-08-08,2026-08-08 07:11:15,Pull Day,strength_training,Strength,50.1,0.0,362,116.0,149.0,AEROBIC_BASE
+23882839498,2026-08-07,2026-08-07 07:39:41,Cardio,indoor_cardio,Cardio / Cross-Training,12.0,0.0,162,151.0,177.0,TEMPO
+23882754703,2026-08-07,2026-08-07 07:15:51,Push Day,strength_training,Strength,23.5,0.0,177,114.0,151.0,AEROBIC_BASE
+23870309286,2026-08-06,2026-08-06 06:51:00,Leg Day,strength_training,Strength,42.4,0.0,327,119.0,162.0,ANAEROBIC_CAPACITY
+23848672173,2026-08-04,2026-08-04 13:58:00,Pull Day,strength_training,Strength,53.9,0.0,451,124.0,144.0,AEROBIC_BASE
+23846819928,2026-08-04,2026-08-04 07:28:40,Annecy Walking,walking,Outdoor / Endurance,276.5,18.48,1937,128.0,165.0,AEROBIC_BASE
+24699090920,2026-08-03,2026-08-03 18:50:22,Stopwatch,stop_watch,Workout,0.5,0.0,0,,,
+23837062961,2026-08-03,2026-08-03 16:05:00,Push Day,strength_training,Strength,55.9,0.0,493,126.0,160.0,ANAEROBIC_CAPACITY
+23834518183,2026-08-03,2026-08-03 07:36:59,Annecy Walking,walking,Outdoor / Endurance,323.0,16.8,2473,131.0,174.0,AEROBIC_BASE
+23812230574,2026-08-01,2026-08-01 14:10:42,Strength,strength_training,Strength,50.6,0.0,342,108.0,148.0,AEROBIC_BASE
+23791817313,2026-07-30,2026-07-30 19:07:59,Cardio,indoor_cardio,Cardio / Cross-Training,51.0,0.0,515,132.0,176.0,SPEED
+23786361435,2026-07-30,2026-07-30 11:01:06,Strength,strength_training,Strength,50.6,0.0,437,123.0,157.0,ANAEROBIC_CAPACITY
+23777701975,2026-07-29,2026-07-29 16:30:01,Strength,strength_training,Strength,61.7,0.0,386,106.0,137.0,AEROBIC_BASE
+23767850616,2026-07-28,2026-07-28 19:04:29,Cardio,indoor_cardio,Cardio / Cross-Training,48.8,0.0,495,131.0,175.0,SPEED
+23767849451,2026-07-28,2026-07-28 11:42:28,Strength,strength_training,Strength,49.0,0.0,434,125.0,155.0,ANAEROBIC_CAPACITY
+23767848801,2026-07-27,2026-07-27 22:11:19,Bouldering,bouldering,Workout,40.3,0.0,355,124.0,159.0,SPEED
+23706415890,2026-07-23,2026-07-23 19:09:15,Cardio,indoor_cardio,Cardio / Cross-Training,49.2,0.0,590,144.0,185.0,SPEED
+23698912079,2026-07-23,2026-07-23 07:12:06,Strength,strength_training,Strength,48.0,0.0,385,118.0,150.0,ANAEROBIC_CAPACITY
+23686021858,2026-07-22,2026-07-22 06:30:38,Strength,strength_training,Strength,52.7,0.0,438,121.0,161.0,ANAEROBIC_CAPACITY
+23673195620,2026-07-21,2026-07-21 07:32:23,Strength,strength_training,Strength,37.5,0.0,328,121.0,153.0,ANAEROBIC_CAPACITY
+23660663184,2026-07-20,2026-07-20 06:33:09,Strength,strength_training,Strength,45.1,0.0,272,102.0,149.0,ANAEROBIC_CAPACITY
+23644231938,2026-07-18,2026-07-18 17:00:17,Strength,strength_training,Strength,54.8,0.0,460,123.0,166.0,ANAEROBIC_CAPACITY
+23626509121,2026-07-17,2026-07-17 06:51:53,Strength,strength_training,Strength,39.5,0.0,308,115.0,142.0,AEROBIC_BASE
+23622101963,2026-07-16,2026-07-16 18:57:45,Strength,strength_training,Strength,63.5,0.0,431,111.0,146.0,AEROBIC_BASE
+23550915169,2026-07-10,2026-07-10 19:30:09,Cardio,indoor_cardio,Cardio / Cross-Training,60.3,0.0,794,151.0,193.0,SPEED
+23543150524,2026-07-10,2026-07-10 06:35:01,Strength,strength_training,Strength,49.8,0.0,377,115.0,146.0,ANAEROBIC_CAPACITY
+23538715400,2026-07-09,2026-07-09 19:05:56,Cardio,indoor_cardio,Cardio / Cross-Training,49.9,0.0,471,127.0,184.0,SPEED
+23524575402,2026-07-08,2026-07-08 08:12:07,Strength,strength_training,Strength,53.0,0.0,429,120.0,160.0,ANAEROBIC_CAPACITY
+23524574947,2026-07-07,2026-07-07 19:09:02,Cardio,indoor_cardio,Cardio / Cross-Training,46.5,0.0,503,135.0,170.0,SPEED
+23506509498,2026-07-07,2026-07-07 06:54:58,Strength,strength_training,Strength,74.6,0.0,406,105.0,147.0,AEROBIC_BASE
+23461274545,2026-07-03,2026-07-03 07:16:20,Strength,strength_training,Strength,64.3,0.0,366,105.0,157.0,ANAEROBIC_CAPACITY
+23449496719,2026-07-02,2026-07-02 06:48:14,Strength,strength_training,Strength,52.4,0.0,391,113.0,158.0,ANAEROBIC_CAPACITY
+23449037829,2026-06-26,2026-06-26 17:54:10,Strength,strength_training,Strength,67.0,0.0,497,116.0,157.0,ANAEROBIC_CAPACITY
+23359886065,2026-06-24,2026-06-24 07:21:44,Strength,strength_training,Strength,41.0,0.0,272,107.0,149.0,AEROBIC_BASE
+23354764345,2026-06-23,2026-06-23 19:13:55,Cardio,indoor_cardio,Cardio / Cross-Training,45.0,0.0,492,133.0,178.0,SPEED
+23347530787,2026-06-23,2026-06-23 07:21:24,Strength,strength_training,Strength,41.1,0.0,226,97.0,146.0,AEROBIC_BASE
+23302120513,2026-06-19,2026-06-19 06:57:48,Strength,strength_training,Strength,53.2,0.0,276,95.0,125.0,UNKNOWN
+23299267534,2026-06-18,2026-06-18 19:17:26,Cardio,indoor_cardio,Cardio / Cross-Training,33.9,0.0,430,141.0,181.0,SPEED
+23299267246,2026-06-18,2026-06-18 06:37:51,Strength,strength_training,Strength,50.5,0.0,335,105.0,158.0,ANAEROBIC_CAPACITY
+23273074568,2026-06-16,2026-06-16 19:13:52,Cardio,indoor_cardio,Cardio / Cross-Training,39.2,0.0,433,134.0,180.0,AEROBIC_BASE
+23265450999,2026-06-16,2026-06-16 07:04:49,Strength,strength_training,Strength,62.8,0.0,463,113.0,162.0,ANAEROBIC_CAPACITY
+23214813700,2026-06-11,2026-06-11 19:06:30,Cardio,indoor_cardio,Cardio / Cross-Training,51.2,0.0,639,143.0,195.0,SPEED
+23207612015,2026-06-11,2026-06-11 06:36:37,Strength,strength_training,Strength,48.4,0.0,304,103.0,153.0,AEROBIC_BASE
+23195546767,2026-06-10,2026-06-10 06:19:28,Strength,strength_training,Strength,55.1,0.0,302,98.0,129.0,AEROBIC_BASE
