@@ -28,8 +28,10 @@ ATHX_DIR = BASE_DIR / "athx" if (BASE_DIR / "athx").is_dir() else BASE_DIR
 LEGACY_CAL_DIR = BASE_DIR / "legacy_calendar" if (BASE_DIR / "legacy_calendar").is_dir() else BASE_DIR
 DATA_DIR = Path(os.environ.get("AGY_DATA_DIR", str(ATHX_DIR)))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
+LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
 LOCAL_TZ = ZoneInfo(os.environ.get("TZ", "Europe/Paris"))
-SERVER_PID_FILE = BASE_DIR / "server.pid"
+SERVER_PID_FILE = LOGS_DIR / "server.pid"
 
 if str(ATHX_DIR) not in sys.path:
     sys.path.insert(0, str(ATHX_DIR))
@@ -44,7 +46,7 @@ MOBILITY_CSV = DATA_DIR / "apple_mobility_biomechanics.csv"
 WORKOUTS_CSV = DATA_DIR / "apple_workouts_history.csv"
 WORKOUT_HTML = ATHX_DIR / "garmin_workout.html"
 CALENDAR_HTML = LEGACY_CAL_DIR / "calendar_dashboard.html"
-ACCESS_LOG = BASE_DIR / "server_access.log"
+ACCESS_LOG = LOGS_DIR / "server_access.log"
 LAST_PAYLOAD_FILE = DATA_DIR / "last_payload.json"
 CAL_DATA_DIR = LEGACY_CAL_DIR / "calendar_data"
 
@@ -855,8 +857,10 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                 self.send_error(404, "Calendar dashboard not found")
 
         # Meeting Hub Dashboard
-        elif clean_path in ("/meeting", "/meeting_hub", "/meeting_hub.html"):
-            target_file = BASE_DIR / "meeting_hub.html"
+        elif clean_path in ("/meeting", "/meeting/", "/meeting_hub", "/meeting_hub/", "/meeting_hub.html", "/meeting/index.html"):
+            target_file = BASE_DIR / "meeting_hub" / "index.html"
+            if not target_file.exists():
+                target_file = BASE_DIR / "meeting_hub" / "meeting_hub.html"
             if target_file.exists():
                 content = target_file.read_bytes()
                 self.send_response(200)
@@ -868,11 +872,16 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404, "Meeting Hub not found")
 
-        # Meeting Hub modular assets (.js, .css, .json)
-        elif clean_path.startswith("/meeting_hub/"):
-            rel_path = clean_path.lstrip("/")
-            target_file = (BASE_DIR / rel_path).resolve()
-            if target_file.exists() and str(target_file).startswith(str(BASE_DIR)):
+        # Meeting Hub modular assets (.js, .css, .json, .html)
+        elif clean_path.startswith("/meeting_hub/") or clean_path.startswith("/meeting/") or clean_path.startswith("/ui/") or clean_path.startswith("/data/") or clean_path in ("/meeting_hub.app.js",):
+            if clean_path.startswith("/meeting_hub/"):
+                rel_path = clean_path.removeprefix("/meeting_hub/")
+            elif clean_path.startswith("/meeting/"):
+                rel_path = clean_path.removeprefix("/meeting/")
+            else:
+                rel_path = clean_path.lstrip("/")
+            target_file = (BASE_DIR / "meeting_hub" / rel_path).resolve()
+            if target_file.exists() and str(target_file).startswith(str(BASE_DIR / "meeting_hub")):
                 content = target_file.read_bytes()
                 content_type = "text/plain"
                 if target_file.suffix == ".js":

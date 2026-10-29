@@ -14,8 +14,8 @@
 services:
   agy:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     image: agy:latest
     container_name: agy
     restart: unless-stopped
@@ -31,7 +31,7 @@ services:
       - HAE_MCP_TOKEN=${HAE_MCP_TOKEN:-}
     volumes:
       # Persists all biometric CSVs, Garmin workout caches, tokens, logs, and generated HTML dashboards
-      - ./data:/app/data
+      - ../athx/data:/app/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s

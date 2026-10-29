@@ -13,7 +13,8 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 LOCAL_TZ = ZoneInfo("Europe/Paris")
-BASE_DIR = Path(__file__).resolve().parent
+ATHX_DIR = Path(__file__).resolve().parent
+BASE_DIR = ATHX_DIR.parent
 CAL_DATA_DIR = BASE_DIR / "legacy_calendar" / "calendar_data" if (BASE_DIR / "legacy_calendar" / "calendar_data").exists() else BASE_DIR / "calendar_data"
 INVENTORY_FILE = CAL_DATA_DIR / "fridge_inventory.json"
 

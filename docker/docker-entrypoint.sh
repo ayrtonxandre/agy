@@ -33,9 +33,9 @@ for item in "$DATA_DIR"/*; do
 done
 
 # 3. Ensure athlete dashboards exist; compile if missing
-if [ ! -f "$DATA_DIR/garmin_workout.html" ] && [ -f "/app/generate_unified_athlete_dashboard.py" ]; then
+if [ ! -f "$DATA_DIR/garmin_workout.html" ] && [ -f "/app/athx/generate_unified_athlete_dashboard.py" ]; then
     echo "   [Build] Compiling initial ATHX Athlete Dashboard..."
-    python3 /app/generate_unified_athlete_dashboard.py || echo "   [Warning] Initial dashboard build skipped or had errors"
+    python3 /app/athx/generate_unified_athlete_dashboard.py || echo "   [Warning] Initial dashboard build skipped or had errors"
 fi
 
 echo "=========================================================="

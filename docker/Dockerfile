@@ -29,13 +29,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app/
 
 # Set up entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
-    chmod +x /app/athx 2>/dev/null || true
+    chmod +x /app/bin/athx 2>/dev/null || true
 
 # Prepare seed directory for volume initialisation
 RUN mkdir -p /app/seed /app/data && \
-    cp -r *.csv *.json *.html garmin_tokens calendar_data hae_token.txt credentials.json* /app/seed/ 2>/dev/null || true
+    cp -r athx/*.csv athx/*.json legacy_calendar/calendar_data /app/seed/ 2>/dev/null || true
 
 # Expose web service & webhook port
 EXPOSE 8080

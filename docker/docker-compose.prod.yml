@@ -15,8 +15,8 @@ services:
     image: ghcr.io/ayrtonxandre/agy:latest
     # Fallback to local build if image not pulled from GHCR:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: agy
     restart: unless-stopped
     ports:

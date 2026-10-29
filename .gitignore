@@ -28,6 +28,7 @@ hae_token.txt
 .env
 
 # Local Daemon Logs & Raw Payloads
+logs/
 server_access.log
 last_payload.json
 *.log

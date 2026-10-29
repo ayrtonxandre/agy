@@ -66,11 +66,11 @@ If you already have existing Garmin tokens (`garmin_tokens/`) or Google Calendar
 
 ### 2. Configure SWAG Reverse Proxy
 
-Copy the provided Nginx configuration file [`swag/agy.subdomain.conf`](file:///swag/agy.subdomain.conf) into SWAG's proxy configuration directory on the server:
+Copy the provided Nginx configuration file [`docker/swag/agy.subdomain.conf`](file:///Users/ayrtonandre/Documents/work/AGY/docker/swag/agy.subdomain.conf) into SWAG's proxy configuration directory on the server:
 
 ```bash
 # Path inside SWAG config volume on your host:
-cp swag/agy.subdomain.conf ${DOCKER_ROOT}/swag/nginx/proxy-confs/agy.subdomain.conf
+cp docker/swag/agy.subdomain.conf ${DOCKER_ROOT}/swag/nginx/proxy-confs/agy.subdomain.conf
 ```
 
 #### SWAG Configuration (`agy.subdomain.conf`):
@@ -134,8 +134,8 @@ services:
     image: ghcr.io/ayrtonxandre/agy:latest
     # Or build locally:
     # build:
-    #   context: .
-    #   dockerfile: Dockerfile
+    #   context: ..
+    #   dockerfile: docker/Dockerfile
     container_name: agy
     restart: unless-stopped
     ports:
@@ -186,7 +186,7 @@ SYNC_INTERVAL_HOURS=6
 
 ```bash
 # Pull the latest image and launch in detached mode:
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker/docker-compose.prod.yml up -d
 
 # Verify container health:
 docker ps --filter "name=agy"
@@ -264,8 +264,8 @@ To sync your Apple Health metrics (weight, body fat, sleep, active energy, prote
 ### Update to Latest Image
 When new updates are pushed to GitHub, update the running container:
 ```bash
-docker compose -f docker-compose.prod.yml pull
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker/docker-compose.prod.yml pull
+docker compose -f docker/docker-compose.prod.yml up -d
 ```
 
 ### Backing Up Data

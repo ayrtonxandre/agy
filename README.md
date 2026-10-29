@@ -59,12 +59,24 @@ The `AGY` codebase is cleanly decoupled into dedicated domains:
 
 ```text
 Documents/work/AGY/
-├── meeting_hub/                # Pillar 1: Meeting Hub Application Core
-│   ├── model/                  # Data engines (Store, ProjectEngine, MinutesEngine, PrepScore)
-│   ├── views/                  # View renderers (Today, Projects, Decisions)
-│   ├── ui/                     # Presentation shell, icons, styles, meeting panel
-│   ├── data/                   # Bundled events, local docs cache, importer
-│   └── tests/                  # Verification test suite
+├── athx/                       # Pillar 1: ATHX Athletic Intelligence Engine
+│   ├── athx_*.py               # Sports-science & analytical telemetry engines
+│   ├── garmin_*.py             # Garmin Personal API clients, sync pipelines & note parsers
+│   ├── apple_*.csv             # Active Apple Health biometrics datasets
+│   ├── macro_orchestrator.py   # Training-to-Cart grocery inventory manager
+│   ├── garmin_workout.html     # Interactive Athlete Headquarters dashboard
+│   └── index.html              # ATHX web interface
+├── bin/                        # Master Executables
+│   └── athx                    # Single-word CLI orchestrator (aliased via ~/.local/bin/athx)
+├── docker/                     # Docker & SWAG Deployment
+│   ├── Dockerfile              # Container definition for orchestrator & webhooks
+│   ├── docker-compose.yml      # Local container orchestration
+│   ├── docker-compose.prod.yml # Production compose with SWAG reverse proxy
+│   ├── docker-entrypoint.sh    # Container initialization & seed volume script
+│   └── swag/                   # Nginx reverse proxy subdomain configuration
+├── docs/                       # Documentation & Architecture Decks
+│   ├── athx/                   # ATHX Architecture diagrams (.drawio, .html) and PPTX decks
+│   └── how-to/                 # Deployment and sync guides
 ├── eom/                        # Pillar 2: End of Mission (EOM) Engine
 │   ├── agent_eom.py            # Vertex AI Reasoning Engine handover synthesizer
 │   └── README.md               # EOM architecture and GCP deployment reference
@@ -72,22 +84,29 @@ Documents/work/AGY/
 │   ├── calendar_dashboard.html # Legacy 620 KB single-file calendar view
 │   ├── generate_calendar_dashboard.py # Legacy builder
 │   ├── unified_calendar.py     # Tri-calendar ICS aggregator
+│   ├── credentials.json        # Google Calendar OAuth client credentials
+│   ├── token.json              # Active Google Calendar OAuth token
 │   ├── calendar_data/          # Cached ICS files and raw calendars
 │   └── DEPRECATED.md           # Formal deprecation and migration guide
-├── docs/                       # Documentation & presentation decks
-│   └── athx/                   # ATHX Architecture diagrams (.drawio, .html) and PPTX decks
+├── logs/                       # Runtime Logs & Daemon States
+│   ├── server_access.log       # Orchestrator HTTP & webhook request logs
+│   └── server.pid              # Active background process PID
+├── meeting_hub/                # Pillar 3: Meeting Hub Application Core
+│   ├── index.html              # Meeting Hub desktop & browser runner (/meeting)
+│   ├── meeting_hub.app.js      # Bundled zero-dependency frontend distribution
+│   ├── meeting_intelligence.py # Executive intelligence & ATHX biological readiness bridge
+│   ├── model/                  # Data engines (Store, ProjectEngine, MinutesEngine, PrepScore)
+│   ├── views/                  # View renderers (Today, Projects, Decisions)
+│   ├── ui/                     # Presentation shell, icons, styles, meeting panel
+│   ├── data/                   # Bundled events, local docs cache, importer
+│   └── tests/                  # Verification test suite
 ├── tools/                      # Ancillary & retired tools
 │   ├── excalidraw/             # Excalidraw MCP diagram generation scripts
 │   ├── google_drive/           # Legacy Drive archive synchronization
 │   └── legacy_dashboards/      # Experimental v1 HTML dashboards
-├── athx                        # Master ATHX executable CLI
-├── athx_*.py                   # ATHX sports-science & analytics engines
-├── garmin_*.py, apple_*.csv    # ATHX biometrics pipelines & active datasets
-├── garmin_workout.html         # ATHX Athlete Headquarters (interactive dashboard)
-├── meeting_hub.html            # Meeting Hub production browser runner
-├── meeting_intelligence.py     # Executive intelligence & ATHX biological readiness bridge
 ├── orchestrator.py             # Master multi-engine background server (:8080)
-└── macro_orchestrator.py       # Training-to-Cart grocery inventory manager
+├── README.md                   # Complete repository documentation
+└── requirements.txt            # Python dependencies
 ```
 
 ---
@@ -472,27 +491,35 @@ The coach synthesizes an authoritative answer referencing actual numbers from th
 ### 💼 Pillar 1: Meeting Hub Core
 | Module | Description |
 | :--- | :--- |
-| **[`meeting_hub.html`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub.html)** | Production runner loading compiled Meeting Hub bundle (`/meeting`) with dark navy theme and collapsible panels. |
+| **[`meeting_hub/index.html`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/index.html)** | Production runner loading compiled Meeting Hub bundle (`/meeting`) with dark navy theme and collapsible panels. |
 | **[`meeting_hub/`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/)** | Modular frontend application directory: `model/` (Store, ProjectEngine, MinutesEngine, PrepScore), `views/` (Today, Projects, Decisions), `ui/` (Shell, MeetingPanel, Icons, Styles), and `data/` (events, docs cache, importer). |
-| **[`meeting_intelligence.py`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_intelligence.py)** | Executive briefing engine integrating biological readiness (sleep, HRV, ACWR) with daily meeting agendas. |
+| **[`meeting_hub/meeting_intelligence.py`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/meeting_intelligence.py)** | Executive briefing engine integrating biological readiness (sleep, HRV, ACWR) with daily meeting agendas. |
 | **[`meeting_hub/build.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/build.js)** | Zero-dependency ES-module concatenator compiling clean standalone production distribution (317 KB). |
 | **[`meeting_hub/tests/`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/tests/)** | Automated test suite verifying project models, 48h checklists, honest coverage, and decision deduplication. |
 
 ### 🏋️ Pillar 2: ATHX Athletic Intelligence
 | Module | Description |
 | :--- | :--- |
-| **[`athx`](file:///Users/ayrtonandre/Documents/work/AGY/athx)** | Single-word master CLI orchestrator with fluid progress display, cross-machine path resolution, and full ecosystem diagnostics (`athx doctor`, `athx garmin`). |
-| **[`athx_config.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx_config.py)** | Single source of truth: 2027 benchmarks, 62 exercise mappings, MEV/MAV/MRV bands, compound stimulus volume factors, and plausible load boundaries. |
-| **[`athx_analytics.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx_analytics.py)** | Core analytical telemetry engine: data cleaning, unknown imputation, e1RM restrictions, ACWR, Foster strain, and recovery composite. |
-| **[`athx_ai_coach.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx_ai_coach.py)** | Autonomous Sports Science AI briefing generator synthesizing telemetry into elite coaching debriefs and microcycle prescriptions. |
-| **[`athx_durability_cs_gear.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx_durability_cs_gear.py)** | Advanced sports-science engine: Critical Speed ($CS$/$D'$), CrossFit 3-tier durability, Dynamic Mornati Sleep Debt, Plews & Buchheit overnight HRV ($cv\text{lnRMSSD}$), Running Biomechanics ($VR\%$, $GCT$), and VBT Fatigue Drop-Off. |
-| **[`extract_garmin_strength.py`](file:///Users/ayrtonandre/Documents/work/AGY/extract_garmin_strength.py)** | Headless Garmin Connect bridge auto-delegating to the official Developer Personal API (`garmin_personal_sync.py`) with legacy OAuth fallback. |
-| **[`garmin_personal_client.py`](file:///Users/ayrtonandre/Documents/work/AGY/garmin_personal_client.py)** | Official Garmin Connect Developer Program Personal API client exchanging `GARMIN_PERSONAL_API_KEY` for RS256 JWT Bearer token and querying activity, HRV, sleep, and wellness endpoints. |
-| **[`garmin_personal_sync.py`](file:///Users/ayrtonandre/Documents/work/AGY/garmin_personal_sync.py)** | High-throughput synchronization pipeline extracting strength sets, running biomechanics, overnight HRV, sleep summaries with dynamic need, and 90-day daily wellness. |
-| **[`garmin_note_parser.py`](file:///Users/ayrtonandre/Documents/work/AGY/garmin_note_parser.py)** | Multi-provider LLM parser extracting structured exercise sets and splits from free-text workout notes and CrossFit WODs. |
-| **[`generate_unified_athlete_dashboard.py`](file:///Users/ayrtonandre/Documents/work/AGY/generate_unified_athlete_dashboard.py)** | Zero-hardcoded dashboard generator outputting `garmin_workout.html` and `index.html` (interactive Anatomic Target HUD, Critical Speed, Biomechanics, and VBT Fatigue). |
+| **[`bin/athx`](file:///Users/ayrtonandre/Documents/work/AGY/bin/athx)** | Single-word master CLI orchestrator with fluid progress display, cross-machine path resolution, and full ecosystem diagnostics (`athx doctor`, `athx garmin`). |
+| **[`athx/athx_config.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx/athx_config.py)** | Single source of truth: 2027 benchmarks, 62 exercise mappings, MEV/MAV/MRV bands, compound stimulus volume factors, and plausible load boundaries. |
+| **[`athx/athx_analytics.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx/athx_analytics.py)** | Core analytical telemetry engine: data cleaning, unknown imputation, e1RM restrictions, ACWR, Foster strain, and recovery composite. |
+| **[`athx/athx_ai_coach.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx/athx_ai_coach.py)** | Autonomous Sports Science AI briefing generator synthesizing telemetry into elite coaching debriefs and microcycle prescriptions. |
+| **[`athx/athx_durability_cs_gear.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx/athx_durability_cs_gear.py)** | Advanced sports-science engine: Critical Speed ($CS$/$D'$), CrossFit 3-tier durability, Dynamic Mornati Sleep Debt, Plews & Buchheit overnight HRV ($cv\text{lnRMSSD}$), Running Biomechanics ($VR\%$, $GCT$), and VBT Fatigue Drop-Off. |
+| **[`athx/extract_garmin_strength.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx/extract_garmin_strength.py)** | Headless Garmin Connect bridge auto-delegating to the official Developer Personal API (`garmin_personal_sync.py`) with legacy OAuth fallback. |
+| **[`athx/garmin_personal_client.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx/garmin_personal_client.py)** | Official Garmin Connect Developer Program Personal API client exchanging `GARMIN_PERSONAL_API_KEY` for RS256 JWT Bearer token and querying activity, HRV, sleep, and wellness endpoints. |
+| **[`athx/garmin_personal_sync.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx/garmin_personal_sync.py)** | High-throughput synchronization pipeline extracting strength sets, running biomechanics, overnight HRV, sleep summaries with dynamic need, and 90-day daily wellness. |
+| **[`athx/garmin_note_parser.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx/garmin_note_parser.py)** | Multi-provider LLM parser extracting structured exercise sets and splits from free-text workout notes and CrossFit WODs. |
+| **[`athx/generate_unified_athlete_dashboard.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx/generate_unified_athlete_dashboard.py)** | Zero-hardcoded dashboard generator outputting `garmin_workout.html` and `index.html` (interactive Anatomic Target HUD, Critical Speed, Biomechanics, and VBT Fatigue). |
+| **[`athx/macro_orchestrator.py`](file:///Users/ayrtonandre/Documents/work/AGY/athx/macro_orchestrator.py)** | Connects training demand to daily macronutrients and generates aisle-organized grocery restock lists with Apple Reminders export. |
 | **[`orchestrator.py`](file:///Users/ayrtonandre/Documents/work/AGY/orchestrator.py)** | Local HTTP daemon (port 8080) with automated Apple Health REST webhook ingestion (`POST /api/health`), multi-day historical upsert into 6 CSVs, mDNS discovery, and debounced GitHub auto-push. |
-| **[`macro_orchestrator.py`](file:///Users/ayrtonandre/Documents/work/AGY/macro_orchestrator.py)** | Connects training demand to daily macronutrients and generates aisle-organized grocery restock lists with Apple Reminders export. |
+
+### 🐳 Deployment & Container Infrastructure
+| Module | Description |
+| :--- | :--- |
+| **[`docker/Dockerfile`](file:///Users/ayrtonandre/Documents/work/AGY/docker/Dockerfile)** | Multi-stage Docker container definition with Python 3.12, volume initialisation, and auto-compilation. |
+| **[`docker/docker-compose.yml`](file:///Users/ayrtonandre/Documents/work/AGY/docker/docker-compose.yml)** | Development and standalone container composition. |
+| **[`docker/docker-compose.prod.yml`](file:///Users/ayrtonandre/Documents/work/AGY/docker/docker-compose.prod.yml)** | Production deployment configuration integrated with LinuxServer.io SWAG. |
+| **[`docker/swag/agy.subdomain.conf`](file:///Users/ayrtonandre/Documents/work/AGY/docker/swag/agy.subdomain.conf)** | Nginx reverse proxy configuration with SSL termination and 50M payload limit for Health Auto Export. |
 
 ### 🎯 Pillar 3: End of Mission (EOM) Engine
 | Module | Description |
@@ -561,10 +588,10 @@ Detailed instructions: [Docker & SWAG Deployment Guide](file:///Users/ayrton.and
 ### Quick Start (Production Server):
 ```bash
 # 1. Place agy.subdomain.conf into SWAG proxy-confs
-cp swag/agy.subdomain.conf ${DOCKER_ROOT}/swag/nginx/proxy-confs/
+cp docker/swag/agy.subdomain.conf ${DOCKER_ROOT}/swag/nginx/proxy-confs/
 
 # 2. Launch AGY on the 'lsio' external docker network
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker/docker-compose.prod.yml up -d
 ```
 
 * **Web UI**: `https://agy.yourdomain.com/` (Athlete Dashboard) and `/calendar`

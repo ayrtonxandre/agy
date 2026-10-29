@@ -11,7 +11,8 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 LOCAL_TZ = ZoneInfo("Europe/Paris")
-BASE_DIR = Path(__file__).resolve().parent
+MHUB_DIR = Path(__file__).resolve().parent
+BASE_DIR = MHUB_DIR.parent
 
 def load_biological_readiness() -> dict:
     """Loads current readiness metrics from ATHX athlete briefing."""
