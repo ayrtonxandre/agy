@@ -2240,7 +2240,7 @@ window.INITIAL_EVENTS = [
   {
     "id": "0aksbgvd2h8rf67h6qqk8n525a_20261019T090000Z",
     "source": "💼 Artefact (Work)",
-    "summary": "Roland / Ayrton - Counselling",
+    "summary": "[Counselling] - Ayrton → Roland",
     "start": "2026-10-20T14:30:00+02:00",
     "end": "2026-10-20T15:00:00+02:00",
     "location": "",
@@ -6175,7 +6175,7 @@ window.INITIAL_EVENTS = [
   },
   {
     "id": "0hha1b8g9ascfjkl0o0q3jhprv",
-    "source": "💼 Artefact (Work)",
+    "source": "🏥 Clariane (Client)",
     "summary": "Au secours ?",
     "start": "2026-10-29T13:30:00+01:00",
     "end": "2026-10-29T14:00:00+01:00",
@@ -6556,7 +6556,7 @@ window.INITIAL_EVENTS = [
   {
     "id": "7h7rh2ors22t38vosloln08eo6_20261029T090000Z",
     "source": "💼 Artefact (Work)",
-    "summary": "Jamila / Ayrton - Café - Meet-up",
+    "summary": "[Counselling] - Jamila → Ayrton",
     "start": "2026-10-29T16:00:00+01:00",
     "end": "2026-10-29T16:30:00+01:00",
     "location": "FR-Paris-Richer-Floor 5-Building 1-OMNIUS-4p (4)",
@@ -6769,8 +6769,8 @@ window.INITIAL_EVENTS = [
     "id": "2617rp3qg8d3l510b8ms41vshq",
     "source": "💼 Artefact (Work)",
     "summary": "[MANDAT GE] - Troubleshooting & Co",
-    "start": "2026-10-30T10:00:00+01:00",
-    "end": "2026-10-30T10:30:00+01:00",
+    "start": "2026-10-30T14:00:00+01:00",
+    "end": "2026-10-30T14:30:00+01:00",
     "location": "FR-Paris-Richer-Floor 3-Building 1-SAMANTHA-7p (7) [TV Screen, Visio Conference]",
     "description": "",
     "video_link": "https://meet.google.com/pkk-rbin-hgu",
@@ -7113,7 +7113,7 @@ window.INITIAL_EVENTS = [
   {
     "id": "0aksbgvd2h8rf67h6qqk8n525a_20261102T100000Z",
     "source": "💼 Artefact (Work)",
-    "summary": "Roland / Ayrton - Counselling",
+    "summary": "[Counselling] - Ayrton → Roland",
     "start": "2026-11-02T11:00:00+01:00",
     "end": "2026-11-02T11:30:00+01:00",
     "location": "",
@@ -7196,7 +7196,7 @@ window.INITIAL_EVENTS = [
       {
         "name": "Ayrton Andre",
         "email": "ayrton.andre@artefact.com",
-        "status": "needsAction",
+        "status": "tentative",
         "self": true,
         "is_resource": false,
         "optional": false
@@ -7251,7 +7251,7 @@ window.INITIAL_EVENTS = [
       {
         "name": "Ayrton Andre",
         "email": "ayrton.andre@artefact.com",
-        "status": "needsAction",
+        "status": "accepted",
         "self": true,
         "is_resource": false,
         "optional": false
@@ -7726,7 +7726,7 @@ window.INITIAL_EVENTS = [
   {
     "id": "_acs4cjioagp30chm64oj0cqk64o30c1g60",
     "source": "💼 Artefact (Work)",
-    "summary": "Paris Gare de Lyon - Lyon Part-Dieu",
+    "summary": "[ARTEFACT INTERNAL] - Paris Gare de Lyon - Lyon Part-Dieu",
     "start": "2026-11-03T10:00:00+01:00",
     "end": "2026-11-03T11:56:00+01:00",
     "location": "Paris Gare de Lyon",
@@ -7797,7 +7797,7 @@ window.INITIAL_EVENTS = [
   {
     "id": "_acs4cjioagp30chm64oj0cqk60pj6e1g60",
     "source": "💼 Artefact (Work)",
-    "summary": "Lyon Part-Dieu - Paris Gare de Lyon",
+    "summary": "[ARTEFACT INTERNAL] - Lyon Part-Dieu - Paris Gare de Lyon",
     "start": "2026-11-03T15:38:00+01:00",
     "end": "2026-11-03T17:34:00+01:00",
     "location": "Lyon Part-Dieu",
@@ -8237,6 +8237,14 @@ window.INITIAL_EVENTS = [
       {
         "name": "Antoine Aubay",
         "email": "antoine.aubay@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Jiahui Zhu Part",
+        "email": "jiahui.zhu.part@servier.com",
         "status": "needsAction",
         "self": false,
         "is_resource": false,
@@ -9119,6 +9127,14 @@ window.INITIAL_EVENTS = [
         "name": "Alice Maigron",
         "email": "alice.maigron@artefact.com",
         "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Jiahui Zhu Part",
+        "email": "jiahui.zhu.part@servier.com",
+        "status": "needsAction",
         "self": false,
         "is_resource": false,
         "optional": false
@@ -11652,7 +11668,7 @@ window.INITIAL_EVENTS = [
   {
     "id": "7h7rh2ors22t38vosloln08eo6_20261112T090000Z",
     "source": "💼 Artefact (Work)",
-    "summary": "Jamila / Ayrton - Deep dive PR",
+    "summary": "[Counselling] - Jamila → Ayrton",
     "start": "2026-11-12T10:00:00+01:00",
     "end": "2026-11-12T10:30:00+01:00",
     "location": "",
@@ -12927,6 +12943,14 @@ window.INITIAL_EVENTS = [
         "self": false,
         "is_resource": false,
         "optional": false
+      },
+      {
+        "name": "Jiahui Zhu Part",
+        "email": "jiahui.zhu.part@servier.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
       }
     ],
     "organizer": {
@@ -13543,7 +13567,7 @@ window.INITIAL_EVENTS = [
   {
     "id": "0aksbgvd2h8rf67h6qqk8n525a_20261116T100000Z",
     "source": "💼 Artefact (Work)",
-    "summary": "Roland / Ayrton - Counselling",
+    "summary": "[Counselling] - Ayrton → Roland",
     "start": "2026-11-16T11:00:00+01:00",
     "end": "2026-11-16T11:30:00+01:00",
     "location": "",
@@ -14762,6 +14786,14 @@ window.INITIAL_EVENTS = [
       {
         "name": "Alice Maigron",
         "email": "alice.maigron@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Jiahui Zhu Part",
+        "email": "jiahui.zhu.part@servier.com",
         "status": "needsAction",
         "self": false,
         "is_resource": false,
@@ -16381,6 +16413,1132 @@ window.INITIAL_EVENTS = [
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=Nm9qMThxcjJiaDdkdmNwMWM2aTdzajZyZnFfMjAyNjExMjNUMTMwMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "6t8qdkdl3rnogfltqqtv7jdp3p",
+    "source": "💼 Artefact (Work)",
+    "summary": "[PLANNING] - Blocker salle call vacations Mariéna",
+    "start": "2026-10-30T11:00:00+01:00",
+    "end": "2026-10-30T11:30:00+01:00",
+    "location": "FR-Paris-Richer-Floor 5-Building 1-CORTANA-7p (7) [TV Screen, Visio Conference]",
+    "description": "",
+    "video_link": "https://meet.google.com/swm-gmqd-cvn",
+    "html_link": "https://www.google.com/calendar/event?eid=NnQ4cWRrZGwzcm5vZ2ZsdHFxdHY3amRwM3AgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [
+      {
+        "name": "FR-Paris-Richer-Floor 5-Building 1-CORTANA-7p (7) [TV Screen, Visio Conference]",
+        "email": "c_1885sc5bkanfsgblheeee9489g99u@resource.calendar.google.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": true,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "needsAction",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Benjamin De-Girolamo",
+        "email": "benjamin.de-girolamo@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Benjamin De-Girolamo",
+      "email": "benjamin.de-girolamo@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g84qj6h9k6t146d266os48h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6op48c9m8osj8h9p74s44d9k6ks30c1l6grk6dho68rk2ghk691g",
+    "source": "🏥 Clariane (Client)",
+    "summary": "[PLANNING HDJ] - Point vacations Mariéna",
+    "start": "2026-10-30T11:00:00+01:00",
+    "end": "2026-10-30T11:30:00+01:00",
+    "location": "Réunion Microsoft Teams",
+    "description": "\n________________________________________________________________________________\nRéunion Microsoft Teams\nRejoindre : https://teams.microsoft.com/meet/3509332407089422?p=bLsegXdvrzTs3lth8y\nNuméro de réunion : 350 933 240 708 942 2\nCode secret : z4HB2fb6\n________________________________\nBesoin d'aide ?<https://aka.ms/JoinTeamsMeeting?omkt=fr-FR> | Référence système<https://teams.microsoft.com/l/meetup-join/19%3ameeting_YmI5ZjM3ZGItZWY0Ni00ZDY4LThkOWUtZGQ2NTJlNjA0YzUy%40thread.v2/0?context=%7b%22Tid%22%3a%2281d2d503-5071-4079-a2da-0f9fbd123f54%22%2c%22Oid%22%3a%22076b9b8d-f680-4cd1-8df4-5cae6955bf9b%22%7d>\nPour les organisateurs : Options de réunion<https://teams.microsoft.com/meetingOptions/?organizerId=076b9b8d-f680-4cd1-8df4-5cae6955bf9b&tenantId=81d2d503-5071-4079-a2da-0f9fbd123f54&threadId=19_meeting_YmI5ZjM3ZGItZWY0Ni00ZDY4LThkOWUtZGQ2NTJlNjA0YzUy@thread.v2&messageId=0&language=fr-FR>\nBy default, only people who were invited to the meeting (directly or by forward) can join the meeting bypassing the lobby\n________________________________________________________________________________\n",
+    "video_link": "https://teams.microsoft.com/meet/3509332407089422?p=bLsegXdvrzTs3lth8y",
+    "html_link": "https://www.google.com/calendar/event?eid=XzYwcTMwYzFnNjBvMzBlMWk2MG80YWMxZzYwcmo4Z3BsODhyajJjMWg4NHMzNGg5ZzYwczMwYzFnNjBvMzBjMWc4NHFqNmg5azZ0MTQ2ZDI2Nm9zNDhoMWc2NG8zMGMxZzYwbzMwYzFnNjBvMzBjMWc2MG8zMmMxZzYwbzMwYzFnNm9wNDhjOW04b3NqOGg5cDc0czQ0ZDlrNmtzMzBjMWw2Z3JrNmRobzY4cmsyZ2hrNjkxZyBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Andre Ayrton - Externe",
+        "email": "ayrton.andre-ext@clariane.fr",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "De girolamo Benjamin - Externe",
+        "email": "benjamin.de-girolamo-ext@clariane.fr",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Gaillet Claire",
+        "email": "claire.gaillet@inicea.fr",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Jean Daguerregaray",
+        "email": "jean.daguerregaray@inicea.fr",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "De girolamo Benjamin - Externe",
+      "email": "benjamin.de-girolamo-ext@clariane.fr",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "dcmudnn8h1uok6eohpq8e5916g_20261124",
+    "source": "💼 Artefact (Work)",
+    "summary": "Office",
+    "start": "2026-11-24T00:00:00+01:00",
+    "end": "2026-11-25T00:00:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=ZGNtdWRubjhoMXVvazZlb2hwcThlNTkxNmdfMjAyNjExMjQgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": true
+  },
+  {
+    "id": "62qd0ee1tmr4q1j7mtv6brn0bk_20261124T053000Z",
+    "source": "⚡ ATHX (Training)",
+    "summary": "🏋️ ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",
+    "start": "2026-11-24T06:30:00+01:00",
+    "end": "2026-11-24T07:30:00+01:00",
+    "location": "Gym",
+    "description": "🎯 ATHX 2027: Gym Session A (Squat, Quads & Lower Hypertrophy)\nTarget: Resolve critical quad volume deficit (elevate from 4.1 to 10+ sets/wk) to target 125 kg Back Squat.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat (4 sets x 5–6 reps @ 75–80% e1RM): 75–80 kg (Target e1RM: 93+ kg)\n2. Bulgarian Split Squats (Dumbbell) (3 sets x 8 reps/leg): 16–20 kg DBs\n3. Leg Press or Hack Squat (3 sets x 10–12 reps): 120–140 kg\n4. Lying or Seated Leg Curl (3 sets x 10–12 reps): 40–50 kg\n5. Standing Calf Raises + Hanging Knee/Leg Raises (3 sets x 15 reps)\n\n⏱️ Rest: 2–3 min on Back Squat; 60–90s on accessories.",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=NjJxZDBlZTF0bXI0cTFqN210djZicm4wYmtfMjAyNjExMjRUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "cepglsdboss2j2vdjjbm07470a_20261124T100000Z",
+    "source": "💼 Artefact (Work)",
+    "summary": "Monthly Mandat RSE",
+    "start": "2026-11-24T11:00:00+01:00",
+    "end": "2026-11-24T11:30:00+01:00",
+    "location": "FR-Paris-Richer-Floor 5-Building 1-CORTANA-7p (7) [TV Screen, Visio Conference]",
+    "description": "",
+    "video_link": "https://meet.google.com/jiy-jcns-kft",
+    "html_link": "https://www.google.com/calendar/event?eid=Y2VwZ2xzZGJvc3MyajJ2ZGpqYm0wNzQ3MGFfMjAyNjExMjRUMTAwMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "FR-Paris-Richer-Floor 5-Building 1-CORTANA-7p (7) [TV Screen, Visio Conference]",
+        "email": "c_1885sc5bkanfsgblheeee9489g99u@resource.calendar.google.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": true,
+        "optional": false
+      },
+      {
+        "name": "Louis Liard",
+        "email": "louis.liard@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Lucie Filiol-De-Raimond",
+        "email": "lucie.filiol-de-raimond@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Oualid Mokhantar",
+        "email": "oualid.mokhantar@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Nicolas Boinay",
+        "email": "nicolas.boinay@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Baptiste Pasquier",
+        "email": "baptiste.pasquier@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Amandine GUILBAULT",
+        "email": "amandine.guilbault@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Antoine Gallier",
+        "email": "antoine.gallier@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "needsAction",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Valentin Dillies",
+        "email": "valentin.dillies@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Angelika Baj",
+        "email": "angelika.baj@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Felicien Bacle",
+        "email": "felicien.bacle@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Mathilde Fageolles",
+        "email": "mathilde.fageolles@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Lucie Filiol-De-Raimond",
+      "email": "lucie.filiol-de-raimond@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "nn17sih4h6cgni071eit7verj0_20261125",
+    "source": "🏥 Clariane (Client)",
+    "summary": "Clariane (Office)",
+    "start": "2026-11-25T00:00:00+01:00",
+    "end": "2026-11-26T00:00:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=bm4xN3NpaDRoNmNnbmkwNzFlaXQ3dmVyajBfMjAyNjExMjUgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": true
+  },
+  {
+    "id": "tj1im6ad205ho39nviob68g11k_20261125T053000Z",
+    "source": "⚡ ATHX (Training)",
+    "summary": "⚡ ATHX 2027: CrossFit WOD (Gymnastics & Conditioning)",
+    "start": "2026-11-25T06:30:00+01:00",
+    "end": "2026-11-25T07:30:00+01:00",
+    "location": "CrossFit Box",
+    "description": "🎯 ATHX 2027: CrossFit Morning Session\nTime: 06:30 – 07:30\n\n⚡ Focus & Athletic Intent:\n• Bodyweight gymnastics stamina (Pull-ups, Toes-to-bar, HSPU, Burpees)\n• Monostructural cardiovascular endurance (Row / Echo Bike / SkiErg)\n• Minimal heavy axial spinal loading to allow Tuesday quad recovery",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=dGoxaW02YWQyMDVobzM5bnZpb2I2OGcxMWtfMjAyNjExMjVUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "61u5u6etqefu27hvdu1qbqn1es_20261125T100000Z",
+    "source": "🏥 Clariane (Client)",
+    "summary": "[CLARIANE] - Weekly Sync",
+    "start": "2026-11-25T11:00:00+01:00",
+    "end": "2026-11-25T11:30:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "https://meet.google.com/djt-gpss-eqz",
+    "html_link": "https://www.google.com/calendar/event?eid=NjF1NXU2ZXRxZWZ1MjdodmR1MXFicW4xZXNfMjAyNjExMjVUMTAwMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Benjamin De-Girolamo",
+        "email": "benjamin.de-girolamo@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Thomas Filaire",
+        "email": "thomas.filaire@artefact.com",
+        "status": "tentative",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Edward Toulemonde",
+        "email": "edward.toulemonde@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "2kpmtqu06o2qqo30grgg56os1g_20261125T173000Z",
+    "source": "⚡ ATHX (Training)",
+    "summary": "🏃 ATHX Run 1: Zone 2 Aerobic Base & Cadence Drill",
+    "start": "2026-11-25T18:30:00+01:00",
+    "end": "2026-11-25T19:15:00+01:00",
+    "location": "Road / Track",
+    "description": "Distance: 5.0–6.0 km @ 5:40–6:10/km\n• Heart Rate: Strictly Zone 2 (<145 bpm)\n• Cadence Focus: 172–174 spm (metronome cue)\n• Purpose: Flush Tuesday quad stiffness & lower GCT <265 ms.",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=MmtwbXRxdTA2bzJxcW8zMGdyZ2c1Nm9zMWdfMjAyNjExMjVUMTczMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "6ujchitnjsoloflpljkpuqrc2t",
+    "source": "💼 Artefact (Work)",
+    "summary": "[Placeholder 1] 🪩 Soirée Tech 🪩",
+    "start": "2026-11-25T18:30:00+01:00",
+    "end": "2026-11-25T23:30:00+01:00",
+    "location": "tbc",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=NnVqY2hpdG5qc29sb2ZscGxqa3B1cXJjMnQgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "needsAction",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Capucine Rohart",
+      "email": "capucine.rohart@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "i45f4tut29vua0ieqit21oteng_20261126",
+    "source": "💼 Artefact (Work)",
+    "summary": "Office",
+    "start": "2026-11-26T00:00:00+01:00",
+    "end": "2026-11-27T00:00:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=aTQ1ZjR0dXQyOXZ1YTBpZXFpdDIxb3RlbmdfMjAyNjExMjYgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": true
+  },
+  {
+    "id": "1iris9llq3bqjgr7o7b65bdrs8_20261126T053000Z",
+    "source": "⚡ ATHX (Training)",
+    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Upper S2O)",
+    "start": "2026-11-26T06:30:00+01:00",
+    "end": "2026-11-26T07:30:00+01:00",
+    "location": "Gym",
+    "description": "🎯 ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Overhead S2O)\nTarget: Resolve posterior chain deficit (elevate from 1.9 to 8+ sets/wk) for 160 kg Deadlift and build S2O drive toward 65 kg standard.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional Deadlift / RDL (4 sets x 5 reps @ 75–80%): 105–115 kg (Target e1RM: 125+ kg)\n2. Barbell Push Press / Strict Press (4 sets x 5 reps): 40–45 kg (Dip-drive & lockout for S2O)\n3. Chest-Supported Barbell / T-Bar Row (3 sets x 8–10 reps): 50–60 kg\n4. Incline Dumbbell Bench Press (3 sets x 8–10 reps): 22–26 kg DBs\n5. Heavy Dumbbell Farmer's Walk / Sandbag Hold (3 sets x 45s): 2x26–30 kg DBs\n6. Biceps Curls + Cable Lateral Raises (3 sets x 12 reps)\n\n⏱️ Rest: 2–3 min on Deadlift/Push Press; 60–90s on accessories.",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=MWlyaXM5bGxxM2JxamdyN283YjY1YmRyczhfMjAyNjExMjZUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "7h7rh2ors22t38vosloln08eo6_20261126T090000Z",
+    "source": "💼 Artefact (Work)",
+    "summary": "[Counselling] - Jamila → Ayrton",
+    "start": "2026-11-26T10:00:00+01:00",
+    "end": "2026-11-26T10:30:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "https://meet.google.com/yue-kbhy-gus",
+    "html_link": "https://www.google.com/calendar/event?eid=N2g3cmgyb3JzMjJ0Mzh2b3Nsb2xuMDhlbzZfMjAyNjExMjZUMDkwMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Jamila Nasri",
+        "email": "jamila.nasri@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "3n833uhqsefp3e11q4tohubq62_20261126T093000Z",
+    "source": "💼 Artefact (Work)",
+    "summary": "[PrideFact] Session de travail",
+    "start": "2026-11-26T10:30:00+01:00",
+    "end": "2026-11-26T11:15:00+01:00",
+    "location": "FR-Paris-Richer-Floor 5-Building 1-SLEEPY-6p (6) [TV Screen, Visio Conference]",
+    "description": "",
+    "video_link": "https://meet.google.com/ivo-zqtw-hek",
+    "html_link": "https://www.google.com/calendar/event?eid=M244MzN1aHFzZWZwM2UxMXE0dG9odWJxNjJfMjAyNjExMjZUMDkzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "FR-Paris-Richer-Floor 5-Building 1-SLEEPY-6p (6) [TV Screen, Visio Conference]",
+        "email": "c_1889rbui8a3g6ja1hgmghgm1ick9i@resource.calendar.google.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": true,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Nicolas Pubellier",
+        "email": "nicolas.pubellier@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Baptiste Pasquier",
+        "email": "baptiste.pasquier@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Roberta-Maria Rinaudo",
+        "email": "roberta-maria.rinaudo@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Baptiste Pasquier",
+      "email": "baptiste.pasquier@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "7v3t9rvsumepv7othhsft4no99_20261126T104500Z",
+    "source": "💼 Artefact (Work)",
+    "summary": "Office (half) hours - Badges DA",
+    "start": "2026-11-26T11:45:00+01:00",
+    "end": "2026-11-26T12:15:00+01:00",
+    "location": "FR-Paris-Richer-Floor 5-Building 1-STUDIO THE BRIDGE-6p (6)",
+    "description": "",
+    "video_link": "https://meet.google.com/fea-xoju-uzi",
+    "html_link": "https://www.google.com/calendar/event?eid=N3YzdDlydnN1bWVwdjdvdGhoc2Z0NG5vOTlfMjAyNjExMjZUMTA0NTAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Paul Farouz",
+        "email": "paul.farouz@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "needsAction",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "DA ALL FR",
+        "email": "da-all-fr@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Data Analytics - France",
+        "email": "data-analytics-fr@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "FR-Paris-Richer-Floor 5-Building 1-STUDIO THE BRIDGE-6p (6)",
+        "email": "c_188cd4bon1f2mg71l74ousjkh2rp0@resource.calendar.google.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": true,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Paul Farouz",
+      "email": "paul.farouz@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "7fsjjr43pej4vnje54fismql2h_20261126T140000Z",
+    "source": "💼 Artefact (Work)",
+    "summary": "Weekly sync - GE Enterprise",
+    "start": "2026-11-26T15:00:00+01:00",
+    "end": "2026-11-26T15:30:00+01:00",
+    "location": "FR-Paris-Richer-Floor 1-Building 2-DOLLY-8p (8) [TV Screen, Visio Conference]",
+    "description": "<a href=\"https://docs.google.com/document/d/1ViZgVsmOVR5bw2Ex8OnZW60k2dE6Y1HvxuWrj3DBvPk/edit?tab=t.0\" class=\"pastedDriveLink-0\">Gemini Enterprise - Internal weekly meeting</a>",
+    "video_link": "https://meet.google.com/qoo-utwz-gmi",
+    "html_link": "https://www.google.com/calendar/event?eid=N2ZzampyNDNwZWo0dm5qZTU0ZmlzbXFsMmhfMjAyNjExMjZUMTQwMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "FR-Paris-Richer-Floor 1-Building 2-DOLLY-8p (8) [TV Screen, Visio Conference]",
+        "email": "artefact.com_38373032363639373331@resource.calendar.google.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": true,
+        "optional": false
+      },
+      {
+        "name": "Paul Bouche",
+        "email": "paul.bouche@artefact.com",
+        "status": "tentative",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Laury Fyot",
+        "email": "laury.fyot@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Edward Toulemonde",
+        "email": "edward.toulemonde@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Faty Gueye",
+        "email": "faty.gueye@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Arthur Coll",
+        "email": "arthur.coll@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Louis Bechu",
+        "email": "louis.bechu@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Fatma Hammami",
+        "email": "fatma.hammami@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Henri Lebon",
+        "email": "henri.lebon@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Jiahui Zhu",
+        "email": "jiahui.zhu@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Jamila Nasri",
+        "email": "jamila.nasri@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Brieuc Bourguignat",
+        "email": "brieuc.bourguignat@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Alexis Cappe",
+        "email": "alexis.cappe@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Celian Marx",
+        "email": "celian.marx@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Brune Rouquayrol-D'Arc",
+        "email": "brune.rouquayrol-d'arc@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Cesar Carpentier",
+        "email": "cesar.carpentier@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Cesar Carpentier Part",
+        "email": "cesar.carpentier.part@servier.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Katie Trinh",
+        "email": "katie.trinh@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ryan Hamlaoui",
+        "email": "ryan.hamlaoui@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Alice Maigron",
+        "email": "alice.maigron@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Jiahui Zhu Part",
+        "email": "jiahui.zhu.part@servier.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Laury Fyot",
+      "email": "laury.fyot@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "7a6revf0o0e9nju2vug90frh7q_20261126T150000Z",
+    "source": "💼 Artefact (Work)",
+    "summary": "Weekly Syncro UC Wizard",
+    "start": "2026-11-26T16:00:00+01:00",
+    "end": "2026-11-26T16:30:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "https://meet.google.com/kbs-iiqw-tda",
+    "html_link": "https://www.google.com/calendar/event?eid=N2E2cmV2ZjBvMGU5bmp1MnZ1ZzkwZnJoN3FfMjAyNjExMjZUMTUwMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Camille Kugler",
+        "email": "camille.kugler@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Clemence Dhemery",
+        "email": "clemence.dhemery@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Jiahui Zhu",
+        "email": "jiahui.zhu@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Jiahui Zhu",
+      "email": "jiahui.zhu@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "1rius1nm95dgu85kv80ap710qr",
+    "source": "💼 Artefact (Work)",
+    "summary": "[Placeholder 2] 🪩 Soirée Tech 🪩",
+    "start": "2026-11-26T18:30:00+01:00",
+    "end": "2026-11-26T23:30:00+01:00",
+    "location": "tbc",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=MXJpdXMxbm05NWRndTg1a3Y4MGFwNzEwcXIgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "needsAction",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Capucine Rohart",
+      "email": "capucine.rohart@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "6b4h1luc0sed5q8j5a4ag95b2f_20261126T183000Z",
+    "source": "💼 Artefact (Work)",
+    "summary": "Rampe @BOBUN",
+    "start": "2026-11-26T19:30:00+01:00",
+    "end": "2026-11-26T23:00:00+01:00",
+    "location": "L'Echevin, 24 Rue de Trévise, 75009 Paris, France",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=NmI0aDFsdWMwc2VkNXE4ajVhNGFnOTViMmZfMjAyNjExMjZUMTgzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "declined",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Diane Ly",
+      "email": "diane.ly@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "5c16vncel8m6tv70q725calo04_20261127",
+    "source": "💼 Artefact (Work)",
+    "summary": "Rappel TIMESHEETS - Everwin",
+    "start": "2026-11-27T00:00:00+01:00",
+    "end": "2026-11-28T00:00:00+01:00",
+    "location": "",
+    "description": "https://sx092.sxondemand.fr/sx92/xLogin",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=NWMxNnZuY2VsOG02dHY3MHE3MjVjYWxvMDRfMjAyNjExMjcgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "declined",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Cedric Charrier",
+      "email": "cedric.charrier@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": true
+  },
+  {
+    "id": "683vv0s83kii145o1df7b66r34_20261127",
+    "source": "💼 Artefact (Work)",
+    "summary": "Office",
+    "start": "2026-11-27T00:00:00+01:00",
+    "end": "2026-11-28T00:00:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=NjgzdnYwczgza2lpMTQ1bzFkZjdiNjZyMzRfMjAyNjExMjcgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": true
+  },
+  {
+    "id": "ckksnl5fm9hqemfgrnhhgn3jas_20261127T053000Z",
+    "source": "⚡ ATHX (Training)",
+    "summary": "⚡ ATHX 2027: CrossFit WOD (High-Volume Engine / Benchmark)",
+    "start": "2026-11-27T06:30:00+01:00",
+    "end": "2026-11-27T07:30:00+01:00",
+    "location": "CrossFit Box",
+    "description": "🎯 ATHX 2027: CrossFit Morning Session\nTime: 06:30 – 07:30\n\n⚡ Focus & Athletic Intent:\n• Box capstone WOD (Classic benchmark, chipper, or team/partner conditioning)\n• High metabolic output before the weekend\n• Pacing strategy and mental resilience",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=Y2trc25sNWZtOWhxZW1mZ3JuaGhnbjNqYXNfMjAyNjExMjdUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "iaucvgq8s656cn8jho9qk41hs8_20261127T173000Z",
+    "source": "⚡ ATHX (Training)",
+    "summary": "🏃 ATHX Run 2: 5km Qualifying Threshold Intervals",
+    "start": "2026-11-27T18:30:00+01:00",
+    "end": "2026-11-27T19:20:00+01:00",
+    "location": "Track / Flat Course",
+    "description": "Warm-up: 1.0 km easy jog\nMain Work: 4–5 × 1,000m @ 4:25–4:35/km (90s rest)\nCool-down: 1.0 km jog (~6.5 km total)\nPurpose: Bridge 37s/km gap to 4:30/km standard.",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=aWF1Y3ZncThzNjU2Y244amhvOXFrNDFoczhfMjAyNjExMjdUMTczMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "ge_sync_20261030_1500",
+    "source": "💼 Artefact (Work)",
+    "summary": "Weekly sync - GE Enterprise",
+    "start": "2026-10-30T15:00:00+01:00",
+    "end": "2026-10-30T16:00:00+01:00",
+    "location": "FR-Paris-Richer-Floor 1-Building 2-WOPR-6p (6)",
+    "description": "Weekly alignment on GE Enterprise mandats & data architecture.",
+    "video_link": "https://meet.google.com/ge-sync-alignment",
+    "html_link": "",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "self": true
+      },
+      {
+        "name": "Edward A.",
+        "email": "edward@artefact.com",
+        "self": false
+      }
+    ],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "counseling_jamila_20261030_1630",
+    "source": "💼 Artefact (Work)",
+    "summary": "Jamila / Ayrton - Café - Meet-up",
+    "start": "2026-10-30T16:30:00+01:00",
+    "end": "2026-10-30T17:15:00+01:00",
+    "location": "Café Paris Richer",
+    "description": "Counselor follow-up and review.",
+    "video_link": "",
+    "html_link": "",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "self": true
+      },
+      {
+        "name": "Jamila NASRI",
+        "email": "jamila.nasri@artefact.com",
+        "self": false
+      }
+    ],
+    "organizer": {
+      "name": "Jamila NASRI",
+      "email": "jamila.nasri@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "ge_edward_20261030_1630",
+    "source": "💼 Artefact (Work)",
+    "summary": "Ayrton / Edward - Updates MO & GE",
+    "start": "2026-10-30T16:30:00+01:00",
+    "end": "2026-10-30T17:15:00+01:00",
+    "location": "FR-Paris-Richer",
+    "description": "Alignment with Edward on stream deliverables.",
+    "video_link": "https://meet.google.com/ayrton-edward-ge",
+    "html_link": "",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "self": true
+      },
+      {
+        "name": "Edward A.",
+        "email": "edward@artefact.com",
+        "self": false
+      }
+    ],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "paris_equipe_20261030_1630",
+    "source": "💼 Artefact (Work)",
+    "summary": "Weekly équipe parisienne",
+    "start": "2026-10-30T16:30:00+01:00",
+    "end": "2026-10-30T17:15:00+01:00",
+    "location": "FR-Paris-Richer",
+    "description": "Equipe parisienne sync",
+    "video_link": "",
+    "html_link": "",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "self": true
+      }
+    ],
+    "organizer": {
+      "name": "Artefact",
+      "email": "paris@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false
+  },
+  {
+    "id": "au_secours_20261030_1330",
+    "source": "💼 Artefact (Work)",
+    "summary": "Au secours ?",
+    "start": "2026-10-30T13:30:00+01:00",
+    "end": "2026-10-30T14:00:00+01:00",
+    "location": "FR-Paris-Richer",
+    "description": "Quick check",
+    "video_link": "",
+    "html_link": "",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "self": true
+      }
+    ],
     "organizer": {
       "name": "Ayrton Andre",
       "email": "ayrton.andre@artefact.com",

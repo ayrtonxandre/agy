@@ -1,6 +1,6 @@
 /**
  * Meeting Hub Compiled Application Bundle
- * Generated: 2026-10-30T09:09:34.123Z
+ * Generated: 2026-10-30T14:11:49.890Z
  */
 (function(window, document) {
 'use strict';
@@ -29,7 +29,9 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "datastore ge",
         "weekly sync - ge enterprise",
         "[mandat ge]",
-        "mandat ge"
+        "mandat ge",
+        "mo & ge",
+        "updates mo & ge"
       ],
       "workstreams": [
         {
@@ -1146,6 +1148,9 @@ function matchMission(event, registry) {
     if (m.id === 'counseling') {
       contactNames.push('roland juilhard', 'jamila nasri', 'roland j.', 'jamila n.');
     }
+    if (m.id === 'ge-enterprise') {
+      contactNames.push('louis bechu', 'edward toulemonde', 'paul bouche', 'camille kugler');
+    }
     const matchedContacts = attendees.filter(att => 
       contactNames.some(c => c && (att.includes(c) || c.includes(att)))
     );
@@ -1162,6 +1167,93 @@ function matchMission(event, registry) {
 }
 
 MeetingHub.matchMission = matchMission;
+
+/* === Module: model/lane_classifier.js === */
+/**
+ * Meeting Lane Classifier
+ * 
+ * Pure function that classifies a mission meeting into one of 4 lanes:
+ * 1. 'prep': Mission meetings starting in the next 48h (or in progress)
+ * 2. 'fold': Meetings ended in the last 14 days with uncaptured minutes or pending in inbox
+ * 3. 'folded': Meetings whose minutes are folded into mission notes
+ * 4. 'hidden': Older than 14 days uncaptured, cancelled, or > 48h away
+ * 
+ * @param {Object} event - Normalized meeting event
+ * @param {string|Object} inboxStatus - 'folded' | 'pending' | 'not_sent' or status object
+ * @param {Date|string|number} now - Reference time (default: current Date)
+ * @param {number} prepWindowHours - Hours ahead to include in prep (default: 48)
+ * @returns {'prep' | 'fold' | 'folded' | 'hidden'}
+ */
+
+function classifyMeeting(event, inboxStatus, now = new Date(), prepWindowHours = 48) {
+  if (!event) return 'hidden';
+
+  // Check cancelled or declined status
+  if (event.status === 'cancelled' || event.status === 'declined') {
+    return 'hidden';
+  }
+
+  // Check folded status
+  const isFolded = typeof inboxStatus === 'string'
+    ? inboxStatus === 'folded'
+    : Boolean(inboxStatus && (inboxStatus.status === 'folded' || inboxStatus.isFolded));
+
+  if (isFolded) {
+    return 'folded';
+  }
+
+  const nowDate = now instanceof Date ? now : new Date(now);
+  const nowMs = nowDate.getTime();
+
+  // Helper to parse date consistently
+  const parseTime = (dateStr, timeStr) => {
+    if (timeStr && typeof timeStr === 'string' && timeStr.includes('T')) {
+      const parsed = new Date(timeStr);
+      if (!isNaN(parsed.getTime())) return parsed.getTime();
+    }
+    if (dateStr) {
+      const parts = String(dateStr).split('-').map(Number);
+      if (parts.length === 3) {
+        const timeParts = String(timeStr || '00:00').split(':').map(Number);
+        const d = new Date(parts[0], parts[1] - 1, parts[2], timeParts[0] || 0, timeParts[1] || 0, 0);
+        return d.getTime();
+      }
+    }
+    return 0;
+  };
+
+  let startMs = parseTime(event.date, event.start);
+  let endMs = parseTime(event.date, event.end);
+
+  if (!startMs) {
+    return 'hidden';
+  }
+  if (!endMs || endMs <= startMs) {
+    endMs = startMs + (event.durationMin || 45) * 60 * 1000;
+  }
+
+  const prepWindowMs = prepWindowHours * 60 * 60 * 1000;
+  const foldWindowMs = 14 * 24 * 60 * 60 * 1000;
+
+  // Case 1: Event has ended
+  if (endMs <= nowMs) {
+    const timeSinceEnd = nowMs - endMs;
+    if (timeSinceEnd <= foldWindowMs) {
+      return 'fold';
+    }
+    return 'hidden';
+  }
+
+  // Case 2: Event is in progress or starts in the next 48h
+  if (startMs <= nowMs + prepWindowMs) {
+    return 'prep';
+  }
+
+  // Case 3: Future event beyond prep window
+  return 'hidden';
+}
+
+MeetingHub.classifyMeeting = classifyMeeting;
 
 /* === Module: model/event.js === */
 /**
@@ -2200,17 +2292,22 @@ class EventsImporter {
    * @param {Object} options - { force: boolean, dataUrl: string, rawEvents: Array }
    */
   static async importInitialData(db, options = {}) {
-    const meta = await db.get('meta', 'initial_import_done');
     const existingCount = await db.count('events');
+    const seedVersionMeta = await db.get('meta', 'seed_version');
+    const currentSeedVersion = 3; // version 3 includes unified multi-mission calendar events and Friday Oct 30 schedule
 
-    // If store already has events (from previous import or calendar sync), skip cleanly
-    if (existingCount > 0 && !options.force) {
-      console.log(`[Importer] Store already populated with ${existingCount} events. Skipping initial snapshot.`);
+    let rawList = options.rawEvents;
+    if (!rawList && typeof window !== 'undefined' && window.INITIAL_EVENTS && Array.isArray(window.INITIAL_EVENTS)) {
+      rawList = window.INITIAL_EVENTS;
+    }
+
+    // If store already has events and up-to-date seed version, skip cleanly
+    if (existingCount > 0 && !options.force && seedVersionMeta && seedVersionMeta.value >= currentSeedVersion) {
+      console.log(`[Importer] Store already populated with ${existingCount} events (seed v${seedVersionMeta.value}).`);
       return { skipped: true, eventCount: existingCount };
     }
 
     console.log('[Importer] Checking for initial calendar events import...');
-    let rawList = options.rawEvents;
 
     // 1. Check window.INITIAL_EVENTS (fastest, immune to file:// CORS)
     if (!rawList && typeof window !== 'undefined' && window.INITIAL_EVENTS && Array.isArray(window.INITIAL_EVENTS)) {
@@ -2282,6 +2379,7 @@ class EventsImporter {
 
     // 5. Update meta
     await db.put('meta', { key: 'initial_import_done', value: true });
+    await db.put('meta', { key: 'seed_version', value: currentSeedVersion });
     await db.put('meta', { key: 'last_import_timestamp', value: new Date().toISOString() });
     await db.put('meta', { key: 'event_count', value: normalizedEvents.length });
     await db.put('meta', { key: 'series_count', value: collapsedSeries.length });
@@ -2949,6 +3047,7 @@ MeetingHub.PrepScoreCalculator = PrepScoreCalculator;
 
 
 
+
 class MeetingHubStore {
   constructor() {
     this.db = null;
@@ -2961,6 +3060,18 @@ class MeetingHubStore {
     this.activeProjectId = 'ge-enterprise';
     this.subscribers = new Set();
     this.initialized = false;
+  }
+
+  get missionsRegistry() {
+    return { missions: this.missionsCache || [] };
+  }
+
+  set missionsRegistry(val) {
+    if (val && Array.isArray(val.missions)) {
+      this.missionsCache = val.missions;
+    } else if (Array.isArray(val)) {
+      this.missionsCache = val;
+    }
   }
 
   async init(options = {}) {
@@ -2986,9 +3097,10 @@ class MeetingHubStore {
       const resp = await fetch('/api/missions');
       if (resp.ok) {
         const json = await resp.json();
-        if (json.status === 'ok' && Array.isArray(json.missions)) {
-          this.missionsCache = json.missions;
-          return json.missions;
+        const list = Array.isArray(json) ? json : (json.missions || (json.status === 'ok' && json.missions) || []);
+        if (Array.isArray(list) && list.length > 0) {
+          this.missionsCache = list;
+          return list;
         }
       }
     } catch (e) {
@@ -3229,11 +3341,13 @@ class MeetingHubStore {
 
   getProjectForMeeting(meeting) {
     if (!meeting) return null;
-    const projects = this.projectsCache || [];
+    const projects = (this.projectsCache && this.projectsCache.length > 0)
+      ? this.projectsCache
+      : (this.missionsCache && this.missionsCache.length > 0 ? this.missionsCache : DEFAULT_PROJECTS);
     if (typeof matchMission === 'function') {
       const match = matchMission(meeting, projects);
       if (match && match.missionId) {
-        return projects.find(p => p.id === match.missionId) || null;
+        return projects.find(p => p.id === match.missionId) || { id: match.missionId, name: match.missionId };
       }
     }
     const client = (meeting.client || '').toLowerCase().trim();
@@ -3270,6 +3384,24 @@ class MeetingHubStore {
     }
 
     return null;
+  }
+
+  getEventsForProject(projectId) {
+    if (!projectId) return [];
+    const pId = projectId.toLowerCase();
+    let registry = (this.missionsCache && this.missionsCache.length > 0) ? this.missionsCache : null;
+    if (!registry && typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
+      registry = window.MISSIONS_SNAPSHOT.missions;
+    }
+    if (!registry) registry = this.projectsCache || [];
+    return (this.eventsCache || []).filter(e => {
+      const match = (typeof matchMission === 'function')
+        ? matchMission(e, registry)
+        : (typeof MeetingHub !== 'undefined' && MeetingHub.matchMission ? MeetingHub.matchMission(e, registry) : null);
+      if (match && match.missionId && match.missionId.toLowerCase() === pId) return true;
+      const p = this.getProjectForMeeting(e);
+      return p && (p.id.toLowerCase() === pId || (pId === 'clariane-hdj' && p.id === 'clariane'));
+    });
   }
 
   async getSuggestedProjects() {
@@ -3506,9 +3638,11 @@ class MeetingHubStore {
       const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/summary`);
       if (resp.ok) {
         const json = await resp.json();
-        if (json.status === 'ok' && json.summary) {
-          this.missionSummariesCache.set(id, json.summary);
-          return json.summary;
+        const summaryData = (json && json.summary) ? json.summary : json;
+        if (summaryData && (summaryData.missionId || summaryData.workstreams || summaryData.name || summaryData.projectName)) {
+          summaryData.isOffline = false;
+          this.missionSummariesCache.set(id, summaryData);
+          return summaryData;
         }
       }
     } catch (e) {
@@ -3550,9 +3684,18 @@ class MeetingHubStore {
       const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/inbox`);
       if (resp.ok) {
         const json = await resp.json();
-        if (json.status === 'ok') {
-          return json;
-        }
+        const pending = json.pending || json.files || [];
+        const folded = json.folded || json.foldedFiles || [];
+        const pendingCount = json.pendingCount !== undefined ? json.pendingCount : (json.total_pending !== undefined ? json.total_pending : pending.length);
+        const foldedCount = json.foldedCount !== undefined ? json.foldedCount : (json.total_folded !== undefined ? json.total_folded : folded.length);
+        return {
+          status: 'ok',
+          pendingCount,
+          files: pending,
+          foldedCount,
+          foldedFiles: folded,
+          isOffline: false
+        };
       }
     } catch (e) {}
 
@@ -3655,10 +3798,7 @@ class MeetingHubStore {
    */
   buildProjectBaseFromSummary(project, summary) {
     const pId = project.id;
-    const projectEvents = this.eventsCache.filter(e => {
-      const p = this.getProjectForMeeting(e);
-      return p && (p.id === pId || (pId === 'clariane-hdj' && p.id === 'clariane'));
-    });
+    const projectEvents = this.getEventsForProject(pId);
 
     const totalMeetings = projectEvents.length;
     
@@ -3794,6 +3934,7 @@ class MeetingHubStore {
       isMission: true,
       directory: summary.mission?.directory || project.directory,
       totalMeetings,
+      events: projectEvents,
       meetingsWithMinutes,
       coveragePercent,
       coverageText: `${meetingsWithMinutes} of ${totalMeetings} meetings folded`,
@@ -3824,6 +3965,179 @@ class MeetingHubStore {
         { name: 'Politique Zéro Temps Mort', desc: 'Optimisation continue sans temps d’attente inter-séances' },
         { name: 'Case Mix', desc: 'Répartition budgétaire de l’activité Neuro vs Locomoteur' }
       ]
+    };
+  }
+
+  /**
+   * Computes the Mission Cockpit state (Phase 3):
+   * lanes (prep, fold, folded, hidden), next meeting, open actions count, toFold count.
+   */
+  async getMissionHubData(missionId, now = new Date()) {
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'ge-enterprise';
+    const missions = await this.getMissionsRegistry();
+    const mission = missions.find(m => m.id === id) || { id, name: id, client: 'Artefact Internal' };
+    const summary = await this.getMissionSummary(id);
+    let inboxStatus = this.inboxStatusCache.get(id);
+    if (!inboxStatus) {
+      try {
+        inboxStatus = await this.getInboxStatus(id);
+      } catch (e) {
+        inboxStatus = { pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] };
+      }
+    }
+
+    const events = this.getEventsForProject(id);
+    
+    // Classify meetings into lanes
+    const lanes = {
+      prep: [],
+      fold: [],
+      folded: [],
+      hidden: []
+    };
+
+    events.forEach(e => {
+      const lane = (typeof classifyMeeting === 'function')
+        ? classifyMeeting(e, inboxStatus, now)
+        : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxStatus, now) : 'hidden');
+      if (lanes[lane]) {
+        lanes[lane].push(e);
+      } else {
+        lanes.hidden.push(e);
+      }
+    });
+
+    // Sort prep: soonest first
+    lanes.prep.sort((a, b) => {
+      const cmpDate = (a.date || '').localeCompare(b.date || '');
+      if (cmpDate !== 0) return cmpDate;
+      return (a.start || '').localeCompare(b.start || '');
+    });
+
+    // Sort fold: oldest first (most overdue on top)
+    lanes.fold.sort((a, b) => {
+      const cmpDate = (a.date || '').localeCompare(b.date || '');
+      if (cmpDate !== 0) return cmpDate;
+      return (a.start || '').localeCompare(b.start || '');
+    });
+
+    // Sort folded: newest first
+    lanes.folded.sort((a, b) => {
+      const cmpDate = (b.date || '').localeCompare(a.date || '');
+      if (cmpDate !== 0) return cmpDate;
+      return (b.start || '').localeCompare(a.start || '');
+    });
+
+    // Next meeting for this mission
+    const nextMeeting = lanes.prep.length > 0 ? lanes.prep[0] : null;
+
+    // Open actions
+    const openActions = (summary.actions || summary.actionMatrix || []).filter(a => !a.done);
+
+    return {
+      mission,
+      summary,
+      inboxStatus,
+      events,
+      lanes,
+      nextMeeting,
+      openActionsCount: openActions.length,
+      toFoldCount: lanes.fold.length
+    };
+  }
+
+  /**
+   * Computes the Mission Rail state (Phase 2):
+   * Today strip (next meeting today), active missions with amber fold badges,
+   * archived missions, and across counts (inbox badge, my actions badge).
+   */
+  async getRailState(now = new Date()) {
+    const missions = await this.getMissionsRegistry();
+    const todayStr = (typeof getTodayDateStr === 'function') ? getTodayDateStr(now) : now.toISOString().slice(0, 10);
+    const nowTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    // 1. Next meeting today across all missions
+    const todayEvents = (this.eventsCache || [])
+      .filter(e => e.date === todayStr && !e.isAllDay && (e.start || '') >= nowTimeStr)
+      .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+
+    let todayNextMeeting = null;
+    if (todayEvents.length > 0) {
+      const e = todayEvents[0];
+      const match = (typeof matchMission === 'function')
+        ? matchMission(e, missions)
+        : (typeof MeetingHub !== 'undefined' && MeetingHub.matchMission ? MeetingHub.matchMission(e, missions) : null);
+      const mObj = match ? missions.find(m => m.id === match.missionId) : null;
+      todayNextMeeting = {
+        event: e,
+        missionId: match ? match.missionId : null,
+        missionName: mObj ? mObj.name : (e.client || ''),
+        timeStr: e.start,
+        title: e.title
+      };
+    }
+
+    // 2. Missions fold counts
+    const missionItems = [];
+    let totalPendingInbox = 0;
+    let totalFoldMeetings = 0;
+
+    for (const m of missions) {
+      const mEvents = this.getEventsForProject(m.id);
+      let inboxStatus = this.inboxStatusCache.get(m.id);
+      if (!inboxStatus) {
+        try {
+          inboxStatus = await this.getInboxStatus(m.id);
+        } catch (e) {
+          inboxStatus = { pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] };
+        }
+      }
+
+      totalPendingInbox += (inboxStatus.pendingCount || 0);
+
+      let foldCount = 0;
+      mEvents.forEach(e => {
+        const lane = (typeof classifyMeeting === 'function')
+          ? classifyMeeting(e, inboxStatus, now)
+          : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxStatus, now) : 'hidden');
+        if (lane === 'fold') {
+          foldCount++;
+          totalFoldMeetings++;
+        }
+      });
+
+      missionItems.push({
+        id: m.id,
+        name: m.name,
+        archived: Boolean(m.archived || m.status === 'archived'),
+        foldCount
+      });
+    }
+
+    // 3. My actions count
+    let myActionsCount = 0;
+    for (const m of missions) {
+      let summary = this.missionSummariesCache.get(m.id);
+      if (!summary) {
+        summary = await this.getMissionSummary(m.id);
+      }
+      if (summary && Array.isArray(summary.actions)) {
+        summary.actions.forEach(a => {
+          if (!a.done) {
+            const owner = (a.owner || '').toLowerCase();
+            if (owner.includes('ayrton') || owner.includes('andré') || owner.includes('andre')) {
+              myActionsCount++;
+            }
+          }
+        });
+      }
+    }
+
+    return {
+      todayNextMeeting,
+      missions: missionItems,
+      inboxBadge: totalPendingInbox + totalFoldMeetings,
+      myActionsBadge: myActionsCount
     };
   }
 
@@ -4143,17 +4457,18 @@ MeetingHub.Icons = Icons;
 
 /* === Module: ui/shell.js === */
 /**
- * Application Shell Component
+ * Application Shell Component (Phase 2 Cockpit Rail)
  * 
  * Renders the persistent dark navy sidebar and sticky header,
- * manages view/mode switching, handles dark/light theme toggle,
- * sidebar project switcher with suggestions, and live calendar source sync status.
+ * manages mission rail navigation, Today strip, live calendar source sync status,
+ * storage engine info, and theme toggle.
  */
 
 
 
 class ShellUI {
   constructor({
+    store = null,
     onNavigate,
     onModeChange,
     onNewMeeting,
@@ -4168,9 +4483,10 @@ class ShellUI {
     onCreateProject,
     onTogglePanel,
     projects = [],
-    activeProjectId = 'clariane',
+    activeProjectId = 'ge-enterprise',
     suggestedProjects = []
-  }) {
+  } = {}) {
+    this.store = store;
     this.onNavigate = onNavigate;
     this.onModeChange = onModeChange;
     this.onNewMeeting = onNewMeeting;
@@ -4186,29 +4502,19 @@ class ShellUI {
     this.onTogglePanel = onTogglePanel;
 
     this.projects = projects;
-    this.activeProjectId = activeProjectId;
+    this.activeProjectId = activeProjectId || 'ge-enterprise';
     this.suggestedProjects = suggestedProjects;
-    this.isProjectDropdownOpen = false;
     this.isPanelCollapsed = false;
 
-    this.currentView = 'today';
+    this.currentView = 'mission';
     this.currentMode = 'all';
     this.isSyncing = false;
     this.syncStatus = null;
+    this.railState = null;
+    this.showArchived = false;
     this.theme = this.getInitialTheme();
 
     this.applyTheme(this.theme);
-
-    // Global click listener to close project dropdown on outside click
-    document.addEventListener('click', (e) => {
-      if (this.isProjectDropdownOpen) {
-        const selector = document.querySelector('.sidebar-project-selector');
-        if (selector && !selector.contains(e.target)) {
-          this.isProjectDropdownOpen = false;
-          this.renderProjectSwitcher();
-        }
-      }
-    });
   }
 
   getInitialTheme() {
@@ -4245,11 +4551,42 @@ class ShellUI {
     this.renderSyncSection();
   }
 
+  setRailState(railState) {
+    this.railState = railState;
+    this.renderSidebar();
+  }
+
+  async refreshRail() {
+    if (this.store && typeof this.store.getRailState === 'function') {
+      try {
+        this.railState = await this.store.getRailState();
+      } catch (e) {
+        console.warn('[ShellUI] Failed to refresh rail state:', e);
+      }
+    }
+    this.renderSidebar();
+  }
+
+  setActiveProjectId(id) {
+    if (!id) return;
+    this.activeProjectId = id;
+    const aside = document.querySelector('aside');
+    if (aside) {
+      aside.querySelectorAll('.nav[data-nav-mission]').forEach(btn => {
+        if (btn.dataset.navMission === id) {
+          btn.classList.add('on');
+        } else {
+          btn.classList.remove('on');
+        }
+      });
+    }
+  }
+
   setProjects(projects, activeProjectId, suggestedProjects = []) {
     this.projects = projects || [];
     if (activeProjectId) this.activeProjectId = activeProjectId;
     this.suggestedProjects = suggestedProjects || [];
-    this.renderProjectSwitcher();
+    this.renderSidebar();
   }
 
   setSyncing(syncing) {
@@ -4270,38 +4607,106 @@ class ShellUI {
     const aside = document.querySelector('aside');
     if (!aside) return;
 
+    // Resolve missions from railState or fallback to this.projects / window.MISSIONS_SNAPSHOT
+    let missionList = [];
+    if (this.railState && Array.isArray(this.railState.missions) && this.railState.missions.length > 0) {
+      missionList = this.railState.missions;
+    } else if (this.projects && this.projects.length > 0) {
+      missionList = this.projects.map(p => ({
+        id: p.id,
+        name: p.name,
+        archived: Boolean(p.archived || p.status === 'archived'),
+        foldCount: 0
+      }));
+    } else if (typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
+      missionList = window.MISSIONS_SNAPSHOT.missions.map(m => ({
+        id: m.id,
+        name: m.name,
+        archived: Boolean(m.archived || m.status === 'archived'),
+        foldCount: 0
+      }));
+    }
+
+    const activeMissions = missionList.filter(m => !m.archived);
+    const archivedMissions = missionList.filter(m => m.archived);
+
+    // Today strip details
+    const nextToday = this.railState?.todayNextMeeting;
+    const todayStripHtml = nextToday ? `
+      <div class="today-strip" id="railTodayStrip" title="Open next meeting today in its mission">
+        <span class="today-strip-icon">${Icons.calendar}</span>
+        <span class="today-strip-text">Next: <b>${this._escape(nextToday.timeStr)}</b> ${this._escape(nextToday.title)} · <span class="sub" style="font-size: 11px;">${this._escape(nextToday.missionName)}</span></span>
+      </div>
+    ` : `
+      <div class="today-strip empty">
+        <span class="today-strip-icon">${Icons.calendar}</span>
+        <span class="today-strip-text">No more meetings today</span>
+      </div>
+    `;
+
+    const inboxCount = this.railState?.inboxBadge ?? 0;
+    const myActionsCount = this.railState?.myActionsBadge ?? openActionsCount;
+
     aside.innerHTML = `
       <div class="brand">
         <b>M</b>
         <div>Meeting Hub<small>Prep · Capture · Link</small></div>
       </div>
 
-      <!-- Project Switcher & Initiative Scope -->
-      <div class="sidebar-project-block" id="sidebarProjectContainer">
-        <!-- Rendered by renderProjectSwitcher -->
+      <!-- Phase 2: Today Strip (Top, One Line) -->
+      ${todayStripHtml}
+
+      <!-- Missions Section -->
+      <div class="grp">Missions</div>
+      <div class="sidebar-missions-list">
+        ${activeMissions.map(m => {
+          const isSelected = (this.currentView === 'mission' && this.activeProjectId === m.id);
+          return `
+            <button class="nav ${isSelected ? 'on' : ''}" data-nav-mission="${this._escape(m.id)}" title="${this._escape(m.name)}">
+              ${Icons.layers}
+              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: left;">${this._escape(m.name)}</span>
+              ${m.foldCount > 0 ? `<span class="n amber" title="${m.foldCount} meeting(s) to fold">${m.foldCount}</span>` : ''}
+            </button>
+          `;
+        }).join('')}
       </div>
 
-      <div class="grp">Work</div>
-      <button class="nav ${this.currentView === 'today' ? 'on' : ''}" data-view="today">
-        ${Icons.calendar}Today
+      <!-- Archived Missions Toggle -->
+      ${archivedMissions.length > 0 ? `
+        <button class="sidebar-archived-toggle" id="toggleArchivedMissionsBtn">
+          ${this.showArchived ? '▾' : '▸'} Archived (${archivedMissions.length})
+        </button>
+        ${this.showArchived ? `
+          <div class="sidebar-archived-list" style="margin-left: 8px; border-left: 1px solid var(--border); padding-left: 4px;">
+            ${archivedMissions.map(m => {
+              const isSelected = (this.currentView === 'mission' && this.activeProjectId === m.id);
+              return `
+                <button class="nav ${isSelected ? 'on' : ''}" data-nav-mission="${this._escape(m.id)}" title="Archived: ${this._escape(m.name)}" style="opacity: 0.85; font-size: 12px;">
+                  ${Icons.archive || Icons.layers}
+                  <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: left;">${this._escape(m.name)}</span>
+                  ${m.foldCount > 0 ? `<span class="n amber" title="${m.foldCount} to fold">${m.foldCount}</span>` : ''}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        ` : ''}
+      ` : ''}
+
+      <!-- Across Missions Section -->
+      <div class="grp">Across</div>
+      <button class="nav ${this.currentView === 'inbox' ? 'on' : ''}" data-nav-view="inbox" title="Cross-mission raw meeting minutes inbox">
+        ${Icons.inbox || Icons.layers}Inbox
+        ${inboxCount > 0 ? `<span class="n amber" title="${inboxCount} pending minutes">${inboxCount}</span>` : '<span class="n">0</span>'}
       </button>
-      <button class="nav ${this.currentView === 'week' ? 'on' : ''}" data-view="week">
-        ${Icons.week}Week
+      <button class="nav ${this.currentView === 'my-actions' ? 'on' : ''}" data-nav-view="my-actions" title="Actions assigned to you across missions">
+        ${Icons.checkSquare}My actions
+        <span class="n" id="navActions">${myActionsCount}</span>
       </button>
-      <button class="nav ${this.currentView === 'meetings' ? 'on' : ''}" data-view="meetings">
-        ${Icons.users}Meetings
-      </button>
-      <button class="nav ${this.currentView === 'actions' ? 'on' : ''}" data-view="actions">
-        ${Icons.checkSquare}Open Actions
-        <span class="n" id="navActions">${openActionsCount}</span>
-      </button>
-      <button class="nav ${this.currentView === 'series' ? 'on' : ''}" data-view="series">
-        ${Icons.link}Series &amp; Links
-      </button>
-      <button class="nav ${this.currentView === 'projects' ? 'on' : ''}" data-view="projects">
-        ${Icons.layers}Projects &amp; Knowledge
+      <button class="nav ${this.currentView === 'calendar' ? 'on' : ''}" data-nav-view="calendar" title="Calendar Views">
+        ${Icons.calendar}Calendar
       </button>
 
+      <!-- Ecosystem Section -->
       <div class="grp">Ecosystem</div>
       <a class="nav" href="garmin_workout.html" target="_blank" rel="noopener">
         ${Icons.activity}ATHX Athlete
@@ -4325,125 +4730,52 @@ class ShellUI {
       </div>
     `;
 
-    // Wire up sidebar view switches
-    aside.querySelectorAll('.nav[data-view]').forEach(btn => {
+    // Today strip click
+    const stripEl = aside.querySelector('#railTodayStrip');
+    if (stripEl && nextToday) {
+      stripEl.addEventListener('click', () => {
+        if (nextToday.missionId) {
+          window.location.hash = '#/p/' + encodeURIComponent(nextToday.missionId) + '/m/' + encodeURIComponent(nextToday.event.id);
+        } else {
+          window.location.hash = '#/calendar/m/' + encodeURIComponent(nextToday.event.id);
+        }
+      });
+    }
+
+    // Mission buttons click
+    aside.querySelectorAll('[data-nav-mission]').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.currentView = btn.dataset.view;
-        this.renderSidebar(openActionsCount);
-        if (this.onNavigate) this.onNavigate(this.currentView);
+        const missionId = btn.dataset.navMission;
+        this.activeProjectId = missionId;
+        this.currentView = 'mission';
+        window.location.hash = '#/p/' + encodeURIComponent(missionId);
       });
     });
 
-    this.renderProjectSwitcher();
+    // Archived toggle click
+    aside.querySelector('#toggleArchivedMissionsBtn')?.addEventListener('click', () => {
+      this.showArchived = !this.showArchived;
+      this.renderSidebar(openActionsCount);
+    });
+
+    // Across views click
+    aside.querySelectorAll('[data-nav-view]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.navView;
+        this.currentView = view;
+        if (view === 'inbox') {
+          window.location.hash = '#/inbox';
+        } else if (view === 'my-actions') {
+          window.location.hash = '#/my-actions';
+        } else if (view === 'calendar') {
+          window.location.hash = '#/calendar';
+        }
+      });
+    });
+
     this.renderSyncSection();
     this.renderStorageSection();
     this.renderThemeButton();
-  }
-
-  renderProjectSwitcher() {
-    const container = document.querySelector('#sidebarProjectContainer');
-    if (!container) return;
-
-    const activeProject = (this.projects && this.projects.length > 0)
-      ? (this.projects.find(p => p.id === this.activeProjectId) || this.projects[0])
-      : { id: 'clariane', name: 'Clariane' };
-
-    container.innerHTML = `
-      <div class="sidebar-project-selector">
-        <button class="sidebar-project-trigger" id="sidebarProjectTrigger" title="Switch active project initiative">
-          <span class="sidebar-project-icon">${Icons.layers}</span>
-          <span class="sidebar-project-name">${this._escape(activeProject.name)}</span>
-          <span class="sidebar-project-chevron ${this.isProjectDropdownOpen ? 'open' : ''}">${Icons.chevronDown || '▾'}</span>
-        </button>
-
-        ${this.isProjectDropdownOpen ? `
-          <div class="sidebar-project-dropdown" id="sidebarProjectDropdown">
-            <div class="sidebar-project-section-title">Projects</div>
-            <div class="sidebar-project-list">
-              ${(this.projects || []).map(p => `
-                <button class="sidebar-project-option ${p.id === this.activeProjectId ? 'active' : ''}" data-project-id="${this._escape(p.id)}">
-                  <span class="sidebar-project-opt-name">${this._escape(p.name)}</span>
-                  ${p.id === this.activeProjectId ? `<span class="badge ok" style="font-size: 10px;">Active</span>` : ''}
-                </button>
-              `).join('')}
-            </div>
-
-            ${(this.suggestedProjects && this.suggestedProjects.length > 0) ? `
-              <div class="sidebar-project-section-title" style="margin-top: 8px;">Suggested from Tags</div>
-              <div class="sidebar-project-suggestions">
-                ${this.suggestedProjects.map(sp => `
-                  <div class="sidebar-project-suggest-row">
-                    <div style="min-width: 0;">
-                      <div class="sidebar-project-opt-name" style="font-weight: 500;">${this._escape(sp.name)}</div>
-                      <div class="sub" style="font-size: 10px;">${sp.meetingCount} meeting${sp.meetingCount !== 1 ? 's' : ''}</div>
-                    </div>
-                    <button class="btn sm pink" data-confirm-suggested="${this._escape(sp.name)}" data-suggest-id="${this._escape(sp.id)}" style="font-size: 10px; padding: 2px 7px;">
-                      Confirm
-                    </button>
-                  </div>
-                `).join('')}
-              </div>
-            ` : ''}
-
-            <div class="sidebar-project-actions">
-              <button class="btn sm" id="sidebarNewProjectBtn" style="width: 100%; justify-content: center; font-size: 11px;">
-                ${Icons.plus} New Project
-              </button>
-            </div>
-          </div>
-        ` : ''}
-      </div>
-    `;
-
-    // Trigger toggle
-    container.querySelector('#sidebarProjectTrigger')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.isProjectDropdownOpen = !this.isProjectDropdownOpen;
-      this.renderProjectSwitcher();
-    });
-
-    // Project selection
-    container.querySelectorAll('[data-project-id]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.projectId;
-        this.activeProjectId = id;
-        this.isProjectDropdownOpen = false;
-        this.renderProjectSwitcher();
-        if (this.onProjectChange) this.onProjectChange(id);
-      });
-    });
-
-    // Confirm suggested project
-    container.querySelectorAll('[data-confirm-suggested]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.suggestId;
-        const name = btn.dataset.confirmSuggested;
-        const suggestion = (this.suggestedProjects || []).find(s => s.id === id) || { id, name, clientMatch: [name] };
-        if (this.onConfirmSuggestedProject) {
-          this.onConfirmSuggestedProject(suggestion);
-        }
-        this.isProjectDropdownOpen = false;
-      });
-    });
-
-    // New project action
-    container.querySelector('#sidebarNewProjectBtn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.isProjectDropdownOpen = false;
-      if (this.onCreateProject) {
-        this.onCreateProject();
-      } else {
-        const name = prompt('Enter new project name:');
-        if (name && name.trim()) {
-          const clientTag = prompt('Enter primary client/meeting tag for this project (optional):', name.trim()) || name.trim();
-          if (this.onConfirmSuggestedProject) {
-            this.onConfirmSuggestedProject({ name: name.trim(), clientMatch: [clientTag.trim()] });
-          }
-        }
-      }
-    });
   }
 
   _escape(str) {
@@ -4573,6 +4905,8 @@ class ShellUI {
 
     const sub = subtitle !== null ? subtitle : (title === 'Today' ? (typeof formatLongDate === 'function' ? formatLongDate(typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10)) : '') : '');
 
+    // Notice: Phase 2 rule 2 removes the #modeSelector pills (Work/Life/All) from the global header.
+    // They are now housed inside Calendar views.
     header.innerHTML = `
       <h1 id="title">${title}</h1>
       <span class="sub" id="subtitle">${sub}</span>
@@ -4581,12 +4915,6 @@ class ShellUI {
       <div class="header-search">
         ${Icons.search}
         <input type="search" id="quickSearch" placeholder="Search (/)" />
-      </div>
-
-      <div class="seg" id="modeSelector">
-        <button data-m="all" class="${this.currentMode === 'all' ? 'on' : ''}">All</button>
-        <button data-m="work" class="${this.currentMode === 'work' ? 'on' : ''}">Work</button>
-        <button data-m="life" class="${this.currentMode === 'life' ? 'on' : ''}">Life</button>
       </div>
 
       <button class="btn sm" id="todayNavBtn" style="font-family: var(--font-mono); font-size: 11.5px;">Today</button>
@@ -4610,15 +4938,6 @@ class ShellUI {
         }
       });
     }
-
-    header.querySelectorAll('.seg button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        header.querySelectorAll('.seg button').forEach(b => b.classList.remove('on'));
-        btn.classList.add('on');
-        this.currentMode = btn.dataset.m;
-        if (this.onModeChange) this.onModeChange(this.currentMode);
-      });
-    });
 
     header.querySelector('#todayNavBtn')?.addEventListener('click', () => {
       if (this.onTodayClick) this.onTodayClick();
@@ -7227,32 +7546,31 @@ MeetingHub.SeriesView = SeriesView;
 
 /* === Module: views/projects.js === */
 /**
- * Project Base & Knowledge View Component
+ * Mission Cockpit & Knowledge View Component (Phase 3 Project Hub)
  * 
- * Aggregates all meeting minutes, decisions, cross-meeting action matrix,
- * strategic workstreams, and connected Google Docs for any configured initiative.
- * 
- * Features:
- * - Completely generic: driven by project configuration in DB
- * - Honest coverage bars ("X of Y meetings have minutes")
- * - Deduplicated decisions across meetings with "first decided on" and "restated on"
- * - Source quotes and meeting links on every action and decision
- * - Project Settings editor to view and edit project configuration
+ * Replaces legacy KPI project base with an actionable Mission Cockpit:
+ * - Dynamic Header: Title, status, open actions count, amber "to fold" count, next meeting
+ * - Meeting Stream (always open, default view):
+ *     1. Up next: prep (<=48h) with workstream context & prep checklist dots
+ *     2. Just happened: fold (amber) with distinct capture/inbox states
+ *     3. Folded: collapsed 1-line strip, expandable
+ * - Knowledge Tabs below the stream (collapsed by default):
+ *     Workstreams, Decisions, Actions, Contacts, Brief
  */
 
 
-
 class ProjectsView {
-  constructor({ container, store, onSelectMeeting }) {
+  constructor({ container, store, onSelectMeeting } = {}) {
     this.container = container;
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
     this.currentProjectId = 'ge-enterprise';
-    this.currentSubTab = 'workstreams'; // 'workstreams' | 'decisions' | 'actions' | 'docs' | 'settings'
+    this.currentSubTab = null; // 'workstreams' | 'decisions' | 'actions' | 'contacts' | 'brief'
+    this.isFoldedOpen = false;
     this.actionOwnerFilter = 'all';
     this.actionStatusFilter = 'open';
+    this.decisionWsFilter = 'all';
     this.searchQuery = '';
-    this.settingsFeedback = null;
   }
 
   setSearchQuery(q) {
@@ -7261,16 +7579,14 @@ class ProjectsView {
   }
 
   setProject(projectId) {
+    if (!projectId) return;
     this.currentProjectId = projectId;
-    this.settingsFeedback = null;
     this.render();
   }
 
   setTab(tab) {
-    if (tab) {
-      this.currentSubTab = tab;
-      this.render();
-    }
+    this.currentSubTab = tab || null;
+    this.render();
   }
 
   // Alias for backward compatibility
@@ -7278,523 +7594,467 @@ class ProjectsView {
     this.setProject(clientId);
   }
 
+  selectNextMeeting() {
+    const cards = Array.from(this.container.querySelectorAll('[data-event-id]'));
+    if (cards.length === 0) return;
+    const currentId = this.store?.selectedEventId;
+    let nextIdx = 0;
+    if (currentId) {
+      const idx = cards.findIndex(c => c.dataset.eventId === currentId);
+      if (idx >= 0 && idx < cards.length - 1) {
+        nextIdx = idx + 1;
+      }
+    }
+    const nextCard = cards[nextIdx];
+    if (nextCard && this.onSelectMeeting) {
+      this.onSelectMeeting(nextCard.dataset.eventId);
+    }
+  }
+
+  selectPreviousMeeting() {
+    const cards = Array.from(this.container.querySelectorAll('[data-event-id]'));
+    if (cards.length === 0) return;
+    const currentId = this.store?.selectedEventId;
+    let prevIdx = 0;
+    if (currentId) {
+      const idx = cards.findIndex(c => c.dataset.eventId === currentId);
+      if (idx > 0) {
+        prevIdx = idx - 1;
+      } else {
+        prevIdx = cards.length - 1;
+      }
+    }
+    const prevCard = cards[prevIdx];
+    if (prevCard && this.onSelectMeeting) {
+      this.onSelectMeeting(prevCard.dataset.eventId);
+    }
+  }
+
   async render() {
     if (!this.container) return;
 
-    // Load all projects
-    const allProjects = await this.store.getAllProjects();
-    if (!allProjects.some(p => p.id === this.currentProjectId)) {
-      this.currentProjectId = allProjects[0]?.id || 'ge-enterprise';
-    }
+    // Retrieve full cockpit data from system of record
+    const data = await this.store.getMissionHubData(this.currentProjectId);
+    const mission = data.mission || { id: this.currentProjectId, name: this.currentProjectId };
+    const summary = data.summary || {};
+    const lanes = data.lanes || { prep: [], fold: [], folded: [], hidden: [] };
+    const inboxStatus = data.inboxStatus || { pendingCount: 0, files: [] };
 
-    // Build project base from store
-    const project = await this.store.getProjectBase(this.currentProjectId);
+    // Registry missions for dropdown
+    const registry = await this.store.getMissionsRegistry();
+    const allMissions = registry?.missions || [];
 
-    // Filter actions for matrix
-    let matrixActions = project.actionMatrix || [];
-    if (this.actionStatusFilter === 'open') {
-      matrixActions = matrixActions.filter(a => !a.done);
-    } else if (this.actionStatusFilter === 'done') {
-      matrixActions = matrixActions.filter(a => a.done);
-    }
-    if (this.actionOwnerFilter !== 'all') {
-      matrixActions = matrixActions.filter(a => 
-        (a.ownerOrg || '').toLowerCase() === this.actionOwnerFilter.toLowerCase() || 
-        (a.owner || '').toLowerCase().includes(this.actionOwnerFilter.toLowerCase())
-      );
-    }
+    // Filter lanes by search query if present
+    let prepMeetings = lanes.prep;
+    let foldMeetings = lanes.fold;
+    let foldedMeetings = lanes.folded;
+
     if (this.searchQuery) {
-      matrixActions = matrixActions.filter(a => {
-        const text = `${a.text} ${a.owner} ${a.facility || ''} ${a.meetingTitle || ''} ${a.quote || ''}`.toLowerCase();
-        return text.includes(this.searchQuery);
-      });
+      const q = this.searchQuery;
+      const matchMeeting = (m) => {
+        return (m.title || '').toLowerCase().includes(q) ||
+               (m.series || '').toLowerCase().includes(q) ||
+               (m.attendees || []).some(a => a.toLowerCase().includes(q));
+      };
+      prepMeetings = prepMeetings.filter(matchMeeting);
+      foldMeetings = foldMeetings.filter(matchMeeting);
+      foldedMeetings = foldedMeetings.filter(matchMeeting);
     }
 
-    // Filter decisions
-    let decisions = project.decisionRegister || [];
-    if (this.searchQuery) {
-      decisions = decisions.filter(d => {
-        const text = `${d.statement} ${d.label || ''} ${d.facility || ''} ${d.context || ''} ${d.quote || ''}`.toLowerCase();
-        return text.includes(this.searchQuery);
-      });
+    // Workstreams lookup map
+    const workstreams = summary.workstreams || [];
+    const openPoints = summary.openPoints || [];
+    const actions = summary.actions || summary.actionMatrix || [];
+    const decisions = summary.decisionRegister || summary.decisions || [];
+    const contacts = summary.contacts || [];
+
+    // Next meeting display text
+    let nextMeetingText = 'No upcoming meeting in ≤48h';
+    if (data.nextMeeting) {
+      nextMeetingText = `${data.nextMeeting.date} ${data.nextMeeting.start} · ${data.nextMeeting.title}`;
     }
 
     this.container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
-        <!-- Header & Project Selector -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="label">Project Base &amp; Intelligence Hub</span>
-              <span class="badge ${project.archived ? 'sub' : 'ok'}" style="font-weight: 600;">${project.archived ? 'Archived Initiative' : 'Active Deployment'}</span>
-              <span class="badge" style="font-family: var(--font-mono); font-size: 11px;">${this._escape(project.projectId)}</span>
+        
+        <!-- 3.2 Cockpit Header -->
+        <div class="cockpit-header">
+          <div style="flex: 1; min-width: 280px;">
+            <div class="cockpit-title-row">
+              <span class="label" style="margin-bottom: 0;">Mission Cockpit</span>
+              <span class="badge ${mission.archived ? 'sub' : 'ok'}" style="font-weight: 600;">
+                ${mission.archived ? 'Archived' : 'Active Mission'}
+              </span>
+              <span class="badge" style="font-family: var(--font-mono); font-size: 11px;">
+                ${this._escape(mission.id)}
+              </span>
             </div>
-            <h1 style="font: 600 24px/1.2 var(--font-sans); margin: 4px 0;">${this._escape(project.projectName)}</h1>
-            <div class="sub" style="font-size: 12px;">
-              Cross-meeting synthesis of minutes, cumulative decision register, and action matrix from local client data
+            <h1 style="font: 600 24px/1.2 var(--font-sans); margin: 6px 0 2px 0;">
+              ${this._escape(mission.name)}
+            </h1>
+            <div class="cockpit-meta-row">
+              <span class="badge ${data.openActionsCount > 0 ? '' : 'ok'}">
+                ${data.openActionsCount} open action${data.openActionsCount !== 1 ? 's' : ''}
+              </span>
+              ${data.toFoldCount > 0 ? `
+                <span class="badge amber" title="${data.toFoldCount} meeting(s) waiting to be folded into mission notes">
+                  ${data.toFoldCount} to fold
+                </span>
+              ` : `
+                <span class="badge ok" style="font-size: 11px;">All folded</span>
+              `}
+              <span style="font-family: var(--font-mono); font-size: 11.5px;">
+                Next: <b>${this._escape(nextMeetingText)}</b>
+              </span>
+              <span class="sub" style="font-size: 11px;" title="Mission notes folder in system of record">
+                📁 ${this._escape(mission.directory || mission.id)}
+              </span>
             </div>
           </div>
 
-          <!-- Project Initiative Selector Dropdown -->
+          <!-- Mission Switcher Dropdown (Updates URL directly) -->
           <div style="display: flex; gap: 8px; align-items: center;">
-            <label for="projectSelectDropdown" class="sub" style="font-size: 12px; font-weight: 500;">Initiative:</label>
-            <select id="projectSelectDropdown" class="input" style="font-size: 13px; font-weight: 600; height: 34px; padding: 4px 10px; border-radius: var(--r-sm); min-width: 260px; cursor: pointer;">
-              ${allProjects.map(p => `
-                <option value="${this._escape(p.id)}" ${this.currentProjectId.toLowerCase() === p.id.toLowerCase() ? 'selected' : ''}>
-                  ${p.archived ? '[Archived] ' : ''}${this._escape(p.name)}
+            <label for="projectSelectDropdown" class="sub" style="font-size: 12px; font-weight: 500;">Mission:</label>
+            <select id="projectSelectDropdown" class="input" style="font-size: 13px; font-weight: 600; height: 34px; padding: 4px 10px; border-radius: var(--r-sm); min-width: 250px; cursor: pointer;">
+              ${allMissions.map(m => `
+                <option value="${this._escape(m.id)}" ${this.currentProjectId.toLowerCase() === m.id.toLowerCase() ? 'selected' : ''}>
+                  ${m.archived ? '[Archived] ' : ''}${this._escape(m.name)}
                 </option>
               `).join('')}
             </select>
           </div>
         </div>
 
-        <!-- Honest Coverage Card -->
-        <div class="honest-coverage-card">
-          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
-            <span class="label" style="margin-bottom: 0;">Minutes Coverage</span>
-            <span style="font-family: var(--font-mono); font-size: 13px; font-weight: 600;">
-              ${this._escape(project.coverageText)} (${project.coveragePercent}%)
-            </span>
-          </div>
-          <div class="coverage-track">
-            <div class="coverage-fill ${project.coveragePercent === 100 ? 'complete' : ''}" style="width: ${project.coveragePercent}%;"></div>
-          </div>
-          <div class="sub" style="font-size: 11.5px;">
-            ${project.meetingsWithMinutes < project.totalMeetings ? `
-              ${project.totalMeetings - project.meetingsWithMinutes} of ${project.totalMeetings} meetings do not have ingested minutes yet. Action matrix and decision register reflect only meetings with ingested minutes.
+        <!-- 3.3 Meeting Stream (Always visible, default content) -->
+        <div class="stream-container">
+          
+          <!-- Lane 1: Up next: prep (<=48h) -->
+          <div class="stream-lane">
+            <div class="lane-header">
+              <span>Up next: prep (≤48h)</span>
+              <span class="badge ${prepMeetings.length > 0 ? 'pink' : ''}">${prepMeetings.length}</span>
+            </div>
+            ${prepMeetings.length === 0 ? `
+              <div class="empty-lane">Nothing in the next 48h for this mission</div>
             ` : `
-              All ${project.totalMeetings} meetings across this initiative have ingested minutes.
+              <div class="lane-cards">
+                ${prepMeetings.map(m => this._renderPrepCard(m, summary, inboxStatus)).join('')}
+              </div>
             `}
           </div>
-          ${project.inboxPendingCount > 0 ? `
-            <div style="margin-top: 8px; padding: 6px 10px; background: color-mix(in oklab, #d97706 15%, var(--card)); border: 1px solid #d97706; border-radius: var(--r-sm); display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11.5px; font-weight: 500; color: #b45309;">
-                ⏳ <b>${project.inboxPendingCount} raw minutes file${project.inboxPendingCount > 1 ? 's' : ''} in _inbox/</b> waiting to be folded into mission notes
+
+          <!-- Lane 2: Just happened: fold (amber) -->
+          <div class="stream-lane" style="border-color: ${foldMeetings.length > 0 ? 'oklch(0.78 0.16 75 / 45%)' : 'var(--border)'};">
+            <div class="lane-header" style="color: ${foldMeetings.length > 0 ? 'oklch(0.85 0.16 75)' : 'var(--muted-foreground)'};">
+              <span>Just happened: fold</span>
+              <span class="badge ${foldMeetings.length > 0 ? 'amber' : 'ok'}">${foldMeetings.length}</span>
+            </div>
+            ${foldMeetings.length === 0 ? `
+              <div class="empty-lane" style="border-left: 3px solid var(--ok); color: var(--ok);">All minutes folded</div>
+            ` : `
+              <div class="lane-cards">
+                ${foldMeetings.map(m => this._renderFoldCard(m, inboxStatus)).join('')}
+              </div>
+            `}
+          </div>
+
+          <!-- Lane 3: Folded (collapsed 1-line strip, expandable) -->
+          ${foldedMeetings.length > 0 ? `
+            <div class="folded-summary-strip" id="toggleFoldedStripBtn" title="Click to ${this.isFoldedOpen ? 'collapse' : 'expand'} folded meetings">
+              <span style="font-weight: 600;">✔ ${foldedMeetings.length} folded meeting${foldedMeetings.length !== 1 ? 's' : ''}</span>
+              <span style="font-size: 11.5px; opacity: 0.85;">
+                ${this.isFoldedOpen ? '▲ Click to collapse' : '▼ Click to show folded meetings'}
               </span>
-              <span class="sub" style="font-size: 11px;">Single source of truth</span>
+            </div>
+            ${this.isFoldedOpen ? `
+              <div class="lane-cards" style="margin-top: 8px;">
+                ${foldedMeetings.map(m => `
+                  <div class="meeting-card" data-event-id="${this._escape(m.id)}" style="opacity: 0.85;">
+                    <div class="meeting-card-head">
+                      <div>
+                        <span class="meeting-card-time">${this._escape(m.date)} ${this._escape(m.start)}</span>
+                        <span class="meeting-card-title">${this._escape(m.title)}</span>
+                      </div>
+                      <span class="badge ok" style="font-size: 10px;">Folded in notes</span>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          ` : ''}
+
+          <!-- Hidden older meetings notice -->
+          ${lanes.hidden.length > 0 ? `
+            <div class="sub" style="font-size: 11px; margin-top: 4px; color: var(--muted-foreground);">
+              ${lanes.hidden.length} older meeting${lanes.hidden.length !== 1 ? 's' : ''} without minutes (archived)
             </div>
           ` : ''}
         </div>
 
-        <!-- KPI Metric Strip -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
-          <div class="kpi-cell">
-            <span class="kpi-num">${project.totalMeetings}</span>
-            <span class="kpi-sub">Total Initiative Meetings · <b style="color: var(--ok);">${project.meetingsWithMinutes} with Minutes</b></span>
-          </div>
-          <div class="kpi-cell">
-            <span class="kpi-num" style="color: var(--pink-600);">${project.actionStats.open}</span>
-            <span class="kpi-sub">Open Actions (${project.actionStats.artefactOpen} Artefact · ${project.actionStats.clientOpen} Client)</span>
-          </div>
-          <div class="kpi-cell">
-            <span class="kpi-num" style="color: var(--ok);">${project.decisionStats.total}</span>
-            <span class="kpi-sub">Cumulative Validated Decisions</span>
-          </div>
-          <div class="kpi-cell">
-            <span class="kpi-num">${project.connectedDocs.length}</span>
-            <span class="kpi-sub">Connected Google Docs</span>
-          </div>
-        </div>
-
-        <!-- Sub-Tabs Navigation -->
-        <div class="tabs" style="margin-bottom: 0;">
-          <button data-subtab="workstreams" class="${this.currentSubTab === 'workstreams' ? 'on' : ''}">
-            Strategic Workstreams (${project.workstreams.length})
+        <!-- 3.4 Knowledge Tabs (below the stream, collapsed to tab bar by default) -->
+        <div class="tabs" style="margin-top: 12px; margin-bottom: 0;">
+          <button data-cockpit-tab="workstreams" class="${this.currentSubTab === 'workstreams' ? 'on' : ''}">
+            Workstreams (${workstreams.length})
           </button>
-          <button data-subtab="decisions" class="${this.currentSubTab === 'decisions' ? 'on' : ''}">
-            Decision Register (${project.decisionRegister.length})
+          <button data-cockpit-tab="decisions" class="${this.currentSubTab === 'decisions' ? 'on' : ''}">
+            Decisions (${decisions.length})
           </button>
-          <button data-subtab="actions" class="${this.currentSubTab === 'actions' ? 'on' : ''}">
-            Action Matrix (${project.actionStats.open} Open)
+          <button data-cockpit-tab="actions" class="${this.currentSubTab === 'actions' ? 'on' : ''}">
+            Actions (${data.openActionsCount} Open)
           </button>
-          <button data-subtab="docs" class="${this.currentSubTab === 'docs' ? 'on' : ''}">
-            Connected Docs (${project.connectedDocs.length})
+          <button data-cockpit-tab="contacts" class="${this.currentSubTab === 'contacts' ? 'on' : ''}">
+            Contacts (${contacts.length})
           </button>
-          <button data-subtab="settings" class="${this.currentSubTab === 'settings' ? 'on' : ''}">
-            Project Settings
+          <button data-cockpit-tab="brief" class="${this.currentSubTab === 'brief' ? 'on' : ''}">
+            Brief
           </button>
         </div>
 
-        <!-- Sub-Tab Content -->
-        <div id="projectTabBody">
-          ${this._renderSubTabContent(project, matrixActions, decisions)}
-        </div>
+        <!-- Tab Body (Only rendered when a tab is selected) -->
+        ${this.currentSubTab ? `
+          <div id="cockpitTabContent" style="background: var(--card); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px;">
+            ${this._renderTabBody(summary, data)}
+          </div>
+        ` : ''}
+
       </div>
     `;
 
-    this._bindEvents(project);
+    this._bindEvents(data);
   }
 
-  _renderSubTabContent(project, matrixActions, decisions) {
-    if (this.currentSubTab === 'workstreams') {
-      return `
-        <div style="display: grid; gap: 14px;">
-          <!-- Active Strategic Workstreams -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 12px;">
-            ${project.workstreams.map(ws => `
-              <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                  <div>
-                    <span class="badge info" style="font-size: 10px; font-weight: 600;">${this._escape(ws.badge)}</span>
-                    <h3 style="font: 600 15px/1.3 var(--font-sans); margin: 4px 0 2px 0;">${this._escape(ws.title)}</h3>
-                  </div>
-                  <span class="badge ${ws.openActionsCount > 0 ? 'pink' : 'ok'}" style="font-size: 11px;">
-                    ${ws.openActionsCount} open action${ws.openActionsCount > 1 ? 's' : ''}
-                  </span>
-                </div>
-                <div class="sub" style="font-size: 12px; color: var(--foreground);">${this._escape(ws.summary)}</div>
-                
-                ${(ws.keyRules && ws.keyRules.length > 0) ? `
-                  <div style="margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--border);">
-                    <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 4px;">
-                      Governing Architectural Rules:
-                    </div>
-                    <ul style="margin: 0; padding-left: 16px; font-size: 11.5px; color: var(--muted-foreground); display: grid; gap: 3px;">
-                      ${ws.keyRules.map(r => `<li>${this._escape(r)}</li>`).join('')}
-                    </ul>
-                  </div>
-                ` : ''}
+  _renderPrepCard(meeting, summary, inboxStatus) {
+    // Match workstream
+    const titleLower = (meeting.title || '').toLowerCase();
+    const ws = (summary.workstreams || []).find(w => 
+      titleLower.includes((w.badge || '').toLowerCase()) ||
+      titleLower.includes((w.title || '').toLowerCase()) ||
+      titleLower.includes((w.id || '').toLowerCase())
+    );
 
-                ${(ws.openPoints && ws.openPoints.length > 0) ? `
-                  <div style="margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--border);">
-                    <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--pink-600); margin-bottom: 4px; display: flex; justify-content: space-between;">
-                      <span>Open Points (${ws.openPoints.length})</span>
-                      <span class="sub" style="font-size: 10px;">from notes</span>
-                    </div>
-                    <div style="display: grid; gap: 4px;">
-                      ${ws.openPoints.slice(0, 4).map(op => `
-                        <div style="font-size: 11px; padding: 4px 6px; background: var(--muted); border-radius: var(--r-sm); line-height: 1.35;">
-                          <b style="font-family: var(--font-mono); color: var(--pink-600);">${this._escape(op.id || '')}:</b> ${this._escape(op.what || op.point || '')}
-                          ${op.owner ? `<span class="sub" style="font-size: 10px;"> — ${this._escape(op.owner)}</span>` : ''}
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
-                ` : ''}
+    // Collect 3 open points / actions from notes (prioritaire first)
+    const allActions = summary.actions || summary.actionMatrix || [];
+    const openActs = allActions.filter(a => !a.done);
+    
+    // Sort blocking / prioritaire first
+    openActs.sort((a, b) => {
+      const aPrio = (a.deadline || '').toLowerCase().includes('prioritaire') || (a.text || '').toLowerCase().includes('prioritaire');
+      const bPrio = (b.deadline || '').toLowerCase().includes('prioritaire') || (b.text || '').toLowerCase().includes('prioritaire');
+      if (aPrio && !bPrio) return -1;
+      if (!aPrio && bPrio) return 1;
+      return 0;
+    });
 
-                ${(ws.facilities && ws.facilities.length > 0) ? `
-                  <div style="display: flex; gap: 4px; align-items: center; margin-top: auto; padding-top: 8px;">
-                    <span class="sub" style="font-size: 11px;">Sites:</span>
-                    ${ws.facilities.map(f => `<span class="badge" style="font-size: 10px;">${this._escape(f)}</span>`).join('')}
-                  </div>
-                ` : ''}
-              </div>
+    const displayPoints = openActs.slice(0, 3);
+
+    // Prep dots: 1: agenda, 2: last minutes folded, 3: actions reviewed
+    const dot1 = Boolean(meeting.notes && meeting.notes.trim().length > 0);
+    const dot2 = inboxStatus.pendingCount === 0;
+    const dot3 = openActs.length === 0;
+
+    return `
+      <div class="meeting-card" data-event-id="${this._escape(meeting.id)}">
+        <div class="meeting-card-head">
+          <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+            <span class="meeting-card-time">${this._escape(meeting.date)} · ${this._escape(meeting.start)} - ${this._escape(meeting.end)}</span>
+            <span class="meeting-card-title">${this._escape(meeting.title)}</span>
+            ${ws ? `<span class="badge info" style="font-size: 10px;">${this._escape(ws.badge || ws.title)}</span>` : ''}
+          </div>
+          <div class="prep-dots" title="Prep Checklist: (1) Agenda drafted, (2) Previous folded, (3) Actions clear">
+            <span class="prep-dot ${dot1 ? 'ok' : ''}"></span>
+            <span class="prep-dot ${dot2 ? 'ok' : ''}"></span>
+            <span class="prep-dot ${dot3 ? 'ok' : ''}"></span>
+          </div>
+        </div>
+
+        ${displayPoints.length > 0 ? `
+          <ul class="meeting-card-points">
+            ${displayPoints.map(p => `
+              <li>
+                <b style="font-family: var(--font-mono); color: var(--pink-600);">${this._escape(p.id)}:</b>
+                ${this._escape(p.text || p.description)}
+                ${p.owner ? `<span class="sub" style="font-size: 10.5px;">(${this._escape(p.owner)})</span>` : ''}
+              </li>
             `).join('')}
-          </div>
+          </ul>
+        ` : `
+          <div class="sub" style="font-size: 11px; margin-top: 2px;">No blocking actions pending for this stream.</div>
+        `}
+      </div>
+    `;
+  }
 
-          <!-- Stakeholder Matrix & Knowledge Directory -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px;">
-            <!-- Stakeholders Directory -->
-            <div class="card" style="padding: 14px;">
-              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 10px;">
-                Stakeholders Directory (${project.stakeholders.length})
+  _renderFoldCard(meeting, inboxStatus) {
+    // Check if a file is already in inbox for this meeting
+    const hasInboxFile = (inboxStatus.files || []).some(f => 
+      f.includes(meeting.id) ||
+      f.toLowerCase().includes((meeting.title || '').slice(0, 15).toLowerCase().replace(/[^a-z0-9]+/g, '_'))
+    );
+
+    return `
+      <div class="meeting-card fold-card" data-event-id="${this._escape(meeting.id)}">
+        <div class="meeting-card-head">
+          <div>
+            <span class="meeting-card-time">${this._escape(meeting.date)} · ${this._escape(meeting.start)} - ${this._escape(meeting.end)}</span>
+            <span class="meeting-card-title">${this._escape(meeting.title)}</span>
+          </div>
+          ${hasInboxFile ? `
+            <div class="fold-state-pill inbox">⏳ In inbox, waiting to fold</div>
+          ` : `
+            <div class="fold-state-pill empty">⚠️ No minutes yet · Drop or paste</div>
+          `}
+        </div>
+      </div>
+    `;
+  }
+
+  _renderTabBody(summary, data) {
+    if (this.currentSubTab === 'workstreams') {
+      const wsList = summary.workstreams || [];
+      return `
+        <div style="display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));">
+          ${wsList.length > 0 ? wsList.map(w => `
+            <div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                <div>
+                  <span class="badge info" style="font-size: 10px;">${this._escape(w.badge || 'Workstream')}</span>
+                  <h3 style="font: 600 15px/1.3 var(--font-sans); margin: 4px 0 2px 0;">${this._escape(w.title)}</h3>
+                </div>
+                <span class="badge" style="font-size: 11px;">
+                  ${w.openPointsCount || 0} open points
+                </span>
               </div>
-              <div style="display: grid; gap: 6px; max-height: 220px; overflow-y: auto;">
-                ${project.stakeholders.length > 0 ? project.stakeholders.map(s => `
-                  <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-radius: var(--r-sm); background: var(--muted);">
-                    <div>
-                      <div style="font-size: 12px; font-weight: 500;">${this._escape(s.name)}</div>
-                      <div style="font-size: 11px; color: var(--muted-foreground);">${this._escape(s.role)}</div>
-                    </div>
-                    <div style="text-align: right;">
-                      <span class="badge" style="font-size: 10px;">${this._escape(s.org)}</span>
-                      <div style="font-size: 10px; color: var(--muted-foreground); margin-top: 2px;">${s.meetingCount} session${s.meetingCount > 1 ? 's' : ''}</div>
-                    </div>
+              <div class="sub" style="font-size: 12px; color: var(--foreground);">${this._escape(w.summary)}</div>
+              ${(w.keyRules && w.keyRules.length > 0) ? `
+                <div style="margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--border);">
+                  <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 4px;">
+                    Key Rules &amp; Directives:
                   </div>
-                `).join('') : '<div class="sub" style="font-size: 12px;">No attendees registered yet</div>'}
+                  <ul style="margin: 0; padding-left: 16px; font-size: 11.5px; color: var(--muted-foreground); display: grid; gap: 3px;">
+                    ${w.keyRules.map(r => `<li>${this._escape(r)}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              <div style="margin-top: auto; padding-top: 6px; font-size: 11px; color: var(--muted-foreground);">
+                Source note: <span style="font-family: var(--font-mono);">${this._escape(w.filename || '')}</span>
               </div>
             </div>
-
-            <!-- Platform Architecture & Entities -->
-            <div class="card" style="padding: 14px;">
-              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 10px;">
-                Project Vocabulary &amp; Parser Hints
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 8px;">
-                <div>
-                  <div style="font-size: 11px; color: var(--muted-foreground); margin-bottom: 4px;">Connected Systems &amp; Tools:</div>
-                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                    ${project.tools.length > 0 ? project.tools.map(t => `<span class="badge info" style="font-family: var(--font-mono); font-size: 11px;">${this._escape(t)}</span>`).join('') : '<span class="sub" style="font-size: 11px;">None configured</span>'}
-                  </div>
-                </div>
-                <div>
-                  <div style="font-size: 11px; color: var(--muted-foreground); margin-bottom: 4px;">Domain Protocols &amp; Concepts:</div>
-                  <div style="display: grid; gap: 4px;">
-                    ${project.concepts.length > 0 ? project.concepts.map(c => `
-                      <div style="font-size: 11.5px; padding: 4px 6px; border-radius: var(--r-sm); background: var(--muted);">
-                        <b>${this._escape(c.name)}:</b> <span style="color: var(--muted-foreground);">${this._escape(c.desc)}</span>
-                      </div>
-                    `).join('') : '<span class="sub" style="font-size: 11px;">None configured</span>'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          `).join('') : '<div class="sub">No strategic workstream notes found for this mission.</div>'}
         </div>
       `;
     }
 
     if (this.currentSubTab === 'decisions') {
+      const decList = summary.decisionRegister || summary.decisions || [];
       return `
         <div style="display: flex; flex-direction: column; gap: 10px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="sub" style="font-size: 12px;">
-              Showing ${decisions.length} validated architecture and operational decisions from meeting minutes (deduplicated across meetings)
-            </div>
+          <div class="sub" style="font-size: 12px; margin-bottom: 4px;">
+            Cumulative decision register across mission notes (${decList.length} total, newest first).
           </div>
-
-          <div style="display: grid; gap: 10px;">
-            ${decisions.length > 0 ? decisions.map(d => {
-              const firstMeeting = d.firstDecidedOn || {};
-              const restatedList = d.restatedOn || [];
-
-              return `
-                <div class="card" style="padding: 12px 14px; border-left: 3px solid var(--ok); display: flex; flex-direction: column; gap: 8px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                      <span class="badge ok" style="font-weight: 600; font-size: 11px;">${this._escape(d.label || 'Decision')}</span>
-                      ${d.facility ? `<span class="badge" style="font-size: 10px;">${this._escape(d.facility)}</span>` : ''}
-                      ${d.context ? `<span class="sub" style="font-size: 11px;">${this._escape(d.context)}</span>` : ''}
-                    </div>
-                    ${firstMeeting.meetingId ? `
-                      <div style="display: flex; gap: 6px; align-items: center;">
-                        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground);">${firstMeeting.meetingDate || ''}</span>
-                        <button class="btn sm" data-open-meeting="${this._escape(firstMeeting.meetingId)}" style="padding: 2px 8px; font-size: 11px;">
-                          View Meeting
-                        </button>
-                      </div>
-                    ` : ''}
-                  </div>
-
-                  <div style="font-size: 13px; font-weight: 500; color: var(--foreground); line-height: 1.4;">
-                    ${this._escape(d.statement)}
-                  </div>
-
-                  ${d.quote ? `
-                    <div class="quote-box decision">
-                      “${this._escape(d.quote)}”
-                    </div>
-                  ` : ''}
-
-                  <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted-foreground); border-top: 1px solid var(--border); padding-top: 6px; margin-top: 2px;">
-                    <div>
-                      <b>First decided on:</b> ${this._escape(firstMeeting.meetingDate || 'Unknown')} · <i>${this._escape(firstMeeting.meetingTitle || 'Meeting')}</i>
-                    </div>
-
-                    ${restatedList.length > 0 ? `
-                      <div style="margin-top: 2px;">
-                        <b>Restated on ${restatedList.length} subsequent meeting${restatedList.length > 1 ? 's' : ''}:</b>
-                        <ul style="margin: 2px 0 0 16px; padding: 0; display: grid; gap: 2px;">
-                          ${restatedList.map(r => `
-                            <li>
-                              ${this._escape(r.meetingDate)} · <i>${this._escape(r.meetingTitle)}</i>
-                              ${r.quote ? `<span style="font-style: italic; color: var(--foreground);"> — “${this._escape(r.quote)}”</span>` : ''}
-                              <button class="btn sm" data-open-meeting="${this._escape(r.meetingId)}" style="padding: 1px 6px; font-size: 10px; margin-left: 4px;">
-                                View
-                              </button>
-                            </li>
-                          `).join('')}
-                        </ul>
-                      </div>
-                    ` : ''}
-                  </div>
+          <div style="display: grid; gap: 8px;">
+            ${decList.length > 0 ? decList.map(d => `
+              <div class="card" style="padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+                  <span style="font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; color: var(--ok);">${this._escape(d.date || 'Validated')}</span>
+                  ${d.noteTitle ? `<span class="badge" style="font-size: 10px;">${this._escape(d.noteTitle)}</span>` : ''}
                 </div>
-              `;
-            }).join('') : '<div class="empty">No validated decisions extracted for this project yet.</div>'}
+                <div style="font-size: 13px; font-weight: 500; color: var(--foreground);">${this._escape(d.statement || d.decision)}</div>
+                ${d.source ? `<div class="sub" style="font-size: 11px;">Source / Context: ${this._escape(d.source)}</div>` : ''}
+              </div>
+            `).join('') : '<div class="sub">No validated decisions in notes yet.</div>'}
           </div>
         </div>
       `;
     }
 
     if (this.currentSubTab === 'actions') {
-      const owners = ['All', 'Artefact', 'Client'];
-
+      let actList = summary.actions || summary.actionMatrix || [];
+      if (this.actionStatusFilter === 'open') {
+        actList = actList.filter(a => !a.done);
+      } else if (this.actionStatusFilter === 'done') {
+        actList = actList.filter(a => a.done);
+      }
       return `
         <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Action Filters Toolbar -->
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <span class="sub" style="font-size: 11px;">Owner:</span>
-              <div style="display: flex; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;">
-                ${owners.map(o => `
-                  <button class="btn sm ${this.actionOwnerFilter.toLowerCase() === o.toLowerCase() ? 'pink' : ''}" data-filter-owner="${o}" style="border: 0; border-radius: 0; font-size: 11px;">
-                    ${o}
-                  </button>
-                `).join('')}
-              </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div class="sub" style="font-size: 12px;">
+              Read-only view from <span style="font-family: var(--font-mono);">Actions.md</span> (single source of truth).
             </div>
-
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <span class="sub" style="font-size: 11px;">Status:</span>
-              <div style="display: flex; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden;">
-                <button class="btn sm ${this.actionStatusFilter === 'open' ? 'pink' : ''}" data-filter-status="open" style="border: 0; border-radius: 0; font-size: 11px;">Open</button>
-                <button class="btn sm ${this.actionStatusFilter === 'done' ? 'pink' : ''}" data-filter-status="done" style="border: 0; border-radius: 0; font-size: 11px;">Done</button>
-                <button class="btn sm ${this.actionStatusFilter === 'all' ? 'pink' : ''}" data-filter-status="all" style="border: 0; border-radius: 0; font-size: 11px;">All</button>
-              </div>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn sm ${this.actionStatusFilter === 'open' ? 'active' : ''}" data-act-filter="open">Open</button>
+              <button class="btn sm ${this.actionStatusFilter === 'done' ? 'active' : ''}" data-act-filter="done">Closed</button>
+              <button class="btn sm ${this.actionStatusFilter === 'all' ? 'active' : ''}" data-act-filter="all">All</button>
             </div>
-          </div>
-
-          <!-- Actions List -->
-          <div style="display: grid; gap: 6px;">
-            ${matrixActions.length > 0 ? matrixActions.map(act => `
-              <div class="card" style="padding: 10px 12px; display: flex; align-items: flex-start; gap: 10px; transition: border-color 0.15s;">
-                <button class="item-check-btn ${act.done ? 'checked' : ''}" data-action-id="${this._escape(act.id)}" data-meeting-id="${this._escape(act.meetingId || '')}" data-is-note="${Boolean(act.file)}" title="${act.file ? 'Note action: click to copy ID for updating in notes' : (act.done ? 'Mark open' : 'Mark done')}" style="margin-top: 3px;">
-                  ${act.done ? Icons.check : ''}
-                </button>
-
-                <div style="flex: 1; min-width: 0;">
-                  <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                    <span class="badge info" style="font-family: var(--font-mono); font-size: 10px; font-weight: 700;">${this._escape(act.id)}</span>
-                    <span class="chip-owner" style="font-weight: 600;">${this._escape(act.owner)}</span>
-                    <span class="badge" style="font-size: 10px;">${this._escape(act.ownerOrg)}</span>
-                    ${act.facility ? `<span class="badge" style="font-size: 10px;">${this._escape(act.facility)}</span>` : ''}
-                    ${act.dueDate ? `<span class="chip-due" style="font-size: 10px;">${Icons.clock} ${this._escape(act.dueDate)}</span>` : ''}
-                    ${act.file ? `<span class="badge ok" style="font-size: 10px; font-family: var(--font-mono);">[${this._escape(act.file)}]</span>` : ''}
-                    ${(act.tags || []).map(t => `<span class="badge" style="font-size: 10px;">#${this._escape(t)}</span>`).join('')}
-                  </div>
-                  <div class="tx ${act.done ? 'done' : ''}" style="margin-top: 4px; font-size: 12.5px; line-height: 1.4;">
-                    ${this._escape(act.text)}
-                  </div>
-                  ${act.quote ? `
-                    <div class="quote-box" style="margin-top: 6px;">
-                      “${this._escape(act.quote)}”
-                    </div>
-                  ` : ''}
-                  <div class="sub" style="font-size: 11px; margin-top: 4px;">
-                    ${act.meetingDate ? `${act.meetingDate} · ` : ''}<i>${this._escape(act.meetingTitle || act.source || 'Mission Action')}</i>
-                  </div>
-                </div>
-
-                <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0; margin-top: 2px;">
-                  ${act.file ? `
-                    <button class="btn sm" data-copy-note-action="${this._escape(act.id)}" data-note-file="${this._escape(act.file)}" title="Copy action ID to clipboard to mark done in note" style="font-size: 11px;">
-                      📋 Copy ID
-                    </button>
-                  ` : ''}
-                  ${act.meetingId ? `
-                    <button class="btn sm" data-open-meeting="${this._escape(act.meetingId)}" style="font-size: 11px;">
-                      Open Meeting
-                    </button>
-                  ` : ''}
-                </div>
-              </div>
-            `).join('') : '<div class="empty">No matching actions found.</div>'}
-          </div>
-        </div>
-      `;
-    }
-
-    if (this.currentSubTab === 'docs') {
-      return `
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <div class="sub" style="font-size: 12px;">
-            Google Docs attached to meetings across this initiative
           </div>
 
           <div style="display: grid; gap: 8px;">
-            ${project.connectedDocs.length > 0 ? project.connectedDocs.map(doc => `
-              <div class="card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                  <span class="doc-icon">${Icons.fileText}</span>
-                  <div style="min-width: 0;">
-                    <div style="font-weight: 600; font-size: 13px;">${this._escape(doc.title)}</div>
-                    <div class="sub" style="font-size: 11px; margin-top: 2px;">
-                      ${doc.meetingDate} · ${this._escape(doc.facility)} · <span style="color: var(--ok); display: inline-flex; align-items: center; gap: 3px;">${Icons.check} Minutes Ingested (${doc.minutesLength} chars)</span>
-                    </div>
+            ${actList.length > 0 ? actList.map(a => `
+              <div class="card" style="padding: 10px 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                <div style="flex: 1;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span class="badge ${a.done ? 'ok' : 'pink'}" style="font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;">
+                      ${this._escape(a.id)}
+                    </span>
+                    <span style="font-size: 12px; font-weight: 600; color: var(--foreground);">${this._escape(a.owner || 'Unassigned')}</span>
+                    ${a.ownerOrg ? `<span class="badge" style="font-size: 10px;">${this._escape(a.ownerOrg)}</span>` : ''}
+                    ${a.deadline ? `<span class="sub" style="font-size: 11px;">Due: ${this._escape(a.deadline)}</span>` : ''}
                   </div>
+                  <div style="font-size: 13px; color: var(--foreground); line-height: 1.4;">${this._escape(a.text || a.description)}</div>
                 </div>
-
-                <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-                  <a href="${this._escape(doc.url)}" target="_blank" rel="noopener" class="btn sm pink">
-                    Open in Google Docs
-                  </a>
-                  <button class="btn sm" data-open-meeting="${this._escape(doc.meetingId)}">
-                    View Meeting
+                <div>
+                  <button class="btn sm" data-copy-action-id="${this._escape(a.id)}" style="font-size: 10.5px; padding: 2px 6px;">
+                    Copy ID
                   </button>
                 </div>
               </div>
-            `).join('') : '<div class="empty">No connected Google Docs found for this initiative.</div>'}
+            `).join('') : '<div class="sub">No matching actions.</div>'}
           </div>
         </div>
       `;
     }
 
-    if (this.currentSubTab === 'settings') {
-      const cfg = project.projectConfig || {};
-      const clientMatchesStr = (cfg.clientMatch || []).join(', ');
-      const toolsStr = ((cfg.parserHints && cfg.parserHints.tools) || []).join(', ');
-      const decisionTriggersStr = ((cfg.parserHints && cfg.parserHints.decisionTriggers) || []).join(', ');
-
+    if (this.currentSubTab === 'contacts') {
+      const contactList = summary.contacts || [];
       return `
-        <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h2 style="font-size: 16px; margin-bottom: 2px;">Project Configuration: ${this._escape(cfg.name || project.projectName)}</h2>
-              <div class="sub" style="font-size: 12px;">Stored locally in IndexedDB projects database. Modify vocabulary and workstreams dynamically.</div>
-            </div>
-            ${this.settingsFeedback ? `
-              <span class="badge ok" style="font-size: 11px; font-weight: 600;">${this._escape(this.settingsFeedback)}</span>
-            ` : ''}
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="sub" style="font-size: 12px; margin-bottom: 4px;">
+            Stakeholders &amp; contacts from <span style="font-family: var(--font-mono);">Contacts.md</span>.
           </div>
-
-          <form id="projectSettingsForm" style="display: flex; flex-direction: column; gap: 14px;">
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px;">
-              <div>
-                <label class="label">Project ID</label>
-                <input class="in" id="cfgProjectId" value="${this._escape(cfg.id || '')}" disabled style="font-family: var(--font-mono); opacity: 0.7;" />
-              </div>
-              <div>
-                <label class="label">Project Name</label>
-                <input class="in" id="cfgProjectName" value="${this._escape(cfg.name || '')}" required />
-              </div>
-            </div>
-
-            <div>
-              <label class="label">Client Match Tags (Comma-separated)</label>
-              <input class="in" id="cfgClientMatch" value="${this._escape(clientMatchesStr)}" placeholder="e.g. Clariane, Les Arbelles, Mariéna" />
-              <div class="sub" style="font-size: 11px; margin-top: 3px;">Events whose client or tags match any of these will associate with this project.</div>
-            </div>
-
-            <div style="border-top: 1px solid var(--border); padding-top: 12px;">
-              <div class="label" style="margin-bottom: 6px;">Strategic Workstreams (${(cfg.workstreams || []).length})</div>
-              <div id="workstreamsEditorList" style="display: flex; flex-direction: column; gap: 8px;">
-                ${(cfg.workstreams || []).map((ws, idx) => `
-                  <div class="card" style="padding: 10px; background: var(--muted); display: flex; flex-direction: column; gap: 6px;" data-ws-index="${idx}">
-                    <div style="display: grid; grid-template-columns: 120px 1fr 60px; gap: 8px; align-items: center;">
-                      <input class="in sm ws-badge" value="${this._escape(ws.badge)}" placeholder="Badge" />
-                      <input class="in sm ws-title" value="${this._escape(ws.title)}" placeholder="Title" />
-                      <button type="button" class="btn sm delete-ws-btn" data-del-idx="${idx}" style="justify-content: center; color: var(--destructive);">${Icons.trash || 'Delete'}</button>
-                    </div>
-                    <input class="in sm ws-summary" value="${this._escape(ws.summary)}" placeholder="Summary statement" />
-                    <textarea class="in sm ws-rules" style="min-height: 50px; font-size: 11.5px;" placeholder="Governing rules (one per line)">${(ws.keyRules || []).join('\n')}</textarea>
-                  </div>
-                `).join('')}
-              </div>
-              <button type="button" class="btn sm" id="addWorkstreamBtn" style="margin-top: 8px;">
-                ${Icons.plus} Add Workstream
-              </button>
-            </div>
-
-            <div style="border-top: 1px solid var(--border); padding-top: 12px;">
-              <div class="label" style="margin-bottom: 6px;">Domain Parser Hints &amp; Vocabulary</div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px;">
+            ${contactList.length > 0 ? contactList.map(c => `
+              <div class="card" style="padding: 10px 12px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                  <label class="label" style="font-size: 11px;">Tools &amp; Clinical Systems (Comma-separated)</label>
-                  <input class="in" id="cfgParserTools" value="${this._escape(toolsStr)}" placeholder="e.g. Foundry, HM, rTMS, Balnéo, Kiné, Ergo" />
+                  <div style="font-size: 13px; font-weight: 600;">${this._escape(c.name)}</div>
+                  <div class="sub" style="font-size: 11.5px;">${this._escape(c.role || '')}</div>
+                  ${c.email ? `<div class="sub" style="font-size: 11px; font-family: var(--font-mono);">${this._escape(c.email)}</div>` : ''}
                 </div>
-                <div>
-                  <label class="label" style="font-size: 11px;">Decision Trigger Phrases (Comma-separated)</label>
-                  <input class="in" id="cfgDecisionTriggers" value="${this._escape(decisionTriggersStr)}" placeholder="e.g. Arbitrage, Décision, Validé, Zéro Temps Mort" />
+                <div style="text-align: right;">
+                  <span class="badge" style="font-size: 10px;">${this._escape(c.org || 'Stakeholder')}</span>
                 </div>
               </div>
-            </div>
+            `).join('') : '<div class="sub">No contacts recorded in Contacts.md yet.</div>'}
+          </div>
+        </div>
+      `;
+    }
 
-            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
-              <button type="submit" class="btn pink" id="saveProjectSettingsBtn">
-                Save Project Configuration
-              </button>
-            </div>
-          </form>
+    if (this.currentSubTab === 'brief') {
+      return `
+        <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <div class="label" style="margin: 0;">Agent Brief &amp; Mission Directives</div>
+            <span class="sub" style="font-size: 11px;">Agent brief.md (Read-only)</span>
+          </div>
+          <div style="font-size: 12.5px; line-height: 1.5; color: var(--foreground); white-space: pre-wrap;">
+Mission System of Record:
+Every decision, workstream parameter, and open action for this mission is stored directly in durable markdown notes inside the mission repository folder.
+
+Iron Rules:
+1. Notes are the single source of truth.
+2. Meeting Hub captures raw minutes to _inbox/.
+3. Folding folds inbox files into mission notes according to Missions/_fold.md.
+4. UI never stores knowledge in browser localStorage or IndexedDB.
+          </div>
         </div>
       `;
     }
@@ -7802,196 +8062,74 @@ class ProjectsView {
     return '';
   }
 
-  _bindEvents(project) {
-    // Project selection dropdown
+  _bindEvents(data) {
+    // 1. Mission switcher dropdown
     const projDropdown = this.container.querySelector('#projectSelectDropdown');
     if (projDropdown) {
       projDropdown.addEventListener('change', (e) => {
         const nextId = e.target.value;
-        this.setProject(nextId);
-        if (this.store && typeof this.store.setActiveProjectId === 'function') {
-          this.store.setActiveProjectId(nextId);
-        }
+        window.location.hash = '#/p/' + encodeURIComponent(nextId);
       });
     }
 
-    // Project selection buttons (if any)
-    this.container.querySelectorAll('[data-select-project]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.setProject(btn.dataset.selectProject);
-      });
-    });
-
-    // Sub-tab switching
-    this.container.querySelectorAll('.tabs button[data-subtab]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.currentSubTab = btn.dataset.subtab;
-        this.settingsFeedback = null;
-        this.render();
-      });
-    });
-
-    // Open meeting
-    this.container.querySelectorAll('[data-open-meeting]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.openMeeting;
-        if (id && this.onSelectMeeting) {
-          this.onSelectMeeting(id);
+    // 2. Meeting card clicks -> selects meeting & opens drawer
+    this.container.querySelectorAll('[data-event-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        const eventId = card.dataset.eventId;
+        if (eventId && this.onSelectMeeting) {
+          this.onSelectMeeting(eventId);
         }
       });
     });
 
-    // Owner filter in actions
-    this.container.querySelectorAll('[data-filter-owner]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.actionOwnerFilter = btn.dataset.filterOwner;
-        this.render();
-      });
+    // 3. Folded summary strip toggle
+    this.container.querySelector('#toggleFoldedStripBtn')?.addEventListener('click', () => {
+      this.isFoldedOpen = !this.isFoldedOpen;
+      this.render();
     });
 
-    // Status filter in actions
-    this.container.querySelectorAll('[data-filter-status]').forEach(btn => {
+    // 4. Knowledge tabs click
+    this.container.querySelectorAll('[data-cockpit-tab]').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.actionStatusFilter = btn.dataset.filterStatus;
-        this.render();
-      });
-    });
-
-    // Toggle action done state in matrix
-    this.container.querySelectorAll('.item-check-btn[data-action-id]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const actId = btn.dataset.actionId;
-        if (btn.dataset.isNote === 'true') {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(actId);
-          }
-          alert(`Copied ${actId} to clipboard!\nTo mark this action done, edit Actions.md directly (Markdown notes are the single source of truth).`);
-          return;
+        const tab = btn.dataset.cockpitTab;
+        if (this.currentSubTab === tab) {
+          // Toggle close
+          this.currentSubTab = null;
+          window.location.hash = '#/p/' + encodeURIComponent(this.currentProjectId);
+        } else {
+          this.currentSubTab = tab;
+          window.location.hash = '#/p/' + encodeURIComponent(this.currentProjectId) + '/' + encodeURIComponent(tab);
         }
-        const mId = btn.dataset.meetingId;
-        if (!mId) return;
+      });
+    });
 
-        const mData = await this.store.getMeetingData(mId);
-        const items = (mData.items || []).map(it => it.id === actId ? { ...it, done: !it.done } : it);
-        await this.store.saveMeetingData(mId, { items });
+    // 5. Actions filters
+    this.container.querySelectorAll('[data-act-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.actionStatusFilter = btn.dataset.actFilter;
         this.render();
       });
     });
 
-    // Copy note action ID button
-    this.container.querySelectorAll('[data-copy-note-action]').forEach(btn => {
+    // 6. Copy Action ID button
+    this.container.querySelectorAll('[data-copy-action-id]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const actId = btn.dataset.copyNoteAction;
-        const noteFile = btn.dataset.noteFile || 'Actions.md';
+        const actId = btn.dataset.copyActionId;
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(actId);
         }
         const orig = btn.innerHTML;
-        btn.innerHTML = '✓ Copied!';
-        alert(`Copied ${actId} to clipboard!\nOpen ${noteFile} in your editor to mark it done (notes are single source of truth).`);
-        setTimeout(() => { btn.innerHTML = orig; }, 1500);
+        btn.innerHTML = '✓ Copied';
+        alert(`Copied action ID "${actId}" to clipboard.\nEdit Actions.md directly in your editor to modify (notes are the single source of truth).`);
+        setTimeout(() => { btn.innerHTML = orig; }, 1200);
       });
     });
-
-    // Project settings form submission
-    const settingsForm = this.container.querySelector('#projectSettingsForm');
-    if (settingsForm) {
-      // Add workstream
-      this.container.querySelector('#addWorkstreamBtn')?.addEventListener('click', () => {
-        const list = this.container.querySelector('#workstreamsEditorList');
-        if (!list) return;
-        const newCard = document.createElement('div');
-        newCard.className = 'card';
-        newCard.style.cssText = 'padding: 10px; background: var(--muted); display: flex; flex-direction: column; gap: 6px;';
-        newCard.innerHTML = `
-          <div style="display: grid; grid-template-columns: 120px 1fr 60px; gap: 8px; align-items: center;">
-            <input class="in sm ws-badge" value="WS" placeholder="Badge" />
-            <input class="in sm ws-title" value="New Workstream" placeholder="Title" />
-            <button type="button" class="btn sm delete-ws-btn" style="justify-content: center; color: var(--destructive);">${Icons.trash || 'Delete'}</button>
-          </div>
-          <input class="in sm ws-summary" value="" placeholder="Summary statement" />
-          <textarea class="in sm ws-rules" style="min-height: 50px; font-size: 11.5px;" placeholder="Governing rules (one per line)"></textarea>
-        `;
-        newCard.querySelector('.delete-ws-btn')?.addEventListener('click', () => newCard.remove());
-        list.appendChild(newCard);
-      });
-
-      // Delete workstream
-      this.container.querySelectorAll('.delete-ws-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          btn.closest('.card')?.remove();
-        });
-      });
-
-      settingsForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const baseProject = project.projectConfig || ProjectModel.createDefault(this.currentProjectId);
-        
-        const updatedName = this.container.querySelector('#cfgProjectName')?.value.trim() || baseProject.name;
-        const clientMatches = (this.container.querySelector('#cfgClientMatch')?.value || '')
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        const tools = (this.container.querySelector('#cfgParserTools')?.value || '')
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        const decisionTriggers = (this.container.querySelector('#cfgDecisionTriggers')?.value || '')
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean);
-
-        // Collect workstreams from UI
-        const wsCards = this.container.querySelectorAll('#workstreamsEditorList .card');
-        const updatedWorkstreams = [];
-        wsCards.forEach(card => {
-          const badge = card.querySelector('.ws-badge')?.value.trim() || 'WS';
-          const title = card.querySelector('.ws-title')?.value.trim() || 'Workstream';
-          const summary = card.querySelector('.ws-summary')?.value.trim() || '';
-          const rules = (card.querySelector('.ws-rules')?.value || '')
-            .split('\n')
-            .map(r => r.trim())
-            .filter(Boolean);
-
-          updatedWorkstreams.push({
-            id: badge.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-            badge,
-            title,
-            summary,
-            keyRules: rules,
-            facilities: []
-          });
-        });
-
-        const updated = {
-          ...baseProject,
-          name: updatedName,
-          clientMatch: clientMatches.length > 0 ? clientMatches : [updatedName],
-          workstreams: updatedWorkstreams,
-          parserHints: {
-            ...(baseProject.parserHints || {}),
-            tools: tools.length > 0 ? tools : (baseProject.parserHints?.tools || []),
-            decisionTriggers: decisionTriggers.length > 0 ? decisionTriggers : (baseProject.parserHints?.decisionTriggers || [])
-          }
-        };
-
-        try {
-          await this.store.saveProject(updated);
-          this.settingsFeedback = 'Project configuration saved successfully.';
-          this.render();
-        } catch (err) {
-          console.error('[ProjectsView] Failed to save project:', err);
-          alert('Failed to save project: ' + err.message);
-        }
-      });
-    }
   }
 
   _escape(str) {
-    return String(str || '').replace(/[&<>"']/g, c => ({
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, c => ({
       '&': '&amp;',
       '<': '&lt;',
       '>': '&gt;',
@@ -8106,12 +8244,34 @@ function selectMeeting(eventId, tab = null) {
   if (meetingsView && AppState.view === 'calendar' && AppState.calendarTab === 'meetings') meetingsView.setSelectedEvent(eventId);
 }
 
+async function refreshSidebarAndRail() {
+  if (shell) {
+    if (MeetingHub.store) {
+      shell.store = MeetingHub.store;
+      if (AppState.missionId) {
+        shell.activeProjectId = AppState.missionId;
+      }
+      try {
+        const railState = await MeetingHub.store.getRailState();
+        shell.setRailState(railState);
+      } catch (e) {
+        shell.renderSidebar(openActionsCount);
+      }
+    } else {
+      shell.renderSidebar(openActionsCount);
+    }
+  }
+}
+
 function renderActiveView() {
   const leftCol = document.querySelector('#left');
   if (!leftCol) return;
 
   shell.currentView = AppState.view;
-  shell.renderSidebar(openActionsCount);
+  if (AppState.missionId) {
+    shell.activeProjectId = AppState.missionId;
+  }
+  refreshSidebarAndRail();
 
   if (AppState.view === 'mission') {
     const missionName = MeetingHub.store.getProjectName(AppState.missionId) || AppState.missionId;
@@ -8339,6 +8499,7 @@ function showMissionSwitcher() {
 
 // Instantiate App Shell
 const shell = new MeetingHub.ShellUI({
+  store: MeetingHub.store,
   onTogglePanel: () => {
     setPanelCollapsed(!AppState.isPanelCollapsed);
   },
@@ -8351,10 +8512,8 @@ const shell = new MeetingHub.ShellUI({
     }
     renderActiveView();
   },
-  onProjectChange: async (projectId) => {
-    MeetingHub.store.setActiveProjectId(projectId);
-    if (projectsView) projectsView.setProject(projectId);
-    if (AppState.view === 'projects') renderActiveView();
+  onProjectChange: (projectId) => {
+    window.location.hash = '#/p/' + encodeURIComponent(projectId);
   },
   onConfirmSuggestedProject: async (suggestion) => {
     const p = await MeetingHub.store.confirmSuggestedProject(suggestion);
@@ -8396,6 +8555,7 @@ const shell = new MeetingHub.ShellUI({
     }
   },
   onSearch: (query) => {
+    if (AppState.view === 'mission' && projectsView) projectsView.setSearchQuery(query);
     if (AppState.view === 'today' && todayView) todayView.setSearchQuery(query);
     if (AppState.view === 'meetings' && meetingsView) meetingsView.setSearchQuery(query);
     if (AppState.view === 'actions' && actionsView) actionsView.setSearchQuery(query);
@@ -8521,6 +8681,11 @@ function handleHashRoute() {
       localStorage.setItem('mhub_last_mission', parsed.missionId);
     } catch (e) {}
 
+    MeetingHub.store.setActiveProjectId(parsed.missionId);
+    if (shell && typeof shell.setActiveProjectId === 'function') {
+      shell.setActiveProjectId(parsed.missionId);
+    }
+
     if (parsed.eventId) {
       AppState.selectedEventId = parsed.eventId;
       setPanelCollapsed(false);
@@ -8535,6 +8700,8 @@ function handleHashRoute() {
       projectsView.setProject(parsed.missionId);
       if (parsed.tab && typeof projectsView.setTab === 'function') {
         projectsView.setTab(parsed.tab);
+      } else if (!parsed.tab && typeof projectsView.setTab === 'function') {
+        projectsView.setTab(null);
       }
     }
     renderActiveView();
@@ -8743,7 +8910,8 @@ async function bootstrap() {
     await MeetingHub.store.init();
     
     openActionsCount = await MeetingHub.store.getOpenActionsCount();
-    shell.renderSidebar(openActionsCount);
+    shell.store = MeetingHub.store;
+    await refreshSidebarAndRail();
     const initialTodaySub = (typeof formatLongDate === 'function') ? formatLongDate(AppState.date) : AppState.date;
     shell.renderHeader('Today', initialTodaySub);
 
@@ -8842,6 +9010,7 @@ async function bootstrap() {
     MeetingHub.store.subscribe(async (payload) => {
       openActionsCount = await MeetingHub.store.getOpenActionsCount();
       shell.updateActionsBadge(openActionsCount);
+      await refreshSidebarAndRail();
       if (payload.type === 'project_updated' || payload.type === 'project_deleted' || payload.type === 'active_project_changed') {
         const all = await MeetingHub.store.getAllProjects();
         const sug = await MeetingHub.store.getSuggestedProjects();

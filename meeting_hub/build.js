@@ -53,6 +53,7 @@ const sourceFiles = [
   'model/date_utils.js',
   'model/route_parser.js',
   'model/mission_matcher.js',
+  'model/lane_classifier.js',
   'model/event.js',
   'model/series.js',
   'model/links.js',
@@ -234,12 +235,34 @@ function selectMeeting(eventId, tab = null) {
   if (meetingsView && AppState.view === 'calendar' && AppState.calendarTab === 'meetings') meetingsView.setSelectedEvent(eventId);
 }
 
+async function refreshSidebarAndRail() {
+  if (shell) {
+    if (MeetingHub.store) {
+      shell.store = MeetingHub.store;
+      if (AppState.missionId) {
+        shell.activeProjectId = AppState.missionId;
+      }
+      try {
+        const railState = await MeetingHub.store.getRailState();
+        shell.setRailState(railState);
+      } catch (e) {
+        shell.renderSidebar(openActionsCount);
+      }
+    } else {
+      shell.renderSidebar(openActionsCount);
+    }
+  }
+}
+
 function renderActiveView() {
   const leftCol = document.querySelector('#left');
   if (!leftCol) return;
 
   shell.currentView = AppState.view;
-  shell.renderSidebar(openActionsCount);
+  if (AppState.missionId) {
+    shell.activeProjectId = AppState.missionId;
+  }
+  refreshSidebarAndRail();
 
   if (AppState.view === 'mission') {
     const missionName = MeetingHub.store.getProjectName(AppState.missionId) || AppState.missionId;
@@ -467,6 +490,7 @@ function showMissionSwitcher() {
 
 // Instantiate App Shell
 const shell = new MeetingHub.ShellUI({
+  store: MeetingHub.store,
   onTogglePanel: () => {
     setPanelCollapsed(!AppState.isPanelCollapsed);
   },
@@ -479,10 +503,8 @@ const shell = new MeetingHub.ShellUI({
     }
     renderActiveView();
   },
-  onProjectChange: async (projectId) => {
-    MeetingHub.store.setActiveProjectId(projectId);
-    if (projectsView) projectsView.setProject(projectId);
-    if (AppState.view === 'projects') renderActiveView();
+  onProjectChange: (projectId) => {
+    window.location.hash = '#/p/' + encodeURIComponent(projectId);
   },
   onConfirmSuggestedProject: async (suggestion) => {
     const p = await MeetingHub.store.confirmSuggestedProject(suggestion);
@@ -524,6 +546,7 @@ const shell = new MeetingHub.ShellUI({
     }
   },
   onSearch: (query) => {
+    if (AppState.view === 'mission' && projectsView) projectsView.setSearchQuery(query);
     if (AppState.view === 'today' && todayView) todayView.setSearchQuery(query);
     if (AppState.view === 'meetings' && meetingsView) meetingsView.setSearchQuery(query);
     if (AppState.view === 'actions' && actionsView) actionsView.setSearchQuery(query);
@@ -649,6 +672,11 @@ function handleHashRoute() {
       localStorage.setItem('mhub_last_mission', parsed.missionId);
     } catch (e) {}
 
+    MeetingHub.store.setActiveProjectId(parsed.missionId);
+    if (shell && typeof shell.setActiveProjectId === 'function') {
+      shell.setActiveProjectId(parsed.missionId);
+    }
+
     if (parsed.eventId) {
       AppState.selectedEventId = parsed.eventId;
       setPanelCollapsed(false);
@@ -663,6 +691,8 @@ function handleHashRoute() {
       projectsView.setProject(parsed.missionId);
       if (parsed.tab && typeof projectsView.setTab === 'function') {
         projectsView.setTab(parsed.tab);
+      } else if (!parsed.tab && typeof projectsView.setTab === 'function') {
+        projectsView.setTab(null);
       }
     }
     renderActiveView();
@@ -871,7 +901,8 @@ async function bootstrap() {
     await MeetingHub.store.init();
     
     openActionsCount = await MeetingHub.store.getOpenActionsCount();
-    shell.renderSidebar(openActionsCount);
+    shell.store = MeetingHub.store;
+    await refreshSidebarAndRail();
     const initialTodaySub = (typeof formatLongDate === 'function') ? formatLongDate(AppState.date) : AppState.date;
     shell.renderHeader('Today', initialTodaySub);
 
@@ -970,6 +1001,7 @@ async function bootstrap() {
     MeetingHub.store.subscribe(async (payload) => {
       openActionsCount = await MeetingHub.store.getOpenActionsCount();
       shell.updateActionsBadge(openActionsCount);
+      await refreshSidebarAndRail();
       if (payload.type === 'project_updated' || payload.type === 'project_deleted' || payload.type === 'active_project_changed') {
         const all = await MeetingHub.store.getAllProjects();
         const sug = await MeetingHub.store.getSuggestedProjects();

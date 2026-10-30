@@ -125,6 +125,9 @@ export function matchMission(event, registry) {
     if (m.id === 'counseling') {
       contactNames.push('roland juilhard', 'jamila nasri', 'roland j.', 'jamila n.');
     }
+    if (m.id === 'ge-enterprise') {
+      contactNames.push('louis bechu', 'edward toulemonde', 'paul bouche', 'camille kugler');
+    }
     const matchedContacts = attendees.filter(att => 
       contactNames.some(c => c && (att.includes(c) || c.includes(att)))
     );

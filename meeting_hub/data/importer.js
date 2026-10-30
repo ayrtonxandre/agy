@@ -14,17 +14,22 @@ export class EventsImporter {
    * @param {Object} options - { force: boolean, dataUrl: string, rawEvents: Array }
    */
   static async importInitialData(db, options = {}) {
-    const meta = await db.get('meta', 'initial_import_done');
     const existingCount = await db.count('events');
+    const seedVersionMeta = await db.get('meta', 'seed_version');
+    const currentSeedVersion = 3; // version 3 includes unified multi-mission calendar events and Friday Oct 30 schedule
 
-    // If store already has events (from previous import or calendar sync), skip cleanly
-    if (existingCount > 0 && !options.force) {
-      console.log(`[Importer] Store already populated with ${existingCount} events. Skipping initial snapshot.`);
+    let rawList = options.rawEvents;
+    if (!rawList && typeof window !== 'undefined' && window.INITIAL_EVENTS && Array.isArray(window.INITIAL_EVENTS)) {
+      rawList = window.INITIAL_EVENTS;
+    }
+
+    // If store already has events and up-to-date seed version, skip cleanly
+    if (existingCount > 0 && !options.force && seedVersionMeta && seedVersionMeta.value >= currentSeedVersion) {
+      console.log(`[Importer] Store already populated with ${existingCount} events (seed v${seedVersionMeta.value}).`);
       return { skipped: true, eventCount: existingCount };
     }
 
     console.log('[Importer] Checking for initial calendar events import...');
-    let rawList = options.rawEvents;
 
     // 1. Check window.INITIAL_EVENTS (fastest, immune to file:// CORS)
     if (!rawList && typeof window !== 'undefined' && window.INITIAL_EVENTS && Array.isArray(window.INITIAL_EVENTS)) {
@@ -96,6 +101,7 @@ export class EventsImporter {
 
     // 5. Update meta
     await db.put('meta', { key: 'initial_import_done', value: true });
+    await db.put('meta', { key: 'seed_version', value: currentSeedVersion });
     await db.put('meta', { key: 'last_import_timestamp', value: new Date().toISOString() });
     await db.put('meta', { key: 'event_count', value: normalizedEvents.length });
     await db.put('meta', { key: 'series_count', value: collapsedSeries.length });

@@ -1,15 +1,16 @@
 /**
- * Application Shell Component
+ * Application Shell Component (Phase 2 Cockpit Rail)
  * 
  * Renders the persistent dark navy sidebar and sticky header,
- * manages view/mode switching, handles dark/light theme toggle,
- * sidebar project switcher with suggestions, and live calendar source sync status.
+ * manages mission rail navigation, Today strip, live calendar source sync status,
+ * storage engine info, and theme toggle.
  */
 import { Icons } from './icons.js';
 import { getTodayDateStr, formatLongDate } from '../model/date_utils.js';
 
 export class ShellUI {
   constructor({
+    store = null,
     onNavigate,
     onModeChange,
     onNewMeeting,
@@ -24,9 +25,10 @@ export class ShellUI {
     onCreateProject,
     onTogglePanel,
     projects = [],
-    activeProjectId = 'clariane',
+    activeProjectId = 'ge-enterprise',
     suggestedProjects = []
-  }) {
+  } = {}) {
+    this.store = store;
     this.onNavigate = onNavigate;
     this.onModeChange = onModeChange;
     this.onNewMeeting = onNewMeeting;
@@ -42,29 +44,19 @@ export class ShellUI {
     this.onTogglePanel = onTogglePanel;
 
     this.projects = projects;
-    this.activeProjectId = activeProjectId;
+    this.activeProjectId = activeProjectId || 'ge-enterprise';
     this.suggestedProjects = suggestedProjects;
-    this.isProjectDropdownOpen = false;
     this.isPanelCollapsed = false;
 
-    this.currentView = 'today';
+    this.currentView = 'mission';
     this.currentMode = 'all';
     this.isSyncing = false;
     this.syncStatus = null;
+    this.railState = null;
+    this.showArchived = false;
     this.theme = this.getInitialTheme();
 
     this.applyTheme(this.theme);
-
-    // Global click listener to close project dropdown on outside click
-    document.addEventListener('click', (e) => {
-      if (this.isProjectDropdownOpen) {
-        const selector = document.querySelector('.sidebar-project-selector');
-        if (selector && !selector.contains(e.target)) {
-          this.isProjectDropdownOpen = false;
-          this.renderProjectSwitcher();
-        }
-      }
-    });
   }
 
   getInitialTheme() {
@@ -101,11 +93,42 @@ export class ShellUI {
     this.renderSyncSection();
   }
 
+  setRailState(railState) {
+    this.railState = railState;
+    this.renderSidebar();
+  }
+
+  async refreshRail() {
+    if (this.store && typeof this.store.getRailState === 'function') {
+      try {
+        this.railState = await this.store.getRailState();
+      } catch (e) {
+        console.warn('[ShellUI] Failed to refresh rail state:', e);
+      }
+    }
+    this.renderSidebar();
+  }
+
+  setActiveProjectId(id) {
+    if (!id) return;
+    this.activeProjectId = id;
+    const aside = document.querySelector('aside');
+    if (aside) {
+      aside.querySelectorAll('.nav[data-nav-mission]').forEach(btn => {
+        if (btn.dataset.navMission === id) {
+          btn.classList.add('on');
+        } else {
+          btn.classList.remove('on');
+        }
+      });
+    }
+  }
+
   setProjects(projects, activeProjectId, suggestedProjects = []) {
     this.projects = projects || [];
     if (activeProjectId) this.activeProjectId = activeProjectId;
     this.suggestedProjects = suggestedProjects || [];
-    this.renderProjectSwitcher();
+    this.renderSidebar();
   }
 
   setSyncing(syncing) {
@@ -126,38 +149,106 @@ export class ShellUI {
     const aside = document.querySelector('aside');
     if (!aside) return;
 
+    // Resolve missions from railState or fallback to this.projects / window.MISSIONS_SNAPSHOT
+    let missionList = [];
+    if (this.railState && Array.isArray(this.railState.missions) && this.railState.missions.length > 0) {
+      missionList = this.railState.missions;
+    } else if (this.projects && this.projects.length > 0) {
+      missionList = this.projects.map(p => ({
+        id: p.id,
+        name: p.name,
+        archived: Boolean(p.archived || p.status === 'archived'),
+        foldCount: 0
+      }));
+    } else if (typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
+      missionList = window.MISSIONS_SNAPSHOT.missions.map(m => ({
+        id: m.id,
+        name: m.name,
+        archived: Boolean(m.archived || m.status === 'archived'),
+        foldCount: 0
+      }));
+    }
+
+    const activeMissions = missionList.filter(m => !m.archived);
+    const archivedMissions = missionList.filter(m => m.archived);
+
+    // Today strip details
+    const nextToday = this.railState?.todayNextMeeting;
+    const todayStripHtml = nextToday ? `
+      <div class="today-strip" id="railTodayStrip" title="Open next meeting today in its mission">
+        <span class="today-strip-icon">${Icons.calendar}</span>
+        <span class="today-strip-text">Next: <b>${this._escape(nextToday.timeStr)}</b> ${this._escape(nextToday.title)} · <span class="sub" style="font-size: 11px;">${this._escape(nextToday.missionName)}</span></span>
+      </div>
+    ` : `
+      <div class="today-strip empty">
+        <span class="today-strip-icon">${Icons.calendar}</span>
+        <span class="today-strip-text">No more meetings today</span>
+      </div>
+    `;
+
+    const inboxCount = this.railState?.inboxBadge ?? 0;
+    const myActionsCount = this.railState?.myActionsBadge ?? openActionsCount;
+
     aside.innerHTML = `
       <div class="brand">
         <b>M</b>
         <div>Meeting Hub<small>Prep · Capture · Link</small></div>
       </div>
 
-      <!-- Project Switcher & Initiative Scope -->
-      <div class="sidebar-project-block" id="sidebarProjectContainer">
-        <!-- Rendered by renderProjectSwitcher -->
+      <!-- Phase 2: Today Strip (Top, One Line) -->
+      ${todayStripHtml}
+
+      <!-- Missions Section -->
+      <div class="grp">Missions</div>
+      <div class="sidebar-missions-list">
+        ${activeMissions.map(m => {
+          const isSelected = (this.currentView === 'mission' && this.activeProjectId === m.id);
+          return `
+            <button class="nav ${isSelected ? 'on' : ''}" data-nav-mission="${this._escape(m.id)}" title="${this._escape(m.name)}">
+              ${Icons.layers}
+              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: left;">${this._escape(m.name)}</span>
+              ${m.foldCount > 0 ? `<span class="n amber" title="${m.foldCount} meeting(s) to fold">${m.foldCount}</span>` : ''}
+            </button>
+          `;
+        }).join('')}
       </div>
 
-      <div class="grp">Work</div>
-      <button class="nav ${this.currentView === 'today' ? 'on' : ''}" data-view="today">
-        ${Icons.calendar}Today
+      <!-- Archived Missions Toggle -->
+      ${archivedMissions.length > 0 ? `
+        <button class="sidebar-archived-toggle" id="toggleArchivedMissionsBtn">
+          ${this.showArchived ? '▾' : '▸'} Archived (${archivedMissions.length})
+        </button>
+        ${this.showArchived ? `
+          <div class="sidebar-archived-list" style="margin-left: 8px; border-left: 1px solid var(--border); padding-left: 4px;">
+            ${archivedMissions.map(m => {
+              const isSelected = (this.currentView === 'mission' && this.activeProjectId === m.id);
+              return `
+                <button class="nav ${isSelected ? 'on' : ''}" data-nav-mission="${this._escape(m.id)}" title="Archived: ${this._escape(m.name)}" style="opacity: 0.85; font-size: 12px;">
+                  ${Icons.archive || Icons.layers}
+                  <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: left;">${this._escape(m.name)}</span>
+                  ${m.foldCount > 0 ? `<span class="n amber" title="${m.foldCount} to fold">${m.foldCount}</span>` : ''}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        ` : ''}
+      ` : ''}
+
+      <!-- Across Missions Section -->
+      <div class="grp">Across</div>
+      <button class="nav ${this.currentView === 'inbox' ? 'on' : ''}" data-nav-view="inbox" title="Cross-mission raw meeting minutes inbox">
+        ${Icons.inbox || Icons.layers}Inbox
+        ${inboxCount > 0 ? `<span class="n amber" title="${inboxCount} pending minutes">${inboxCount}</span>` : '<span class="n">0</span>'}
       </button>
-      <button class="nav ${this.currentView === 'week' ? 'on' : ''}" data-view="week">
-        ${Icons.week}Week
+      <button class="nav ${this.currentView === 'my-actions' ? 'on' : ''}" data-nav-view="my-actions" title="Actions assigned to you across missions">
+        ${Icons.checkSquare}My actions
+        <span class="n" id="navActions">${myActionsCount}</span>
       </button>
-      <button class="nav ${this.currentView === 'meetings' ? 'on' : ''}" data-view="meetings">
-        ${Icons.users}Meetings
-      </button>
-      <button class="nav ${this.currentView === 'actions' ? 'on' : ''}" data-view="actions">
-        ${Icons.checkSquare}Open Actions
-        <span class="n" id="navActions">${openActionsCount}</span>
-      </button>
-      <button class="nav ${this.currentView === 'series' ? 'on' : ''}" data-view="series">
-        ${Icons.link}Series &amp; Links
-      </button>
-      <button class="nav ${this.currentView === 'projects' ? 'on' : ''}" data-view="projects">
-        ${Icons.layers}Projects &amp; Knowledge
+      <button class="nav ${this.currentView === 'calendar' ? 'on' : ''}" data-nav-view="calendar" title="Calendar Views">
+        ${Icons.calendar}Calendar
       </button>
 
+      <!-- Ecosystem Section -->
       <div class="grp">Ecosystem</div>
       <a class="nav" href="garmin_workout.html" target="_blank" rel="noopener">
         ${Icons.activity}ATHX Athlete
@@ -181,125 +272,52 @@ export class ShellUI {
       </div>
     `;
 
-    // Wire up sidebar view switches
-    aside.querySelectorAll('.nav[data-view]').forEach(btn => {
+    // Today strip click
+    const stripEl = aside.querySelector('#railTodayStrip');
+    if (stripEl && nextToday) {
+      stripEl.addEventListener('click', () => {
+        if (nextToday.missionId) {
+          window.location.hash = '#/p/' + encodeURIComponent(nextToday.missionId) + '/m/' + encodeURIComponent(nextToday.event.id);
+        } else {
+          window.location.hash = '#/calendar/m/' + encodeURIComponent(nextToday.event.id);
+        }
+      });
+    }
+
+    // Mission buttons click
+    aside.querySelectorAll('[data-nav-mission]').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.currentView = btn.dataset.view;
-        this.renderSidebar(openActionsCount);
-        if (this.onNavigate) this.onNavigate(this.currentView);
+        const missionId = btn.dataset.navMission;
+        this.activeProjectId = missionId;
+        this.currentView = 'mission';
+        window.location.hash = '#/p/' + encodeURIComponent(missionId);
       });
     });
 
-    this.renderProjectSwitcher();
+    // Archived toggle click
+    aside.querySelector('#toggleArchivedMissionsBtn')?.addEventListener('click', () => {
+      this.showArchived = !this.showArchived;
+      this.renderSidebar(openActionsCount);
+    });
+
+    // Across views click
+    aside.querySelectorAll('[data-nav-view]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.navView;
+        this.currentView = view;
+        if (view === 'inbox') {
+          window.location.hash = '#/inbox';
+        } else if (view === 'my-actions') {
+          window.location.hash = '#/my-actions';
+        } else if (view === 'calendar') {
+          window.location.hash = '#/calendar';
+        }
+      });
+    });
+
     this.renderSyncSection();
     this.renderStorageSection();
     this.renderThemeButton();
-  }
-
-  renderProjectSwitcher() {
-    const container = document.querySelector('#sidebarProjectContainer');
-    if (!container) return;
-
-    const activeProject = (this.projects && this.projects.length > 0)
-      ? (this.projects.find(p => p.id === this.activeProjectId) || this.projects[0])
-      : { id: 'clariane', name: 'Clariane' };
-
-    container.innerHTML = `
-      <div class="sidebar-project-selector">
-        <button class="sidebar-project-trigger" id="sidebarProjectTrigger" title="Switch active project initiative">
-          <span class="sidebar-project-icon">${Icons.layers}</span>
-          <span class="sidebar-project-name">${this._escape(activeProject.name)}</span>
-          <span class="sidebar-project-chevron ${this.isProjectDropdownOpen ? 'open' : ''}">${Icons.chevronDown || '▾'}</span>
-        </button>
-
-        ${this.isProjectDropdownOpen ? `
-          <div class="sidebar-project-dropdown" id="sidebarProjectDropdown">
-            <div class="sidebar-project-section-title">Projects</div>
-            <div class="sidebar-project-list">
-              ${(this.projects || []).map(p => `
-                <button class="sidebar-project-option ${p.id === this.activeProjectId ? 'active' : ''}" data-project-id="${this._escape(p.id)}">
-                  <span class="sidebar-project-opt-name">${this._escape(p.name)}</span>
-                  ${p.id === this.activeProjectId ? `<span class="badge ok" style="font-size: 10px;">Active</span>` : ''}
-                </button>
-              `).join('')}
-            </div>
-
-            ${(this.suggestedProjects && this.suggestedProjects.length > 0) ? `
-              <div class="sidebar-project-section-title" style="margin-top: 8px;">Suggested from Tags</div>
-              <div class="sidebar-project-suggestions">
-                ${this.suggestedProjects.map(sp => `
-                  <div class="sidebar-project-suggest-row">
-                    <div style="min-width: 0;">
-                      <div class="sidebar-project-opt-name" style="font-weight: 500;">${this._escape(sp.name)}</div>
-                      <div class="sub" style="font-size: 10px;">${sp.meetingCount} meeting${sp.meetingCount !== 1 ? 's' : ''}</div>
-                    </div>
-                    <button class="btn sm pink" data-confirm-suggested="${this._escape(sp.name)}" data-suggest-id="${this._escape(sp.id)}" style="font-size: 10px; padding: 2px 7px;">
-                      Confirm
-                    </button>
-                  </div>
-                `).join('')}
-              </div>
-            ` : ''}
-
-            <div class="sidebar-project-actions">
-              <button class="btn sm" id="sidebarNewProjectBtn" style="width: 100%; justify-content: center; font-size: 11px;">
-                ${Icons.plus} New Project
-              </button>
-            </div>
-          </div>
-        ` : ''}
-      </div>
-    `;
-
-    // Trigger toggle
-    container.querySelector('#sidebarProjectTrigger')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.isProjectDropdownOpen = !this.isProjectDropdownOpen;
-      this.renderProjectSwitcher();
-    });
-
-    // Project selection
-    container.querySelectorAll('[data-project-id]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.projectId;
-        this.activeProjectId = id;
-        this.isProjectDropdownOpen = false;
-        this.renderProjectSwitcher();
-        if (this.onProjectChange) this.onProjectChange(id);
-      });
-    });
-
-    // Confirm suggested project
-    container.querySelectorAll('[data-confirm-suggested]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = btn.dataset.suggestId;
-        const name = btn.dataset.confirmSuggested;
-        const suggestion = (this.suggestedProjects || []).find(s => s.id === id) || { id, name, clientMatch: [name] };
-        if (this.onConfirmSuggestedProject) {
-          this.onConfirmSuggestedProject(suggestion);
-        }
-        this.isProjectDropdownOpen = false;
-      });
-    });
-
-    // New project action
-    container.querySelector('#sidebarNewProjectBtn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.isProjectDropdownOpen = false;
-      if (this.onCreateProject) {
-        this.onCreateProject();
-      } else {
-        const name = prompt('Enter new project name:');
-        if (name && name.trim()) {
-          const clientTag = prompt('Enter primary client/meeting tag for this project (optional):', name.trim()) || name.trim();
-          if (this.onConfirmSuggestedProject) {
-            this.onConfirmSuggestedProject({ name: name.trim(), clientMatch: [clientTag.trim()] });
-          }
-        }
-      }
-    });
   }
 
   _escape(str) {
@@ -429,6 +447,8 @@ export class ShellUI {
 
     const sub = subtitle !== null ? subtitle : (title === 'Today' ? (typeof formatLongDate === 'function' ? formatLongDate(typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10)) : '') : '');
 
+    // Notice: Phase 2 rule 2 removes the #modeSelector pills (Work/Life/All) from the global header.
+    // They are now housed inside Calendar views.
     header.innerHTML = `
       <h1 id="title">${title}</h1>
       <span class="sub" id="subtitle">${sub}</span>
@@ -437,12 +457,6 @@ export class ShellUI {
       <div class="header-search">
         ${Icons.search}
         <input type="search" id="quickSearch" placeholder="Search (/)" />
-      </div>
-
-      <div class="seg" id="modeSelector">
-        <button data-m="all" class="${this.currentMode === 'all' ? 'on' : ''}">All</button>
-        <button data-m="work" class="${this.currentMode === 'work' ? 'on' : ''}">Work</button>
-        <button data-m="life" class="${this.currentMode === 'life' ? 'on' : ''}">Life</button>
       </div>
 
       <button class="btn sm" id="todayNavBtn" style="font-family: var(--font-mono); font-size: 11.5px;">Today</button>
@@ -466,15 +480,6 @@ export class ShellUI {
         }
       });
     }
-
-    header.querySelectorAll('.seg button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        header.querySelectorAll('.seg button').forEach(b => b.classList.remove('on'));
-        btn.classList.add('on');
-        this.currentMode = btn.dataset.m;
-        if (this.onModeChange) this.onModeChange(this.currentMode);
-      });
-    });
 
     header.querySelector('#todayNavBtn')?.addEventListener('click', () => {
       if (this.onTodayClick) this.onTodayClick();

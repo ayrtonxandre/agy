@@ -20,7 +20,9 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "datastore ge",
         "weekly sync - ge enterprise",
         "[mandat ge]",
-        "mandat ge"
+        "mandat ge",
+        "mo & ge",
+        "updates mo & ge"
       ],
       "workstreams": [
         {

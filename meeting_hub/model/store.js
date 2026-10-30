@@ -11,6 +11,7 @@ import { LinkEngine } from './links.js';
 import { MinutesEngine } from './minutes_engine.js';
 import { DEFAULT_PROJECTS, ProjectModel } from './project.js';
 import { matchMission } from './mission_matcher.js';
+import { classifyMeeting } from './lane_classifier.js';
 
 export class MeetingHubStore {
   constructor() {
@@ -24,6 +25,18 @@ export class MeetingHubStore {
     this.activeProjectId = 'ge-enterprise';
     this.subscribers = new Set();
     this.initialized = false;
+  }
+
+  get missionsRegistry() {
+    return { missions: this.missionsCache || [] };
+  }
+
+  set missionsRegistry(val) {
+    if (val && Array.isArray(val.missions)) {
+      this.missionsCache = val.missions;
+    } else if (Array.isArray(val)) {
+      this.missionsCache = val;
+    }
   }
 
   async init(options = {}) {
@@ -49,9 +62,10 @@ export class MeetingHubStore {
       const resp = await fetch('/api/missions');
       if (resp.ok) {
         const json = await resp.json();
-        if (json.status === 'ok' && Array.isArray(json.missions)) {
-          this.missionsCache = json.missions;
-          return json.missions;
+        const list = Array.isArray(json) ? json : (json.missions || (json.status === 'ok' && json.missions) || []);
+        if (Array.isArray(list) && list.length > 0) {
+          this.missionsCache = list;
+          return list;
         }
       }
     } catch (e) {
@@ -292,11 +306,13 @@ export class MeetingHubStore {
 
   getProjectForMeeting(meeting) {
     if (!meeting) return null;
-    const projects = this.projectsCache || [];
+    const projects = (this.projectsCache && this.projectsCache.length > 0)
+      ? this.projectsCache
+      : (this.missionsCache && this.missionsCache.length > 0 ? this.missionsCache : DEFAULT_PROJECTS);
     if (typeof matchMission === 'function') {
       const match = matchMission(meeting, projects);
       if (match && match.missionId) {
-        return projects.find(p => p.id === match.missionId) || null;
+        return projects.find(p => p.id === match.missionId) || { id: match.missionId, name: match.missionId };
       }
     }
     const client = (meeting.client || '').toLowerCase().trim();
@@ -333,6 +349,24 @@ export class MeetingHubStore {
     }
 
     return null;
+  }
+
+  getEventsForProject(projectId) {
+    if (!projectId) return [];
+    const pId = projectId.toLowerCase();
+    let registry = (this.missionsCache && this.missionsCache.length > 0) ? this.missionsCache : null;
+    if (!registry && typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
+      registry = window.MISSIONS_SNAPSHOT.missions;
+    }
+    if (!registry) registry = this.projectsCache || [];
+    return (this.eventsCache || []).filter(e => {
+      const match = (typeof matchMission === 'function')
+        ? matchMission(e, registry)
+        : (typeof MeetingHub !== 'undefined' && MeetingHub.matchMission ? MeetingHub.matchMission(e, registry) : null);
+      if (match && match.missionId && match.missionId.toLowerCase() === pId) return true;
+      const p = this.getProjectForMeeting(e);
+      return p && (p.id.toLowerCase() === pId || (pId === 'clariane-hdj' && p.id === 'clariane'));
+    });
   }
 
   async getSuggestedProjects() {
@@ -569,9 +603,11 @@ export class MeetingHubStore {
       const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/summary`);
       if (resp.ok) {
         const json = await resp.json();
-        if (json.status === 'ok' && json.summary) {
-          this.missionSummariesCache.set(id, json.summary);
-          return json.summary;
+        const summaryData = (json && json.summary) ? json.summary : json;
+        if (summaryData && (summaryData.missionId || summaryData.workstreams || summaryData.name || summaryData.projectName)) {
+          summaryData.isOffline = false;
+          this.missionSummariesCache.set(id, summaryData);
+          return summaryData;
         }
       }
     } catch (e) {
@@ -613,9 +649,18 @@ export class MeetingHubStore {
       const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/inbox`);
       if (resp.ok) {
         const json = await resp.json();
-        if (json.status === 'ok') {
-          return json;
-        }
+        const pending = json.pending || json.files || [];
+        const folded = json.folded || json.foldedFiles || [];
+        const pendingCount = json.pendingCount !== undefined ? json.pendingCount : (json.total_pending !== undefined ? json.total_pending : pending.length);
+        const foldedCount = json.foldedCount !== undefined ? json.foldedCount : (json.total_folded !== undefined ? json.total_folded : folded.length);
+        return {
+          status: 'ok',
+          pendingCount,
+          files: pending,
+          foldedCount,
+          foldedFiles: folded,
+          isOffline: false
+        };
       }
     } catch (e) {}
 
@@ -718,10 +763,7 @@ export class MeetingHubStore {
    */
   buildProjectBaseFromSummary(project, summary) {
     const pId = project.id;
-    const projectEvents = this.eventsCache.filter(e => {
-      const p = this.getProjectForMeeting(e);
-      return p && (p.id === pId || (pId === 'clariane-hdj' && p.id === 'clariane'));
-    });
+    const projectEvents = this.getEventsForProject(pId);
 
     const totalMeetings = projectEvents.length;
     
@@ -857,6 +899,7 @@ export class MeetingHubStore {
       isMission: true,
       directory: summary.mission?.directory || project.directory,
       totalMeetings,
+      events: projectEvents,
       meetingsWithMinutes,
       coveragePercent,
       coverageText: `${meetingsWithMinutes} of ${totalMeetings} meetings folded`,
@@ -887,6 +930,179 @@ export class MeetingHubStore {
         { name: 'Politique Zéro Temps Mort', desc: 'Optimisation continue sans temps d’attente inter-séances' },
         { name: 'Case Mix', desc: 'Répartition budgétaire de l’activité Neuro vs Locomoteur' }
       ]
+    };
+  }
+
+  /**
+   * Computes the Mission Cockpit state (Phase 3):
+   * lanes (prep, fold, folded, hidden), next meeting, open actions count, toFold count.
+   */
+  async getMissionHubData(missionId, now = new Date()) {
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'ge-enterprise';
+    const missions = await this.getMissionsRegistry();
+    const mission = missions.find(m => m.id === id) || { id, name: id, client: 'Artefact Internal' };
+    const summary = await this.getMissionSummary(id);
+    let inboxStatus = this.inboxStatusCache.get(id);
+    if (!inboxStatus) {
+      try {
+        inboxStatus = await this.getInboxStatus(id);
+      } catch (e) {
+        inboxStatus = { pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] };
+      }
+    }
+
+    const events = this.getEventsForProject(id);
+    
+    // Classify meetings into lanes
+    const lanes = {
+      prep: [],
+      fold: [],
+      folded: [],
+      hidden: []
+    };
+
+    events.forEach(e => {
+      const lane = (typeof classifyMeeting === 'function')
+        ? classifyMeeting(e, inboxStatus, now)
+        : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxStatus, now) : 'hidden');
+      if (lanes[lane]) {
+        lanes[lane].push(e);
+      } else {
+        lanes.hidden.push(e);
+      }
+    });
+
+    // Sort prep: soonest first
+    lanes.prep.sort((a, b) => {
+      const cmpDate = (a.date || '').localeCompare(b.date || '');
+      if (cmpDate !== 0) return cmpDate;
+      return (a.start || '').localeCompare(b.start || '');
+    });
+
+    // Sort fold: oldest first (most overdue on top)
+    lanes.fold.sort((a, b) => {
+      const cmpDate = (a.date || '').localeCompare(b.date || '');
+      if (cmpDate !== 0) return cmpDate;
+      return (a.start || '').localeCompare(b.start || '');
+    });
+
+    // Sort folded: newest first
+    lanes.folded.sort((a, b) => {
+      const cmpDate = (b.date || '').localeCompare(a.date || '');
+      if (cmpDate !== 0) return cmpDate;
+      return (b.start || '').localeCompare(a.start || '');
+    });
+
+    // Next meeting for this mission
+    const nextMeeting = lanes.prep.length > 0 ? lanes.prep[0] : null;
+
+    // Open actions
+    const openActions = (summary.actions || summary.actionMatrix || []).filter(a => !a.done);
+
+    return {
+      mission,
+      summary,
+      inboxStatus,
+      events,
+      lanes,
+      nextMeeting,
+      openActionsCount: openActions.length,
+      toFoldCount: lanes.fold.length
+    };
+  }
+
+  /**
+   * Computes the Mission Rail state (Phase 2):
+   * Today strip (next meeting today), active missions with amber fold badges,
+   * archived missions, and across counts (inbox badge, my actions badge).
+   */
+  async getRailState(now = new Date()) {
+    const missions = await this.getMissionsRegistry();
+    const todayStr = (typeof getTodayDateStr === 'function') ? getTodayDateStr(now) : now.toISOString().slice(0, 10);
+    const nowTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    // 1. Next meeting today across all missions
+    const todayEvents = (this.eventsCache || [])
+      .filter(e => e.date === todayStr && !e.isAllDay && (e.start || '') >= nowTimeStr)
+      .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+
+    let todayNextMeeting = null;
+    if (todayEvents.length > 0) {
+      const e = todayEvents[0];
+      const match = (typeof matchMission === 'function')
+        ? matchMission(e, missions)
+        : (typeof MeetingHub !== 'undefined' && MeetingHub.matchMission ? MeetingHub.matchMission(e, missions) : null);
+      const mObj = match ? missions.find(m => m.id === match.missionId) : null;
+      todayNextMeeting = {
+        event: e,
+        missionId: match ? match.missionId : null,
+        missionName: mObj ? mObj.name : (e.client || ''),
+        timeStr: e.start,
+        title: e.title
+      };
+    }
+
+    // 2. Missions fold counts
+    const missionItems = [];
+    let totalPendingInbox = 0;
+    let totalFoldMeetings = 0;
+
+    for (const m of missions) {
+      const mEvents = this.getEventsForProject(m.id);
+      let inboxStatus = this.inboxStatusCache.get(m.id);
+      if (!inboxStatus) {
+        try {
+          inboxStatus = await this.getInboxStatus(m.id);
+        } catch (e) {
+          inboxStatus = { pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] };
+        }
+      }
+
+      totalPendingInbox += (inboxStatus.pendingCount || 0);
+
+      let foldCount = 0;
+      mEvents.forEach(e => {
+        const lane = (typeof classifyMeeting === 'function')
+          ? classifyMeeting(e, inboxStatus, now)
+          : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxStatus, now) : 'hidden');
+        if (lane === 'fold') {
+          foldCount++;
+          totalFoldMeetings++;
+        }
+      });
+
+      missionItems.push({
+        id: m.id,
+        name: m.name,
+        archived: Boolean(m.archived || m.status === 'archived'),
+        foldCount
+      });
+    }
+
+    // 3. My actions count
+    let myActionsCount = 0;
+    for (const m of missions) {
+      let summary = this.missionSummariesCache.get(m.id);
+      if (!summary) {
+        summary = await this.getMissionSummary(m.id);
+      }
+      if (summary && Array.isArray(summary.actions)) {
+        summary.actions.forEach(a => {
+          if (!a.done) {
+            const owner = (a.owner || '').toLowerCase();
+            if (owner.includes('ayrton') || owner.includes('andré') || owner.includes('andre')) {
+              myActionsCount++;
+            }
+          }
+        });
+      }
+    }
+
+    return {
+      todayNextMeeting,
+      missions: missionItems,
+      inboxBadge: totalPendingInbox + totalFoldMeetings,
+      myActionsBadge: myActionsCount
     };
   }
 
