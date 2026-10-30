@@ -32,6 +32,24 @@ def get_calendar_service():
         with open(TOKEN_FILE, "w") as token:
             token.write(creds.to_json())
 
+    ca_certs = os.environ.get("SSL_CERT_FILE")
+    if not ca_certs or not os.path.exists(ca_certs):
+        try:
+            import certifi
+            ca_certs = certifi.where()
+        except ImportError:
+            ca_certs = None
+
+    if ca_certs and os.path.exists(ca_certs):
+        try:
+            import httplib2
+            import google_auth_httplib2
+            http = httplib2.Http(ca_certs=ca_certs)
+            authorized_http = google_auth_httplib2.AuthorizedHttp(creds, http=http)
+            return build("calendar", "v3", http=authorized_http)
+        except Exception:
+            pass
+
     return build("calendar", "v3", credentials=creds)
 
 def list_upcoming_events(max_results=10):

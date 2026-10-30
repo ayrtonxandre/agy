@@ -6,6 +6,7 @@
  */
 import { Icons } from '../ui/icons.js';
 import { PrepScoreCalculator } from '../model/prep_score.js';
+import { getTodayDateStr } from '../model/date_utils.js';
 
 export class MeetingsView {
   constructor({ container, store, onSelectMeeting }) {
@@ -51,8 +52,8 @@ export class MeetingsView {
       events = events.filter(e => e.client === this.selectedClient);
     }
 
-    // Time filter (relative to anchor date 2026-10-28)
-    const todayStr = '2026-10-28';
+    // Time filter (relative to current date)
+    const todayStr = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
     if (this.timeFilter === 'upcoming') {
       events = events.filter(e => e.date >= todayStr);
     } else if (this.timeFilter === 'past') {

@@ -61,6 +61,37 @@ export class CalendarSyncService {
       metaMap[m.key] = m.value;
     }
 
+    // Attempt lightweight backend check if served over HTTP
+    if (typeof fetch !== 'undefined') {
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 2000);
+        const res = await fetch('/api/sync/status', { signal: ctrl.signal }).catch(() => null);
+        clearTimeout(tid);
+        if (res && res.ok) {
+          const remoteStatus = await res.json();
+          if (remoteStatus && remoteStatus.sources) {
+            for (const [k, v] of Object.entries(remoteStatus.sources)) {
+              if (v.last_sync && !metaMap[`last_sync_${k}`]) {
+                metaMap[`last_sync_${k}`] = v.last_sync;
+              }
+              if (v.status) {
+                metaMap[`sync_status_${k}`] = v.status;
+              }
+              if (v.error) {
+                metaMap[`sync_error_${k}`] = v.error;
+              }
+            }
+            if (remoteStatus.last_sync && !metaMap['last_sync_all']) {
+              metaMap['last_sync_all'] = remoteStatus.last_sync;
+            }
+          }
+        }
+      } catch (e) {
+        // Backend unavailable, silently fallback to local IndexedDB meta
+      }
+    }
+
     const defaultFallbackTime = metaMap['last_import_timestamp'] || new Date().toISOString();
 
     const result = {
@@ -140,7 +171,7 @@ export class CalendarSyncService {
     // Server handles OAuth token refresh, iCloud CalDAV creds, and Clariane ICS securely.
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       let resp = await fetch('/api/sync/calendars', {
         method: 'POST',
@@ -149,12 +180,15 @@ export class CalendarSyncService {
         signal: controller.signal
       }).catch(() => null);
 
+      clearTimeout(timeoutId);
+
       if (!resp || !resp.ok) {
         // Fallback to GET on orchestrator calendar events feed
-        resp = await fetch('/api/sync/calendars', { signal: controller.signal }).catch(() => null);
+        const getController = new AbortController();
+        const getTimeoutId = setTimeout(() => getController.abort(), 5000);
+        resp = await fetch('/api/sync/calendars', { signal: getController.signal }).catch(() => null);
+        clearTimeout(getTimeoutId);
       }
-
-      clearTimeout(timeoutId);
 
       if (resp && resp.ok) {
         const data = await resp.json();

@@ -9,6 +9,7 @@
  */
 import { Icons } from '../ui/icons.js';
 import { PrepScoreCalculator } from '../model/prep_score.js';
+import { getTodayDateStr, getMondayOfWeek } from '../model/date_utils.js';
 
 export class WeekView {
   constructor({ container, store, onSelectMeeting }) {
@@ -16,8 +17,8 @@ export class WeekView {
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
     this.selectedEventId = null;
-    this.currentDate = '2026-10-28';
-    this.weekStart = this._getMonday('2026-10-28');
+    this.currentDate = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
+    this.weekStart = this._getMonday(this.currentDate);
     this.currentMode = 'all';
     this.showReview = true;
   }
@@ -53,8 +54,8 @@ export class WeekView {
   }
 
   goToday() {
-    this.currentDate = '2026-10-28';
-    this.weekStart = this._getMonday('2026-10-28');
+    this.currentDate = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
+    this.weekStart = this._getMonday(this.currentDate);
     this.render();
   }
 
@@ -160,7 +161,8 @@ export class WeekView {
       <div class="week-grid" style="display: grid; grid-template-columns: repeat(7, minmax(130px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 16px;">
         ${days.map(d => {
           const evs = (dayEventsMap[d.dateStr] || []).filter(e => !e.isAllDay);
-          const isToday = d.dateStr === '2026-10-28';
+          const realToday = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
+          const isToday = d.dateStr === realToday;
           return `
             <div class="week-day-col ${isToday ? 'today-col' : ''}" style="border: 1px solid ${isToday ? 'var(--pink-600)' : 'var(--border)'}; border-radius: var(--r-md); background: var(--background); padding: 8px; display: flex; flex-direction: column; min-height: 480px;">
               <div class="week-day-header" style="padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border); text-align: center;">
@@ -225,23 +227,30 @@ export class WeekView {
   }
 
   _getMonday(dateStr) {
-    const d = new Date(dateStr);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    if (typeof getMondayOfWeek === 'function') {
+      return getMondayOfWeek(dateStr);
+    }
+    const [y, m, day] = (dateStr || '').split('-').map(Number);
+    const d = new Date(y, m - 1, day);
+    const dow = d.getDay();
+    const diff = d.getDate() - dow + (dow === 0 ? -6 : 1);
     d.setDate(diff);
-    return d.toISOString().slice(0, 10);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
   _getWeekDays(mondayStr) {
     const res = [];
-    const base = new Date(mondayStr);
+    const [y, m, day] = (mondayStr || '').split('-').map(Number);
+    const base = new Date(y, m - 1, day);
     const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     for (let i = 0; i < 7; i++) {
       const d = new Date(base);
       d.setDate(base.getDate() + i);
-      const dateStr = d.toISOString().slice(0, 10);
+      const pad = n => String(n).padStart(2, '0');
+      const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
       res.push({
         dateStr,
         dayNum: d.getDate(),

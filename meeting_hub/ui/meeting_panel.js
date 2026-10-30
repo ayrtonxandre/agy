@@ -79,10 +79,23 @@ export class MeetingPanelUI {
     }
 
     const meetingData = await this.store.getMeetingData(meeting.id);
+    const matchedProject = this.store.getProjectForMeeting(meeting);
+    const allProjects = await this.store.getAllProjects();
+    const missions = allProjects.filter(p => p.isMission);
+    const activeMission = (matchedProject && matchedProject.isMission) ? matchedProject : (missions[0] || null);
+    const missionId = activeMission ? activeMission.id : 'clariane-hdj';
+    const inboxStatus = await this.store.getMeetingInboxStatus(meeting.id, missionId);
+    let missionSummary = null;
+    try {
+      missionSummary = await this.store.getMissionSummary(missionId);
+    } catch (e) {
+      console.warn('[MeetingPanel] Error loading mission summary:', e);
+    }
+
     const isLlmActive = Boolean(this.llmActiveForMeeting[meeting.id]);
     const linkData = await this.store.getMeetingLinks(meeting, { includeLlm: isLlmActive });
     const relatedList = [...linkData.accepted, ...linkData.suggestions];
-    const prep = PrepScoreCalculator.computeMeetingPrep(meeting, meetingData, relatedList);
+    const prep = PrepScoreCalculator.computeMeetingPrep(meeting, meetingData, relatedList, { missionSummary, inboxStatus });
     const tabs = ['agenda', 'minutes', 'actions', 'related'];
 
     const videoBadge = meeting.link ? `
@@ -164,20 +177,44 @@ export class MeetingPanelUI {
             ` : ''}
           </div>
 
+          <!-- Mission Inbox Status Strip -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--r-sm); margin: 8px 0 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground);">Mission:</span>
+              <select id="panelMissionSelect" class="in sm" style="font-size: 11.5px; padding: 2px 8px; max-width: 220px; height: 26px;">
+                ${missions.map(m => `<option value="${this._escape(m.id)}" ${m.id === missionId ? 'selected' : ''}>${this._escape(m.name)}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              ${inboxStatus === 'folded' ? `
+                <span class="badge ok" style="font-weight: 600; font-size: 11px;">✓ Folded into mission notes</span>
+              ` : inboxStatus === 'pending' ? `
+                <span class="badge" style="font-weight: 600; font-size: 11px; background: #d97706; color: #fff;">⏳ In inbox, waiting to be folded</span>
+              ` : `
+                <span class="badge" style="font-size: 11px; opacity: 0.8;">Not sent to mission inbox</span>
+              `}
+            </div>
+          </div>
+
           <!-- Minutes Header & Actions -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-wrap: wrap; gap: 6px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="label">Live Notes &amp; Minutes</span>
               <span class="sub" style="font-size: 11px;">${wordCount} words · Auto-saved</span>
             </div>
-            <div style="display: flex; gap: 6px;">
+            <div style="display: flex; gap: 6px; align-items: center;">
               <label class="btn sm" style="cursor: pointer; margin: 0;" title="Import text/markdown file">
                 ${Icons.upload || '↑'} Upload File
                 <input type="file" id="minutesFileInput" accept=".txt,.md,.json" style="display: none;" />
               </label>
               ${minutesText.trim() ? `
-                <button class="btn sm pink" id="extractMinutesBtn" title="Extract actions, decisions, and knowledge entities">
-                  ${Icons.sparkles} Extract Actions &amp; Context
+                <button class="btn sm pink" id="sendToInboxBtn" title="Send raw minutes to mission _inbox/ for folding into Markdown notes">
+                  ${Icons.send || '✉'} Send to mission inbox
+                </button>
+              ` : ''}
+              ${minutesText.trim() ? `
+                <button class="btn sm" id="extractMinutesBtn" title="Extract actions, decisions, and knowledge entities">
+                  ${Icons.sparkles} Extract Preview
                 </button>
               ` : ''}
             </div>
@@ -191,7 +228,7 @@ export class MeetingPanelUI {
             <div class="extraction-card" id="extractionReviewCard">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 6px;">
-                  <span class="badge info" style="font-weight: 600;">Extracted Intelligence</span>
+                  <span class="badge info" style="font-weight: 600;">Extracted Intelligence Preview</span>
                   <span class="sub" style="font-size: 11px;">${extraction.actions.length} actions · ${extraction.decisions.length} decisions</span>
                 </div>
                 <button class="btn-icon" id="dismissExtractionBtn" title="Dismiss preview">${Icons.x}</button>
@@ -270,8 +307,8 @@ export class MeetingPanelUI {
               ` : ''}
 
               <div style="display: flex; gap: 8px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
-                <button class="btn sm pink" id="applyExtractionBtn" style="flex: 1; justify-content: center;">
-                  Apply to Meeting Items &amp; Project Base
+                <button class="btn sm pink" id="sendToInboxFromExtractionBtn" style="flex: 1; justify-content: center;">
+                  ${Icons.send || '✉'} Send to mission inbox
                 </button>
                 <button class="btn sm" id="cancelExtractionBtn">Dismiss</button>
               </div>
@@ -283,6 +320,24 @@ export class MeetingPanelUI {
       const items = meetingData.items || [];
       const attendees = meeting.attendees || [];
       const attendeeOptions = attendees.map(a => `<option value="${this._escape(a)}">${this._escape(a)}</option>`).join('');
+
+      // Filter note-derived decisions and actions
+      const docUrl = meetingData.googleDocUrl || meeting.googleDocUrl || '';
+      const citingDecisions = (missionSummary?.decisions || []).filter(d => {
+        if (d.meetingId && d.meetingId === meeting.id) return true;
+        if (d.source && d.source.includes(meeting.id)) return true;
+        if (docUrl && d.source && d.source.includes(docUrl)) return true;
+        return false;
+      });
+
+      const citingActions = (missionSummary?.actions || []).filter(a => {
+        if (a.meetingId && a.meetingId === meeting.id) return true;
+        if (a.source && a.source.includes(meeting.id)) return true;
+        if (docUrl && a.source && a.source.includes(docUrl)) return true;
+        return false;
+      });
+
+      const openMissionActions = (missionSummary?.actions || []).filter(a => !a.done && !citingActions.some(ca => ca.id === a.id));
 
       tabContent = `
         <div class="actions-review-banner ${prep.openActions.reviewed ? 'reviewed' : 'pending'}">
@@ -296,6 +351,97 @@ export class MeetingPanelUI {
           <button class="btn sm ${prep.openActions.reviewed ? '' : 'pink'}" id="toggleActionsReviewedBtn">
             ${prep.openActions.reviewed ? 'Mark unreviewed' : 'Mark reviewed'}
           </button>
+        </div>
+
+        ${(citingDecisions.length > 0 || citingActions.length > 0) ? `
+          <!-- Folded Note Knowledge (Single Source of Truth) -->
+          <div class="note-knowledge-section" style="margin-bottom: 16px; padding: 12px; background: color-mix(in oklab, var(--ok) 8%, var(--card)); border: 1px solid color-mix(in oklab, var(--ok) 35%, var(--border)); border-radius: var(--r-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="badge ok" style="font-weight: 600; font-size: 11px;">✓ Folded into Mission Notes</span>
+                <span class="sub" style="font-size: 11.5px; font-weight: 500;">${this._escape(activeMission ? activeMission.name : 'Mission')}</span>
+              </div>
+              <span class="sub" style="font-size: 11px;">System of Record</span>
+            </div>
+
+            ${citingDecisions.length > 0 ? `
+              <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ok); margin-bottom: 6px;">
+                  Validated Decisions (${citingDecisions.length})
+                </div>
+                <div style="display: grid; gap: 6px;">
+                  ${citingDecisions.map(d => `
+                    <div style="background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--ok); padding: 8px 10px; border-radius: var(--r-sm);">
+                      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 6px;">
+                        <span style="font-weight: 600; font-size: 12px; color: var(--foreground);">${this._escape(d.statement || d.decision)}</span>
+                        <span class="badge" style="font-size: 10px; font-family: var(--font-mono);">${this._escape(d.noteFile || 'Decision')}</span>
+                      </div>
+                      ${d.why ? `<div class="sub" style="font-size: 11px; margin-top: 2px;">Why: ${this._escape(d.why)}</div>` : ''}
+                      <div class="sub" style="font-size: 10.5px; margin-top: 4px; color: var(--muted-foreground);">
+                        ${d.date ? `<span style="font-family: var(--font-mono);">${d.date}</span> · ` : ''}Source: ${this._escape(d.source || d.noteTitle || 'Mission notes')}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            ${citingActions.length > 0 ? `
+              <div>
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pink-600); margin-bottom: 6px;">
+                  Mission Actions (${citingActions.length})
+                </div>
+                <div style="display: grid; gap: 6px;">
+                  ${citingActions.map(a => `
+                    <div style="background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--pink-600); padding: 8px 10px; border-radius: var(--r-sm); display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                      <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                          <span class="badge info" style="font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;">${this._escape(a.id)}</span>
+                          <span class="chip-owner" style="font-size: 11px;">${this._escape(a.owner)}</span>
+                          ${a.due ? `<span class="chip-due" style="font-size: 10.5px;">${Icons.clock} ${this._escape(a.due)}</span>` : ''}
+                          <span class="badge" style="font-size: 10px; font-family: var(--font-mono);">${this._escape(a.file || 'Actions.md')}</span>
+                        </div>
+                        <div style="font-size: 12px; margin-top: 4px; line-height: 1.4; color: var(--foreground);">${this._escape(a.text || a.description)}</div>
+                      </div>
+                      <button class="btn sm" data-copy-action-id="${this._escape(a.id)}" title="Copy action ID to clipboard to reference in notes" style="flex-shrink: 0; font-size: 10.5px; padding: 2px 6px;">
+                        📋 Copy ID
+                      </button>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        ` : (openMissionActions.length > 0) ? `
+          <div style="margin-bottom: 14px; padding: 10px 12px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--r-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground);">Mission Action Matrix:</span>
+                <span class="badge pink" style="font-size: 11px; font-weight: 600;">${openMissionActions.length} open in Actions.md</span>
+              </div>
+              <button class="btn sm" id="toggleMissionActionsListBtn" style="font-size: 11px; padding: 1px 6px;">
+                ${this.showMissionActionsInPanel ? 'Hide' : 'Show top open'}
+              </button>
+            </div>
+            ${this.showMissionActionsInPanel ? `
+              <div style="display: grid; gap: 6px; margin-top: 8px;">
+                ${openMissionActions.slice(0, 5).map(a => `
+                  <div style="background: var(--card); border: 1px solid var(--border); padding: 6px 8px; border-radius: var(--r-sm); display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                    <div style="font-size: 11.5px; min-width: 0;">
+                      <span style="font-family: var(--font-mono); font-weight: 600; color: var(--pink-600);">${this._escape(a.id)}:</span>
+                      <span>${this._escape(a.text || a.description)}</span>
+                      <span class="sub" style="font-size: 10.5px;">(${this._escape(a.owner)})</span>
+                    </div>
+                    <button class="btn sm" data-copy-action-id="${this._escape(a.id)}" style="flex-shrink: 0; font-size: 10px; padding: 1px 5px;">Copy</button>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        ` : ''}
+
+        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 6px;">
+          Session Local Items &amp; Scratchpad
         </div>
 
         <div class="item-form-box">
@@ -341,7 +487,7 @@ export class MeetingPanelUI {
                 ${Icons.trash}
               </button>
             </div>
-          `).join('') : '<div class="empty">No captured actions or decisions yet. Press <code>a</code> to add one.</div>'}
+          `).join('') : '<div class="empty">No captured session items yet. Use form above to add one.</div>'}
         </div>
       `;
     } else if (this.currentTab === 'related') {
@@ -610,37 +756,70 @@ export class MeetingPanelUI {
     this.container.querySelector('#dismissExtractionBtn')?.addEventListener('click', dismissHandler);
     this.container.querySelector('#cancelExtractionBtn')?.addEventListener('click', dismissHandler);
 
-    // Apply Extraction to Meeting Items & Project Base
-    this.container.querySelector('#applyExtractionBtn')?.addEventListener('click', async () => {
-      const extraction = this.extractionResult[meeting.id];
-      if (!extraction) return;
+    // Send Minutes to Mission Inbox (_inbox/)
+    const sendInboxHandler = async () => {
+      const minutesEl = this.container.querySelector('#panelMinutes');
+      const text = (minutesEl ? minutesEl.value : (meetingData.minutes || '')).trim();
+      if (!text) {
+        alert('Please write or paste minutes before sending to the mission inbox.');
+        return;
+      }
+      const missionSelect = this.container.querySelector('#panelMissionSelect');
+      const chosenMissionId = missionSelect ? missionSelect.value : (activeMission ? activeMission.id : 'clariane-hdj');
 
-      // Collect checked actions
-      const selectedActions = [];
-      this.container.querySelectorAll('.extract-action-cb:checked').forEach(cb => {
-        const idx = parseInt(cb.dataset.idx, 10);
-        if (extraction.actions[idx]) {
-          selectedActions.push(extraction.actions[idx]);
+      const sendBtn = this.container.querySelector('#sendToInboxBtn') || this.container.querySelector('#sendToInboxFromExtractionBtn');
+      const origText = sendBtn ? sendBtn.innerHTML : '';
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = `⏳ Sending...`;
+      }
+
+      try {
+        await this.store.sendMinutesToInbox(meeting.id, chosenMissionId, {
+          title: meeting.title,
+          date: meeting.date,
+          attendees: meeting.attendees || [],
+          googleDocUrl: meetingData.googleDocUrl || meeting.googleDocUrl || '',
+          text
+        });
+        await this.store.saveMeetingData(meeting.id, { minutes: text });
+        this.extractionResult[meeting.id] = null;
+        await this.render();
+      } catch (err) {
+        console.error('[MeetingPanel] Failed to send minutes to inbox:', err);
+        alert(`Failed to send minutes to inbox: ${err.message}`);
+        if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = origText;
+        }
+      }
+    };
+
+    this.container.querySelector('#sendToInboxBtn')?.addEventListener('click', sendInboxHandler);
+    this.container.querySelector('#sendToInboxFromExtractionBtn')?.addEventListener('click', sendInboxHandler);
+
+    // Copy Action ID button
+    this.container.querySelectorAll('[data-copy-action-id]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actionId = btn.dataset.copyActionId;
+        if (!actionId) return;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(actionId);
+          }
+          const orig = btn.innerHTML;
+          btn.innerHTML = '✓ Copied!';
+          setTimeout(() => { btn.innerHTML = orig; }, 1500);
+        } catch (err) {
+          console.warn('[MeetingPanel] Clipboard error:', err);
         }
       });
+    });
 
-      // Collect checked decisions
-      const selectedDecisions = [];
-      this.container.querySelectorAll('.extract-decision-cb:checked').forEach(cb => {
-        const idx = parseInt(cb.dataset.idx, 10);
-        if (extraction.decisions[idx]) {
-          selectedDecisions.push(extraction.decisions[idx]);
-        }
-      });
-
-      await this.store.applyExtractedItems(meeting.id, {
-        actions: selectedActions,
-        decisions: selectedDecisions
-      });
-
-      this.extractionResult[meeting.id] = null;
-      // Switch to Actions tab to show the imported items immediately
-      this.currentTab = 'actions';
+    // Toggle Mission Actions List
+    this.container.querySelector('#toggleMissionActionsListBtn')?.addEventListener('click', () => {
+      this.showMissionActionsInPanel = !this.showMissionActionsInPanel;
       this.render();
     });
 

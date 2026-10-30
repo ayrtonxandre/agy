@@ -35,6 +35,13 @@ SERVER_PID_FILE = LOGS_DIR / "server.pid"
 
 if str(ATHX_DIR) not in sys.path:
     sys.path.insert(0, str(ATHX_DIR))
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+try:
+    import mission_notes
+except ImportError:
+    mission_notes = None
 
 # Paths (check DATA_DIR first, then fallback to BASE_DIR if needed)
 GARMIN_CSV = DATA_DIR / "garmin_extracted_workouts.csv"
@@ -794,6 +801,18 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
         clean = urlparse(self.path).path.rstrip("/")
         return clean if clean else "/"
 
+    def _is_localhost(self) -> bool:
+        """Enforces that sensitive mission system-of-record endpoints are localhost-only."""
+        client_ip = self.client_address[0]
+        if client_ip not in ("127.0.0.1", "::1", "localhost"):
+            return False
+        xff = self.headers.get("X-Forwarded-For")
+        if xff:
+            for part in xff.split(","):
+                if part.strip() not in ("127.0.0.1", "::1", "localhost"):
+                    return False
+        return True
+
     def do_GET(self):
         client_ip = self.client_address[0]
         clean_path = self._get_clean_path()
@@ -1002,6 +1021,101 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(content)
 
+        # Mission System of Record Endpoints (Phase 3 Backend - Localhost Only)
+        elif clean_path == "/api/missions" or clean_path.startswith("/api/missions/"):
+            if not self._is_localhost():
+                self.send_response(403)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "Forbidden: Mission endpoints restricted to localhost"}).encode("utf-8"))
+                return
+
+            if not mission_notes:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "mission_notes module not available"}).encode("utf-8"))
+                return
+
+            if clean_path == "/api/missions":
+                reg = mission_notes.get_missions_registry()
+                content = json.dumps(reg, indent=2, ensure_ascii=False).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+            else:
+                parts = clean_path.split("/")  # ["", "api", "missions", "<id>", ...]
+                if len(parts) >= 4:
+                    mission_id = parts[3]
+                    action = parts[4] if len(parts) > 4 else "summary"
+
+                    try:
+                        if action == "notes":
+                            notes = mission_notes.list_mission_notes(mission_id)
+                            content = json.dumps({"missionId": mission_id, "notes": notes}, indent=2, ensure_ascii=False).encode("utf-8")
+                            self.send_response(200)
+                        elif action == "note":
+                            parsed_url = urlparse(self.path)
+                            query_params = parse_qs(parsed_url.query)
+                            note_path = query_params.get("path", [""])[0]
+                            if not note_path:
+                                self.send_response(400)
+                                content = json.dumps({"error": "Missing 'path' query parameter"}).encode("utf-8")
+                            else:
+                                note_data = mission_notes.get_mission_note(mission_id, note_path)
+                                content = json.dumps(note_data, indent=2, ensure_ascii=False).encode("utf-8")
+                                self.send_response(200)
+                        elif action == "summary":
+                            summary = mission_notes.get_mission_summary(mission_id)
+                            content = json.dumps(summary, indent=2, ensure_ascii=False).encode("utf-8")
+                            self.send_response(200)
+                        elif action == "inbox":
+                            inbox = mission_notes.list_inbox_files(mission_id)
+                            content = json.dumps(inbox, indent=2, ensure_ascii=False).encode("utf-8")
+                            self.send_response(200)
+                        else:
+                            self.send_response(404)
+                            content = json.dumps({"error": f"Unknown mission action: {action}"}).encode("utf-8")
+
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.send_header("Content-Length", str(len(content)))
+                        self.send_cors_headers()
+                        self.end_headers()
+                        self.wfile.write(content)
+                    except ValueError as ve:
+                        self.send_response(400)
+                        content = json.dumps({"error": str(ve)}).encode("utf-8")
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.send_header("Content-Length", str(len(content)))
+                        self.send_cors_headers()
+                        self.end_headers()
+                        self.wfile.write(content)
+                    except FileNotFoundError as fe:
+                        self.send_response(404)
+                        content = json.dumps({"error": str(fe)}).encode("utf-8")
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.send_header("Content-Length", str(len(content)))
+                        self.send_cors_headers()
+                        self.end_headers()
+                        self.wfile.write(content)
+                    except Exception as e:
+                        self.send_response(500)
+                        content = json.dumps({"error": str(e)}).encode("utf-8")
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.send_header("Content-Length", str(len(content)))
+                        self.send_cors_headers()
+                        self.end_headers()
+                        self.wfile.write(content)
+                else:
+                    self.send_response(400)
+                    self.send_cors_headers()
+                    self.end_headers()
+
         else:
             self.send_error(404, f"Path not found: {clean_path}")
 
@@ -1200,6 +1314,84 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     self.send_cors_headers()
                     self.end_headers()
                     self.wfile.write(content)
+
+            # Mission System of Record Endpoints (Phase 3 Backend - Localhost Only)
+            elif clean_path.startswith("/api/missions/"):
+                if not self._is_localhost():
+                    self.send_response(403)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Forbidden: Mission endpoints restricted to localhost"}).encode("utf-8"))
+                    return
+
+                if not mission_notes:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "mission_notes module not available"}).encode("utf-8"))
+                    return
+
+                parts = clean_path.split("/")  # ["", "api", "missions", "<id>", "action"]
+                if len(parts) >= 5:
+                    mission_id = parts[3]
+                    action = parts[4]
+
+                    try:
+                        if action == "inbox":
+                            res = mission_notes.write_inbox_file(mission_id, payload)
+                            content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                            self.send_response(200 if res.get("status") in ("created", "exists") else 400)
+                        elif action == "fold":
+                            filename = payload.get("filename", "")
+                            if not filename:
+                                inbox_files = mission_notes.list_inbox_files(mission_id)
+                                pending = inbox_files.get("pending", [])
+                                if not pending:
+                                    raise ValueError("No pending inbox files to fold")
+                                filename = pending[0]["filename"]
+
+                            res = mission_notes.generate_fold_proposal(mission_id, filename)
+                            content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                            self.send_response(200 if res.get("status") in ("success", "proposal_generated") else 500)
+                        else:
+                            self.send_response(404)
+                            content = json.dumps({"error": f"Unknown mission POST action: {action}"}).encode("utf-8")
+
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.send_header("Content-Length", str(len(content)))
+                        self.send_cors_headers()
+                        self.end_headers()
+                        self.wfile.write(content)
+                    except ValueError as ve:
+                        self.send_response(400)
+                        content = json.dumps({"error": str(ve)}).encode("utf-8")
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.send_header("Content-Length", str(len(content)))
+                        self.send_cors_headers()
+                        self.end_headers()
+                        self.wfile.write(content)
+                    except FileNotFoundError as fe:
+                        self.send_response(404)
+                        content = json.dumps({"error": str(fe)}).encode("utf-8")
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.send_header("Content-Length", str(len(content)))
+                        self.send_cors_headers()
+                        self.end_headers()
+                        self.wfile.write(content)
+                    except Exception as e:
+                        self.send_response(500)
+                        content = json.dumps({"error": str(e)}).encode("utf-8")
+                        self.send_header("Content-Type", "application/json; charset=utf-8")
+                        self.send_header("Content-Length", str(len(content)))
+                        self.send_cors_headers()
+                        self.end_headers()
+                        self.wfile.write(content)
+                else:
+                    self.send_response(400)
+                    self.send_cors_headers()
+                    self.end_headers()
 
             else:
                 self.send_error(404, f"API endpoint not found: {clean_path}")

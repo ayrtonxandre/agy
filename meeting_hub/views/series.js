@@ -5,6 +5,7 @@
  * and cross-linked meeting webs.
  */
 import { Icons } from '../ui/icons.js';
+import { getTodayDateStr } from '../model/date_utils.js';
 
 export class SeriesView {
   constructor({ container, store, onSelectMeeting }) {
@@ -60,7 +61,7 @@ export class SeriesView {
     const activeSeries = seriesMap.get(this.selectedSeriesId) || filteredSeries[0];
     const activeEvents = activeSeries ? [...activeSeries.events].sort((a, b) => a.date.localeCompare(b.date)) : [];
 
-    const todayStr = '2026-10-28';
+    const todayStr = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
 
     this.container.innerHTML = `
       <div class="view-header" style="margin-bottom: 16px;">

@@ -7,6 +7,8 @@
  * 2. Last minutes found / linked
  * 3. Open actions reviewed
  */
+import { getTodayDateStr } from './date_utils.js';
+
 export class PrepScoreCalculator {
   /**
    * Computes the prep score and status for a single meeting.
@@ -14,9 +16,10 @@ export class PrepScoreCalculator {
    * @param {Object} meeting Calendar event
    * @param {Object} meetingData Stored notes and items for this meeting
    * @param {Array} relatedLinks Suggested/linked prior meetings
+   * @param {Object} options Optional context flags (inboxStatus, missionSummary)
    * @returns {Object} Detailed prep evaluation
    */
-  static computeMeetingPrep(meeting, meetingData = {}, relatedLinks = []) {
+  static computeMeetingPrep(meeting, meetingData = {}, relatedLinks = [], options = {}) {
     if (!meeting) {
       return {
         scorePercent: 0,
@@ -28,6 +31,7 @@ export class PrepScoreCalculator {
         agenda: { ok: false, label: 'Missing', detail: 'No objectives drafted' },
         lastMinutes: { ok: false, label: 'None found', detail: 'No prior meeting found' },
         openActions: { ok: false, label: 'Missing', detail: 'Unreviewed' },
+        inbox: { pending: false, label: 'Folded', detail: 'Notes up to date' },
         people: { count: 0 }
       };
     }
@@ -169,6 +173,15 @@ export class PrepScoreCalculator {
       }
     ];
 
+    // Inbox evaluation from mission notes system of record
+    const hasPendingInbox = options.inboxStatus === 'pending' || Boolean(options.missionSummary?.inbox?.total_pending > 0);
+    const inbox = {
+      pending: hasPendingInbox,
+      status: options.inboxStatus || (hasPendingInbox ? 'pending' : 'folded'),
+      label: hasPendingInbox ? 'Inbox pending' : 'Folded',
+      detail: hasPendingInbox ? 'Inbox pending: raw minutes waiting to be folded' : 'Notes up to date'
+    };
+
     const missingCount = missingItems.filter(i => !i.ok).length;
     const missingSummary = missingCount === 0
       ? 'All items prepared'
@@ -184,6 +197,7 @@ export class PrepScoreCalculator {
       agenda,
       lastMinutes,
       openActions,
+      inbox,
       people,
       missingItems,
       missingCount,
@@ -194,11 +208,12 @@ export class PrepScoreCalculator {
   /**
    * Helper to check if a meeting is scheduled within the next 48 hours.
    */
-  static isWithin48Hours(meetingDate, meetingStart = '00:00', refDateStr = '2026-10-28', refTimeStr = '00:00') {
+  static isWithin48Hours(meetingDate, meetingStart = '00:00', refDateStr = null, refTimeStr = '00:00') {
     if (!meetingDate) return false;
     try {
+      const actualRefDate = refDateStr || (typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10));
       const meetTime = new Date(`${meetingDate}T${meetingStart || '00:00'}:00`).getTime();
-      const refTime = new Date(`${refDateStr}T${refTimeStr || '00:00'}:00`).getTime();
+      const refTime = new Date(`${actualRefDate}T${refTimeStr || '00:00'}:00`).getTime();
       const diffMs = meetTime - refTime;
       const diffHours = diffMs / (1000 * 60 * 60);
       return diffHours >= 0 && diffHours <= 48;

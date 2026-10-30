@@ -8,6 +8,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,24 +24,40 @@ if (fs.existsSync(eventsJsonPath)) {
   console.log('✔ Updated initial_events.js');
 }
 
-// Ensure docs_cache is bundled for offline resilience
-const docsCacheJsonPath = path.join(MHUB_DIR, 'data', 'docs_cache.json');
-let docsCacheJs = 'window.DOCS_CACHE = {};\n';
-if (fs.existsSync(docsCacheJsonPath)) {
-  const docsContent = fs.readFileSync(docsCacheJsonPath, 'utf8');
-  docsCacheJs = `window.DOCS_CACHE = ${docsContent};\n`;
+// NOTE: docs_cache is NOT bundled into the client JS to preserve client minutes privacy.
+// Minutes are fetched live on demand via /api/docs/fetch.
+const docsCacheJs = 'window.DOCS_CACHE = {};\n';
+
+// Ensure missions_snapshot.js is generated from Missions/missions.yaml
+const missionsYamlPath = path.resolve(ROOT_DIR, '..', 'Missions', 'missions.yaml');
+const missionsSnapshotJsPath = path.join(MHUB_DIR, 'data', 'missions_snapshot.js');
+let missionsSnapshotJs = 'var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MISSIONS_SNAPSHOT = { missions: [] };\n';
+if (fs.existsSync(missionsYamlPath)) {
+  try {
+    const jsonStr = execSync(`python3 -c "import yaml, json, sys; print(json.dumps(yaml.safe_load(open(sys.argv[1]))))" "${missionsYamlPath}"`, { encoding: 'utf8' });
+    const parsed = JSON.parse(jsonStr);
+    missionsSnapshotJs = `// Auto-generated missions registry snapshot (file:// fallback)\nvar MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MISSIONS_SNAPSHOT = ${JSON.stringify(parsed, null, 2)};\n`;
+    fs.writeFileSync(missionsSnapshotJsPath, missionsSnapshotJs, 'utf8');
+    console.log('✔ Updated data/missions_snapshot.js');
+  } catch (err) {
+    console.warn('⚠ Could not generate missions_snapshot.js:', err.message);
+  }
+} else if (fs.existsSync(missionsSnapshotJsPath)) {
+  missionsSnapshotJs = fs.readFileSync(missionsSnapshotJsPath, 'utf8');
 }
 
 // Order of modules to bundle
 const sourceFiles = [
   'data/adapter.js',
   'data/db.js',
+  'model/date_utils.js',
+  'model/route_parser.js',
+  'model/mission_matcher.js',
   'model/event.js',
   'model/series.js',
   'model/links.js',
   'model/project.js',
   'model/minutes_engine.js',
-  'model/project_engine.js',
   'data/importer.js',
   'data/sync.js',
   'model/prep_score.js',
@@ -64,6 +81,7 @@ let bundleCode = `/**
 'use strict';
 
 ${docsCacheJs}
+${missionsSnapshotJs}
 window.MeetingHub = window.MeetingHub || {};
 const MeetingHub = window.MeetingHub;
 \n`;
@@ -116,11 +134,14 @@ for (const relPath of sourceFiles) {
 bundleCode += `
 /* === App Controller & Bootstrap === */
 const AppState = {
-  date: '2026-10-28',
-  view: 'today',
+  date: (typeof getTodayDateStr === 'function') ? getTodayDateStr() : new Date().toISOString().slice(0, 10),
+  view: 'mission',
+  calendarTab: 'today',
+  missionId: null,
+  tab: null,
   mode: 'all',
   selectedEventId: null,
-  isPanelCollapsed: false
+  isPanelCollapsed: true
 };
 
 let todayView;
@@ -150,21 +171,67 @@ function setPanelCollapsed(collapsed) {
   } catch (e) {}
 }
 
+async function resolveDefaultMissionId() {
+  try {
+    const registry = await MeetingHub.store.getMissionsRegistry();
+    const missions = registry?.missions || [];
+    const activeMissions = missions.filter(m => !m.archived && m.status !== 'archived');
+    const last = localStorage.getItem('mhub_last_mission');
+    if (last && missions.some(m => m.id === last && !m.archived && m.status !== 'archived')) {
+      return last;
+    }
+    if (activeMissions.length > 0) {
+      return activeMissions[0].id;
+    }
+    if (missions.length > 0) {
+      return missions[0].id;
+    }
+  } catch (e) {
+    console.warn('[MeetingHub] Could not resolve missions registry:', e);
+  }
+  return 'ge-enterprise';
+}
+
 function selectMeeting(eventId, tab = null) {
   if (tab && meetingPanel) {
     meetingPanel.currentTab = tab;
   }
   AppState.selectedEventId = eventId;
   setPanelCollapsed(false);
-  const targetHash = '#/meeting/' + encodeURIComponent(eventId);
-  if (window.location.hash !== targetHash) {
-    window.location.hash = targetHash;
+
+  // If already in a mission context, preserve mission in URL
+  if (AppState.view === 'mission' && AppState.missionId) {
+    const targetHash = '#/p/' + encodeURIComponent(AppState.missionId) + '/m/' + encodeURIComponent(eventId);
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    } else {
+      if (meetingPanel) meetingPanel.setMeeting(eventId, tab);
+    }
+  } else if (AppState.view === 'calendar') {
+    const sub = AppState.calendarTab && AppState.calendarTab !== 'today' ? '/' + AppState.calendarTab : '';
+    const targetHash = '#/calendar' + sub + '/m/' + encodeURIComponent(eventId);
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    } else {
+      if (meetingPanel) meetingPanel.setMeeting(eventId, tab);
+    }
   } else {
-    if (meetingPanel) meetingPanel.setMeeting(eventId, tab);
+    // Try to match mission for this meeting
+    const event = MeetingHub.store.getEvent(eventId);
+    const registry = MeetingHub.store.missionsRegistry || { missions: [] };
+    const match = (typeof matchMission === 'function')
+      ? matchMission(event, registry)
+      : (MeetingHub.matchMission ? MeetingHub.matchMission(event, registry) : null);
+    if (match && match.missionId) {
+      window.location.hash = '#/p/' + encodeURIComponent(match.missionId) + '/m/' + encodeURIComponent(eventId);
+    } else {
+      window.location.hash = '#/calendar/m/' + encodeURIComponent(eventId);
+    }
   }
-  if (todayView && AppState.view === 'today') todayView.setSelectedEvent(eventId);
-  if (weekView && AppState.view === 'week') weekView.setSelectedEvent(eventId);
-  if (meetingsView && AppState.view === 'meetings') meetingsView.setSelectedEvent(eventId);
+
+  if (todayView && AppState.view === 'calendar' && AppState.calendarTab === 'today') todayView.setSelectedEvent(eventId);
+  if (weekView && AppState.view === 'calendar' && AppState.calendarTab === 'week') weekView.setSelectedEvent(eventId);
+  if (meetingsView && AppState.view === 'calendar' && AppState.calendarTab === 'meetings') meetingsView.setSelectedEvent(eventId);
 }
 
 function renderActiveView() {
@@ -174,58 +241,228 @@ function renderActiveView() {
   shell.currentView = AppState.view;
   shell.renderSidebar(openActionsCount);
 
-  const headerTitles = {
-    today: { title: 'Today', sub: 'Wednesday 28 October 2026' },
-    week: { title: 'Week', sub: 'Multi-day review & meeting health' },
-    meetings: { title: 'Meetings', sub: 'Searchable calendar directory (259 events)' },
-    actions: { title: 'Open Actions', sub: 'Action items grouped by client' },
-    series: { title: 'Series & Links', sub: 'Recurring meeting series & linked lineages' },
-    projects: { title: 'Projects & Knowledge', sub: 'Initiative intelligence & minutes synthesis' }
-  };
-  const meta = headerTitles[AppState.view] || headerTitles.today;
-  const tEl = document.querySelector('#title');
-  const sEl = document.querySelector('#subtitle');
-  if (tEl) tEl.textContent = meta.title;
-  if (sEl) sEl.textContent = meta.sub;
+  if (AppState.view === 'mission') {
+    const missionName = MeetingHub.store.getProjectName(AppState.missionId) || AppState.missionId;
+    const tEl = document.querySelector('#title');
+    const sEl = document.querySelector('#subtitle');
+    if (tEl) tEl.textContent = missionName;
+    if (sEl) sEl.textContent = 'Mission Cockpit & Knowledge Base';
 
-  switch (AppState.view) {
-    case 'today':
-      if (todayView) {
-        todayView.container = leftCol;
-        todayView.render();
-      }
-      break;
-    case 'week':
-      if (weekView) {
-        weekView.container = leftCol;
-        weekView.render();
-      }
-      break;
-    case 'meetings':
-      if (meetingsView) {
-        meetingsView.container = leftCol;
-        meetingsView.render();
-      }
-      break;
-    case 'actions':
-      if (actionsView) {
-        actionsView.container = leftCol;
-        actionsView.render();
-      }
-      break;
-    case 'series':
-      if (seriesView) {
-        seriesView.container = leftCol;
-        seriesView.render();
-      }
-      break;
-    case 'projects':
-      if (projectsView) {
-        projectsView.container = leftCol;
-        projectsView.render();
-      }
-      break;
+    if (projectsView) {
+      projectsView.container = leftCol;
+      projectsView.render();
+    }
+    return;
   }
+
+  if (AppState.view === 'inbox') {
+    const tEl = document.querySelector('#title');
+    const sEl = document.querySelector('#subtitle');
+    if (tEl) tEl.textContent = 'Cross-Mission Inbox';
+    if (sEl) sEl.textContent = 'Pending meeting minutes waiting to be folded';
+    leftCol.innerHTML = \`
+      <div class="card" style="padding: 24px;">
+        <div class="label">Cross-Mission Inbox</div>
+        <h2 style="margin: 8px 0;">Incoming Meeting Minutes</h2>
+        <p class="sub" style="margin-bottom: 16px;">Past meeting minutes awaiting folding into durable mission notes.</p>
+        <div id="inboxList">Loading inbox status...</div>
+      </div>
+    \`;
+    (async () => {
+      try {
+        const reg = await MeetingHub.store.getMissionsRegistry();
+        const missions = reg?.missions || [];
+        const container = leftCol.querySelector('#inboxList');
+        if (!container) return;
+        let html = '';
+        for (const m of missions) {
+          const status = await MeetingHub.store.getInboxStatus(m.id);
+          const pending = status?.pendingCount || 0;
+          html += \`
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--secondary);">
+              <div>
+                <strong>\${m.name}</strong>
+                <div class="sub" style="font-size: 11px;">\${m.directory}</div>
+              </div>
+              <div>
+                \${pending > 0 ? \`<span class="badge warn" style="color: var(--warn); font-weight: 600;">\${pending} pending</span>\` : '<span class="badge ok">0 pending</span>'}
+              </div>
+            </div>
+          \`;
+        }
+        container.innerHTML = html;
+      } catch (e) {}
+    })();
+    return;
+  }
+
+  if (AppState.view === 'my-actions') {
+    const tEl = document.querySelector('#title');
+    const sEl = document.querySelector('#subtitle');
+    if (tEl) tEl.textContent = 'My Actions';
+    if (sEl) sEl.textContent = 'Cross-mission action matrix';
+    if (actionsView) {
+      actionsView.container = leftCol;
+      actionsView.render();
+    }
+    return;
+  }
+
+  if (AppState.view === 'calendar') {
+    const todayFormatted = (typeof formatLongDate === 'function') ? formatLongDate(AppState.date) : AppState.date;
+    const headerTitles = {
+      today: { title: 'Today', sub: todayFormatted },
+      week: { title: 'Week', sub: 'Multi-day review & meeting health' },
+      meetings: { title: 'Meetings', sub: 'Searchable calendar directory (259 events)' },
+      series: { title: 'Series & Links', sub: 'Recurring meeting series & linked lineages' }
+    };
+    const meta = headerTitles[AppState.calendarTab] || headerTitles.today;
+    const tEl = document.querySelector('#title');
+    const sEl = document.querySelector('#subtitle');
+    if (tEl) tEl.textContent = meta.title;
+    if (sEl) sEl.textContent = meta.sub;
+
+    switch (AppState.calendarTab) {
+      case 'today':
+        if (todayView) {
+          todayView.container = leftCol;
+          todayView.render();
+        }
+        break;
+      case 'week':
+        if (weekView) {
+          weekView.container = leftCol;
+          weekView.render();
+        }
+        break;
+      case 'meetings':
+        if (meetingsView) {
+          meetingsView.container = leftCol;
+          meetingsView.render();
+        }
+        break;
+      case 'series':
+        if (seriesView) {
+          seriesView.container = leftCol;
+          seriesView.render();
+        }
+        break;
+    }
+    return;
+  }
+}
+
+function showMissionSwitcher() {
+  const existingModal = document.querySelector('#missionSwitcherModal');
+  if (existingModal) {
+    existingModal.remove();
+    return;
+  }
+
+  const missions = MeetingHub.store.missionsRegistry?.missions || [];
+  const activeMissions = missions.filter(m => !m.archived && m.status !== 'archived');
+  const archivedMissions = missions.filter(m => m.archived || m.status === 'archived');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'missionSwitcherModal';
+  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); z-index: 9999; display: flex; align-items: flex-start; justify-content: center; padding-top: 15vh;';
+
+  overlay.innerHTML = \`
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); width: 100%; max-width: 520px; box-shadow: 0 16px 32px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column;">
+      <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--pink-600); font-weight: 600;">SWITCH MISSION</span>
+        <input id="missionSearchInput" type="text" placeholder="Type to search active missions..." style="flex: 1; background: transparent; border: none; color: var(--foreground); font-family: var(--font-sans); font-size: 15px; outline: none;" autofocus autocomplete="off" />
+        <span style="font-size: 11px; color: var(--muted-foreground); font-family: var(--font-mono);">[Esc] Close</span>
+      </div>
+      <div id="missionList" style="max-height: 360px; overflow-y: auto; padding: 8px;"></div>
+    </div>
+  \`;
+
+  document.body.appendChild(overlay);
+
+  const searchInput = overlay.querySelector('#missionSearchInput');
+  const listContainer = overlay.querySelector('#missionList');
+  let selectedIndex = 0;
+  let filteredMissions = [...activeMissions, ...archivedMissions];
+
+  function renderList() {
+    if (filteredMissions.length === 0) {
+      listContainer.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--muted-foreground); font-size: 13px;">No matching mission found.</div>';
+      return;
+    }
+    listContainer.innerHTML = filteredMissions.map((m, idx) => {
+      const isSelected = idx === selectedIndex;
+      const isArchived = m.archived || m.status === 'archived';
+      const numLabel = idx < 9 && !isArchived ? \`<span style="font-family: var(--font-mono); font-size: 11px; background: var(--secondary); padding: 2px 6px; border-radius: 4px; margin-right: 8px; color: var(--muted-foreground);">\${idx + 1}</span>\` : '';
+      return \`
+        <div class="mission-item" data-id="\${m.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: var(--r-md); cursor: pointer; background: \${isSelected ? 'var(--secondary)' : 'transparent'}; border: 1px solid \${isSelected ? 'var(--pink-600)' : 'transparent'};">
+          <div style="display: flex; align-items: center;">
+            \${numLabel}
+            <div>
+              <div style="font-weight: 600; font-size: 14px; color: \${isSelected ? 'var(--foreground)' : 'var(--card-foreground)'};">\${m.name}</div>
+              <div class="sub" style="font-size: 11px;">\${m.client || 'Artefact'} · \${m.directory}</div>
+            </div>
+          </div>
+          <div>
+            \${isArchived ? '<span class="badge sub" style="font-size: 10px;">Archived</span>' : '<span class="badge ok" style="font-size: 10px;">Active</span>'}
+          </div>
+        </div>
+      \`;
+    }).join('');
+
+    listContainer.querySelectorAll('.mission-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const id = item.dataset.id;
+        overlay.remove();
+        window.location.hash = '#/p/' + encodeURIComponent(id);
+      });
+    });
+  }
+
+  function filter(query) {
+    const q = query.toLowerCase().trim();
+    if (!q) {
+      filteredMissions = [...activeMissions, ...archivedMissions];
+    } else {
+      filteredMissions = [...activeMissions, ...archivedMissions].filter(m => {
+        const text = \`\${m.name} \${m.id} \${m.directory} \${(m.clientMatch || []).join(' ')}\`.toLowerCase();
+        return text.includes(q);
+      });
+    }
+    selectedIndex = 0;
+    renderList();
+  }
+
+  renderList();
+  setTimeout(() => searchInput.focus(), 30);
+
+  searchInput.addEventListener('input', (e) => filter(e.target.value));
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      overlay.remove();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIndex = Math.min(filteredMissions.length - 1, selectedIndex + 1);
+      renderList();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIndex = Math.max(0, selectedIndex - 1);
+      renderList();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const picked = filteredMissions[selectedIndex];
+      if (picked) {
+        overlay.remove();
+        window.location.hash = '#/p/' + encodeURIComponent(picked.id);
+      }
+    }
+  });
 }
 
 // Instantiate App Shell
@@ -276,8 +513,9 @@ const shell = new MeetingHub.ShellUI({
     if (meetingsView) meetingsView.setMode(newMode);
   },
   onTodayClick: () => {
-    AppState.date = '2026-10-28';
-    if (todayView) todayView.setDate('2026-10-28');
+    const today = (typeof getTodayDateStr === 'function') ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
+    AppState.date = today;
+    if (todayView) todayView.setDate(today);
     if (weekView) weekView.goToday();
     if (AppState.view !== 'today' && AppState.view !== 'week') {
       AppState.view = 'today';
@@ -365,41 +603,120 @@ const shell = new MeetingHub.ShellUI({
 
 function handleHashRoute() {
   const hash = window.location.hash || '';
-  const meetingMatch = hash.match(/^#\\/meeting\\/([^/?#]+)/);
-  if (meetingMatch) {
-    const meetingId = decodeURIComponent(meetingMatch[1]);
-    AppState.selectedEventId = meetingId;
-    setPanelCollapsed(false);
-    if (meetingPanel) meetingPanel.setMeeting(meetingId);
-    if (todayView && AppState.view === 'today') todayView.setSelectedEvent(meetingId);
-    if (weekView && AppState.view === 'week') weekView.setSelectedEvent(meetingId);
-    if (meetingsView && AppState.view === 'meetings') meetingsView.setSelectedEvent(meetingId);
-  } else if (hash === '#/today' || hash === '' || hash === '#/') {
-    AppState.selectedEventId = null;
-    if (meetingPanel) meetingPanel.setMeeting(null);
-    if (AppState.view !== 'today') {
-      AppState.view = 'today';
-      renderActiveView();
+  const parsed = (typeof parseRoute === 'function')
+    ? parseRoute(hash)
+    : (MeetingHub.parseRoute ? MeetingHub.parseRoute(hash) : { view: 'root' });
+
+  // Handle legacy redirects
+  if (parsed.isLegacy && parsed.redirectTo) {
+    window.location.hash = parsed.redirectTo;
+    return;
+  }
+
+  // Handle root route (#/ or empty)
+  if (parsed.view === 'root') {
+    resolveDefaultMissionId().then((defaultMissionId) => {
+      window.location.hash = '#/p/' + encodeURIComponent(defaultMissionId);
+    });
+    return;
+  }
+
+  // Handle legacy meeting route: #/meeting/:eventId
+  if (parsed.view === 'legacy-meeting' && parsed.eventId) {
+    const event = MeetingHub.store.getEvent(parsed.eventId);
+    const registryPromise = MeetingHub.store.missionsRegistry
+      ? Promise.resolve(MeetingHub.store.missionsRegistry)
+      : MeetingHub.store.getMissionsRegistry();
+    registryPromise.then((registry) => {
+      const match = (typeof matchMission === 'function')
+        ? matchMission(event, registry)
+        : (MeetingHub.matchMission ? MeetingHub.matchMission(event, registry) : null);
+      if (match && match.missionId) {
+        window.location.hash = '#/p/' + encodeURIComponent(match.missionId) + '/m/' + encodeURIComponent(parsed.eventId);
+      } else {
+        window.location.hash = '#/calendar/m/' + encodeURIComponent(parsed.eventId);
+      }
+    });
+    return;
+  }
+
+  // Handle mission route: #/p/:missionId[/m/:eventId or /:tab]
+  if (parsed.view === 'mission') {
+    AppState.view = 'mission';
+    AppState.missionId = parsed.missionId;
+    AppState.tab = parsed.tab;
+    try {
+      localStorage.setItem('mhub_last_mission', parsed.missionId);
+    } catch (e) {}
+
+    if (parsed.eventId) {
+      AppState.selectedEventId = parsed.eventId;
+      setPanelCollapsed(false);
+      if (meetingPanel) meetingPanel.setMeeting(parsed.eventId);
     } else {
-      if (todayView) todayView.setSelectedEvent(null);
+      AppState.selectedEventId = null;
+      setPanelCollapsed(true);
+      if (meetingPanel) meetingPanel.setMeeting(null);
     }
-  } else {
-    const viewMatch = hash.match(/^#\\/([a-z]+)/);
-    if (viewMatch) {
-      const v = viewMatch[1];
-      if (['today', 'week', 'meetings', 'actions', 'series', 'projects'].includes(v)) {
-        AppState.selectedEventId = null;
-        if (meetingPanel) meetingPanel.setMeeting(null);
-        if (AppState.view !== v) {
-          AppState.view = v;
-          renderActiveView();
-        }
+
+    if (projectsView) {
+      projectsView.setProject(parsed.missionId);
+      if (parsed.tab && typeof projectsView.setTab === 'function') {
+        projectsView.setTab(parsed.tab);
       }
     }
+    renderActiveView();
+    return;
+  }
+
+  // Handle inbox route: #/inbox
+  if (parsed.view === 'inbox') {
+    AppState.view = 'inbox';
+    AppState.selectedEventId = null;
+    setPanelCollapsed(true);
+    if (meetingPanel) meetingPanel.setMeeting(null);
+    renderActiveView();
+    return;
+  }
+
+  // Handle my-actions route: #/my-actions
+  if (parsed.view === 'my-actions') {
+    AppState.view = 'my-actions';
+    AppState.selectedEventId = null;
+    setPanelCollapsed(true);
+    if (meetingPanel) meetingPanel.setMeeting(null);
+    renderActiveView();
+    return;
+  }
+
+  // Handle calendar route: #/calendar[/:tab][/m/:eventId]
+  if (parsed.view === 'calendar') {
+    AppState.view = 'calendar';
+    AppState.calendarTab = parsed.tab || 'today';
+
+    if (parsed.eventId) {
+      AppState.selectedEventId = parsed.eventId;
+      setPanelCollapsed(false);
+      if (meetingPanel) meetingPanel.setMeeting(parsed.eventId);
+      if (todayView && AppState.calendarTab === 'today') todayView.setSelectedEvent(parsed.eventId);
+      if (weekView && AppState.calendarTab === 'week') weekView.setSelectedEvent(parsed.eventId);
+      if (meetingsView && AppState.calendarTab === 'meetings') meetingsView.setSelectedEvent(parsed.eventId);
+    } else {
+      AppState.selectedEventId = null;
+      if (meetingPanel) meetingPanel.setMeeting(null);
+      if (todayView) todayView.setSelectedEvent(null);
+      if (weekView) weekView.setSelectedEvent(null);
+      if (meetingsView) meetingsView.setSelectedEvent(null);
+    }
+    renderActiveView();
+    return;
   }
 }
 
-// Global Keyboard Navigation (j, k, a, /, Escape, \)
+// Global Keyboard Navigation (j, k, a, /, Escape, \\, g p, g i, g c, 1-9)
+let lastLeaderKey = '';
+let leaderTimeout = null;
+
 window.addEventListener('keydown', (e) => {
   const activeEl = document.activeElement;
   const isInputActive = activeEl && (
@@ -409,7 +726,7 @@ window.addEventListener('keydown', (e) => {
     activeEl.isContentEditable
   );
 
-  // Esc clears quick search, collapses drawer or resets selected meeting
+  // Esc order: blur input -> close drawer -> go back from tab to stream
   if (e.key === 'Escape') {
     if (isInputActive) {
       const isSearch = activeEl.id === 'quickSearch';
@@ -421,35 +738,98 @@ window.addEventListener('keydown', (e) => {
         if (AppState.view === 'actions' && actionsView) actionsView.setSearchQuery('');
         if (AppState.view === 'series' && seriesView) seriesView.setSearchQuery('');
       }
-    } else if (!AppState.isPanelCollapsed) {
+      return;
+    }
+    if (!AppState.isPanelCollapsed) {
       setPanelCollapsed(true);
-    } else if (AppState.selectedEventId) {
-      window.location.hash = AppState.view === 'today' ? '#/today' : '#/' + AppState.view;
+      if (AppState.view === 'mission' && AppState.missionId) {
+        window.location.hash = '#/p/' + encodeURIComponent(AppState.missionId);
+      } else if (AppState.view === 'calendar') {
+        const sub = AppState.calendarTab && AppState.calendarTab !== 'today' ? '/' + AppState.calendarTab : '';
+        window.location.hash = '#/calendar' + sub;
+      }
+      return;
+    }
+    if (AppState.view === 'mission' && AppState.tab) {
+      window.location.hash = '#/p/' + encodeURIComponent(AppState.missionId);
+      return;
     }
     return;
   }
 
-  // Single-letter shortcuts only fire when not typing in editable fields
+  // Single-letter and sequence shortcuts only fire when not typing in editable fields
   if (isInputActive) return;
 
-  // '\\' -> toggle right meeting panel
+  // Leader sequence: g p, g i, g c
+  if (lastLeaderKey === 'g') {
+    lastLeaderKey = '';
+    clearTimeout(leaderTimeout);
+    if (e.key === 'p' || e.key === 'P') {
+      e.preventDefault();
+      showMissionSwitcher();
+      return;
+    }
+    if (e.key === 'i' || e.key === 'I') {
+      e.preventDefault();
+      window.location.hash = '#/inbox';
+      return;
+    }
+    if (e.key === 'c' || e.key === 'C') {
+      e.preventDefault();
+      window.location.hash = '#/calendar';
+      return;
+    }
+  }
+
+  if (e.key === 'g' || e.key === 'G') {
+    lastLeaderKey = 'g';
+    clearTimeout(leaderTimeout);
+    leaderTimeout = setTimeout(() => { lastLeaderKey = ''; }, 1000);
+    return;
+  }
+
+  // 1-9 jump to Nth active mission in rail
+  if (e.key >= '1' && e.key <= '9' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const idx = parseInt(e.key, 10) - 1;
+    const missions = MeetingHub.store.missionsRegistry?.missions || [];
+    const activeMissions = missions.filter(m => !m.archived && m.status !== 'archived');
+    if (activeMissions[idx]) {
+      e.preventDefault();
+      window.location.hash = '#/p/' + encodeURIComponent(activeMissions[idx].id);
+      return;
+    }
+  }
+
+  // '\\\\' -> toggle right meeting panel
   if (e.key === '\\\\') {
     e.preventDefault();
     setPanelCollapsed(!AppState.isPanelCollapsed);
     return;
   }
 
-  // 'j' or ArrowDown -> next meeting
+  // 'j' or ArrowDown -> next meeting (in stream or calendar)
   if (e.key === 'j' || e.key === 'ArrowDown') {
     e.preventDefault();
-    if (todayView && AppState.view === 'today') todayView.selectNextMeeting();
+    if (AppState.view === 'mission') {
+      if (projectsView && typeof projectsView.selectNextMeeting === 'function') {
+        projectsView.selectNextMeeting();
+      }
+    } else if (todayView && AppState.view === 'calendar' && AppState.calendarTab === 'today') {
+      todayView.selectNextMeeting();
+    }
     return;
   }
 
-  // 'k' or ArrowUp -> previous meeting
+  // 'k' or ArrowUp -> previous meeting (in stream or calendar)
   if (e.key === 'k' || e.key === 'ArrowUp') {
     e.preventDefault();
-    if (todayView && AppState.view === 'today') todayView.selectPreviousMeeting();
+    if (AppState.view === 'mission') {
+      if (projectsView && typeof projectsView.selectPreviousMeeting === 'function') {
+        projectsView.selectPreviousMeeting();
+      }
+    } else if (todayView && AppState.view === 'calendar' && AppState.calendarTab === 'today') {
+      todayView.selectPreviousMeeting();
+    }
     return;
   }
 
@@ -492,7 +872,8 @@ async function bootstrap() {
     
     openActionsCount = await MeetingHub.store.getOpenActionsCount();
     shell.renderSidebar(openActionsCount);
-    shell.renderHeader('Today', 'Wednesday 28 October 2026');
+    const initialTodaySub = (typeof formatLongDate === 'function') ? formatLongDate(AppState.date) : AppState.date;
+    shell.renderHeader('Today', initialTodaySub);
 
     // Retrieve & render initial sync status in sidebar
     try {
@@ -566,7 +947,14 @@ async function bootstrap() {
       },
       onClose: () => {
         setPanelCollapsed(true);
-        window.location.hash = AppState.view === 'today' ? '#/today' : '#/' + AppState.view;
+        if (AppState.view === 'mission' && AppState.missionId) {
+          window.location.hash = '#/p/' + encodeURIComponent(AppState.missionId);
+        } else if (AppState.view === 'calendar') {
+          const sub = AppState.calendarTab && AppState.calendarTab !== 'today' ? '/' + AppState.calendarTab : '';
+          window.location.hash = '#/calendar' + sub;
+        } else {
+          window.location.hash = AppState.view === 'today' ? '#/today' : '#/' + AppState.view;
+        }
       },
       onCollapse: () => {
         setPanelCollapsed(true);
@@ -603,20 +991,24 @@ async function bootstrap() {
       }
     } catch (e) {}
 
-    // Handle initial route or default flagship meeting
+    // Handle initial route
     handleHashRoute();
     renderActiveView();
 
-    if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '#/today') {
-      const todayEvents = MeetingHub.store.getEventsByDate(AppState.date, 'work');
-      const defaultMeeting = todayEvents.find(e => e.title.includes('MO - Suivi anomalies')) || todayEvents[0];
-      if (defaultMeeting && !AppState.isPanelCollapsed) {
-        window.location.hash = '#/meeting/' + encodeURIComponent(defaultMeeting.id);
-      }
-    }
-
     const activeEngine = MeetingHub.store.db.engineName || 'IndexedDB';
-    console.log('[MeetingHub] Ready. 259 events loaded via ' + activeEngine + '.');
+    const initialEventsList = await MeetingHub.store.getAllEvents();
+    console.log('[MeetingHub] Ready. ' + initialEventsList.length + ' events loaded via ' + activeEngine + '.');
+
+    // Non-blocking background sync pass to pull fresh calendar changes from backend
+    setTimeout(async () => {
+      try {
+        await MeetingHub.CalendarSyncService.syncAll(MeetingHub.store.db, MeetingHub.store);
+        const freshStatus = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
+        shell.setSyncStatus(freshStatus);
+      } catch (e) {
+        // Silent background sync fail
+      }
+    }, 600);
   } catch (err) {
     console.error('[MeetingHub] Initialization error:', err);
     if (leftCol) {

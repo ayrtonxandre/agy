@@ -19,7 +19,7 @@ export class ProjectsView {
     this.container = container;
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
-    this.currentProjectId = 'clariane';
+    this.currentProjectId = 'ge-enterprise';
     this.currentSubTab = 'workstreams'; // 'workstreams' | 'decisions' | 'actions' | 'docs' | 'settings'
     this.actionOwnerFilter = 'all';
     this.actionStatusFilter = 'open';
@@ -38,6 +38,13 @@ export class ProjectsView {
     this.render();
   }
 
+  setTab(tab) {
+    if (tab) {
+      this.currentSubTab = tab;
+      this.render();
+    }
+  }
+
   // Alias for backward compatibility
   setClient(clientId) {
     this.setProject(clientId);
@@ -49,7 +56,7 @@ export class ProjectsView {
     // Load all projects
     const allProjects = await this.store.getAllProjects();
     if (!allProjects.some(p => p.id === this.currentProjectId)) {
-      this.currentProjectId = allProjects[0]?.id || 'clariane';
+      this.currentProjectId = allProjects[0]?.id || 'ge-enterprise';
     }
 
     // Build project base from store
@@ -91,7 +98,7 @@ export class ProjectsView {
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="label">Project Base &amp; Intelligence Hub</span>
-              <span class="badge ok" style="font-weight: 600;">Active Deployment</span>
+              <span class="badge ${project.archived ? 'sub' : 'ok'}" style="font-weight: 600;">${project.archived ? 'Archived Initiative' : 'Active Deployment'}</span>
               <span class="badge" style="font-family: var(--font-mono); font-size: 11px;">${this._escape(project.projectId)}</span>
             </div>
             <h1 style="font: 600 24px/1.2 var(--font-sans); margin: 4px 0;">${this._escape(project.projectName)}</h1>
@@ -106,7 +113,7 @@ export class ProjectsView {
             <select id="projectSelectDropdown" class="input" style="font-size: 13px; font-weight: 600; height: 34px; padding: 4px 10px; border-radius: var(--r-sm); min-width: 260px; cursor: pointer;">
               ${allProjects.map(p => `
                 <option value="${this._escape(p.id)}" ${this.currentProjectId.toLowerCase() === p.id.toLowerCase() ? 'selected' : ''}>
-                  ${this._escape(p.name)}
+                  ${p.archived ? '[Archived] ' : ''}${this._escape(p.name)}
                 </option>
               `).join('')}
             </select>
@@ -131,6 +138,14 @@ export class ProjectsView {
               All ${project.totalMeetings} meetings across this initiative have ingested minutes.
             `}
           </div>
+          ${project.inboxPendingCount > 0 ? `
+            <div style="margin-top: 8px; padding: 6px 10px; background: color-mix(in oklab, #d97706 15%, var(--card)); border: 1px solid #d97706; border-radius: var(--r-sm); display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11.5px; font-weight: 500; color: #b45309;">
+                ⏳ <b>${project.inboxPendingCount} raw minutes file${project.inboxPendingCount > 1 ? 's' : ''} in _inbox/</b> waiting to be folded into mission notes
+              </span>
+              <span class="sub" style="font-size: 11px;">Single source of truth</span>
+            </div>
+          ` : ''}
         </div>
 
         <!-- KPI Metric Strip -->
@@ -209,6 +224,23 @@ export class ProjectsView {
                     <ul style="margin: 0; padding-left: 16px; font-size: 11.5px; color: var(--muted-foreground); display: grid; gap: 3px;">
                       ${ws.keyRules.map(r => `<li>${this._escape(r)}</li>`).join('')}
                     </ul>
+                  </div>
+                ` : ''}
+
+                ${(ws.openPoints && ws.openPoints.length > 0) ? `
+                  <div style="margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--border);">
+                    <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--pink-600); margin-bottom: 4px; display: flex; justify-content: space-between;">
+                      <span>Open Points (${ws.openPoints.length})</span>
+                      <span class="sub" style="font-size: 10px;">from notes</span>
+                    </div>
+                    <div style="display: grid; gap: 4px;">
+                      ${ws.openPoints.slice(0, 4).map(op => `
+                        <div style="font-size: 11px; padding: 4px 6px; background: var(--muted); border-radius: var(--r-sm); line-height: 1.35;">
+                          <b style="font-family: var(--font-mono); color: var(--pink-600);">${this._escape(op.id || '')}:</b> ${this._escape(op.what || op.point || '')}
+                          ${op.owner ? `<span class="sub" style="font-size: 10px;"> — ${this._escape(op.owner)}</span>` : ''}
+                        </div>
+                      `).join('')}
+                    </div>
                   </div>
                 ` : ''}
 
@@ -378,16 +410,18 @@ export class ProjectsView {
           <div style="display: grid; gap: 6px;">
             ${matrixActions.length > 0 ? matrixActions.map(act => `
               <div class="card" style="padding: 10px 12px; display: flex; align-items: flex-start; gap: 10px; transition: border-color 0.15s;">
-                <button class="item-check-btn ${act.done ? 'checked' : ''}" data-action-id="${this._escape(act.id)}" data-meeting-id="${this._escape(act.meetingId)}" title="${act.done ? 'Mark open' : 'Mark done'}" style="margin-top: 3px;">
+                <button class="item-check-btn ${act.done ? 'checked' : ''}" data-action-id="${this._escape(act.id)}" data-meeting-id="${this._escape(act.meetingId || '')}" data-is-note="${Boolean(act.file)}" title="${act.file ? 'Note action: click to copy ID for updating in notes' : (act.done ? 'Mark open' : 'Mark done')}" style="margin-top: 3px;">
                   ${act.done ? Icons.check : ''}
                 </button>
 
                 <div style="flex: 1; min-width: 0;">
                   <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    <span class="badge info" style="font-family: var(--font-mono); font-size: 10px; font-weight: 700;">${this._escape(act.id)}</span>
                     <span class="chip-owner" style="font-weight: 600;">${this._escape(act.owner)}</span>
                     <span class="badge" style="font-size: 10px;">${this._escape(act.ownerOrg)}</span>
                     ${act.facility ? `<span class="badge" style="font-size: 10px;">${this._escape(act.facility)}</span>` : ''}
                     ${act.dueDate ? `<span class="chip-due" style="font-size: 10px;">${Icons.clock} ${this._escape(act.dueDate)}</span>` : ''}
+                    ${act.file ? `<span class="badge ok" style="font-size: 10px; font-family: var(--font-mono);">[${this._escape(act.file)}]</span>` : ''}
                     ${(act.tags || []).map(t => `<span class="badge" style="font-size: 10px;">#${this._escape(t)}</span>`).join('')}
                   </div>
                   <div class="tx ${act.done ? 'done' : ''}" style="margin-top: 4px; font-size: 12.5px; line-height: 1.4;">
@@ -399,13 +433,22 @@ export class ProjectsView {
                     </div>
                   ` : ''}
                   <div class="sub" style="font-size: 11px; margin-top: 4px;">
-                    ${act.meetingDate} · <i>${this._escape(act.meetingTitle)}</i>
+                    ${act.meetingDate ? `${act.meetingDate} · ` : ''}<i>${this._escape(act.meetingTitle || act.source || 'Mission Action')}</i>
                   </div>
                 </div>
 
-                <button class="btn sm" data-open-meeting="${this._escape(act.meetingId)}" style="flex-shrink: 0; font-size: 11px; margin-top: 2px;">
-                  Open Meeting
-                </button>
+                <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0; margin-top: 2px;">
+                  ${act.file ? `
+                    <button class="btn sm" data-copy-note-action="${this._escape(act.id)}" data-note-file="${this._escape(act.file)}" title="Copy action ID to clipboard to mark done in note" style="font-size: 11px;">
+                      📋 Copy ID
+                    </button>
+                  ` : ''}
+                  ${act.meetingId ? `
+                    <button class="btn sm" data-open-meeting="${this._escape(act.meetingId)}" style="font-size: 11px;">
+                      Open Meeting
+                    </button>
+                  ` : ''}
+                </div>
               </div>
             `).join('') : '<div class="empty">No matching actions found.</div>'}
           </div>
@@ -590,6 +633,13 @@ export class ProjectsView {
     this.container.querySelectorAll('.item-check-btn[data-action-id]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const actId = btn.dataset.actionId;
+        if (btn.dataset.isNote === 'true') {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(actId);
+          }
+          alert(`Copied ${actId} to clipboard!\nTo mark this action done, edit Actions.md directly (Markdown notes are the single source of truth).`);
+          return;
+        }
         const mId = btn.dataset.meetingId;
         if (!mId) return;
 
@@ -597,6 +647,22 @@ export class ProjectsView {
         const items = (mData.items || []).map(it => it.id === actId ? { ...it, done: !it.done } : it);
         await this.store.saveMeetingData(mId, { items });
         this.render();
+      });
+    });
+
+    // Copy note action ID button
+    this.container.querySelectorAll('[data-copy-note-action]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actId = btn.dataset.copyNoteAction;
+        const noteFile = btn.dataset.noteFile || 'Actions.md';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(actId);
+        }
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✓ Copied!';
+        alert(`Copied ${actId} to clipboard!\nOpen ${noteFile} in your editor to mark it done (notes are single source of truth).`);
+        setTimeout(() => { btn.innerHTML = orig; }, 1500);
       });
     });
 

@@ -87,7 +87,9 @@ export class EventModel {
     if (corpus.includes('athx') || corpus.includes('training') || corpus.includes('wod') || corpus.includes('crossfit')) {
       return { stream: 'life', client: 'ATHX', isTraining: true };
     }
-    if (corpus.includes('clariane') || corpus.includes('inicea') || corpus.includes('estela') || corpus.includes('@clariane.fr')) {
+    if (corpus.includes('clariane') || corpus.includes('inicea') || corpus.includes('estela') || corpus.includes('@clariane.fr') ||
+        corpus.includes('hdj') || corpus.includes('netsoins') || corpus.includes('molécules onéreuses') || corpus.includes('molecules onereuses') ||
+        corpus.includes('care dispensing') || corpus.includes('updates mo') || corpus.includes('questions mo') || corpus.includes('[invoicing]')) {
       return { stream: 'work', client: 'Clariane', isTraining: false };
     }
     if (corpus.includes('personal') || corpus.includes('ma vie') || corpus.includes('icloud')) {

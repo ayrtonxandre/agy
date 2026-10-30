@@ -11,6 +11,7 @@
  */
 import { Icons } from '../ui/icons.js';
 import { PrepScoreCalculator } from '../model/prep_score.js';
+import { getTodayDateStr, formatLongDate } from '../model/date_utils.js';
 
 export class TodayView {
   constructor({ container, store, onSelectMeeting, onNavigateProject }) {
@@ -19,13 +20,38 @@ export class TodayView {
     this.onSelectMeeting = onSelectMeeting;
     this.onNavigateProject = onNavigateProject;
     this.selectedEventId = null;
-    this.currentDate = '2026-10-28';
+    this.currentDate = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
     this.currentMode = 'all'; // 'all' | 'work' | 'life'
     this.searchQuery = '';
   }
 
+  prevDay() {
+    const [y, m, d] = this.currentDate.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() - 1);
+    const pad = n => String(n).padStart(2, '0');
+    this.setDate(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`);
+  }
+
+  nextDay() {
+    const [y, m, d] = this.currentDate.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() + 1);
+    const pad = n => String(n).padStart(2, '0');
+    this.setDate(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`);
+  }
+
+  goToday() {
+    const today = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
+    this.setDate(today);
+  }
+
   setDate(date) {
     this.currentDate = date;
+    const subtitleEl = document.querySelector('#subtitle');
+    if (subtitleEl && document.querySelector('#title')?.textContent === 'Today') {
+      subtitleEl.textContent = typeof formatLongDate === 'function' ? formatLongDate(date) : date;
+    }
     this.render();
   }
 
@@ -151,18 +177,23 @@ export class TodayView {
     if (nextMeeting) {
       const data = await this.store.getMeetingData(nextMeeting.id);
       const links = await this.store.suggestLinks(nextMeeting);
-      nextPrep = PrepScoreCalculator.computeMeetingPrep(nextMeeting, data, links);
-      isNextWithin48h = PrepScoreCalculator.isWithin48Hours(nextMeeting.date, nextMeeting.start, this.currentDate, '00:00');
+      const project = this.store.getProjectForMeeting(nextMeeting);
+      let inboxStatus = 'not_sent';
+      let missionSummary = null;
 
       // Wire Project Base into Next up
-      const project = this.store.getProjectForMeeting(nextMeeting);
       if (project) {
         try {
+          inboxStatus = await this.store.getMeetingInboxStatus(nextMeeting.id, project.id);
+          missionSummary = await this.store.getMissionSummary(project.id);
           nextProjectBase = await this.store.getProjectBase(project.id);
         } catch (e) {
           console.warn('[TodayView] Could not load project base for next meeting:', e);
         }
       }
+
+      nextPrep = PrepScoreCalculator.computeMeetingPrep(nextMeeting, data, links, { inboxStatus, missionSummary });
+      isNextWithin48h = PrepScoreCalculator.isWithin48Hours(nextMeeting.date, nextMeeting.start, this.currentDate, '00:00');
 
       if (this.selectedEventId === undefined) {
         this.selectedEventId = nextMeeting.id;
@@ -209,7 +240,7 @@ export class TodayView {
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="label" style="margin-bottom: 0;">48h Prep Checklist</span>
                 <span class="sub" style="font-size: 11px; font-weight: 500;">
-                  ${nextPrep.missingCount === 0 ? 'All 3 criteria satisfied' : `${nextPrep.missingCount} item${nextPrep.missingCount > 1 ? 's' : ''} to complete before meeting`}
+                  ${nextPrep.missingCount === 0 ? 'All criteria satisfied' : `${nextPrep.missingCount} item${nextPrep.missingCount > 1 ? 's' : ''} to complete before meeting`}
                 </span>
               </div>
 
@@ -233,6 +264,13 @@ export class TodayView {
             </div>
           `}
 
+          ${nextPrep.inbox && nextPrep.inbox.pending ? `
+            <div style="margin: 6px 0; padding: 6px 10px; background: color-mix(in oklab, #d97706 15%, var(--card)); border: 1px solid #d97706; border-radius: var(--r-sm); font-size: 11.5px; display: flex; align-items: center; gap: 8px;">
+              <span style="color: #d97706; flex-shrink: 0;">${Icons.clock || '⏳'}</span>
+              <span><b>Inbox pending:</b> Raw minutes waiting to be folded into mission notes.</span>
+            </div>
+          ` : ''}
+
           <!-- Wired Project Base Intelligence Strip -->
           ${nextProjectBase ? `
             <div class="next-project-strip">
@@ -249,6 +287,46 @@ export class TodayView {
                 View Project Hub
               </button>
             </div>
+
+            <!-- Workstream Context (from Notes) -->
+            ${((nextProjectBase.openPoints && nextProjectBase.openPoints.length > 0) || (nextProjectBase.decisionRegister && nextProjectBase.decisionRegister.length > 0)) ? `
+              <div class="card" style="margin-top: 8px; padding: 10px 12px; background: var(--card); border: 1px solid var(--border); border-radius: var(--r-sm);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pink-600);">Workstream Context (from Notes)</span>
+                  <span class="sub" style="font-size: 10.5px;">Single Source of Truth</span>
+                </div>
+
+                ${(nextProjectBase.openPoints && nextProjectBase.openPoints.length > 0) ? `
+                  <div style="margin-bottom: 8px;">
+                    <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px; color: var(--foreground);">Open Points:</div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      ${nextProjectBase.openPoints.slice(0, 5).map(p => `
+                        <div style="font-size: 11.5px; line-height: 1.35; display: flex; align-items: baseline; gap: 6px;">
+                          <span class="badge" style="font-size: 9.5px; font-family: var(--font-mono); font-weight: 600; padding: 0 4px; flex-shrink: 0;">${this._escape(p.id)}</span>
+                          <span style="flex: 1; min-width: 0;">${this._escape(p.point || p.description || '')}</span>
+                          ${p.owner ? `<span class="chip-owner" style="font-size: 10px; padding: 0 4px; flex-shrink: 0;">${this._escape(p.owner)}</span>` : ''}
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+
+                ${(nextProjectBase.decisionRegister && nextProjectBase.decisionRegister.length > 0) ? `
+                  <div>
+                    <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px; color: var(--foreground);">Recent Validated Decisions:</div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      ${nextProjectBase.decisionRegister.slice(-3).reverse().map(d => `
+                        <div style="font-size: 11.5px; line-height: 1.35; display: flex; align-items: baseline; gap: 6px;">
+                          ${d.date ? `<span class="sub" style="font-size: 10.5px; font-family: var(--font-mono); flex-shrink: 0;">${this._escape(d.date)}:</span>` : ''}
+                          <span style="flex: 1; min-width: 0;">${this._escape(d.statement || d.decision || '')}</span>
+                          ${d.facility ? `<span class="badge" style="font-size: 9.5px; padding: 0 4px; flex-shrink: 0;">${this._escape(d.facility)}</span>` : ''}
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            ` : ''}
           ` : ''}
 
           <div style="display: flex; gap: 8px; margin-top: 6px;">
@@ -265,8 +343,15 @@ export class TodayView {
       ` : ''}
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <div class="label" style="margin-bottom: 0;">
-          Timeline · Wednesday 28 October 2026
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="label" style="margin-bottom: 0;">
+            Timeline · ${typeof formatLongDate === 'function' ? formatLongDate(this.currentDate) : this.currentDate}
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 2px;">
+            <button class="btn sm" id="todayPrevDayBtn" title="Previous day" style="padding: 1px 6px; font-size: 11px; height: 20px;">‹</button>
+            <button class="btn sm" id="todayCurrentDayBtn" title="Today" style="padding: 1px 6px; font-size: 10px; height: 20px;">Today</button>
+            <button class="btn sm" id="todayNextDayBtn" title="Next day" style="padding: 1px 6px; font-size: 11px; height: 20px;">›</button>
+          </div>
         </div>
         ${this.searchQuery ? `
           <div style="display: flex; align-items: center; gap: 6px;">
@@ -327,6 +412,11 @@ export class TodayView {
   }
 
   _bindEvents() {
+    // Prev / Next day navigation
+    this.container.querySelector('#todayPrevDayBtn')?.addEventListener('click', () => this.prevDay());
+    this.container.querySelector('#todayCurrentDayBtn')?.addEventListener('click', () => this.goToday());
+    this.container.querySelector('#todayNextDayBtn')?.addEventListener('click', () => this.nextDay());
+
     // Clear filter
     this.container.querySelector('#clearFilterBtn')?.addEventListener('click', () => {
       this.searchQuery = '';

@@ -20,37 +20,46 @@ This document provides a comprehensive technical overview of the **Meeting Hub**
 ```
 meeting_hub/
 ├── meeting_hub.html           # Application HTML shell & viewport container
-├── meeting_hub.app.js         # Compiled, standalone application bundle (245 KB)
-├── build.js                   # Node.js bundler (compiles modules, embeds cache & seed)
+├── meeting_hub.app.js         # Compiled, standalone application bundle (315.4 KB)
+├── build.js                   # Node.js bundler (compiles modules, builds missions snapshot)
+├── _deprecated/               # Archived domain logic retired in Phase 4
+│   ├── minutes_engine.js      # Archived original minutes extraction engine
+│   ├── project_engine.js      # Archived in-memory multi-meeting synthesis engine
+│   └── project.js             # Archived hardcoded project constants
 ├── data/
 │   ├── adapter.js             # Multi-engine storage adapter (IndexedDB -> LocalStorage -> Memory)
 │   ├── db.js                  # Database schema & store initializers
 │   ├── importer.js            # Idempotent calendar importer & meeting notes initial seed
 │   ├── initial_events.json    # Static JSON of 259 calendar events
 │   ├── initial_events.js      # Global JS wrapper for initial events (file:// CORS resilience)
-│   ├── docs_cache.json        # Pre-cached real meeting minutes from Google Docs
+│   ├── missions_snapshot.js   # Offline missions registry snapshot (from Missions/missions.yaml)
+│   ├── docs_cache.json        # Pre-cached real meeting minutes from Google Docs (server-only)
 │   └── sync.js                # Calendar sync service & stream freshness tracking
 ├── model/
 │   ├── event.js               # Event domain model, date parsing & normalization
 │   ├── series.js              # Recurring series clustering & cadence inference
 │   ├── links.js               # LinkEngine: deterministic meeting linkage & accept/reject store
-│   ├── prep_score.js          # Dynamic meeting readiness calculator (0-100%)
-│   ├── minutes_engine.js      # Deterministic minutes parser (actions, decisions, entities)
-│   ├── project_engine.js      # Cross-meeting aggregator (workstreams, decisions, action matrix)
-│   └── store.js               # Central reactive state store (MeetingHubStore singleton)
+│   ├── prep_score.js          # Dynamic meeting readiness calculator (evaluates inbox pending state)
+│   ├── minutes_engine.js      # Deterministic minutes parser (metadata, participants, topics, actions)
+│   ├── project.js             # Generic decoupled ProjectModel factory & validator
+│   └── store.js               # Central reactive state store (wires to /api/missions/* and snapshot)
 ├── ui/
 │   ├── icons.js               # Pure stroke SVG icon library (Lucide/Tabler, no emojis)
 │   ├── styles.css             # Arty design tokens (OKLCH, typography, dark mode, layout)
 │   ├── shell.js               # Persistent dark navy sidebar, sticky header, theme toggle
-│   ├── meeting_panel.js       # Right slide-over drawer (Agenda, Minutes, Actions, Decisions, Related)
+│   ├── meeting_panel.js       # Right slide-over drawer (Agenda, Minutes with inbox status, Actions)
 │   └── cart.js                # Macro Cart component (logic preserved, UI deferred)
-└── views/
-    ├── today.js               # Today timeline, next-up prep card, all-day strip, life overlay
-    ├── week.js                # Multi-day weekly health review & density KPIs
-    ├── meetings.js            # Searchable, filterable calendar directory (259 events)
-    ├── actions.js             # Open actions view grouped by client engagement
-    ├── series.js              # Recurring meeting series browser & lineage graphs
-    └── projects.js            # Project Base & Knowledge Hub (workstreams, decision register, matrix)
+├── views/
+│   ├── today.js               # Today timeline, next-up prep card with note context, inbox pending alert
+│   ├── week.js                # Multi-day weekly health review & density KPIs
+│   ├── meetings.js            # Searchable, filterable calendar directory (259 events)
+│   ├── actions.js             # Open actions view reading authoritatively from mission notes (Actions.md)
+│   ├── series.js              # Recurring meeting series browser & lineage graphs
+│   └── projects.js            # Project Base reading live note summaries (workstreams, decisions, matrix)
+└── tests/
+    ├── test_step2.js          # Generic decoupled models & honest coverage tests (7/7 pass)
+    ├── test_phase3.js         # Store & views integration with mission notes system of record (6/6 pass)
+    └── test_mission_notes.py  # Python backend mission notes parser & idempotency tests (6/6 pass)
 ```
 
 ### Detailed File Responsibilities
@@ -58,31 +67,33 @@ meeting_hub/
 | File | Responsibilities |
 | :--- | :--- |
 | **`meeting_hub.html`** | Single HTML entry point. Loads Jost & Fira Code Google Fonts, `styles.css`, `initial_events.js`, and `meeting_hub.app.js`. Mounts `<aside>` (sidebar), `<header>`, and split columns (`#left` main view, `#right` drawer). |
-| **`build.js`** | Concatenates modules in topological order, strips ESM `import`/`export` keywords, exports them onto `window.MeetingHub`, embeds `initial_events.js` and `docs_cache.json` (`window.DOCS_CACHE`), and wires the global hash router and keyboard shortcuts. |
+| **`build.js`** | Concatenates modules in topological order, strips ESM `import`/`export` keywords, exports them onto `window.MeetingHub`, auto-generates `data/missions_snapshot.js` from `Missions/missions.yaml`, strips client minutes from bundle for privacy, and wires router and shortcuts. |
 | **`data/adapter.js`** | Unified asynchronous key-value database interface (`get`, `put`, `getAll`, `delete`, `clear`). Automatically tests IndexedDB; if blocked by sandbox or browser security, falls back gracefully to `LocalStorageAdapter` or `MemoryAdapter`. |
-| **`data/db.js`** | Factory `getDatabase()`. Defines object stores: `events`, `series`, `links`, `meeting_data`, `cart`, `sync_status`. |
+| **`data/db.js`** | Factory `getDatabase()`. Defines object stores: `events`, `series`, `links`, `meeting_data`, `cart`, `sync_status`. Browser storage strictly retains UI preferences and calendar caches—never mission knowledge. |
 | **`data/importer.js`** | Imports the 259 calendar events idempotently. Groups recurring meetings into series entries. Seeds flagship Clariane meetings with their Google Doc URLs. |
 | **`data/sync.js`** | `CalendarSyncService`. Manages 4 calendar streams (Google Artefact, Outlook Clariane, iCloud Personal, Garmin ATHX). Tracks per-source `lastSynced` timestamps, relative time strings ("Just now", "2m ago"), and simulated sync re-fetching. |
-| **`data/docs_cache.json`** | Local cache of real Google Doc meeting minutes for offline/file-mode reliability (e.g. Mariéna and Les Arbelles planning meetings). |
+| **`data/missions_snapshot.js`** | Offline snapshot of `missions.yaml` generated by `build.js` so `file://` mode loads registry metadata without network or CORS restrictions. |
+| **`data/docs_cache.json`** | Local cache of real Google Doc meeting minutes used strictly on backend (`/api/docs/fetch`); never baked into the distributed frontend bundle. |
 | **`model/event.js`** | Standardizes raw calendar payloads. Normalizes start/end strings (`HH:MM`), calculates `durationMin`, assigns `stream` (`work` vs `life`), cleans titles, detects training/recovery sessions, and extracts `googleDocUrl`. |
 | **`model/series.js`** | Groups repetitive meeting subjects into recurring series objects with calculated cadence (weekly, bi-weekly, monthly) and event lists. |
 | **`model/links.js`** | `LinkEngine`. Deterministically links meetings based on: (1) series lineage, (2) overlapping attendee sets, (3) matching client tags, (4) explicit parent-child relations. Supports an **Accept / Reject / Unlink** workflow so the user controls connections. |
-| **`model/prep_score.js`** | Calculates 0–100% meeting readiness based on: Agenda populated (+35%), previous minutes logged (+35%), open actions reviewed (+30%). Provides dynamic badge color classes (`ok`, `warn`, `pink`). |
-| **`model/minutes_engine.js`** | Deterministic minutes intelligence parser. Takes raw plain text or Markdown notes and extracts: metadata (facility, date), participants (with roles/orgs), discussion topics, action items (with owner parsing, owner organization, and due timing), validated decision statements, and knowledge tools (`Foundry`, `HM`, `rTMS`). |
-| **`model/project_engine.js`** | Aggregates all meeting notes, actions, decisions, and connected docs across a client (e.g. Clariane). Synthesizes 4 Strategic Workstreams, compiles a Cumulative Decision Register, builds a Cross-Meeting Action Matrix, and indexes participating stakeholders. |
-| **`model/store.js`** | `MeetingHubStore` singleton. In-memory cached access to events, series, and links. Manages reactive pub/sub subscriptions, saves meeting notes/items keyed strictly by `id`, queries `/api/docs/fetch` or local cache, and computes project bases. |
+| **`model/prep_score.js`** | Evaluates meeting readiness (Agenda, previous meeting folded into notes, carried-over actions, and inbox pending status). |
+| **`model/minutes_engine.js`** | Minutes parser for meeting metadata (date, facility, title), participants, topics, and meeting-level actions. Decisions and domain knowledge extraction are deprecated in favor of the authoritative note fold workflow. |
+| **`model/project.js`** | Generic decoupled `ProjectModel` validator and factory. Hardcoded constants were removed and archived into `_deprecated/`. |
+| **`model/store.js`** | `MeetingHubStore` singleton. Orchestrates cache access, loads `/api/missions/*`, builds `ProjectBase` directly from parsed Markdown note summaries, tracks inbox status, and delivers 1-click clipboard action management. |
 | **`ui/icons.js`** | SVG stroke icons (no emojis): `calendar`, `week`, `users`, `checkSquare`, `link`, `activity`, `plus`, `refreshCw`, `layers`, `fileText`, `externalLink`, `clock`, `alertCircle`, etc. |
 | **`ui/styles.css`** | Arty design system tokens: OKLCH color definitions, CSS variables, typography hierarchy, layout grid, dense KPI metric cells, badge variants, theme toggle styles, meeting drawer slide-over, and responsive breakpoints. |
 | **`ui/shell.js`** | Manages persistent sidebar navigation (Today, Week, Meetings, Open Actions, Series & Links, Projects & Knowledge, ATHX Athlete link), calendar stream sync status indicator, Work/Life/All filter pills, theme toggle (Dark/Light), and header updates. |
-| **`ui/meeting_panel.js`** | Right-hand drawer routed to `#/meeting/:id`. Contains 5 tabs: **Agenda**, **Minutes** (connected Google Doc, 1-click fetch, file upload, text area, extraction review card), **Actions** (interactive checkboxes, owner, due date), **Decisions**, and **Related** (accepted and suggested meeting links). |
+| **`ui/meeting_panel.js`** | Right-hand drawer routed to `#/meeting/:id`. Minutes tab features mission selector, live inbox status badge (`✓ Folded into mission notes`, `⏳ In inbox, waiting to be folded`, `Not sent`), and `#sendToInboxBtn`. Actions tab displays note-derived decisions and actions citing this meeting. |
 | **`ui/cart.js`** | Macro Cart tray component. Manages adding items to a persistent cart for batch recap email, follow-up meeting drafting, or task batch export. |
-| **`views/today.js`** | Daily view: Top "Next Up" preparation banner with dynamic prep score and action list; all-day events strip; timed scrollable timeline with visual indicators and life overlay. |
+| **`views/today.js`** | Daily view: Top "Next Up" preparation banner with note-derived workstream context (3–5 open points and recent validated decisions), inbox pending warning alert, all-day events strip, and timed scrollable timeline. |
 | **`views/week.js`** | Multi-day review view: 4 KPI summary cards (Meeting Load, Prep Readiness, Open Actions, Life Balance), multi-column day grid showing meeting distribution. |
 | **`views/meetings.js`** | Searchable table directory of all 259 events with client badges, stream indicators, date filtering, and quick search. |
-| **`views/actions.js`** | Open Actions view grouping pending action items by client engagement (Artefact, Clariane, Crédit Agricole, Ferrero) with quick toggle and owner tags. |
+| **`views/actions.js`** | Open Actions view aggregating actions from `Actions.md` across all registered missions alongside local items. Renders Action ID badges (`ACT-CLAR-01`), source file badges (`[Actions.md]`), and 1-click `📋 Copy ID` buttons. |
 | **`views/series.js`** | Recurring series view: list of recurring series with occurrences count, cadence badge, and visual lineage cards of past/future sessions. |
-| **`views/projects.js`** | Project Base & Knowledge Hub for client initiatives (e.g. Clariane HDJ Planning Manager): Top KPI strip (Meetings, Actions, Decisions, Docs), 4 Strategic Workstreams, Cumulative Decision Register, Cross-Meeting Action Matrix, Stakeholder Directory, and Connected Docs. |
-| **`orchestrator.py`** | Python backend server on port 8080. Added `/api/docs/fetch` (Google Drive v3 API `files().export(mimeType='text/plain')` with cache fallback) and routing for `/meeting`. |
+| **`views/projects.js`** | Project Base & Knowledge Hub driven live by mission note summaries: Top KPI strip with inbox pending alerts, note workstreams with open points lists, cumulative decision register, and action matrix with single-source-of-truth guards. |
+| **`mission_notes.py`** | Standalone backend module parsing Markdown tables in `Missions/` (Decisions, Actions, Open Points, Rules), resolving safe paths, enforcing inbox idempotency, and generating full mission summaries. |
+| **`orchestrator.py`** | Python backend server on port 8080. Added localhost-only `/api/missions/*` REST endpoints, `/api/docs/fetch`, and static routing for `/meeting`. |
 
 ---
 
@@ -100,37 +111,38 @@ The table below contrasts what was originally specified in `AGY_PROMPT.md` again
 | **6. Extraction Confirmation** | No review mechanism was specified (either auto-extracted or omitted). | **Extraction Review Card:** Minutes extraction runs deterministically, presenting proposed actions (with inferred owner and due date) and decisions with individual checkboxes and a 1-click `✓ Apply to Meeting Items & Project Base` button. | Designed to prevent automated noise from polluting the persistent action backlog. |
 | **7. Project Base & Knowledge Hub** | **Not in original prompt.** Original prompt only scoped event-level notes and series grouping. | **Complete Project Base Knowledge Hub (`views/projects.js` & `#/projects`):** Aggregates minutes across an entire client initiative (Clariane: 48 meetings). Provides 4 Strategic Workstreams, a Cumulative Decision Register, Cross-Meeting Action Matrix, Stakeholder Directory, and Connected Docs. | User requested: *"On the project level, the sum of the minutes could feed the whole project base. Lets scope this"*. |
 | **8. Data Layer Resilience** | Prompt specified IndexedDB with a thin adapter. | **Multi-Engine Resilient Database Adapter (`adapter.js`):** IndexedDB + LocalStorage fallback + In-memory fallback + bundled cache (`window.DOCS_CACHE` & `window.INITIAL_EVENTS`). | When running under strict browser environments or `file://`, raw IndexedDB calls hung. Adapter ensures zero-latency instant loading everywhere. |
+| **9. Knowledge Moved to Markdown System of Record** | Original implementation relied on in-memory `ProjectEngine` regex parsing across historical meetings and IndexedDB items. | **Plain Markdown System of Record (`Missions/`):** Plain Markdown notes in `/Users/ayrtonandre/Documents/work/Missions/` are the authoritative single source of truth for decisions, actions, and workstream rules. Meeting Hub captures raw minutes to `_inbox/` and reads live summaries from `/api/missions/*`. Action items in the Hub point to `Actions.md` as the single source of truth (users copy the action ID with 1 click to mark done in the note). `ProjectEngine` was retired to `_deprecated/`, and raw client minutes were removed from the bundled client JS for complete privacy. | User approved merge plan (`docs/AGY_PROMPT_KNOWLEDGE_MERGE.md`) to establish durable plain-text files as the single source of truth for all mission knowledge and eliminate browser-only state risks. |
 
 ---
 
 ## 4. Key Architectural Systems
 
-### A. Meeting Minutes Intelligence Engine (`MinutesEngine`)
-Located at [`meeting_hub/model/minutes_engine.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/model/minutes_engine.js):
-- **Deterministic Regex-Based Parser**: Does not require an external LLM for core extraction; operates instantly and offline.
-- **Participants**: Extracts name, role, and organization (e.g., `GAILLET Claire | IDE - Marienia`, `FERRIER Fabien | Cadre de rééducation`).
-- **Actions**: Matches action bullet items, splits on `:` or `|`, attributes owners (`Claire GAILLET`, `Artefact`, `Les Arbelles`, `Équipe`), infers organization (`Client` vs `Artefact` vs `Transversal`), determines due dates (`Semaine prochaine`, `Cette semaine`, `Prioritaire`), and assigns workstream tags (`hm-sync`, `foundry`, `modeling`, `alerting`, `analytics`).
-- **Decisions**: Detects French decision structures (*Workflow de Validation*, *Politique Zéro Temps Mort*, *Solution Retenue*, *Surbooking*, *Règle Bilans*).
-- **Knowledge Entities**: Tags platforms (`Foundry`, `Hôpital Manager`) and clinical concepts (`Flux Annonces`, `Case Mix`, `rTMS/tDCS`, `Balnéothérapie`).
+### A. Mission System of Record & Markdown Notes Seam
+Located at [`mission_notes.py`](file:///Users/ayrtonandre/Documents/work/AGY/mission_notes.py) and `/Users/ayrtonandre/Documents/work/Missions/`:
+- **Single Source of Truth**: All domain decisions, open points, actions, and workstream rules live in human-readable Markdown files (`Mission Overview.md`, `Actions.md`, facility notes).
+- **The Fold Workflow**: Raw minutes captured in Meeting Hub are delivered via `POST /api/missions/<id>/inbox` to `_inbox/`. The user/agent folds them into authoritative Markdown notes, moving processed minutes to `_inbox/_folded/`.
+- **Backend Bridge**: `mission_notes.py` parses Markdown tables, resolves safe paths (strictly blocking traversal attacks), provides inbox write idempotency, and aggregates full mission summaries consumed via `/api/missions/<id>/summary`.
+- **Dual Run Mode**: Online mode reads live note summaries from the backend; standalone `file://` mode degrades gracefully by loading `data/missions_snapshot.js`.
 
-### B. Project Base Knowledge Hub (`ProjectEngine` & `ProjectsView`)
-Located at [`meeting_hub/model/project_engine.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/model/project_engine.js) and [`meeting_hub/views/projects.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/views/projects.js):
-- **Synthesis Across Sessions**: Gathers all meetings tagged with a client (`Clariane`), extracts minutes items, and deduplicates decisions and actions.
-- **Strategic Workstreams**:
-  1. *Flux Annonces & Processus d’Admission* (`HM → Foundry`)
-  2. *Modélisation des Programmes Thérapeutiques* (`Moteur & Contraintes`)
-  3. *Synchronisation SIH & Circuit de Validation* (`Foundry ↔ HM`)
-  4. *Analytique, Alerting & Case Mix* (`Reporting & Pilotage`)
+### B. Meeting Minutes Capture (`MinutesEngine` & Drawer)
+Located at [`meeting_hub/model/minutes_engine.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/model/minutes_engine.js) and [`meeting_hub/ui/meeting_panel.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/ui/meeting_panel.js):
+- **Deterministic Regex-Based Parser**: Operates instantly and offline to extract meeting metadata, participants (with clinical/operational roles), topics, and immediate meeting actions.
+- **Minutes Ingestion & Inbox Delivery**: Connects to Google Docs via `/api/docs/fetch` or accepts manual text/Granola notes. Displays live inbox status (`Not sent`, `⏳ In inbox, waiting to be folded`, `✓ Folded into mission notes`) and dispatches to the mission inbox via `#sendToInboxBtn`.
+- **Decisions & Knowledge Decoupling**: Decisions and domain knowledge entities are no longer extracted into ad-hoc browser memory; they are authoritatively extracted during the note fold workflow.
+
+### C. Project Base & Workstreams View (`views/projects.js`)
+Located at [`meeting_hub/views/projects.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/views/projects.js):
+- **Direct Note Synthesis**: Powered live by `store.buildProjectBaseFromSummary()`.
+- **Workstreams with Open Points**: Each workstream card displays its active open points directly from the corresponding Markdown note.
 - **Cumulative Decision Register**: Permanent log of architecture and workflow agreements with links back to the meeting session where they were made.
-- **Cross-Meeting Action Matrix**: Filterable by owner organization (`Artefact` vs `Client`), status (`Open` vs `Done`), with live checkbox toggle and search.
-- **Connected Docs & Artifacts**: Direct links to open Google Docs (`Open Google Doc ↗`) and jump directly to relevant calendar events.
+- **Single Source of Truth Action Matrix**: Filterable action matrix citing `Actions.md`. Renders Action ID badges (`ACT-CLAR-01`), source note badges, and 1-click `📋 Copy ID` buttons, guarding against silent browser DB divergence.
 
-### C. Persistent Routing & Keyboard Navigation
+### D. Persistent Routing & Keyboard Navigation
 - **Routes**:
   - `#/today`: Today view.
   - `#/week`: Weekly review view.
   - `#/meetings`: Searchable directory.
-  - `#/actions`: Open actions backlog.
+  - `#/actions`: Open actions backlog reading from mission notes.
   - `#/series`: Recurring series & lineages.
   - `#/projects`: Project Base & Knowledge Hub.
   - `#/meeting/:id`: Opens right-hand drawer while preserving the active left view.
@@ -146,20 +158,18 @@ Located at [`meeting_hub/model/project_engine.js`](file:///Users/ayrtonandre/Doc
 
 ## 5. Current Verification & Build State
 
-1. **Step 1 & Step 2 Verified**:
-   - Generic project schema `{ id, name, clientMatch[], docSources[], workstreams[], parserHints[] }` stored in IndexedDB `projects`.
-   - Domain knowledge decoupled: 9 pre-configured initiatives matching real calendar tracks (HDJ, MO, Invoicing, F360, Coproj Data, GE Enterprise/UC Wizard, Healthcare/Care Dispensing, PrideFact RSE, Counseling).
-   - Priority matching on meeting title bracket tags (`[TAG]`) and auto-discovery via `getSuggestedProjects()`.
-   - Honest coverage bars ("X of Y meetings have minutes", never fake 100%).
-   - Source quotes and direct links stored on all extracted actions and decisions.
-   - Cross-meeting decision deduplication with "first decided on" and "restated on" audit history.
-   - 48h prep checklist replacing percentage scores for upcoming meetings.
-   - Collapsible right meeting panel with persistent state.
-   - Master shell command `meeting` to launch orchestrator server and open browser.
-2. **Compilation**: `node meeting_hub/build.js` produces a verified 317.3 KB standalone bundle [`meeting_hub/meeting_hub.app.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/meeting_hub.app.js) with zero syntax errors.
-3. **Automated Test Suite**: Verified via [`meeting_hub/tests/test_step2.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/tests/test_step2.js): 7/7 unit tests passing.
-4. **Execution Modes**:
-   - `http://localhost:8080/meeting` (via `orchestrator.py serve` or `meeting` command).
+1. **Phase 1 to Phase 4 Completed & Verified**:
+   - Missions system of record established under `/Users/ayrtonandre/Documents/work/Missions/Clariane HDJ Planning Manager/` following `bootstrapping-missions` standards.
+   - Fold workflow implemented and tested on real meeting minutes (`execute_fold.py`).
+   - Frontend wired to live Markdown summaries (`/api/missions/*`) with graceful `file://` fallback (`missions_snapshot.js`).
+   - Legacy `ProjectEngine` and hardcoded project constants moved to `meeting_hub/_deprecated/`.
+   - Client minutes purged from `meeting_hub.app.js` (`window.DOCS_CACHE = {}`), reducing bundle size from 359.8 KB to **315.4 KB (-44.4 KB / -12.3%)**.
+2. **Automated Test Suites (100% Passing)**:
+   - `test_step2.js`: 7/7 PASSED (Decoupled models, honest coverage, decision deduplication).
+   - `test_phase3.js`: 6/6 PASSED (Mission registry, summary mapping, single source of truth action contract, inbox status detection, prep score alerts).
+   - `test_mission_notes.py`: 6/6 PASSED (Markdown table parser, path traversal protection, inbox idempotency).
+3. **Execution Modes**:
+   - `http://localhost:8080/meeting` (via `python3 orchestrator.py serve` or `meeting` command).
    - `file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub.html` (standalone double-click in browser).
 
 ---

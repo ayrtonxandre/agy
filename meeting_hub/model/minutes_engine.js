@@ -357,60 +357,11 @@ export class MinutesEngine {
     return actions;
   }
 
-  /* ================= Decisions Extraction ================= */
-
+  /* ================= Decisions Extraction (DEPRECATED) ================= */
+  // Deprecated as part of Phase 4: Decisions are authoritatively maintained in
+  // mission Markdown notes (Decisions.md) via the fold workflow.
   static extractDecisions(cleanText, topics = [], hints = {}, meta = {}) {
-    const decisions = [];
-    const lines = cleanText.split('\n').map(l => l.trim()).filter(Boolean);
-    const meetingLink = meta.meetingId ? `#/meeting/${encodeURIComponent(meta.meetingId)}` : '';
-
-    // Project-configured decision triggers
-    const configuredTriggers = (hints.decisionTriggers || []).map(t => {
-      try {
-        if (typeof t === 'string') {
-          const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          return { regex: new RegExp(`(?:\\b${escaped}\\b)\\s*[:|]?\\s*(.+)`, 'i'), label: t };
-        }
-        return { regex: new RegExp(t.pattern, 'i'), label: t.label || 'Decision' };
-      } catch (e) {
-        return null;
-      }
-    }).filter(Boolean);
-
-    // Generic fallback triggers if none configured or alongside
-    const genericTriggers = [
-      { regex: /(?:\bdécision\b|\bdecision\b)\s*[:|]\s*(.+)/i, label: 'Decision' },
-      { regex: /(?:\bdécidé\s+que\b|\bdecided\s+that\b|\bconvenu\s+de\b|\bagreed\s+to\b)\s+(.+)/i, label: 'Agreement' },
-      { regex: /(?:\bsolution\s+retenue\b|\bsolution\s+adoptée\b)\s*[:|]?\s*(.+)/i, label: 'Adopted Solution' }
-    ];
-
-    const decisionTriggers = configuredTriggers.length > 0
-      ? [...configuredTriggers, ...genericTriggers]
-      : genericTriggers;
-
-    for (const line of lines) {
-      // Skip section headers like "Décisions prises:" or "Décisions :"
-      if (/^(?:#+\s*)?(?:décisions?(?:\s+prises)?|decisions?)\s*:\s*$/i.test(line)) {
-        continue;
-      }
-
-      for (const trigger of decisionTriggers) {
-        if (trigger.regex.test(line)) {
-          const statement = line.replace(/^[*\-•]\s*/, '').trim();
-          decisions.push({
-            id: `dec-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            label: trigger.label,
-            statement,
-            context: MinutesEngine.findContextTopic(line, topics),
-            quote: line,
-            meetingLink
-          });
-          break;
-        }
-      }
-    }
-
-    return decisions;
+    return [];
   }
 
   static findContextTopic(line, topics) {
@@ -422,47 +373,14 @@ export class MinutesEngine {
     return 'General';
   }
 
-  /* ================= Knowledge Extraction ================= */
-
+  /* ================= Knowledge Extraction (DEPRECATED) ================= */
+  // Deprecated as part of Phase 4: Knowledge, tools, and concepts are authoritatively
+  // captured in mission Markdown notes (Overview.md, Workstreams.md) via the fold workflow.
   static extractKnowledge(text, facility = '', hints = {}) {
-    const lower = text.toLowerCase();
-    const tools = [];
-    const concepts = [];
-    const facilities = [];
-
-    // Driven dynamically by project parser hints
-    const configuredTools = hints.tools || [];
-    for (const t of configuredTools) {
-      const name = typeof t === 'string' ? t : t.name;
-      const keywords = typeof t === 'string' ? [t.toLowerCase()] : (t.keywords || [t.name.toLowerCase()]);
-      if (keywords.some(k => lower.includes(k.toLowerCase()))) {
-        tools.push({ name, type: (typeof t === 'object' && t.type) || 'Tool' });
-      }
-    }
-
-    const configuredConcepts = hints.concepts || [];
-    for (const c of configuredConcepts) {
-      const name = typeof c === 'string' ? c : c.name;
-      const keywords = typeof c === 'string' ? [c.toLowerCase()] : (c.keywords || [c.name.toLowerCase()]);
-      if (keywords.some(k => lower.includes(k.toLowerCase()))) {
-        concepts.push({ name, desc: (typeof c === 'object' && c.desc) || '' });
-      }
-    }
-
-    const configuredFacilities = hints.facilities || [];
-    for (const f of configuredFacilities) {
-      if (lower.includes(f.toLowerCase())) {
-        facilities.push(f);
-      }
-    }
-    if (facility && !facilities.includes(facility)) {
-      facilities.push(facility);
-    }
-
     return {
-      tools: Array.from(new Map(tools.map(t => [t.name, t])).values()),
-      concepts: Array.from(new Map(concepts.map(c => [c.name, c])).values()),
-      facilities: Array.from(new Set(facilities))
+      tools: [],
+      concepts: [],
+      facilities: []
     };
   }
 

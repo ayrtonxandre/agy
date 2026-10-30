@@ -6,6 +6,7 @@
  * sidebar project switcher with suggestions, and live calendar source sync status.
  */
 import { Icons } from './icons.js';
+import { getTodayDateStr, formatLongDate } from '../model/date_utils.js';
 
 export class ShellUI {
   constructor({
@@ -422,13 +423,15 @@ export class ShellUI {
     btn.onclick = () => this.toggleTheme();
   }
 
-  renderHeader(title = 'Today', subtitle = 'Wednesday 28 October 2026') {
+  renderHeader(title = 'Today', subtitle = null) {
     const header = document.querySelector('header');
     if (!header) return;
 
+    const sub = subtitle !== null ? subtitle : (title === 'Today' ? (typeof formatLongDate === 'function' ? formatLongDate(typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10)) : '') : '');
+
     header.innerHTML = `
       <h1 id="title">${title}</h1>
-      <span class="sub" id="subtitle">${subtitle}</span>
+      <span class="sub" id="subtitle">${sub}</span>
       <div class="spacer"></div>
 
       <div class="header-search">

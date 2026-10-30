@@ -116,10 +116,18 @@ Documents/work/AGY/
 **Meeting Hub** is an executive-grade desktop web application replacing legacy single-file calendar dashboards with a structured preparation and capture system: *"Walk into every meeting prepared, walk out with actions captured."*
 
 ### Core Principles & Design Rules
-1. **Generic Engine**: Zero hardcoded client names, counts, ratios, or workstreams in codebase logic. Domain knowledge is cleanly decoupled into project configuration records stored in IndexedDB.
-2. **Honest Coverage Only**: Never displays misleading percentages that imply completeness. Shows exact metrics (e.g. *"2 of 17 meetings have minutes"*), distinguishing meetings with ingested minutes from those without.
-3. **Data Stays Local**: Client minutes, action registers, and decisions reside in local browser storage (`IndexedDB` with fallback to `LocalStorage` and in-memory cache) with full JSON export/import capability.
-4. **Arty Design System**: Jost typography for readable text, Fira Code for IDs and dates, OKLCH color palette with dark navy `#0B132B` background, flat 1px borders, and pure Lucide stroke SVG icons (zero emojis).
+1. **Generic Engine**: Zero hardcoded client names, counts, ratios, or workstreams in codebase logic. Domain knowledge is decoupled into plain Markdown mission repositories (`/Users/ayrtonandre/Documents/work/Missions/`) referenced via `missions.yaml`.
+2. **Honest Coverage Only**: Never displays misleading percentages that imply completeness. Shows exact metrics (e.g. *"2 of 20 meetings folded"*), distinguishing meetings whose minutes have been folded into the system of record from pending raw minutes.
+3. **Markdown as Single Source of Truth**: Mission notes (`Mission Overview.md`, `Actions.md`, facility notes) are the authoritative system of record. Meeting Hub captures raw minutes to `_inbox/` and reads live summaries via `/api/missions/*`. Actions cite `Actions.md` with 1-click clipboard copy of IDs (`ACT-CLAR-01`).
+4. **Data Stays Local & Private**: No client minutes or credentials are baked into the frontend bundle (`meeting_hub.app.js`). All mission APIs are strictly localhost-only (`_is_localhost` guard blocking remote LAN or Docker access).
+5. **Arty Design System**: Jost typography for readable text, Fira Code for IDs and dates, OKLCH color palette with dark navy `#0B132B` background, flat 1px borders, and pure Lucide stroke SVG icons (zero emojis).
+
+### Mission System of Record & The Fold Workflow
+- **System of Record**: Each mission lives under `/Users/ayrtonandre/Documents/work/Missions/<Mission Name>/` with structured notes (`Agent brief.md`, `Mission Overview.md`, `Actions.md`, `_inbox/`, `_inbox/_folded/`, and facility workstream notes).
+- **Capture Seam**: Meeting Hub connects to Google Docs via `/api/docs/fetch` or accepts manual text/Granola notes. Clicking **"Send to mission inbox"** creates an idempotent Markdown file in `_inbox/` with YAML metadata.
+- **The Fold Routine**: The user or AI agent executes the fold routine (`POST /api/missions/<id>/fold` or `execute_fold.py`), extracting decisions into workstream notes, assigning open points, updating `Actions.md`, and archiving processed minutes to `_folded/`.
+- **Honest Prep Checklist**: Prep score evaluates whether prior meetings of a series were folded into notes, and warns if unprocessed raw minutes are pending in the mission inbox.
+- **Action Matrix**: The Hub acts as a read-only viewport on `Actions.md`. To complete an action, the user copies the ID with 1 click and updates the note directly, preventing browser storage divergence.
 
 ### 9 Configured Project Initiatives & Bracket Matching
 The system categorizes 259 calendar events across 9 active initiatives. Meeting titles with bracket tags (`[TAG]`) receive top matching priority:

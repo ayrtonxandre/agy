@@ -14,9 +14,9 @@
  */
 
 import assert from 'assert';
-import { ProjectModel, DEFAULT_CLARIANE_PROJECT } from '../model/project.js';
-import { MinutesEngine } from '../model/minutes_engine.js';
-import { ProjectEngine } from '../model/project_engine.js';
+import { ProjectModel, DEFAULT_CLARIANE_PROJECT } from '../_deprecated/project.js';
+import { MinutesEngine } from '../_deprecated/minutes_engine.js';
+import { ProjectEngine } from '../_deprecated/project_engine.js';
 import { PrepScoreCalculator } from '../model/prep_score.js';
 
 let passed = 0;

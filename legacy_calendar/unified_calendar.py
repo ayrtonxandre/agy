@@ -211,6 +211,9 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                     src = default_source
                     if any(prefix in summary for prefix in ["⚡ ATHX", "🏋️ ATHX", "🏃 ATHX"]) or summary.strip().startswith("🏋️"):
                         src = "⚡ ATHX (Training)"
+                    elif (ev.get("colorId") == "7" or 
+                          any(kw in summary.lower() for kw in ["clariane", "inicea", "estela", "hdj", "netsoins", "molécules onéreuses", "molecules onereuses", "care dispensing", "updates mo", "questions mo", "[invoicing]"])):
+                        src = "🏥 Clariane (Client)"
 
                     video_link = extract_meeting_video_link(ev)
                     attendees = extract_attendees_info(ev)

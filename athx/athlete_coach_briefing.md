@@ -10,18 +10,16 @@
 | Shoulder-to-Overhead (S2O) | 65.0 kg | 52.5 kg | -12.5 kg | 🟡 +0.42 kg/wk (In Progress) |
 | Barbell Back Squat | 125.0 kg | 90.0 kg | -35.0 kg | 🟡 +1.17 kg/wk (In Progress) |
 | Deadlift Floor Pull | 160.0 kg | 140.0 kg | -20.0 kg | 🟡 +0.67 kg/wk (In Progress) |
-| 5km Running Pace | 4:30/km | 5:07/km | +37s/km | 🟡 -1.24s/wk (In Progress) |
+| 5km Running Pace | 4:30/km | 5:07/km | +37s/km | 🟡 -1.25s/wk (In Progress) |
 | Sandbag Carry / Grip | 60.0 kg | 56.0 kg | -4.0 kg | 🟡 +0.13 kg/wk (In Progress) |
 
 ---
 
 ## 3. ⚠️ Critical Deficit & Fatigue Alerts
-- **Volume Starvation**: Chest: 7.6 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Lats/Back: 8.7 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Quads: 5.0 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Hamstrings/Glutes: 5.1 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Chest: 9.7 sets/wk (Deficit vs MEV 10.0)
+- **Volume Starvation**: Quads: 5.6 sets/wk (Deficit vs MEV 8.0)
 - **Volume Starvation**: Forearms: 1.0 sets/wk (Deficit vs MEV 4.0)
-- **Acute:Chronic Workload Ratio (ACWR)**: `1.62` (High Injury Risk (>1.5)). Acute load is 5,208.5 kg vs chronic baseline 3,213.7 kg. Foster training monotony is `0.80`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
+- **Acute:Chronic Workload Ratio (ACWR)**: `1.62` (High Injury Risk (>1.5)). Acute load is 5,329.1 kg vs chronic baseline 3,289.5 kg. Foster training monotony is `0.83`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
 - **Sleep & Recovery**: 7-day average sleep duration is `7.0 hrs` with a composite readiness score of `98.3%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
 ---

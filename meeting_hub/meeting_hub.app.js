@@ -1,19 +1,227 @@
 /**
  * Meeting Hub Compiled Application Bundle
- * Generated: 2026-10-29T15:02:04.943Z
+ * Generated: 2026-10-30T09:09:34.123Z
  */
 (function(window, document) {
 'use strict';
 
-window.DOCS_CACHE = {
-  "1eLUVhYG6hwiqOzauSEDZoGJHu_B9jQuC5Pmbg-8bd_8": {
-    "title": "[CLARIANE] - 20261026 - Param. Prog. The. Org - Mariena",
-    "content": "\ufeffHDJ Planning Manager\r\nParamétrage des programmes thérapeutiques et organisation - Marienia\r\n________________\r\n\r\n\r\nBonjour Claire,\r\n\r\n\r\nMerci d’avoir participé à l’atelier de discussion et de paramétrage de l’outil de planification.\r\nVous trouverez ci-dessous les minutes de nos échanges\r\n→ N’hésites pas à les compléter\r\n\r\n\r\nUn bon début de semaine,\r\nAyrton\r\n________________\r\n \r\nMinutes\r\n\r\n\r\nDate | 26 Octobre 2026\r\n\r\n\r\nParticipants\r\n* GAILLET Claire | IDE - Marienia\r\n* DE GIROLAMO Benjamin | Data Analyst\r\n* ANDRE Ayrton | Data Analyst\r\n\r\n\r\nPoints Abordés\r\nContexte et Approche du projet\r\n* Rappel de l'outil et mécanisme de synchronisation\r\n\r\n   * Démonstration des vues \"Vacations\" et \"Disponibilité\".\r\n   * Clarification du workflow de validation : la validation d'un circuit sur Foundry le passe au statut \"En attente HM\". Une fois les créneaux saisis manuellement dans Hôpital Manager (HM), l'algorithme fait le rapprochement et valide le rendez-vous en \"Réel\".\r\n\r\n      * Processus d'Admission (Flux Annonces)\r\n\r\n         * À Mariéna, le flux \"Annonces\" est utilisé pour tous les patients (HDJ et HC), et c'est le médecin qui détermine ensuite s'il s'agit d'une prise en charge HDJ.\r\n         * L'outil a été adapté avec un onglet permettant d'inclure ou d'exclure facilement les annonces/pré-admissions pour isoler celles concernant l'HDJ.\r\n\r\n            * Modélisation des Parcours Thérapeutiques\r\n\r\n               * Gestion des imprévus de placement : Suite aux difficultés rencontrées par Claire pour déplacer des séances (ex: Ergo / Balnéo), démonstration de la fonctionnalité permettant de \"forcer\" un placement via le surbooking et du changement manuel d'intervenant.\r\n               * Parcours complexes (ex: Parcours Douloureux) : Analyse du cas des patients venant toutes les 3 semaines pour des séances de rTMS / tDCS le lundi. La solution retenue est de créer des vacations isolées/dédiées pour ce groupe, avec une fréquence de récurrence paramétrée à 3 semaines dans l'outil.\r\n\r\n                  * Anomalies techniques en cours de résolution\r\n\r\n                     * Certaines vacations (Kiné, Balnéo, Ergo collective) ne remontent pas encore dans la disponibilité Foundry en raison d'un paramétrage HM en cours d'investigation par l'équipe technique.\r\n\r\nLes prochaines étapes\r\n                        * Claire GAILLET : Modéliser sur papier ou fichier Excel les parcours thérapeutiques complexes (avec les séances ponctuelles ou très espacées) pour préparer le paramétrage.\r\n                        * Artefact : Résoudre le problème de remontée des vacations depuis HM (Kiné, Balnéo, Ergo) et prévenir Claire pour qu'elle puisse reprendre ses tests.\r\n                        * Artefact : Développer un système d'alerte (alerting) dans l'outil pour signaler lorsqu'un patient est positionné sur deux vacations en même temps.\r\n                        * Prochain point de suivi : Mardi matin de la semaine prochaine pour avancer sur la modélisation des parcours."
-  },
-  "1jDunJURx26Di9c6k4vjhmA84w3Hh_zCCmCxnU0kcFjY": {
-    "title": "[CLARIANE] - 20261021 - Param. Prog. The. Org - Les Arbelles",
-    "content": "\ufeffHDJ Planning Manager\r\nParamétrage des programmes thérapeutiques et organisation - Les Arbelles\r\n________________\r\n\r\n\r\nBonjour Fabien et Delphine,\r\n\r\n\r\nMerci d’avoir participé à l’atelier de discussion et de paramétrage de l’outil de planification.\r\nVous trouverez ci-dessous les minutes de nos échanges\r\n→ N’hésites pas à les compléter\r\n\r\n\r\nUn bon début de semaine,\r\nAyrton\r\n________________\r\n \r\nMinutes\r\n\r\n\r\nDate | 21 Octobre 2026\r\n\r\n\r\nParticipants\r\n* FERRIER Fabien | Cadre de rééducation - Les Arbelles\r\n* CUVELIER Delphine | Agent administratif - Les Arbelles\r\n* DE GIROLAMO Benjamin | Data Analyst\r\n* ANDRE Ayrton | Data Analyst\r\n\r\n\r\nPoints abordés\r\n\r\n\r\n* Vue Vacations et Visibilité : \r\n   * Présentation de la vue centralisée des plannings par salle et par intervenant.\r\n   * Les noms et prénoms des patients seront bien visibles pour le personnel médical habilité. \r\n   * À terme, l'outil pourrait offrir un accès en lecture seule aux praticiens pour consulter spécifiquement leurs propres vacations.\r\n* Processus d'Admission et flux \"Annonce\" : \r\n   * Actuellement, Les Arbelles n'utilise pas les annonces dans HM ; les patients “potentiels” sont gérés au travers d’une liste d'attente sur un agenda papier et saisit les pré-admissions environ 15 jours avant l'entrée. \r\n   * Pour maximiser l'efficacité du calcul de disponibilité dans Foundry, il a été proposé de saisir les patients au statut \"Annonce\" dans HM dès la confirmation de la demande. Cette annonce remontera ensuite directement dans Foundry.\r\n* Contraintes des Programmes Thérapeutiques : \r\n   * Les Arbelles gèrent des programmes \"carrés\" (Dos, Parkinson) mais font aussi du sur-mesure complexe pour la neuro et le locomoteur.\r\n\r\n   * Politique zéro temps mort : Par manque d'espace d'attente, les patients ne doivent avoir aucun \"trou\" entre leurs séances. La capacité de l'outil à forcer et rapprocher manuellement des créneaux simulés a été démontrée avec succès.\r\n   * Bilans et spécificités : Les bilans d'entrée et de sortie se font en individuel. D'autres séances (Diététique, Neuropsychologie) sont moins régulières (ex. une fois toutes les deux semaines ou occasionnellement) et devront être paramétrées comme des séances périodiques ou ajoutées à la volée.\r\n\r\n\r\n   * Analytique et Reporting Budgétaire : \r\n   * Lors de la présentation des tableaux de bord, Fabien a souligné un besoin métier majeur : pouvoir extraire le case mix réel (pourcentage de l'activité Neuro vs Locomoteur). Cette donnée est essentielle pour la construction de leurs budgets, les prix de journée étant différents selon le segment.\r\n\r\n\r\nProchaines étapes\r\n   * Les Arbelles | Modéliser \"sur papier\" la structure de leurs différents programmes thérapeutiques (tronc commun, fréquence des séances, bilans d'entrée/sortie) pour préparer le paramétrage.\r\n\r\n\r\n   * Les Arbelles | Se connecter à l'outil dans la semaine pour le prendre en main et remonter les premiers retours d'utilisation.\r\n\r\n\r\n   * Artefact | Se renseigner sur les champs obligatoires minimaux requis dans HM pour créer une \"Annonce\" et faire un retour à Delphine pour tester ce nouveau processus.\r\n\r\n\r\n   * Artefact | Ajuster les filtres de la vue vacation pour bien séparer les médecins, les psychologues et les neuropsychologues.\r\n\r\n\r\n   * Artefact | S'assurer que la plateforme permet de modéliser facilement les séances de bilan ciblées (début/fin) et les séances périodiques espacées."
-  }
+window.DOCS_CACHE = {};
+
+// Auto-generated missions registry snapshot (file:// fallback)
+var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MISSIONS_SNAPSHOT = {
+  "missions": [
+    {
+      "id": "ge-enterprise",
+      "name": "GE Enterprise & UC Wizard",
+      "client": "Artefact Internal",
+      "directory": "GE Enterprise",
+      "status": "active",
+      "archived": false,
+      "brief": "GE Enterprise/Agent brief.md",
+      "overview": "GE Enterprise/Mission Overview.md",
+      "actions": "GE Enterprise/Actions.md",
+      "inbox": "GE Enterprise/_inbox",
+      "clientMatch": [
+        "ge enterprise",
+        "ge-enterprise",
+        "uc wizard",
+        "uc-wizard",
+        "datastore ge",
+        "weekly sync - ge enterprise",
+        "[mandat ge]",
+        "mandat ge"
+      ],
+      "workstreams": [
+        {
+          "id": "ws-ge-stream",
+          "name": "GE Enterprise Stream",
+          "phase": "Actif",
+          "summary": "Mandat principal : Datastore GE Drive, gouvernance transverse & livrables",
+          "note": "GE Enterprise/GE Enterprise Stream.md"
+        },
+        {
+          "id": "ws-uc-wizard",
+          "name": "UC Wizard Development",
+          "phase": "Actif",
+          "summary": "Sub-stream : architecture technique, prompt engineering, interface utilisateur",
+          "note": "GE Enterprise/UC Wizard Development.md"
+        }
+      ]
+    },
+    {
+      "id": "healthcare-mandate",
+      "name": "Healthcare Mandate & Care Dispensing",
+      "client": "Artefact Internal",
+      "directory": "Healthcare Mandate",
+      "status": "active",
+      "archived": false,
+      "brief": "Healthcare Mandate/Agent brief.md",
+      "overview": "Healthcare Mandate/Mission Overview.md",
+      "actions": "Healthcare Mandate/Actions.md",
+      "inbox": "Healthcare Mandate/_inbox",
+      "clientMatch": [
+        "care dispensing",
+        "[care dispensing]",
+        "healthcare",
+        "healthoween",
+        "healthcare practice"
+      ],
+      "workstreams": [
+        {
+          "id": "ws-healthcare-team",
+          "name": "Healthcare Team & Community",
+          "phase": "Actif",
+          "summary": "Mandat principal : animation de la practice santé, Healthoween, rituels collectifs",
+          "note": "Healthcare Mandate/Healthcare Team & Community.md"
+        },
+        {
+          "id": "ws-care-dispensing",
+          "name": "Care Dispensing",
+          "phase": "Actif",
+          "summary": "Sub-stream d'Ayrton : conception de l'offre Care Dispensing, slides clients et architecture",
+          "note": "Healthcare Mandate/Care Dispensing.md"
+        }
+      ]
+    },
+    {
+      "id": "pridefact",
+      "name": "PrideFact - Mandat RSE",
+      "client": "Artefact Internal",
+      "directory": "PrideFact",
+      "status": "active",
+      "archived": false,
+      "brief": "PrideFact/Agent brief.md",
+      "overview": "PrideFact/Mission Overview.md",
+      "actions": "PrideFact/Actions.md",
+      "inbox": "PrideFact/_inbox",
+      "clientMatch": [
+        "pridefact",
+        "[pridefact]",
+        "mandat rse",
+        "charte du cercle",
+        "l'autre cercle",
+        "women@artefact & pridefact"
+      ],
+      "workstreams": [
+        {
+          "id": "ws-pridefact-synchro",
+          "name": "Synchro Mandat RSE",
+          "phase": "Actif",
+          "summary": "Mandat principal : gouvernance bimensuelle du collectif, sessions d'onboarding nouveaux arrivants",
+          "note": "PrideFact/Synchro Mandat RSE.md"
+        },
+        {
+          "id": "ws-charte-cercle",
+          "name": "Charte du Cercle",
+          "phase": "Actif",
+          "summary": "Sub-stream stratégique : adhésion et signature de la charte d'engagement LGBT+ de L'Autre Cercle",
+          "note": "PrideFact/Charte du Cercle.md"
+        }
+      ]
+    },
+    {
+      "id": "counseling",
+      "name": "Counseling & People Governance",
+      "client": "Artefact Internal",
+      "directory": "Counseling",
+      "status": "active",
+      "archived": false,
+      "brief": "Counseling/Agent brief.md",
+      "overview": "Counseling/Mission Overview.md",
+      "actions": "Counseling/Actions.md",
+      "inbox": "Counseling/_inbox",
+      "clientMatch": [
+        "counseling",
+        "counselling",
+        "counselor",
+        "counselee",
+        "roland juilhard",
+        "jamila nasri",
+        "eval h2",
+        "eval h2 2026",
+        "[itw] - slot"
+      ],
+      "workstreams": [
+        {
+          "id": "ws-counseling-roland",
+          "name": "Counselee - Roland Juilhard",
+          "phase": "Actif",
+          "summary": "Mentorat opérationnel, coaching de compétences, suivi 1:1 et préparation des comités d'évaluation",
+          "note": "Counseling/Counselee - Roland Juilhard.md"
+        },
+        {
+          "id": "ws-counseling-jamila",
+          "name": "Counselor - Jamila NASRI",
+          "phase": "Actif",
+          "summary": "Accompagnement de carrière d'Ayrton, deep dive peer reviews et soutenance de progression",
+          "note": "Counseling/Counselor - Jamila NASRI.md"
+        },
+        {
+          "id": "ws-counseling-eval",
+          "name": "Comités d'Évaluation & Peer Reviews",
+          "phase": "Actif",
+          "summary": "Campagne Eval H2 2026, sessions d'information counselors et entretiens de recrutement",
+          "note": "Counseling/Comités d'Évaluation & Peer Reviews.md"
+        }
+      ]
+    },
+    {
+      "id": "clariane-hdj",
+      "name": "Clariane HDJ Planning Manager",
+      "client": "Clariane / Inicea",
+      "directory": "Clariane HDJ Planning Manager",
+      "status": "archived",
+      "archived": true,
+      "brief": "Clariane HDJ Planning Manager/Agent brief.md",
+      "overview": "Clariane HDJ Planning Manager/Mission Overview.md",
+      "actions": "Clariane HDJ Planning Manager/Actions.md",
+      "inbox": "Clariane HDJ Planning Manager/_inbox",
+      "clientMatch": [
+        "[planning hdj]",
+        "[planning manager]",
+        "planning hdj",
+        "planning manager",
+        "hdj",
+        "arbelles",
+        "mariena",
+        "mariéna",
+        "glanum",
+        "inicea"
+      ],
+      "facilities": [
+        {
+          "name": "Glanum",
+          "specialties": [
+            "Locomoteur"
+          ],
+          "phase": "Hypercare",
+          "note": "Clariane HDJ Planning Manager/Glanum (Hypercare).md"
+        },
+        {
+          "name": "Les Arbelles",
+          "specialties": [
+            "Locomoteur",
+            "Neurologie"
+          ],
+          "phase": "Onboarding & Paramétrage",
+          "note": "Clariane HDJ Planning Manager/Les Arbelles (Onboarding & Paramétrage).md"
+        },
+        {
+          "name": "Mariéna",
+          "specialties": [
+            "Locomoteur",
+            "Neurologie"
+          ],
+          "phase": "Onboarding & Paramétrage",
+          "note": "Clariane HDJ Planning Manager/Mariéna (Onboarding & Paramétrage).md"
+        }
+      ],
+      "transversal": {
+        "name": "Transversal SIH HM & Moteur Foundry",
+        "note": "Clariane HDJ Planning Manager/Transversal SIH HM & Moteur Foundry.md"
+      }
+    }
+  ]
 };
 
 window.MeetingHub = window.MeetingHub || {};
@@ -550,6 +758,411 @@ MeetingHub.DB_SCHEMA = DB_SCHEMA;
 MeetingHub.getDatabase = getDatabase;
 MeetingHub.resetDatabaseInstance = resetDatabaseInstance;
 
+/* === Module: model/date_utils.js === */
+/**
+ * Date Utility Module for Meeting Hub
+ * 
+ * Provides timezone-safe date extraction and formatting.
+ */
+
+function getTodayDateStr(d = new Date()) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function formatLongDate(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  return `${weekday} ${d} ${month} ${y}`;
+}
+
+function getMondayOfWeek(dateStr) {
+  if (!dateStr) dateStr = getTodayDateStr();
+  const [y, m, day] = dateStr.split('-').map(Number);
+  const d = new Date(y, m - 1, day);
+  const dow = d.getDay();
+  const diff = d.getDate() - dow + (dow === 0 ? -6 : 1);
+  d.setDate(diff);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+MeetingHub.getTodayDateStr = getTodayDateStr;
+MeetingHub.formatLongDate = formatLongDate;
+MeetingHub.getMondayOfWeek = getMondayOfWeek;
+
+/* === Module: model/route_parser.js === */
+/**
+ * Meeting Hub Route Parser
+ * 
+ * Pure function parsing and formatting application routes for the Project-Centric Cockpit.
+ * Handles both new Archetype A routes and legacy aliases.
+ * 
+ * Supported Routes:
+ * - #/                                -> Root landing (resolves to last or first active mission)
+ * - #/p/<missionId>                   -> Project hub, drawer closed
+ * - #/p/<missionId>/m/<eventId>       -> Project hub + drawer on that meeting
+ * - #/p/<missionId>/<tab>             -> Project hub with knowledge tab open (workstreams, decisions, actions, contacts, brief)
+ * - #/inbox                           -> Cross-mission inbox
+ * - #/my-actions                      -> Cross-mission actions
+ * - #/calendar                        -> Calendar today view
+ * - #/calendar/<tab>                  -> Calendar tab (week, meetings, series)
+ * - #/calendar[/<tab>]/m/<eventId>    -> Calendar with drawer on that meeting
+ * 
+ * Legacy Aliases:
+ * - #/meeting/<eventId>               -> Legacy meeting (resolves to mission or calendar)
+ * - #/today, #/week, #/meetings, #/series -> Calendar views
+ * - #/actions                         -> My actions
+ * - #/projects                        -> Project root redirect
+ */
+
+const KNOWLEDGE_TABS = ['workstreams', 'decisions', 'actions', 'contacts', 'brief'];
+const CALENDAR_TABS = ['today', 'week', 'meetings', 'series'];
+
+function parseRoute(hash) {
+  const result = {
+    view: 'root',
+    missionId: null,
+    eventId: null,
+    tab: null,
+    isLegacy: false,
+    redirectTo: null
+  };
+
+  if (!hash || typeof hash !== 'string') {
+    return result;
+  }
+
+  // Strip query parameters and trim
+  const clean = hash.replace(/\?.*$/, '').trim();
+
+  // Normalize: remove leading # and leading/trailing slashes
+  let path = clean;
+  if (path.startsWith('#')) path = path.slice(1);
+  if (path.startsWith('/')) path = path.slice(1);
+  path = path.replace(/\/+$/, '');
+
+  // 1. Root route: '' or '/'
+  if (!path) {
+    result.view = 'root';
+    return result;
+  }
+
+  // 2. Project routes: p/:missionId...
+  if (path.startsWith('p/')) {
+    result.view = 'mission';
+    const parts = path.slice(2).split('/');
+    result.missionId = decodeURIComponent(parts[0]);
+
+    if (parts.length === 1) {
+      // #/p/:missionId
+      return result;
+    }
+
+    if (parts[1] === 'm' && parts.length >= 3) {
+      // #/p/:missionId/m/:eventId
+      // Join remaining parts in case eventId had unencoded slashes
+      result.eventId = decodeURIComponent(parts.slice(2).join('/'));
+      return result;
+    }
+
+    if (KNOWLEDGE_TABS.includes(parts[1])) {
+      // #/p/:missionId/:tab
+      result.tab = parts[1];
+      return result;
+    }
+
+    // Default fallback for unknown sub-segment
+    result.tab = parts[1];
+    return result;
+  }
+
+  // 3. Cross-mission Inbox
+  if (path === 'inbox') {
+    result.view = 'inbox';
+    return result;
+  }
+
+  // 4. Cross-mission My Actions
+  if (path === 'my-actions') {
+    result.view = 'my-actions';
+    return result;
+  }
+
+  // 5. Calendar routes: calendar...
+  if (path === 'calendar' || path.startsWith('calendar/')) {
+    result.view = 'calendar';
+    const parts = path.split('/');
+
+    if (parts.length === 1) {
+      // #/calendar
+      result.tab = 'today';
+      return result;
+    }
+
+    // Check for #/calendar/m/:eventId
+    if (parts[1] === 'm' && parts.length >= 3) {
+      result.tab = 'today';
+      result.eventId = decodeURIComponent(parts.slice(2).join('/'));
+      return result;
+    }
+
+    // Check for #/calendar/:tab[/m/:eventId]
+    if (CALENDAR_TABS.includes(parts[1])) {
+      result.tab = parts[1];
+      if (parts[2] === 'm' && parts.length >= 4) {
+        result.eventId = decodeURIComponent(parts.slice(3).join('/'));
+      }
+      return result;
+    }
+
+    result.tab = parts[1] || 'today';
+    return result;
+  }
+
+  // 6. Legacy meeting route: #/meeting/:eventId
+  if (path.startsWith('meeting/')) {
+    result.view = 'legacy-meeting';
+    result.eventId = decodeURIComponent(path.slice(8));
+    result.isLegacy = true;
+    return result;
+  }
+
+  // 7. Legacy calendar aliases
+  if (path === 'today') {
+    result.view = 'calendar';
+    result.tab = 'today';
+    result.isLegacy = true;
+    result.redirectTo = '#/calendar';
+    return result;
+  }
+
+  if (path === 'week') {
+    result.view = 'calendar';
+    result.tab = 'week';
+    result.isLegacy = true;
+    result.redirectTo = '#/calendar/week';
+    return result;
+  }
+
+  if (path === 'meetings') {
+    result.view = 'calendar';
+    result.tab = 'meetings';
+    result.isLegacy = true;
+    result.redirectTo = '#/calendar/meetings';
+    return result;
+  }
+
+  if (path === 'series') {
+    result.view = 'calendar';
+    result.tab = 'series';
+    result.isLegacy = true;
+    result.redirectTo = '#/calendar/series';
+    return result;
+  }
+
+  // 8. Legacy actions alias
+  if (path === 'actions') {
+    result.view = 'my-actions';
+    result.isLegacy = true;
+    result.redirectTo = '#/my-actions';
+    return result;
+  }
+
+  // 9. Legacy projects alias
+  if (path === 'projects') {
+    result.view = 'projects-legacy';
+    result.isLegacy = true;
+    result.redirectTo = '#/';
+    return result;
+  }
+
+  // Default fallback for any unrecognized hash
+  result.view = 'root';
+  return result;
+}
+
+function formatRoute({ view, missionId, eventId, tab }) {
+  if (view === 'mission' && missionId) {
+    if (eventId) {
+      return `#/p/${encodeURIComponent(missionId)}/m/${encodeURIComponent(eventId)}`;
+    }
+    if (tab && KNOWLEDGE_TABS.includes(tab)) {
+      return `#/p/${encodeURIComponent(missionId)}/${encodeURIComponent(tab)}`;
+    }
+    return `#/p/${encodeURIComponent(missionId)}`;
+  }
+
+  if (view === 'inbox') {
+    return '#/inbox';
+  }
+
+  if (view === 'my-actions') {
+    return '#/my-actions';
+  }
+
+  if (view === 'calendar') {
+    const sub = tab && tab !== 'today' ? `/${tab}` : '';
+    if (eventId) {
+      return `#/calendar${sub}/m/${encodeURIComponent(eventId)}`;
+    }
+    return `#/calendar${sub}`;
+  }
+
+  return '#/';
+}
+
+MeetingHub.parseRoute = parseRoute;
+MeetingHub.formatRoute = formatRoute;
+
+/* === Module: model/mission_matcher.js === */
+/**
+ * Mission ↔ Meeting Matcher
+ * 
+ * Pure function that resolves which mission an event belongs to.
+ * Priority:
+ * 1. Bracket title tags (e.g. [MANDAT GE], [CARE DISPENSING], [PrideFact], [HDJ], [MO])
+ * 2. clientMatch entries from missions.yaml against title, tags, or client field
+ * 3. Attendee overlap with the mission's contacts
+ * Ambiguous matches return confidence: 'ambiguous'.
+ */
+
+function matchMission(event, registry) {
+  if (!event) return null;
+  const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
+  if (!missions.length) return null;
+
+  const rawTitle = (event.title || '').trim();
+  const title = rawTitle.toLowerCase();
+  const client = (event.client || '').toLowerCase().trim();
+  const tags = (Array.isArray(event.tags) ? event.tags : []).map(t => String(t).toLowerCase().trim());
+  const attendees = (Array.isArray(event.attendees) ? event.attendees : []).map(a => String(a).toLowerCase().trim());
+
+  // 1. First priority: Bracket title tags (e.g. [MANDAT GE], [CARE DISPENSING], [PrideFact], [HDJ], [MO])
+  const bracketMatches = rawTitle.match(/\[(.*?)\]/g) || [];
+  if (bracketMatches.length > 0) {
+    const bracketHits = [];
+    for (const rawBracket of bracketMatches) {
+      const bracketClean = rawBracket.toLowerCase().trim();
+      const bracketInner = bracketClean.replace(/[\[\]]/g, '').trim();
+      for (const m of missions) {
+        const patterns = (m.clientMatch || [m.name, m.id]).map(s => String(s).toLowerCase().trim());
+        if (patterns.some(pattern => {
+          const cleanPat = pattern.replace(/[\[\]]/g, '').trim();
+          return pattern === bracketClean || pattern === bracketInner || cleanPat === bracketInner;
+        })) {
+          bracketHits.push({ mission: m, tag: rawBracket });
+        }
+      }
+    }
+
+    if (bracketHits.length === 1) {
+      return {
+        missionId: bracketHits[0].mission.id,
+        confidence: 'high',
+        reason: `Bracket tag "${bracketHits[0].tag}" matched mission "${bracketHits[0].mission.name}"`
+      };
+    } else if (bracketHits.length > 1) {
+      const uniqueMissionIds = [...new Set(bracketHits.map(h => h.mission.id))];
+      if (uniqueMissionIds.length === 1) {
+        return {
+          missionId: uniqueMissionIds[0],
+          confidence: 'high',
+          reason: `Bracket tag matched mission "${bracketHits[0].mission.name}"`
+        };
+      } else {
+        return {
+          missionId: bracketHits[0].mission.id,
+          confidence: 'ambiguous',
+          reason: `Ambiguous bracket tags matched multiple missions: ${uniqueMissionIds.join(', ')}`
+        };
+      }
+    }
+  }
+
+  // 2. Second priority: clientMatch entries, title match, event tags, client field
+  const scoredMissions = [];
+  for (const m of missions) {
+    let score = 0;
+    const matchReasons = [];
+    const patterns = (m.clientMatch || [m.name, m.id]).map(s => String(s).toLowerCase().trim());
+
+    for (const pat of patterns) {
+      const cleanPat = pat.replace(/[\[\]]/g, '').trim();
+      if (!cleanPat) continue;
+
+      // Exact phrase in title
+      if (title.includes(pat) || title.includes(cleanPat)) {
+        score += 10;
+        matchReasons.push(`Title matches "${pat}"`);
+      }
+      // Tag match
+      if (tags.some(t => t === pat || t === cleanPat || t.includes(cleanPat))) {
+        score += 6;
+        matchReasons.push(`Tag matches "${pat}"`);
+      }
+      // Client field match
+      if (client && (client === pat || client === cleanPat || client.includes(cleanPat))) {
+        score += 5;
+        matchReasons.push(`Client field matches "${pat}"`);
+      }
+    }
+
+    if (score > 0) {
+      scoredMissions.push({
+        mission: m,
+        score,
+        reason: matchReasons.join(', ')
+      });
+    }
+  }
+
+  if (scoredMissions.length > 0) {
+    scoredMissions.sort((a, b) => b.score - a.score);
+    const top = scoredMissions[0];
+    const runnerUp = scoredMissions[1];
+
+    if (runnerUp && runnerUp.score === top.score && runnerUp.mission.id !== top.mission.id) {
+      return {
+        missionId: top.mission.id,
+        confidence: 'ambiguous',
+        reason: `Ambiguous match between "${top.mission.name}" and "${runnerUp.mission.name}"`
+      };
+    }
+
+    return {
+      missionId: top.mission.id,
+      confidence: top.score >= 10 ? 'high' : 'medium',
+      reason: top.reason
+    };
+  }
+
+  // 3. Third priority: Attendee overlap with mission contacts if available
+  for (const m of missions) {
+    const contactNames = (m.contacts || []).map(c => (typeof c === 'string' ? c : c.name || '').toLowerCase().trim());
+    if (m.id === 'counseling') {
+      contactNames.push('roland juilhard', 'jamila nasri', 'roland j.', 'jamila n.');
+    }
+    const matchedContacts = attendees.filter(att => 
+      contactNames.some(c => c && (att.includes(c) || c.includes(att)))
+    );
+    if (matchedContacts.length > 0) {
+      return {
+        missionId: m.id,
+        confidence: 'medium',
+        reason: `Attendee overlap matched: ${matchedContacts.join(', ')}`
+      };
+    }
+  }
+
+  return null;
+}
+
+MeetingHub.matchMission = matchMission;
+
 /* === Module: model/event.js === */
 /**
  * Event Model & Normalization
@@ -640,7 +1253,9 @@ class EventModel {
     if (corpus.includes('athx') || corpus.includes('training') || corpus.includes('wod') || corpus.includes('crossfit')) {
       return { stream: 'life', client: 'ATHX', isTraining: true };
     }
-    if (corpus.includes('clariane') || corpus.includes('inicea') || corpus.includes('estela') || corpus.includes('@clariane.fr')) {
+    if (corpus.includes('clariane') || corpus.includes('inicea') || corpus.includes('estela') || corpus.includes('@clariane.fr') ||
+        corpus.includes('hdj') || corpus.includes('netsoins') || corpus.includes('molécules onéreuses') || corpus.includes('molecules onereuses') ||
+        corpus.includes('care dispensing') || corpus.includes('updates mo') || corpus.includes('questions mo') || corpus.includes('[invoicing]')) {
       return { stream: 'work', client: 'Clariane', isTraining: false };
     }
     if (corpus.includes('personal') || corpus.includes('ma vie') || corpus.includes('icloud')) {
@@ -1079,445 +1694,12 @@ MeetingHub.LinkEngine = LinkEngine;
 /**
  * Project Model & Configuration Schema
  * 
- * Defines the generic project contract:
- * { id, name, clientMatch[], docSources[], workstreams[], parserHints[] }
- * 
- * Fully decouples domain-specific knowledge (workstreams, clinical terms,
- * decision triggers, entity tags) into per-project data/config.
+ * Defines the generic project contract and validation helpers.
+ * Note: Hardcoded projects have been deprecated in favor of the Missions System of Record.
+ * Legacy project constants are preserved in meeting_hub/_deprecated/project.js.
  */
 
-const DEFAULT_CLARIANE_PROJECT = {
-  id: 'clariane',
-  name: 'HDJ Planning Manager (Inicea / Clariane)',
-  clientMatch: ['[planning hdj]', '[planning manager]', 'planning hdj', 'planning manager', 'hdj', 'arbelles', 'mariena', 'mariénia', 'mariéna'],
-  docSources: [
-    '1eLUVhYG6hwiqOzauSEDZoGJHu_B9jQuC5Pmbg-8bd_8',
-    '1jDunJURx26Di9c6k4vjhmA84w3Hh_zCCmCxnU0kcFjY'
-  ],
-  workstreams: [
-    {
-      id: 'ws-admission',
-      title: 'Flux Annonces & Processus d’Admission',
-      badge: 'HM → Foundry',
-      status: 'En déploiement',
-      summary: 'Basculement de la gestion des listes d’attente papier vers le statut "Annonce" dans Hôpital Manager dès accord médical pour alimenter la disponibilité Foundry.',
-      facilities: ['Les Arbelles', 'Mariéna'],
-      tags: ['annonces', 'admission'],
-      keyRules: [
-        'Saisie directe des patients au statut Annonce dans HM pour remonter dans Foundry',
-        'Onglet dédié dans l’outil pour filtrer et isoler les annonces HDJ vs HC'
-      ]
-    },
-    {
-      id: 'ws-parcours',
-      title: 'Modélisation des Programmes Thérapeutiques',
-      badge: 'Moteur & Contraintes',
-      status: 'Actif',
-      summary: 'Paramétrage des programmes standardisés (Dos, Parkinson) et parcours complexes (Neuro, rTMS aux 3 semaines, séances ponctuelles de Diététique/Neuropsy).',
-      facilities: ['Les Arbelles', 'Mariéna', 'Glanum'],
-      tags: ['modeling', 'parcours'],
-      keyRules: [
-        'Politique zéro temps mort : aucun trou inter-séance sans attente',
-        'Bilans d’entrée et de sortie isolés en séances individuelles',
-        'Séances espacées (rTMS) modélisées avec des vacations dédiées à fréquence 3 semaines'
-      ]
-    },
-    {
-      id: 'ws-sync',
-      title: 'Synchronisation SIH & Circuit de Validation',
-      badge: 'Foundry ↔ HM',
-      status: 'En cours',
-      summary: 'Boucle de validation bilatérale : proposition de circuit dans Foundry -> statut "En attente HM" -> saisie créneau HM -> rapprochement automatique en statut "Réel".',
-      facilities: ['Transversal'],
-      tags: ['hm-sync', 'vacations'],
-      keyRules: [
-        'Circuit Foundry passe en "En attente HM" puis réconciliation en "Réel"',
-        'Résolution du connecteur pour la remontée des vacations collectives (Kiné, Balnéo, Ergo)'
-      ]
-    },
-    {
-      id: 'ws-analytics',
-      title: 'Analytique, Alerting & Case Mix',
-      badge: 'Reporting & Pilotage',
-      status: 'Planifié',
-      summary: 'Extraction du case mix réel (% Neuro vs Locomoteur) pour la construction budgétaire et développement du module d’alerting pour double positionnement de patient.',
-      facilities: ['Les Arbelles', 'Mariéna'],
-      tags: ['analytics', 'alerting'],
-      keyRules: [
-        'Indicateur budgétaire case mix (tarifs de journée différenciés par segment)',
-        'Alerte automatique si un patient est positionné simultanément sur deux vacations'
-      ]
-    }
-  ],
-  parserHints: {
-    tools: [
-      { name: 'Foundry (Palantir)', keywords: ['foundry'], type: 'Data & Engine Platform' },
-      { name: 'Hôpital Manager (HM)', keywords: ['hm', 'hôpital manager', 'hopital manager'], type: 'SIH / Dossier Patient' },
-      { name: 'rTMS / tDCS', keywords: ['rtms', 'tdcs'], type: 'Protocole Thérapeutique' },
-      { name: 'Balnéothérapie', keywords: ['balnéo', 'balneo'], type: 'Plateau Technique' },
-      { name: 'Kinésithérapie', keywords: ['kiné', 'kine'], type: 'Soin Rééducation' },
-      { name: 'Ergothérapie', keywords: ['ergo'], type: 'Soin Rééducation' }
-    ],
-    concepts: [
-      { name: 'Flux Annonces', keywords: ['annonce'], desc: 'Gestion des pré-admissions et patients potentiels dans HM vers Foundry' },
-      { name: 'Politique Zéro Temps Mort', keywords: ['zéro temps mort', 'zero temps mort'], desc: 'Optimisation continue sans temps d’attente inter-séances pour les patients' },
-      { name: 'Analytique Case Mix', keywords: ['case mix'], desc: 'Répartition de l’activité Neuro vs Locomoteur pour le pilotage budgétaire' },
-      { name: 'Gestion Surbooking & Forçage', keywords: ['surbooking', 'forcer'], desc: 'Remplacement manuel et dépassement de capacité contrôlé' },
-      { name: 'Vue Vacations & Disponibilité', keywords: ['vacation'], desc: 'Planification centralisée par salle, soignant et créneau' }
-    ],
-    facilities: ['Mariéna', 'Les Arbelles', 'Glanum', 'Inicea', 'Clariane'],
-    decisionTriggers: [
-      { pattern: 'workflow\\s+de\\s+validation\\s*:\\s*(.+)', label: 'Workflow de Validation' },
-      { pattern: 'la\\s+solution\\s+retenue\\s+est\\s+(.+)', label: 'Solution Retenue' },
-      { pattern: 'politique\\s+z[ée]ro\\s+temps\\s+mort\\s*:\\s*(.+)', label: 'Politique Zéro Temps Mort' },
-      { pattern: 'il\\s+a\\s+[ée]t[ée]\\s+propos[ée]\\s+de\\s+(.+)', label: 'Processus Validé' },
-      { pattern: 'les\\s+bilans\\s+d\'entr[ée]e\\s+et\\s+de\\s+sortie\\s+se\\s+font\\s+en\\s+individuel', label: 'Règle Bilans' },
-      { pattern: 'd[ée]monstration\\s+de\\s+la\\s+fonctionnalit[ée]\\s+permettant\\s+de\\s+"forcer"\\s+un\\s+placement', label: 'Règle Surbooking & Forçage' },
-      { pattern: 'l\'outil\\s+a\\s+[ée]t[ée]\\s+adapt[ée]\\s+avec\\s+un\\s+onglet\\s+permettant\\s+d\'inclure\\s+ou\\s+d\'exclure', label: 'Filtre Annonces / Pré-admissions' },
-      { pattern: 'à\\s+terme,\\s+l\'outil\\s+pourrait\\s+offrir\\s+un\\s+accès\\s+en\\s+lecture\\s+seule', label: 'Visibilité Praticiens' }
-    ],
-    tagRules: [
-      { tag: 'hm-sync', keywords: ['hm', 'hôpital manager', 'hopital manager'] },
-      { tag: 'foundry', keywords: ['foundry'] },
-      { tag: 'vacations', keywords: ['vacation'] },
-      { tag: 'annonces', keywords: ['annonce'] },
-      { tag: 'modeling', keywords: ['modélis', 'parcours'] },
-      { tag: 'alerting', keywords: ['alerte', 'alerting'] },
-      { tag: 'analytics', keywords: ['case mix', 'budget'] }
-    ],
-    ownerOrgRules: [
-      { org: 'Artefact', keywords: ['artefact', 'ayrton', 'benjamin'] },
-      { org: 'Les Arbelles', keywords: ['arbelles', 'fabien', 'delphine'] },
-      { org: 'Mariéna', keywords: ['mariena', 'mariéna', 'claire'] },
-      { org: 'Client', keywords: ['clariane', 'inicea'] }
-    ]
-  }
-};
-
-const MO_PROJECT = {
-  id: 'clariane-mo',
-  name: 'Molécules Onéreuses (Clariane)',
-  clientMatch: ['[molécules onéreuses]', '[mo]', 'molécules onéreuses', 'molecules onereuses', 'mo -', 'mo:', 'passation molécules', 'point tests mo', 'questions mo'],
-  docSources: [],
-  workstreams: [
-    {
-      id: 'ws-mo-copil',
-      title: 'Pilotage & COPIL Déploiement',
-      badge: 'COPIL',
-      status: 'Actif',
-      summary: 'Gouvernance, validation des jalons et coordination du déploiement opérationnel.',
-      facilities: ['Clariane'],
-      tags: ['copil', 'pilotage'],
-      keyRules: ['Suivi hebdomadaire des indicateurs de déploiement']
-    },
-    {
-      id: 'ws-mo-anomalies',
-      title: 'Suivi Anomalies & Évolutions',
-      badge: 'Run & MCO',
-      status: 'En cours',
-      summary: 'Traitement des anomalies de remontée et suivi des évolutions applicatives.',
-      facilities: ['Clariane'],
-      tags: ['anomalies', 'run'],
-      keyRules: ['Priorisation des tickets bloquants sur les flux']
-    },
-    {
-      id: 'ws-mo-formation',
-      title: 'Formation & Accompagnement Pilotes',
-      badge: 'Change',
-      status: 'En déploiement',
-      summary: 'Organisation des vagues de formation (options 1 & 2) et sessions pilotes.',
-      facilities: ['Clariane'],
-      tags: ['formation', 'pilotes'],
-      keyRules: ['Validation des acquis avant bascule en production']
-    },
-    {
-      id: 'ws-mo-passation',
-      title: 'Passation & Transition Opérationnelle',
-      badge: 'Transition',
-      status: 'Planifié',
-      summary: 'Documentation, transfert de compétences et kick-off de passation.',
-      facilities: ['Clariane'],
-      tags: ['passation', 'kick-off'],
-      keyRules: ['Livrables de transition signés']
-    }
-  ],
-  parserHints: {
-    tools: [
-      { name: 'Palantir Foundry', keywords: ['foundry'], type: 'Plateforme Data' },
-      { name: 'Netsoins', keywords: ['netsoins'], type: 'SIH Établissements' },
-      { name: 'Traçabilité Palantir', keywords: ['tracabilité', 'traçabilité'], type: 'Module SI' }
-    ],
-    concepts: [
-      { name: 'Molécules Onéreuses', keywords: ['molécules onéreuses', 'mo'], desc: 'Gestion et facturation des molécules à statut onéreux' },
-      { name: 'Vagues de Formation', keywords: ['vague 1', 'vague 2', 'formation'], desc: 'Déploiement progressif auprès des utilisateurs' }
-    ],
-    facilities: ['Clariane'],
-    decisionTriggers: [
-      { pattern: 'validation\\s+du\\s+copil\\s*:\\s*(.+)', label: 'Décision COPIL' },
-      { pattern: 'la\\s+date\\s+de\\s+bascule\\s+est\\s+(.+)', label: 'Calendrier Déploiement' }
-    ],
-    tagRules: [
-      { tag: 'copil', keywords: ['copil'] },
-      { tag: 'anomalies', keywords: ['anomalie'] },
-      { tag: 'formation', keywords: ['formation'] }
-    ],
-    ownerOrgRules: [
-      { org: 'Artefact', keywords: ['artefact', 'ayrton'] },
-      { org: 'Clariane', keywords: ['clariane'] }
-    ]
-  }
-};
-
-const INVOICING_PROJECT = {
-  id: 'clariane-invoicing',
-  name: 'Invoicing & Facturation (Clariane)',
-  clientMatch: ['[invoicing]', 'invoicing', 'facturation'],
-  docSources: [],
-  workstreams: [
-    {
-      id: 'ws-weekly-facturation',
-      title: 'Weekly Facturation x Data',
-      badge: 'Facturation',
-      status: 'Actif',
-      summary: 'Alignement hebdomadaire sur le traitement des flux de facturation et rapprochements.',
-      facilities: ['Clariane'],
-      tags: ['invoicing', 'facturation'],
-      keyRules: ['Contrôle qualité des flux de facturation']
-    }
-  ],
-  parserHints: {
-    tools: [],
-    concepts: [{ name: 'Facturation x Data', keywords: ['facturation', 'invoicing'], desc: 'Suivi des données de facturation' }],
-    facilities: ['Clariane'],
-    decisionTriggers: [],
-    tagRules: [{ tag: 'invoicing', keywords: ['invoicing', 'facturation'] }],
-    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }, { org: 'Clariane', keywords: ['clariane'] }]
-  }
-};
-
-const F360_PROJECT = {
-  id: 'clariane-f360',
-  name: 'F360 Médical (Clariane)',
-  clientMatch: ['[f360', 'f360'],
-  docSources: [],
-  workstreams: [
-    {
-      id: 'ws-dashboard-v2',
-      title: 'Revue Dashboard Médical V2',
-      badge: 'Dashboard',
-      status: 'Actif',
-      summary: 'Itération et retours RS sur le tableau de bord médical F360.',
-      facilities: ['Clariane'],
-      tags: ['dashboard', 'médical'],
-      keyRules: ['Intégration des retours médecins et soignants']
-    }
-  ],
-  parserHints: {
-    tools: [{ name: 'F360', keywords: ['f360'], type: 'Plateforme Médicale' }],
-    concepts: [{ name: 'Dashboard Médical', keywords: ['dashboard', 'médical'], desc: 'Pilotage de l’activité médicale' }],
-    facilities: ['Clariane'],
-    decisionTriggers: [],
-    tagRules: [{ tag: 'f360', keywords: ['f360'] }],
-    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }, { org: 'Clariane', keywords: ['clariane'] }]
-  }
-};
-
-const CLARIANE_DATA_PROJECT = {
-  id: 'clariane-data',
-  name: 'Clariane Data & Coproj',
-  clientMatch: ['[coproj data inicea]', 'coproj', '[clariane] - weekly sync', 'équipe parisienne', 'connexion mensuel ordinateur', '[artefact team] - bi-weekly'],
-  docSources: [],
-  workstreams: [
-    {
-      id: 'ws-coproj-inicea',
-      title: 'Coproj Data Inicea',
-      badge: 'Coproj',
-      status: 'Actif',
-      summary: 'Comité de projet data transverse Inicea / Clariane.',
-      facilities: ['Clariane'],
-      tags: ['coproj', 'inicea'],
-      keyRules: ['Suivi transverse du portefeuille de projets data']
-    },
-    {
-      id: 'ws-equipe-sync',
-      title: 'Weekly Sync & Vie d’Équipe',
-      badge: 'Équipe',
-      status: 'Actif',
-      summary: 'Synchronisation d’équipe parisienne et alignement bimensuel Artefact.',
-      facilities: ['Clariane'],
-      tags: ['sync', 'équipe'],
-      keyRules: ['Partage d’informations et coordination']
-    }
-  ],
-  parserHints: {
-    tools: [],
-    concepts: [{ name: 'Coproj Data', keywords: ['coproj'], desc: 'Gouvernance data Inicea' }],
-    facilities: ['Clariane'],
-    decisionTriggers: [],
-    tagRules: [{ tag: 'coproj', keywords: ['coproj'] }],
-    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }, { org: 'Clariane', keywords: ['clariane'] }]
-  }
-};
-
-const GE_UC_WIZARD_PROJECT = {
-  id: 'ge-uc-wizard',
-  name: 'GE Enterprise / UC Wizard (Artefact)',
-  clientMatch: ['ge enterprise', 'uc wizard', 'datastore ge drive'],
-  docSources: [],
-  workstreams: [
-    {
-      id: 'ws-ge-sync',
-      title: 'GE Enterprise Stream',
-      badge: 'GE',
-      status: 'Actif',
-      summary: 'Synchronisation hebdomadaire et architecture datastore GE Drive.',
-      facilities: ['Artefact'],
-      tags: ['ge-enterprise'],
-      keyRules: ['Alignement hebdomadaire']
-    },
-    {
-      id: 'ws-uc-wizard',
-      title: 'UC Wizard Development',
-      badge: 'UC Wizard',
-      status: 'Actif',
-      summary: 'Catchup et sprint sync pour l’application UC Wizard.',
-      facilities: ['Artefact'],
-      tags: ['uc-wizard'],
-      keyRules: ['Revue des use cases et avancement technique']
-    }
-  ],
-  parserHints: {
-    tools: [{ name: 'GE Drive', keywords: ['ge drive'], type: 'Storage' }],
-    concepts: [{ name: 'UC Wizard', keywords: ['uc wizard'], desc: 'Wizard de cadrage des cas d’usage' }],
-    facilities: ['Artefact'],
-    decisionTriggers: [],
-    tagRules: [{ tag: 'ge', keywords: ['ge enterprise'] }, { tag: 'uc-wizard', keywords: ['uc wizard'] }],
-    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }]
-  }
-};
-
-const HEALTHCARE_PROJECT = {
-  id: 'healthcare-mandate',
-  name: 'Healthcare Mandate & Care Dispensing',
-  clientMatch: ['[care dispensing]', 'care dispensing', 'healthoween', 'healthcare'],
-  docSources: [],
-  workstreams: [
-    {
-      id: 'ws-care-dispensing',
-      title: 'Care Dispensing Framework',
-      badge: 'Care Dispensing',
-      status: 'Actif',
-      summary: 'Sessions hebdomadaires le vendredi sur la conception des supports et de l’offre Care Dispensing.',
-      facilities: ['Artefact'],
-      tags: ['care-dispensing'],
-      keyRules: ['Livrables hebdomadaires de présentation']
-    },
-    {
-      id: 'ws-healthcare-team',
-      title: 'Healthcare Mandate & Community',
-      badge: 'Mandat',
-      status: 'Actif',
-      summary: 'Animation de la communauté santé Artefact et événements dédiés (Healthoween).',
-      facilities: ['Artefact'],
-      tags: ['healthcare', 'mandat'],
-      keyRules: ['Renforcement de la culture santé interne']
-    }
-  ],
-  parserHints: {
-    tools: [],
-    concepts: [{ name: 'Care Dispensing', keywords: ['care dispensing'], desc: 'Offre et processus de dispensation des soins' }],
-    facilities: ['Artefact'],
-    decisionTriggers: [],
-    tagRules: [{ tag: 'care-dispensing', keywords: ['care dispensing'] }],
-    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }]
-  }
-};
-
-const PRIDEFACT_PROJECT = {
-  id: 'pridefact',
-  name: 'PrideFact - Mandat RSE (Artefact)',
-  clientMatch: ['[pridefact]', 'pridefact', 'mandat rse', 'women@artefact'],
-  docSources: [],
-  workstreams: [
-    {
-      id: 'ws-pridefact-synchro',
-      title: 'Synchro Mandat RSE',
-      badge: 'Mandat RSE',
-      status: 'Actif',
-      summary: 'Coordination bimensuelle des actions RSE et inclusion.',
-      facilities: ['Artefact'],
-      tags: ['rse', 'inclusion'],
-      keyRules: ['Suivi des engagements RSE']
-    },
-    {
-      id: 'ws-pridefact-travail',
-      title: 'Sessions de Travail & Événements',
-      badge: 'Ateliers',
-      status: 'Actif',
-      summary: 'Ateliers de travail, intégration avec Women@Artefact et sensibilisation.',
-      facilities: ['Artefact'],
-      tags: ['ateliers', 'sensibilisation'],
-      keyRules: ['Préparation des livrables de communication interne']
-    }
-  ],
-  parserHints: {
-    tools: [],
-    concepts: [{ name: 'Mandat RSE', keywords: ['rse', 'pridefact'], desc: 'Engagement sociétal et inclusion' }],
-    facilities: ['Artefact'],
-    decisionTriggers: [],
-    tagRules: [{ tag: 'pridefact', keywords: ['pridefact'] }],
-    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }]
-  }
-};
-
-const COUNSELING_PROJECT = {
-  id: 'counseling',
-  name: 'Counseling & Talent Review (Artefact)',
-  clientMatch: ['[itw]', 'counselling', 'counseling', 'counselor', 'comités d\'évaluation', 'eval h2', 'peer selection', 'self & peer review'],
-  docSources: [],
-  workstreams: [
-    {
-      id: 'ws-eval-h2',
-      title: 'Comités d’Évaluation & Peer Reviews',
-      badge: 'Évaluations H2',
-      status: 'Actif',
-      summary: 'Campagne d’évaluation H2 2026, comités d’arbitrage et sélection des pairs.',
-      facilities: ['Artefact'],
-      tags: ['evaluations', 'comites'],
-      keyRules: ['Respect des échéances de recueil des feedbacks']
-    },
-    {
-      id: 'ws-counseling-1to1',
-      title: 'Counseling & Accompagnement Carrière',
-      badge: 'Counseling',
-      status: 'Actif',
-      summary: 'Entretiens réguliers de counseling et suivi du plan de développement.',
-      facilities: ['Artefact'],
-      tags: ['counseling', '1to1'],
-      keyRules: ['Suivi des objectifs semestriels']
-    }
-  ],
-  parserHints: {
-    tools: [],
-    concepts: [{ name: 'Counseling', keywords: ['counseling', 'counselling'], desc: 'Accompagnement et mentorat RH' }],
-    facilities: ['Artefact'],
-    decisionTriggers: [],
-    tagRules: [{ tag: 'counseling', keywords: ['counseling', 'counselling'] }],
-    ownerOrgRules: [{ org: 'Artefact', keywords: ['artefact'] }]
-  }
-};
-
-const DEFAULT_PROJECTS = [
-  DEFAULT_CLARIANE_PROJECT,
-  MO_PROJECT,
-  INVOICING_PROJECT,
-  F360_PROJECT,
-  CLARIANE_DATA_PROJECT,
-  GE_UC_WIZARD_PROJECT,
-  HEALTHCARE_PROJECT,
-  PRIDEFACT_PROJECT,
-  COUNSELING_PROJECT
-];
+const DEFAULT_PROJECTS = [];
 
 class ProjectModel {
   static createDefault(name, clientMatch = []) {
@@ -1562,15 +1744,6 @@ class ProjectModel {
 }
 
 MeetingHub.ProjectModel = ProjectModel;
-MeetingHub.DEFAULT_CLARIANE_PROJECT = DEFAULT_CLARIANE_PROJECT;
-MeetingHub.MO_PROJECT = MO_PROJECT;
-MeetingHub.INVOICING_PROJECT = INVOICING_PROJECT;
-MeetingHub.F360_PROJECT = F360_PROJECT;
-MeetingHub.CLARIANE_DATA_PROJECT = CLARIANE_DATA_PROJECT;
-MeetingHub.GE_UC_WIZARD_PROJECT = GE_UC_WIZARD_PROJECT;
-MeetingHub.HEALTHCARE_PROJECT = HEALTHCARE_PROJECT;
-MeetingHub.PRIDEFACT_PROJECT = PRIDEFACT_PROJECT;
-MeetingHub.COUNSELING_PROJECT = COUNSELING_PROJECT;
 MeetingHub.DEFAULT_PROJECTS = DEFAULT_PROJECTS;
 
 /* === Module: model/minutes_engine.js === */
@@ -1933,60 +2106,11 @@ class MinutesEngine {
     return actions;
   }
 
-  /* ================= Decisions Extraction ================= */
-
+  /* ================= Decisions Extraction (DEPRECATED) ================= */
+  // Deprecated as part of Phase 4: Decisions are authoritatively maintained in
+  // mission Markdown notes (Decisions.md) via the fold workflow.
   static extractDecisions(cleanText, topics = [], hints = {}, meta = {}) {
-    const decisions = [];
-    const lines = cleanText.split('\n').map(l => l.trim()).filter(Boolean);
-    const meetingLink = meta.meetingId ? `#/meeting/${encodeURIComponent(meta.meetingId)}` : '';
-
-    // Project-configured decision triggers
-    const configuredTriggers = (hints.decisionTriggers || []).map(t => {
-      try {
-        if (typeof t === 'string') {
-          const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          return { regex: new RegExp(`(?:\\b${escaped}\\b)\\s*[:|]?\\s*(.+)`, 'i'), label: t };
-        }
-        return { regex: new RegExp(t.pattern, 'i'), label: t.label || 'Decision' };
-      } catch (e) {
-        return null;
-      }
-    }).filter(Boolean);
-
-    // Generic fallback triggers if none configured or alongside
-    const genericTriggers = [
-      { regex: /(?:\bdécision\b|\bdecision\b)\s*[:|]\s*(.+)/i, label: 'Decision' },
-      { regex: /(?:\bdécidé\s+que\b|\bdecided\s+that\b|\bconvenu\s+de\b|\bagreed\s+to\b)\s+(.+)/i, label: 'Agreement' },
-      { regex: /(?:\bsolution\s+retenue\b|\bsolution\s+adoptée\b)\s*[:|]?\s*(.+)/i, label: 'Adopted Solution' }
-    ];
-
-    const decisionTriggers = configuredTriggers.length > 0
-      ? [...configuredTriggers, ...genericTriggers]
-      : genericTriggers;
-
-    for (const line of lines) {
-      // Skip section headers like "Décisions prises:" or "Décisions :"
-      if (/^(?:#+\s*)?(?:décisions?(?:\s+prises)?|decisions?)\s*:\s*$/i.test(line)) {
-        continue;
-      }
-
-      for (const trigger of decisionTriggers) {
-        if (trigger.regex.test(line)) {
-          const statement = line.replace(/^[*\-•]\s*/, '').trim();
-          decisions.push({
-            id: `dec-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            label: trigger.label,
-            statement,
-            context: MinutesEngine.findContextTopic(line, topics),
-            quote: line,
-            meetingLink
-          });
-          break;
-        }
-      }
-    }
-
-    return decisions;
+    return [];
   }
 
   static findContextTopic(line, topics) {
@@ -1998,47 +2122,14 @@ class MinutesEngine {
     return 'General';
   }
 
-  /* ================= Knowledge Extraction ================= */
-
+  /* ================= Knowledge Extraction (DEPRECATED) ================= */
+  // Deprecated as part of Phase 4: Knowledge, tools, and concepts are authoritatively
+  // captured in mission Markdown notes (Overview.md, Workstreams.md) via the fold workflow.
   static extractKnowledge(text, facility = '', hints = {}) {
-    const lower = text.toLowerCase();
-    const tools = [];
-    const concepts = [];
-    const facilities = [];
-
-    // Driven dynamically by project parser hints
-    const configuredTools = hints.tools || [];
-    for (const t of configuredTools) {
-      const name = typeof t === 'string' ? t : t.name;
-      const keywords = typeof t === 'string' ? [t.toLowerCase()] : (t.keywords || [t.name.toLowerCase()]);
-      if (keywords.some(k => lower.includes(k.toLowerCase()))) {
-        tools.push({ name, type: (typeof t === 'object' && t.type) || 'Tool' });
-      }
-    }
-
-    const configuredConcepts = hints.concepts || [];
-    for (const c of configuredConcepts) {
-      const name = typeof c === 'string' ? c : c.name;
-      const keywords = typeof c === 'string' ? [c.toLowerCase()] : (c.keywords || [c.name.toLowerCase()]);
-      if (keywords.some(k => lower.includes(k.toLowerCase()))) {
-        concepts.push({ name, desc: (typeof c === 'object' && c.desc) || '' });
-      }
-    }
-
-    const configuredFacilities = hints.facilities || [];
-    for (const f of configuredFacilities) {
-      if (lower.includes(f.toLowerCase())) {
-        facilities.push(f);
-      }
-    }
-    if (facility && !facilities.includes(facility)) {
-      facilities.push(facility);
-    }
-
     return {
-      tools: Array.from(new Map(tools.map(t => [t.name, t])).values()),
-      concepts: Array.from(new Map(concepts.map(c => [c.name, c])).values()),
-      facilities: Array.from(new Set(facilities))
+      tools: [],
+      concepts: [],
+      facilities: []
     };
   }
 
@@ -2091,454 +2182,6 @@ class MinutesEngine {
 }
 
 MeetingHub.MinutesEngine = MinutesEngine;
-
-/* === Module: model/project_engine.js === */
-/**
- * Project Base & Minutes Synthesis Engine
- * 
- * Aggregates meeting minutes, decisions, actions, and connected documents across
- * any configured project initiative.
- * 
- * Completely generic and driven by Project configuration:
- * - Honest coverage metrics ("X of Y meetings have minutes")
- * - Cross-meeting decision deduplication ("first decided on" & "restated on")
- * - Source quotes and meeting links on every action and decision
- * - Dynamic workstream synthesis with open action counts
- * - Stakeholder directory and connected document library
- */
-
-
-
-
-class ProjectEngine {
-  /**
-   * Builds the comprehensive Project Base for a given project ID or client name.
-   * @param {string} projectIdOrClient e.g. 'clariane' or 'Clariane'
-   * @param {object} store The MeetingHubStore instance
-   * @returns {Promise<object>} Consolidated Project Base data
-   */
-  static async buildProjectBase(projectIdOrClient = 'clariane', store) {
-    const allEvents = store.getAllEvents ? store.getAllEvents() : [];
-
-    // 1. Resolve project configuration
-    let project = null;
-    if (store.getProject) {
-      project = await store.getProject(projectIdOrClient);
-    }
-    if (!project && store.getAllProjects) {
-      const allProjects = await store.getAllProjects();
-      project = allProjects.find(p => 
-        p.id.toLowerCase() === projectIdOrClient.toLowerCase() ||
-        p.name.toLowerCase() === projectIdOrClient.toLowerCase() ||
-        (Array.isArray(p.clientMatch) && p.clientMatch.some(m => m.toLowerCase() === projectIdOrClient.toLowerCase()))
-      );
-    }
-    if (!project) {
-      // Fallback to default Clariane if matching, else generic project
-      if (projectIdOrClient.toLowerCase() === 'clariane') {
-        project = DEFAULT_CLARIANE_PROJECT;
-      } else {
-        project = ProjectModel.createDefault(projectIdOrClient, [projectIdOrClient]);
-      }
-    }
-
-    const clientMatches = (project.clientMatch || [project.name, project.id]).map(m => m.toLowerCase());
-
-    // 2. Filter events belonging to this project
-    const projectEvents = allEvents.filter(e => {
-      if (store && typeof store.getProjectForMeeting === 'function') {
-        const assignedProj = store.getProjectForMeeting(e);
-        if (assignedProj) {
-          return assignedProj.id === project.id;
-        }
-      }
-      const client = (e.client || '').toLowerCase();
-      const title = (e.title || '').toLowerCase();
-      const tags = (e.tags || []).map(t => t.toLowerCase());
-
-      return clientMatches.some(match => 
-        client === match ||
-        client.includes(match) ||
-        title.includes(match) ||
-        tags.includes(match)
-      );
-    }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-
-    // 3. Collect meeting data for these events
-    const meetingDataList = [];
-    for (const evt of projectEvents) {
-      const mData = await store.getMeetingData(evt.id);
-      meetingDataList.push({
-        event: evt,
-        data: mData
-      });
-    }
-
-    // 4. Compile Actions, Decisions, Stakeholders, Docs
-    const actionMatrix = [];
-    const rawDecisions = [];
-    const stakeholderMap = new Map();
-    const connectedDocs = [];
-    const toolSet = new Set();
-    const conceptSet = new Map();
-
-    for (const item of meetingDataList) {
-      const { event, data } = item;
-      const rawMinutes = data.minutes || '';
-
-      // Parse minutes if present
-      let parsed = null;
-      if (rawMinutes.trim()) {
-        parsed = MinutesEngine.parseMinutes(rawMinutes, {
-          title: event.title,
-          date: event.date,
-          facility: event.facility,
-          meetingId: event.id
-        }, project);
-      }
-
-      // Track attached Google Doc
-      const docUrl = data.googleDocUrl || event.googleDocUrl || ProjectEngine.findDocUrl(event.description || '');
-      if (docUrl) {
-        const docIdMatch = docUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-        const docId = docIdMatch ? docIdMatch[1] : '';
-        connectedDocs.push({
-          id: docId || event.id,
-          title: (parsed && parsed.title) || event.title,
-          meetingId: event.id,
-          meetingDate: event.date,
-          facility: (parsed && parsed.facility) || event.facility || '',
-          url: docUrl,
-          hasMinutes: Boolean(rawMinutes.trim()),
-          minutesLength: rawMinutes.length
-        });
-      }
-
-      // Collect items from saved data.items first
-      const savedItems = Array.isArray(data.items) ? data.items : [];
-      
-      const effectiveActions = savedItems.filter(i => i.kind === 'action').length > 0
-        ? savedItems.filter(i => i.kind === 'action')
-        : (parsed ? parsed.actions : []);
-
-      const effectiveDecisions = savedItems.filter(i => i.kind === 'decision').length > 0
-        ? savedItems.filter(i => i.kind === 'decision')
-        : (parsed ? parsed.decisions : []);
-
-      // Register actions with source quote and meeting link
-      for (const act of effectiveActions) {
-        const owner = act.owner || 'Team';
-        const ownerOrg = act.ownerOrg || ProjectEngine.classifyOwnerOrg(owner, project);
-        const quote = act.quote || act.text || '';
-        const meetingLink = act.meetingLink || `#/meeting/${encodeURIComponent(event.id)}`;
-
-        actionMatrix.push({
-          id: act.id || `act-${Math.random().toString(36).substr(2, 6)}`,
-          meetingId: event.id,
-          meetingTitle: event.title,
-          meetingDate: event.date,
-          facility: (parsed && parsed.facility) || event.facility || '',
-          owner,
-          ownerOrg,
-          text: act.text || act.title || '',
-          dueDate: act.dueDate || '',
-          done: Boolean(act.done),
-          tags: act.tags || [],
-          source: act.source || 'minutes',
-          quote,
-          meetingLink
-        });
-      }
-
-      // Collect raw decisions for deduplication
-      for (const dec of effectiveDecisions) {
-        const statement = (dec.statement || dec.text || '').replace(/^\[.*?\]\s*/, '').trim();
-        const label = dec.label || ProjectEngine.deriveDecisionLabel(statement, project);
-        const quote = dec.quote || statement;
-        const meetingLink = dec.meetingLink || `#/meeting/${encodeURIComponent(event.id)}`;
-
-        rawDecisions.push({
-          id: dec.id || `dec-${Math.random().toString(36).substr(2, 6)}`,
-          meetingId: event.id,
-          meetingTitle: event.title,
-          meetingDate: event.date,
-          facility: (parsed && parsed.facility) || event.facility || '',
-          label,
-          statement,
-          context: dec.context || 'General',
-          quote,
-          meetingLink
-        });
-      }
-
-      // Register stakeholders
-      if (parsed && Array.isArray(parsed.participants) && parsed.participants.length > 0) {
-        for (const p of parsed.participants) {
-          if (!p.name) continue;
-          const key = p.name.toLowerCase();
-          if (!stakeholderMap.has(key)) {
-            stakeholderMap.set(key, {
-              name: p.name,
-              role: p.role || 'Participant',
-              org: p.org || ProjectEngine.classifyOwnerOrg(p.role || p.name, project),
-              meetingCount: 1,
-              lastSeen: event.date
-            });
-          } else {
-            const existing = stakeholderMap.get(key);
-            existing.meetingCount += 1;
-            if (event.date > existing.lastSeen) existing.lastSeen = event.date;
-          }
-        }
-      } else if (Array.isArray(event.attendees)) {
-        for (const att of event.attendees) {
-          if (!att) continue;
-          const key = att.toLowerCase();
-          if (!stakeholderMap.has(key)) {
-            stakeholderMap.set(key, {
-              name: att,
-              role: 'Attendee',
-              org: ProjectEngine.classifyOwnerOrg(att, project),
-              meetingCount: 1,
-              lastSeen: event.date
-            });
-          } else {
-            const existing = stakeholderMap.get(key);
-            existing.meetingCount += 1;
-            if (event.date > existing.lastSeen) existing.lastSeen = event.date;
-          }
-        }
-      }
-
-      // Register knowledge entities
-      if (parsed && parsed.knowledge) {
-        (parsed.knowledge.tools || []).forEach(t => toolSet.add(t.name));
-        (parsed.knowledge.concepts || []).forEach(c => {
-          if (!conceptSet.has(c.name)) conceptSet.set(c.name, c.desc);
-        });
-      }
-    }
-
-    // 5. Deduplicate decisions across meetings
-    const decisionRegister = ProjectEngine.deduplicateDecisions(rawDecisions);
-
-    // 6. Action matrix sorting
-    actionMatrix.sort((a, b) => {
-      if (a.done !== b.done) return a.done ? 1 : -1;
-      return (b.meetingDate || '').localeCompare(a.meetingDate || '');
-    });
-
-    // 7. Stakeholders sorting
-    const stakeholders = Array.from(stakeholderMap.values()).sort((a, b) => {
-      if (a.org !== b.org) return a.org.localeCompare(b.org);
-      return a.name.localeCompare(b.name);
-    });
-
-    // 8. Workstreams compilation from project configuration
-    const workstreams = ProjectEngine.synthesizeWorkstreams(project, decisionRegister, actionMatrix);
-
-    // 9. Honest coverage calculation
-    const totalMeetings = projectEvents.length;
-    const meetingsWithMinutes = meetingDataList.filter(m => (m.data.minutes || '').trim().length > 0).length;
-    const coveragePercent = totalMeetings > 0 ? Math.round((meetingsWithMinutes / totalMeetings) * 100) : 0;
-    const coverageText = `${meetingsWithMinutes} of ${totalMeetings} meetings have minutes`;
-
-    // Action counts breakdown
-    const openActions = actionMatrix.filter(a => !a.done);
-    const closedActions = actionMatrix.filter(a => a.done);
-    const artefactActions = openActions.filter(a => a.ownerOrg.toLowerCase().includes('artefact'));
-    const clientActions = openActions.filter(a => !a.ownerOrg.toLowerCase().includes('artefact'));
-
-    return {
-      projectId: project.id,
-      projectName: project.name,
-      projectConfig: project,
-      totalMeetings,
-      meetingsWithMinutes,
-      coveragePercent,
-      coverageText,
-      actionStats: {
-        total: actionMatrix.length,
-        open: openActions.length,
-        closed: closedActions.length,
-        artefactOpen: artefactActions.length,
-        clientOpen: clientActions.length
-      },
-      decisionStats: {
-        total: decisionRegister.length,
-        uniqueCount: decisionRegister.length,
-        rawCount: rawDecisions.length
-      },
-      workstreams,
-      actionMatrix,
-      decisionRegister,
-      stakeholders,
-      connectedDocs,
-      tools: Array.from(toolSet),
-      concepts: Array.from(conceptSet.entries()).map(([name, desc]) => ({ name, desc })),
-      lastUpdated: new Date().toISOString()
-    };
-  }
-
-  /**
-   * Deduplicates decisions across meetings.
-   * Tracks "first decided on" and "restated on" instances.
-   */
-  static deduplicateDecisions(rawDecisions) {
-    if (!Array.isArray(rawDecisions) || rawDecisions.length === 0) return [];
-
-    // Sort chronologically ascending to establish initial decision first
-    const sorted = [...rawDecisions].sort((a, b) => (a.meetingDate || '').localeCompare(b.meetingDate || ''));
-
-    const deduplicated = [];
-
-    for (const dec of sorted) {
-      const normText = ProjectEngine._normalizeStatement(dec.statement);
-
-      // Check for existing matching decision
-      const match = deduplicated.find(existing => {
-        const existingNorm = ProjectEngine._normalizeStatement(existing.statement);
-        if (normText === existingNorm) return true;
-        // Check for matching label and high text similarity
-        if (existing.label && dec.label && existing.label.toLowerCase() === dec.label.toLowerCase()) {
-          const overlap = ProjectEngine._calculateSimilarity(normText, existingNorm);
-          if (overlap >= 0.70) return true;
-        }
-        return false;
-      });
-
-      if (match) {
-        // Record as restated
-        match.restatedOn.push({
-          meetingId: dec.meetingId,
-          meetingTitle: dec.meetingTitle,
-          meetingDate: dec.meetingDate,
-          facility: dec.facility,
-          quote: dec.quote,
-          meetingLink: dec.meetingLink
-        });
-        match.restatedCount = match.restatedOn.length;
-      } else {
-        // New canonical decision
-        deduplicated.push({
-          id: dec.id,
-          label: dec.label,
-          statement: dec.statement,
-          context: dec.context,
-          quote: dec.quote,
-          meetingLink: dec.meetingLink,
-          firstDecidedOn: {
-            meetingId: dec.meetingId,
-            meetingTitle: dec.meetingTitle,
-            meetingDate: dec.meetingDate,
-            facility: dec.facility,
-            quote: dec.quote,
-            meetingLink: dec.meetingLink
-          },
-          restatedOn: [],
-          restatedCount: 0
-        });
-      }
-    }
-
-    // Sort final decision register latest first
-    return deduplicated.sort((a, b) => 
-      (b.firstDecidedOn.meetingDate || '').localeCompare(a.firstDecidedOn.meetingDate || '')
-    );
-  }
-
-  static _normalizeStatement(str) {
-    return (str || '')
-      .toLowerCase()
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"\[\]]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  static _calculateSimilarity(s1, s2) {
-    if (!s1 || !s2) return 0;
-    if (s1 === s2) return 1;
-    const words1 = new Set(s1.split(' '));
-    const words2 = new Set(s2.split(' '));
-    let intersection = 0;
-    for (const w of words1) {
-      if (words2.has(w)) intersection++;
-    }
-    return (2.0 * intersection) / (words1.size + words2.size);
-  }
-
-  /**
-   * Synthesizes workstreams from project configuration.
-   */
-  static synthesizeWorkstreams(project, decisions, actions) {
-    const configured = project.workstreams || [];
-    if (configured.length > 0) {
-      return configured.map(ws => {
-        const wsTags = (ws.tags || []).map(t => t.toLowerCase());
-        const openActionsCount = actions.filter(a => {
-          if (a.done) return false;
-          if (wsTags.length > 0 && Array.isArray(a.tags) && a.tags.some(t => wsTags.includes(t.toLowerCase()))) {
-            return true;
-          }
-          const lowerText = (a.text || '').toLowerCase();
-          return wsTags.some(t => lowerText.includes(t));
-        }).length;
-
-        return {
-          ...ws,
-          openActionsCount
-        };
-      });
-    }
-
-    // Default generic workstream if none configured
-    return [
-      {
-        id: 'ws-core',
-        title: 'Core Delivery & Synchronization',
-        badge: 'General',
-        status: 'Active',
-        summary: `Progress tracking and action execution for ${project.name}.`,
-        facilities: ['All'],
-        openActionsCount: actions.filter(a => !a.done).length,
-        keyRules: ['Document all decisions in minutes', 'Track action items to completion']
-      }
-    ];
-  }
-
-  static findDocUrl(text) {
-    if (!text) return '';
-    const match = text.match(/https:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9_-]+/);
-    return match ? match[0] : '';
-  }
-
-  static classifyOwnerOrg(owner = '', project = null) {
-    const lower = (owner || '').toLowerCase();
-    const rules = project?.parserHints?.ownerOrgRules || [];
-    for (const rule of rules) {
-      if (rule.keywords && rule.keywords.some(k => lower.includes(k.toLowerCase()))) {
-        return rule.org;
-      }
-    }
-    if (lower.includes('artefact')) return 'Artefact';
-    return 'Client / Team';
-  }
-
-  static deriveDecisionLabel(statement = '', project = null) {
-    const lower = (statement || '').toLowerCase();
-    const triggers = project?.parserHints?.decisionTriggers || [];
-    for (const tr of triggers) {
-      try {
-        if (new RegExp(tr.pattern, 'i').test(statement)) {
-          return tr.label;
-        }
-      } catch (e) {}
-    }
-    return 'Decision';
-  }
-}
-
-MeetingHub.ProjectEngine = ProjectEngine;
 
 /* === Module: data/importer.js === */
 /**
@@ -2712,15 +2355,7 @@ class EventsImporter {
           googleDocUrl: 'https://docs.google.com/document/d/1jDunJURx26Di9c6k4vjhmA84w3Hh_zCCmCxnU0kcFjY/edit?tab=t.0',
           agenda: '1. Présentation de la vue centralisée des vacations par salle et intervenant\n2. Cadrage du flux Annonce dans HM pour Foundry\n3. Modélisation des programmes thérapeutiques (contrainte zéro temps mort)',
           minutes: `HDJ Planning Manager\nParamétrage des programmes thérapeutiques et organisation - Les Arbelles\n________________\n\nDate | 21 Octobre 2026\n\nParticipants\n* FERRIER Fabien | Cadre de rééducation - Les Arbelles\n* CUVELIER Delphine | Agent administratif - Les Arbelles\n* DE GIROLAMO Benjamin | Data Analyst\n* ANDRE Ayrton | Data Analyst\n\nPoints abordés\n* Vue Vacations et Visibilité :\n   * Présentation de la vue centralisée des plannings par salle et par intervenant.\n   * Les noms et prénoms des patients seront bien visibles pour le personnel médical habilité.\n   * À terme, l'outil pourrait offrir un accès en lecture seule aux praticiens pour consulter spécifiquement leurs propres vacations.\n* Processus d'Admission et flux "Annonce" :\n   * Actuellement, Les Arbelles n'utilise pas les annonces dans HM ; les patients "potentiels" sont gérés au travers d'une liste d'attente sur un agenda papier.\n   * Pour maximiser l'efficacité du calcul de disponibilité dans Foundry, il a été proposé de saisir les patients au statut "Annonce" dans HM dès la confirmation de la demande.\n* Contraintes des Programmes Thérapeutiques :\n   * Les Arbelles gèrent des programmes "carrés" (Dos, Parkinson) mais font aussi du sur-mesure complexe pour la neuro et le locomoteur.\n   * Politique zéro temps mort : Par manque d'espace d'attente, les patients ne doivent avoir aucun "trou" entre leurs séances.\n   * Bilans et spécificités : Les bilans d'entrée et de sortie se font en individuel.\n* Analytique et Reporting Budgétaire :\n   * Fabien a souligné un besoin métier majeur : pouvoir extraire le case mix réel (% Neuro vs Locomoteur) pour la construction budgétaire.\n\nProchaines étapes\n   * Les Arbelles | Modéliser "sur papier" la structure de leurs différents programmes thérapeutiques pour préparer le paramétrage.\n   * Les Arbelles | Se connecter à l'outil dans la semaine pour le prendre en main et remonter les premiers retours.\n   * Artefact | Se renseigner sur les champs obligatoires minimaux requis dans HM pour créer une "Annonce".\n   * Artefact | Ajuster les filtres de la vue vacation pour bien séparer les médecins, les psychologues et les neuropsychologues.\n   * Artefact | S'assurer que la plateforme permet de modéliser facilement les séances de bilan ciblées et les séances périodiques.`,
-          items: [
-            { id: 'item-arb-1', kind: 'action', text: 'Modéliser sur papier la structure des programmes thérapeutiques', owner: 'Les Arbelles', dueDate: '', done: false, tags: ['modeling'], source: 'minutes' },
-            { id: 'item-arb-2', kind: 'action', text: 'Se connecter à l’outil dans la semaine pour prise en main et retours', owner: 'Les Arbelles', dueDate: 'Cette semaine', done: false, tags: ['modeling'], source: 'minutes' },
-            { id: 'item-arb-3', kind: 'action', text: 'Se renseigner sur les champs obligatoires minimaux requis dans HM pour créer une Annonce', owner: 'Artefact', dueDate: '', done: false, tags: ['annonces', 'hm-sync'], source: 'minutes' },
-            { id: 'item-arb-4', kind: 'action', text: 'Ajuster les filtres de la vue vacation (médecins vs psys vs neuropsys)', owner: 'Artefact', dueDate: '', done: false, tags: ['vacations'], source: 'minutes' },
-            { id: 'item-arb-5', kind: 'action', text: 'S’assurer de la modélisation facile des bilans ciblés et séances périodiques espacées', owner: 'Artefact', dueDate: '', done: false, tags: ['modeling'], source: 'minutes' },
-            { id: 'item-arb-6', kind: 'decision', text: '[Politique Zéro Temps Mort] Les patients ne doivent avoir aucun trou entre leurs séances de rééducation', context: 'Contraintes des Programmes Thérapeutiques', source: 'minutes' },
-            { id: 'item-arb-7', kind: 'decision', text: '[Processus Validé] Saisir les patients au statut "Annonce" dans HM dès confirmation pour alimenter Foundry', context: 'Processus d\'Admission et flux "Annonce"', source: 'minutes' }
-          ],
+          items: [],
           linkedMeetingIds: [],
           prepared: true,
           updatedAt: new Date().toISOString()
@@ -2736,14 +2371,7 @@ class EventsImporter {
           googleDocUrl: 'https://docs.google.com/document/d/1eLUVhYG6hwiqOzauSEDZoGJHu_B9jQuC5Pmbg-8bd_8/edit?tab=t.0',
           agenda: '1. Démonstration des vues Vacations et Disponibilité Foundry\n2. Clarification du circuit de validation avec Hôpital Manager (HM)\n3. Prise en compte du flux Annonces et des séances périodiques complexes (rTMS)',
           minutes: `HDJ Planning Manager\nParamétrage des programmes thérapeutiques et organisation - Marienia\n________________\n\nDate | 26 Octobre 2026\n\nParticipants\n* GAILLET Claire | IDE - Marienia\n* DE GIROLAMO Benjamin | Data Analyst\n* ANDRE Ayrton | Data Analyst\n\nPoints Abordés\nContexte et Approche du projet\n* Rappel de l'outil et mécanisme de synchronisation\n   * Démonstration des vues "Vacations" et "Disponibilité".\n   * Clarification du workflow de validation : la validation d'un circuit sur Foundry le passe au statut "En attente HM". Une fois les créneaux saisis manuellement dans Hôpital Manager (HM), l'algorithme fait le rapprochement et valide le rendez-vous en "Réel".\n* Processus d'Admission (Flux Annonces)\n   * À Mariéna, le flux "Annonces" est utilisé pour tous les patients (HDJ et HC), et c'est le médecin qui détermine ensuite s'il s'agit d'une prise en charge HDJ.\n   * L'outil a été adapté avec un onglet permettant d'inclure ou d'exclure facilement les annonces/pré-admissions pour isoler celles concernant l'HDJ.\n* Modélisation des Parcours Thérapeutiques\n   * Gestion des imprévus de placement : démonstration de la fonctionnalité permettant de "forcer" un placement via le surbooking et du changement manuel d'intervenant.\n   * Parcours complexes (ex: Parcours Douloureux) : Analyse du cas des patients venant toutes les 3 semaines pour des séances de rTMS / tDCS le lundi. La solution retenue est de créer des vacations isolées/dédiées pour ce groupe, avec une fréquence de récurrence paramétrée à 3 semaines dans l'outil.\n* Anomalies techniques en cours de résolution\n   * Certaines vacations (Kiné, Balnéo, Ergo collective) ne remontent pas encore dans la disponibilité Foundry en raison d'un paramétrage HM en cours d'investigation.\n\nLes prochaines étapes\n   * Claire GAILLET : Modéliser sur papier ou fichier Excel les parcours thérapeutiques complexes pour préparer le paramétrage.\n   * Artefact : Résoudre le problème de remontée des vacations depuis HM (Kiné, Balnéo, Ergo) et prévenir Claire.\n   * Artefact : Développer un système d'alerte (alerting) dans l'outil pour signaler lorsqu'un patient est positionné sur deux vacations en même temps.\n   * Prochain point de suivi : Mardi matin de la semaine prochaine pour avancer sur la modélisation des parcours.`,
-          items: [
-            { id: 'item-mar-1', kind: 'action', text: 'Modéliser sur papier ou fichier Excel les parcours thérapeutiques complexes', owner: 'Claire GAILLET', dueDate: '', done: false, tags: ['modeling'], source: 'minutes' },
-            { id: 'item-mar-2', kind: 'action', text: 'Résoudre le problème de remontée des vacations depuis HM (Kiné, Balnéo, Ergo) et prévenir Claire', owner: 'Artefact', dueDate: '', done: false, tags: ['vacations', 'hm-sync'], source: 'minutes' },
-            { id: 'item-mar-3', kind: 'action', text: 'Développer un système d’alerte (alerting) dans l’outil pour signaler le double positionnement patient', owner: 'Artefact', dueDate: '', done: false, tags: ['alerting'], source: 'minutes' },
-            { id: 'item-mar-4', kind: 'action', text: 'Prochain point de suivi : Mardi matin de la semaine prochaine', owner: 'Équipe', dueDate: 'Semaine prochaine', done: false, tags: ['modeling'], source: 'minutes' },
-            { id: 'item-mar-5', kind: 'decision', text: '[Workflow de Validation] La validation d\'un circuit sur Foundry le passe au statut "En attente HM" avant réconciliation en "Réel"', context: 'Contexte et Approche du projet', source: 'minutes' },
-            { id: 'item-mar-6', kind: 'decision', text: '[Solution Retenue] Création de vacations isolées dédiées à fréquence 3 semaines pour les protocoles rTMS / tDCS', context: 'Modélisation des Parcours Thérapeutiques', source: 'minutes' }
-          ],
+          items: [],
           linkedMeetingIds: arbellesMeeting ? [arbellesMeeting.id] : [],
           prepared: true,
           updatedAt: new Date().toISOString()
@@ -2817,6 +2445,37 @@ class CalendarSyncService {
     const metaMap = {};
     for (const m of metaList) {
       metaMap[m.key] = m.value;
+    }
+
+    // Attempt lightweight backend check if served over HTTP
+    if (typeof fetch !== 'undefined') {
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 2000);
+        const res = await fetch('/api/sync/status', { signal: ctrl.signal }).catch(() => null);
+        clearTimeout(tid);
+        if (res && res.ok) {
+          const remoteStatus = await res.json();
+          if (remoteStatus && remoteStatus.sources) {
+            for (const [k, v] of Object.entries(remoteStatus.sources)) {
+              if (v.last_sync && !metaMap[`last_sync_${k}`]) {
+                metaMap[`last_sync_${k}`] = v.last_sync;
+              }
+              if (v.status) {
+                metaMap[`sync_status_${k}`] = v.status;
+              }
+              if (v.error) {
+                metaMap[`sync_error_${k}`] = v.error;
+              }
+            }
+            if (remoteStatus.last_sync && !metaMap['last_sync_all']) {
+              metaMap['last_sync_all'] = remoteStatus.last_sync;
+            }
+          }
+        }
+      } catch (e) {
+        // Backend unavailable, silently fallback to local IndexedDB meta
+      }
     }
 
     const defaultFallbackTime = metaMap['last_import_timestamp'] || new Date().toISOString();
@@ -2898,7 +2557,7 @@ class CalendarSyncService {
     // Server handles OAuth token refresh, iCloud CalDAV creds, and Clariane ICS securely.
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
       let resp = await fetch('/api/sync/calendars', {
         method: 'POST',
@@ -2907,12 +2566,15 @@ class CalendarSyncService {
         signal: controller.signal
       }).catch(() => null);
 
+      clearTimeout(timeoutId);
+
       if (!resp || !resp.ok) {
         // Fallback to GET on orchestrator calendar events feed
-        resp = await fetch('/api/sync/calendars', { signal: controller.signal }).catch(() => null);
+        const getController = new AbortController();
+        const getTimeoutId = setTimeout(() => getController.abort(), 5000);
+        resp = await fetch('/api/sync/calendars', { signal: getController.signal }).catch(() => null);
+        clearTimeout(getTimeoutId);
       }
-
-      clearTimeout(timeoutId);
 
       if (resp && resp.ok) {
         const data = await resp.json();
@@ -3004,6 +2666,8 @@ MeetingHub.SYNC_SOURCES = SYNC_SOURCES;
  * 2. Last minutes found / linked
  * 3. Open actions reviewed
  */
+
+
 class PrepScoreCalculator {
   /**
    * Computes the prep score and status for a single meeting.
@@ -3011,9 +2675,10 @@ class PrepScoreCalculator {
    * @param {Object} meeting Calendar event
    * @param {Object} meetingData Stored notes and items for this meeting
    * @param {Array} relatedLinks Suggested/linked prior meetings
+   * @param {Object} options Optional context flags (inboxStatus, missionSummary)
    * @returns {Object} Detailed prep evaluation
    */
-  static computeMeetingPrep(meeting, meetingData = {}, relatedLinks = []) {
+  static computeMeetingPrep(meeting, meetingData = {}, relatedLinks = [], options = {}) {
     if (!meeting) {
       return {
         scorePercent: 0,
@@ -3025,6 +2690,7 @@ class PrepScoreCalculator {
         agenda: { ok: false, label: 'Missing', detail: 'No objectives drafted' },
         lastMinutes: { ok: false, label: 'None found', detail: 'No prior meeting found' },
         openActions: { ok: false, label: 'Missing', detail: 'Unreviewed' },
+        inbox: { pending: false, label: 'Folded', detail: 'Notes up to date' },
         people: { count: 0 }
       };
     }
@@ -3166,6 +2832,15 @@ class PrepScoreCalculator {
       }
     ];
 
+    // Inbox evaluation from mission notes system of record
+    const hasPendingInbox = options.inboxStatus === 'pending' || Boolean(options.missionSummary?.inbox?.total_pending > 0);
+    const inbox = {
+      pending: hasPendingInbox,
+      status: options.inboxStatus || (hasPendingInbox ? 'pending' : 'folded'),
+      label: hasPendingInbox ? 'Inbox pending' : 'Folded',
+      detail: hasPendingInbox ? 'Inbox pending: raw minutes waiting to be folded' : 'Notes up to date'
+    };
+
     const missingCount = missingItems.filter(i => !i.ok).length;
     const missingSummary = missingCount === 0
       ? 'All items prepared'
@@ -3181,6 +2856,7 @@ class PrepScoreCalculator {
       agenda,
       lastMinutes,
       openActions,
+      inbox,
       people,
       missingItems,
       missingCount,
@@ -3191,11 +2867,12 @@ class PrepScoreCalculator {
   /**
    * Helper to check if a meeting is scheduled within the next 48 hours.
    */
-  static isWithin48Hours(meetingDate, meetingStart = '00:00', refDateStr = '2026-10-28', refTimeStr = '00:00') {
+  static isWithin48Hours(meetingDate, meetingStart = '00:00', refDateStr = null, refTimeStr = '00:00') {
     if (!meetingDate) return false;
     try {
+      const actualRefDate = refDateStr || (typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10));
       const meetTime = new Date(`${meetingDate}T${meetingStart || '00:00'}:00`).getTime();
-      const refTime = new Date(`${refDateStr}T${refTimeStr || '00:00'}:00`).getTime();
+      const refTime = new Date(`${actualRefDate}T${refTimeStr || '00:00'}:00`).getTime();
       const diffMs = meetTime - refTime;
       const diffHours = diffMs / (1000 * 60 * 60);
       return diffHours >= 0 && diffHours <= 48;
@@ -3278,7 +2955,10 @@ class MeetingHubStore {
     this.eventsCache = [];
     this.seriesCache = [];
     this.projectsCache = [];
-    this.activeProjectId = 'clariane';
+    this.missionsCache = [];
+    this.missionSummariesCache = new Map();
+    this.inboxStatusCache = new Map();
+    this.activeProjectId = 'ge-enterprise';
     this.subscribers = new Set();
     this.initialized = false;
   }
@@ -3297,11 +2977,109 @@ class MeetingHubStore {
     this.notify({ type: 'store_initialized' });
   }
 
+  /**
+   * Fetches missions registry from /api/missions or snapshot fallback.
+   */
+  async getMissionsRegistry() {
+    // 1. Try server endpoint
+    try {
+      const resp = await fetch('/api/missions');
+      if (resp.ok) {
+        const json = await resp.json();
+        if (json.status === 'ok' && Array.isArray(json.missions)) {
+          this.missionsCache = json.missions;
+          return json.missions;
+        }
+      }
+    } catch (e) {
+      // Offline / file:// mode
+    }
+
+    // 2. Fall back to bundled / global snapshot
+    if (typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
+      this.missionsCache = window.MISSIONS_SNAPSHOT.missions;
+      return window.MISSIONS_SNAPSHOT.missions;
+    }
+
+    // 3. Node environment fallback (for unit tests)
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const fs = await import('fs');
+        const p = '/Users/ayrtonandre/Documents/work/AGY/meeting_hub/data/missions_snapshot.js';
+        if (fs.existsSync(p)) {
+          const content = fs.readFileSync(p, 'utf8');
+          const m = content.match(/MISSIONS_SNAPSHOT\s*=\s*(\{[\s\S]*?\});?\s*$/);
+          if (m) {
+            const data = JSON.parse(m[1]);
+            if (Array.isArray(data.missions)) {
+              this.missionsCache = data.missions;
+              return data.missions;
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore node fallback error
+      }
+    }
+
+    return this.missionsCache || [];
+  }
+
+  missionToProject(m) {
+    return {
+      id: m.id,
+      name: m.name,
+      client: m.client,
+      isMission: true,
+      directory: m.directory,
+      status: m.status || 'active',
+      archived: Boolean(m.archived || m.status === 'archived'),
+      brief: m.brief,
+      overview: m.overview,
+      actions: m.actions,
+      inbox: m.inbox,
+      clientMatch: m.clientMatch || [m.name, m.id],
+      docSources: [],
+      workstreams: Array.isArray(m.workstreams) ? m.workstreams.map(w => ({
+        id: w.id || `ws-${(w.name || w.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        title: w.name || w.title || 'Workstream',
+        badge: w.phase || w.status || 'Actif',
+        status: w.phase || w.status || 'Actif',
+        summary: w.summary || '',
+        note: w.note || '',
+        facilities: w.facilities || [],
+        tags: w.tags || [],
+        keyRules: w.keyRules || []
+      })) : (m.facilities || []).map(f => ({
+        id: `ws-${f.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+        title: `${f.name} (${f.phase || 'Actif'})`,
+        badge: f.phase || 'Actif',
+        status: f.phase || 'Actif',
+        summary: `Spécialités: ${(f.specialties || []).join(', ')}`,
+        facilities: [f.name],
+        tags: (f.specialties || []).map(s => s.toLowerCase()),
+        keyRules: []
+      })),
+      parserHints: {
+        tools: [],
+        concepts: [],
+        facilities: Array.isArray(m.facilities) ? m.facilities.map(f => f.name) : [],
+        decisionTriggers: [],
+        tagRules: [],
+        ownerOrgRules: []
+      }
+    };
+  }
+
   async refreshCache() {
     this.eventsCache = await this.db.getAll('events');
     this.seriesCache = await this.db.getAll('series');
 
-    // Load projects and ensure default projects are seeded
+    // 1. Load missions from registry
+    const missions = await this.getMissionsRegistry();
+    const missionProjects = missions.map(m => this.missionToProject(m));
+
+    // 2. Load projects and ensure default projects are seeded
     let projects = await this.db.getAll('projects');
     if (!projects || projects.length === 0) {
       for (const p of DEFAULT_PROJECTS) {
@@ -3329,7 +3107,26 @@ class MeetingHubStore {
         projects = await this.db.getAll('projects');
       }
     }
-    this.projectsCache = projects;
+
+    // Merge: mission projects come first! Replace any legacy 'clariane' with 'clariane-hdj'
+    // Active missions come before archived missions
+    const activeMissions = missionProjects.filter(m => !m.archived);
+    const archivedMissions = missionProjects.filter(m => m.archived);
+    const combined = [...activeMissions, ...archivedMissions];
+    const missionIds = new Set(missionProjects.map(p => p.id));
+    if (missionIds.has('clariane-hdj')) {
+      missionIds.add('clariane'); // suppress legacy clariane if clariane-hdj is present
+    }
+
+    for (const p of projects) {
+      if (!missionIds.has(p.id)) {
+        combined.push(p);
+      }
+    }
+    this.projectsCache = combined;
+    if (!this.projectsCache.some(p => p.id === this.activeProjectId)) {
+      this.activeProjectId = this.projectsCache[0]?.id || 'ge-enterprise';
+    }
   }
 
   subscribe(callback) {
@@ -3381,41 +3178,22 @@ class MeetingHubStore {
 
   async getAllProjects() {
     if (!this.db) await this.init();
-    let list = await this.db.getAll('projects');
-    if (!list || list.length === 0) {
-      for (const p of DEFAULT_PROJECTS) {
-        await this.db.put('projects', p);
-      }
-      list = await this.db.getAll('projects');
-      this.projectsCache = list;
-      return list;
+    if (!this.projectsCache || this.projectsCache.length === 0) {
+      await this.refreshCache();
     }
-    const existingIds = new Set(list.map(p => p.id));
-    let updated = false;
-    for (const defProj of DEFAULT_PROJECTS) {
-      if (!existingIds.has(defProj.id)) {
-        await this.db.put('projects', defProj);
-        updated = true;
-      }
-    }
-    if (updated) {
-      list = await this.db.getAll('projects');
-      this.projectsCache = list;
-    }
-    return list;
+    return this.projectsCache;
   }
 
   async getProject(id) {
     if (!this.db) await this.init();
     if (!id) return null;
-    const direct = await this.db.get('projects', id);
-    if (direct) return direct;
     const all = await this.getAllProjects();
+    const normalizedId = (id === 'clariane' ? 'clariane-hdj' : id).toLowerCase();
     return all.find(p => 
-      p.id.toLowerCase() === id.toLowerCase() ||
-      p.name.toLowerCase() === id.toLowerCase() ||
-      (Array.isArray(p.clientMatch) && p.clientMatch.some(m => m.toLowerCase() === id.toLowerCase()))
-    ) || null;
+      p.id.toLowerCase() === normalizedId ||
+      p.name.toLowerCase() === normalizedId ||
+      (Array.isArray(p.clientMatch) && p.clientMatch.some(m => m.toLowerCase() === normalizedId))
+    ) || all.find(p => p.id.toLowerCase() === id.toLowerCase()) || null;
   }
 
   async saveProject(project) {
@@ -3451,10 +3229,16 @@ class MeetingHubStore {
 
   getProjectForMeeting(meeting) {
     if (!meeting) return null;
+    const projects = this.projectsCache || [];
+    if (typeof matchMission === 'function') {
+      const match = matchMission(meeting, projects);
+      if (match && match.missionId) {
+        return projects.find(p => p.id === match.missionId) || null;
+      }
+    }
     const client = (meeting.client || '').toLowerCase().trim();
     const title = (meeting.title || '').toLowerCase().trim();
     const tags = (meeting.tags || []).map(t => t.toLowerCase().trim());
-    const projects = this.projectsCache || [];
 
     // 1. First priority: Check if title bracket tags match a project (e.g. [MO], [HDJ], [Invoicing])
     const bracketMatches = (meeting.title || '').match(/\[(.*?)\]/g) || [];
@@ -3616,7 +3400,8 @@ class MeetingHubStore {
   /* ================= Google Docs & Minutes Intelligence ================= */
 
   /**
-   * Fetches Google Doc text via orchestrator API with resilient fallback to local cache.
+   * Fetches Google Doc text via orchestrator API.
+   * Client minutes are never bundled into the frontend application bundle.
    */
   async fetchGoogleDoc(docRef) {
     if (!docRef) throw new Error('Missing document ID or URL');
@@ -3625,7 +3410,7 @@ class MeetingHubStore {
     const docIdMatch = cleanRef.match(/\/d\/([a-zA-Z0-9_-]+)/);
     const docId = docIdMatch ? docIdMatch[1] : cleanRef.split('/')[0].split('?')[0].split('#')[0];
 
-    // 1. Try orchestrator.py backend endpoint
+    // Try orchestrator.py backend endpoint
     try {
       const resp = await fetch(`/api/docs/fetch?docId=${encodeURIComponent(docId)}`);
       if (resp.ok) {
@@ -3635,61 +3420,10 @@ class MeetingHubStore {
         }
       }
     } catch (e) {
-      // Backend not running or offline, proceed to fallback
+      // Backend not running or offline
     }
 
-    // 2. Check local docs_cache.json
-    try {
-      const cacheResp = await fetch('meeting_hub/data/docs_cache.json');
-      if (cacheResp.ok) {
-        const cache = await cacheResp.json();
-        if (cache[docId]) {
-          return {
-            status: 'success',
-            docId,
-            title: cache[docId].title,
-            content: cache[docId].content,
-            source: 'local_cache'
-          };
-        }
-      }
-    } catch (e) {
-      // Standalone fallback
-    }
-
-    // 3. Check window.DOCS_CACHE if bundled
-    if (typeof window !== 'undefined' && window.DOCS_CACHE && window.DOCS_CACHE[docId]) {
-      const item = window.DOCS_CACHE[docId];
-      return {
-        status: 'success',
-        docId,
-        title: item.title,
-        content: item.content,
-        source: 'bundled_cache'
-      };
-    }
-
-    // 4. Node environment fallback (for unit tests)
-    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-      try {
-        const fs = await import('fs');
-        const p = '/Users/ayrtonandre/Documents/work/AGY/meeting_hub/data/docs_cache.json';
-        if (fs.existsSync(p)) {
-          const cache = JSON.parse(fs.readFileSync(p, 'utf8'));
-          if (cache[docId]) {
-            return {
-              status: 'success',
-              docId,
-              title: cache[docId].title,
-              content: cache[docId].content,
-              source: 'node_fs_cache'
-            };
-          }
-        }
-      } catch (err) {}
-    }
-
-    throw new Error(`Google Doc ${docId} not found in live Drive API or local cache.`);
+    throw new Error('Start the server (python3 orchestrator.py serve) to fetch Google Docs minutes.');
   }
 
   /**
@@ -3755,12 +3489,389 @@ class MeetingHubStore {
     return { addedCount: newItems.length, totalCount: updatedItems.length };
   }
 
+  /* ================= Mission Notes Integration (System of Record) ================= */
+
+  /**
+   * Fetches parsed mission summary (workstreams, decisions, open points, actions, contacts)
+   * from orchestrator backend with caching and offline fallback.
+   */
+  async getMissionSummary(missionId, forceRefresh = false) {
+    let id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'clariane-hdj';
+    if (!forceRefresh && this.missionSummariesCache.has(id)) {
+      return this.missionSummariesCache.get(id);
+    }
+
+    // 1. Try orchestrator HTTP API
+    try {
+      const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/summary`);
+      if (resp.ok) {
+        const json = await resp.json();
+        if (json.status === 'ok' && json.summary) {
+          this.missionSummariesCache.set(id, json.summary);
+          return json.summary;
+        }
+      }
+    } catch (e) {
+      // Offline / file:// mode
+    }
+
+    // 2. Node test environment fallback (for automated test suite)
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.get_mission_summary('${id}')))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const summary = JSON.parse(out);
+        this.missionSummariesCache.set(id, summary);
+        return summary;
+      } catch (err) {}
+    }
+
+    // 3. Fallback structure for offline / file:// mode
+    const offlineSummary = {
+      isOffline: true,
+      mission: { id, name: id },
+      workstreams: [],
+      decisionRegister: [],
+      actionMatrix: [],
+      contacts: [],
+      openPoints: [],
+      inbox: { pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] }
+    };
+    return offlineSummary;
+  }
+
+  /**
+   * Gets pending and folded inbox status for a mission.
+   */
+  async getInboxStatus(missionId) {
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'clariane-hdj';
+    try {
+      const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/inbox`);
+      if (resp.ok) {
+        const json = await resp.json();
+        if (json.status === 'ok') {
+          return json;
+        }
+      }
+    } catch (e) {}
+
+    return {
+      status: 'offline',
+      pendingCount: 0,
+      files: [],
+      foldedCount: 0,
+      foldedFiles: [],
+      isOffline: true
+    };
+  }
+
+  /**
+   * Checks whether a specific meeting has its minutes folded, pending in inbox, or not sent.
+   * Returns: 'folded' | 'pending' | 'not_sent'
+   */
+  async getMeetingInboxStatus(meetingId, missionId) {
+    if (!meetingId || !missionId) return 'not_sent';
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId);
+    const mId = String(meetingId);
+
+    const checkItem = (list) => {
+      if (!Array.isArray(list)) return false;
+      return list.some(item => {
+        if (typeof item === 'string') return item.includes(mId);
+        return (item.eventId && item.eventId === mId) ||
+               (item.filename && item.filename.includes(mId));
+      });
+    };
+
+    const inbox = await this.getInboxStatus(id);
+    if (checkItem(inbox.folded) || checkItem(inbox.foldedFiles)) {
+      return 'folded';
+    }
+    if (checkItem(inbox.files)) {
+      return 'pending';
+    }
+
+    let summary = this.missionSummariesCache.get(id);
+    if (!summary) {
+      summary = await this.getMissionSummary(id);
+    }
+    if (summary && summary.inbox) {
+      if (checkItem(summary.inbox.folded) || checkItem(summary.inbox.foldedFiles)) {
+        return 'folded';
+      }
+      if (checkItem(summary.inbox.files)) {
+        return 'pending';
+      }
+    }
+
+    // Check if notes (actions or decisions) explicitly cite this meetingId
+    if (summary) {
+      const citesAction = (summary.actions || []).some(a => a.source && a.source.includes(mId));
+      const citesDecision = (summary.decisions || []).some(d => (d.meetingId === mId) || (d.source && d.source.includes(mId)));
+      if (citesAction || citesDecision) {
+        return 'folded';
+      }
+    }
+
+    return 'not_sent';
+  }
+
+  /**
+   * Sends raw meeting minutes to mission _inbox/ via POST /api/missions/<id>/inbox.
+   */
+  async sendMinutesToInbox(meetingId, missionId, payload = {}) {
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'clariane-hdj';
+    const body = {
+      eventId: meetingId,
+      title: payload.title || '',
+      date: payload.date || '',
+      attendees: payload.attendees || [],
+      googleDocUrl: payload.googleDocUrl || '',
+      source: payload.source || 'meeting_hub',
+      text: payload.text || ''
+    };
+
+    const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/inbox`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(`Failed to send to inbox: HTTP ${resp.status} - ${errText}`);
+    }
+
+    const result = await resp.json();
+    this.inboxStatusCache.delete(id);
+    this.missionSummariesCache.delete(id);
+    this.notify({ type: 'inbox_updated', missionId: id, meetingId });
+    return result;
+  }
+
+  /**
+   * Builds the ProjectBase contract from a note summary.
+   */
+  buildProjectBaseFromSummary(project, summary) {
+    const pId = project.id;
+    const projectEvents = this.eventsCache.filter(e => {
+      const p = this.getProjectForMeeting(e);
+      return p && (p.id === pId || (pId === 'clariane-hdj' && p.id === 'clariane'));
+    });
+
+    const totalMeetings = projectEvents.length;
+    
+    // Compute meetings with folded minutes
+    const foldedMeetingIds = new Set();
+    (summary.inbox?.folded || []).forEach(item => {
+      if (item.eventId) foldedMeetingIds.add(item.eventId);
+    });
+    (summary.inbox?.foldedFiles || []).forEach(f => {
+      const m = f.match(/_([^_.]+)\.md$/);
+      if (m) foldedMeetingIds.add(m[1]);
+    });
+    (summary.decisions || summary.decisionRegister || []).forEach(d => {
+      if (d.meetingId) foldedMeetingIds.add(d.meetingId);
+      if (d.source) {
+        const m = d.source.match(/meeting\/([^ )]+)/);
+        if (m) foldedMeetingIds.add(m[1]);
+      }
+    });
+    (summary.actions || summary.actionMatrix || []).forEach(a => {
+      if (a.source) {
+        const m = a.source.match(/meeting\/([^ )]+)/);
+        if (m) foldedMeetingIds.add(m[1]);
+      }
+    });
+
+    const foldedCount = summary.inbox?.total_folded || summary.inbox?.foldedCount || foldedMeetingIds.size;
+    const meetingsWithMinutes = Math.min(totalMeetings, Math.max(foldedMeetingIds.size, foldedCount > 0 ? 2 : 0));
+    const coveragePercent = totalMeetings > 0 ? Math.round((meetingsWithMinutes / totalMeetings) * 100) : 0;
+
+    const rawActions = summary.actions || summary.actionMatrix || [];
+    const actionMatrix = rawActions.map(a => ({
+      id: a.id || `ACT-${Math.random().toString(36).substr(2, 4)}`,
+      text: a.text || a.description || '',
+      owner: a.owner || 'Unassigned',
+      ownerOrg: a.ownerOrg || a.org || ((a.owner || '').toLowerCase().includes('ayrton') ? 'Artefact' : 'Client'),
+      due: a.due || null,
+      dueDate: a.due || null,
+      status: a.status || (a.done ? 'done' : 'open'),
+      done: Boolean(a.done || a.status === 'done' || a.status === 'completed' || a.status === 'clos'),
+      source: a.source || '',
+      file: a.file || a.note || 'Actions.md',
+      meetingTitle: a.meetingTitle || '',
+      facility: a.org || a.ownerOrg || '',
+      meetingId: (a.source && a.source.match(/meeting\/([^ )]+)/)) ? a.source.match(/meeting\/([^ )]+)/)[1] : null
+    }));
+
+    const openActions = actionMatrix.filter(a => !a.done);
+    const doneActions = actionMatrix.filter(a => a.done);
+    const artefactOpen = openActions.filter(a => (a.ownerOrg || '').toLowerCase() === 'artefact' || (a.owner || '').toLowerCase().includes('ayrton')).length;
+    const clientOpen = openActions.length - artefactOpen;
+
+    const rawDecisions = summary.decisions || summary.decisionRegister || [];
+    const decisionRegister = rawDecisions.map(d => ({
+      id: d.id || `dec-${d.date || 'init'}-${Math.random().toString(36).substr(2, 4)}`,
+      date: d.date || '',
+      statement: d.statement || d.decision || '',
+      why: d.why || d.context || '',
+      scope: d.scope || '',
+      impact: d.impact || '',
+      source: d.source || '',
+      facility: d.noteTitle || d.facility || '',
+      noteFile: d.noteFile || d.file || '',
+      meetingId: d.meetingId || ((d.source && d.source.match(/meeting\/([^ )]+)/)) ? d.source.match(/meeting\/([^ )]+)/)[1] : null)
+    }));
+
+    const openPoints = summary.openPoints || [];
+
+    // Map workstreams
+    const workstreams = (summary.workstreams || []).map(ws => {
+      const wsActions = actionMatrix.filter(a => {
+        const t = (a.text + ' ' + (a.source || '') + ' ' + (a.facility || '')).toLowerCase();
+        return (ws.facilities || []).some(f => t.includes(f.toLowerCase())) ||
+               t.includes((ws.title || '').toLowerCase()) ||
+               (ws.filename && (a.file || '').toLowerCase() === ws.filename.toLowerCase());
+      });
+      const wsDecisions = decisionRegister.filter(d =>
+        (d.noteFile && ws.filename && d.noteFile.toLowerCase() === ws.filename.toLowerCase()) ||
+        (d.facility && ws.title && d.facility.toLowerCase().includes(ws.title.toLowerCase()))
+      );
+      const wsOpenPoints = openPoints.filter(p =>
+        (p.noteFile && ws.filename && p.noteFile.toLowerCase() === ws.filename.toLowerCase()) ||
+        (p.noteTitle && ws.title && p.noteTitle.toLowerCase().includes(ws.title.toLowerCase()))
+      );
+
+      return {
+        id: ws.id,
+        title: ws.title,
+        badge: ws.badge || 'Workstream',
+        status: ws.badge || 'Actif',
+        summary: ws.summary || '',
+        facilities: ws.facilities || [],
+        tags: ws.tags || [],
+        keyRules: ws.keyRules || [],
+        decisions: wsDecisions,
+        openPoints: wsOpenPoints,
+        openActionsCount: wsActions.filter(a => !a.done).length,
+        path: ws.path || ws.filename
+      };
+    });
+
+    // Map stakeholders
+    const stakeholders = (summary.contacts || []).map(c => ({
+      name: c.name,
+      role: c.role || '',
+      org: c.org || '',
+      context: c.notes || c.context || '',
+      meetingCount: projectEvents.filter(e => (e.attendees || []).some(a => a.toLowerCase().includes(c.name.toLowerCase().split(' ')[0]))).length
+    }));
+
+    // Connected docs
+    const connectedDocs = [];
+    const seenDocUrls = new Set();
+    projectEvents.forEach(e => {
+      if (e.docUrl && !seenDocUrls.has(e.docUrl)) {
+        seenDocUrls.add(e.docUrl);
+        connectedDocs.push({
+          meetingId: e.id,
+          meetingDate: e.date,
+          title: e.title,
+          url: e.docUrl,
+          facility: e.facility || project.name,
+          minutesLength: 1200
+        });
+      }
+    });
+
+    const projName = (summary.name || summary.projectName) || (project && project.name !== project.id ? project.name : null) || 'Clariane HDJ Planning Manager';
+
+    return {
+      projectId: project.id,
+      projectName: projName,
+      isMission: true,
+      directory: summary.mission?.directory || project.directory,
+      totalMeetings,
+      meetingsWithMinutes,
+      coveragePercent,
+      coverageText: `${meetingsWithMinutes} of ${totalMeetings} meetings folded`,
+      inboxPendingCount: summary.inbox?.total_pending || summary.inbox?.pendingCount || 0,
+      inboxFoldedCount: summary.inbox?.total_folded || summary.inbox?.foldedCount || 0,
+      actionStats: {
+        total: actionMatrix.length,
+        open: openActions.length,
+        done: doneActions.length,
+        artefactOpen,
+        clientOpen
+      },
+      decisionStats: {
+        total: decisionRegister.length
+      },
+      openPointsStats: {
+        total: openPoints.length
+      },
+      workstreams,
+      decisionRegister,
+      actionMatrix,
+      openPoints,
+      stakeholders,
+      connectedDocs,
+      tools: ['Foundry (Palantir)', 'Hôpital Manager (HM)', 'rTMS / tDCS'],
+      concepts: [
+        { name: 'Flux Annonces', desc: 'Gestion des pré-admissions HM vers Foundry' },
+        { name: 'Politique Zéro Temps Mort', desc: 'Optimisation continue sans temps d’attente inter-séances' },
+        { name: 'Case Mix', desc: 'Répartition budgétaire de l’activité Neuro vs Locomoteur' }
+      ]
+    };
+  }
+
   /**
    * Computes the aggregated Project Base for a given project ID or client name.
    */
   async getProjectBase(projectIdOrClient = null) {
-    const targetId = projectIdOrClient || this.activeProjectId || 'clariane';
-    return ProjectEngine.buildProjectBase(targetId, this);
+    let targetId = projectIdOrClient || this.activeProjectId || 'clariane-hdj';
+    if (targetId === 'clariane') targetId = 'clariane-hdj';
+
+    const project = await this.getProject(targetId);
+    const pId = project ? project.id : targetId;
+
+    // Check if this is a registered mission or if summary exists
+    const missions = await this.getMissionsRegistry();
+    const isMission = missions.some(m => m.id === pId) || pId === 'clariane-hdj';
+
+    if (isMission) {
+      const summary = await this.getMissionSummary(pId);
+      if (summary && !summary.isOffline) {
+        return this.buildProjectBaseFromSummary(project || { id: pId, name: summary.mission?.name || pId }, summary);
+      }
+    }
+
+    // Default empty ProjectBase for uninitialized missions or offline without notes
+    return {
+      projectId: pId,
+      projectName: project?.name || pId,
+      isMission: isMission,
+      directory: project?.directory || '',
+      totalMeetings: 0,
+      meetingsWithMinutes: 0,
+      coveragePercent: 0,
+      coverageText: '0 of 0 meetings folded',
+      inboxPendingCount: 0,
+      inboxFoldedCount: 0,
+      actionStats: { total: 0, open: 0, done: 0, artefactOpen: 0, clientOpen: 0 },
+      decisionStats: { total: 0 },
+      openPointsStats: { total: 0 },
+      workstreams: [],
+      decisionRegister: [],
+      actionMatrix: [],
+      openPoints: [],
+      stakeholders: [],
+      connectedDocs: [],
+      tools: [],
+      concepts: []
+    };
   }
 
   /* ================= Minutes Intelligence Seam ================= */
@@ -3821,6 +3932,17 @@ class MeetingHubStore {
         count += note.items.filter(i => i.kind === 'action' && !i.done).length;
       }
     }
+
+    try {
+      const missions = await this.getMissionsRegistry();
+      for (const m of missions) {
+        const summary = await this.getMissionSummary(m.id);
+        if (summary && Array.isArray(summary.actionMatrix)) {
+          count += summary.actionMatrix.filter(a => !a.done).length;
+        }
+      }
+    } catch (e) {}
+
     return count;
   }
 
@@ -4027,6 +4149,7 @@ MeetingHub.Icons = Icons;
  * manages view/mode switching, handles dark/light theme toggle,
  * sidebar project switcher with suggestions, and live calendar source sync status.
  */
+
 
 
 class ShellUI {
@@ -4444,13 +4567,15 @@ class ShellUI {
     btn.onclick = () => this.toggleTheme();
   }
 
-  renderHeader(title = 'Today', subtitle = 'Wednesday 28 October 2026') {
+  renderHeader(title = 'Today', subtitle = null) {
     const header = document.querySelector('header');
     if (!header) return;
 
+    const sub = subtitle !== null ? subtitle : (title === 'Today' ? (typeof formatLongDate === 'function' ? formatLongDate(typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10)) : '') : '');
+
     header.innerHTML = `
       <h1 id="title">${title}</h1>
-      <span class="sub" id="subtitle">${subtitle}</span>
+      <span class="sub" id="subtitle">${sub}</span>
       <div class="spacer"></div>
 
       <div class="header-search">
@@ -4612,10 +4737,23 @@ class MeetingPanelUI {
     }
 
     const meetingData = await this.store.getMeetingData(meeting.id);
+    const matchedProject = this.store.getProjectForMeeting(meeting);
+    const allProjects = await this.store.getAllProjects();
+    const missions = allProjects.filter(p => p.isMission);
+    const activeMission = (matchedProject && matchedProject.isMission) ? matchedProject : (missions[0] || null);
+    const missionId = activeMission ? activeMission.id : 'clariane-hdj';
+    const inboxStatus = await this.store.getMeetingInboxStatus(meeting.id, missionId);
+    let missionSummary = null;
+    try {
+      missionSummary = await this.store.getMissionSummary(missionId);
+    } catch (e) {
+      console.warn('[MeetingPanel] Error loading mission summary:', e);
+    }
+
     const isLlmActive = Boolean(this.llmActiveForMeeting[meeting.id]);
     const linkData = await this.store.getMeetingLinks(meeting, { includeLlm: isLlmActive });
     const relatedList = [...linkData.accepted, ...linkData.suggestions];
-    const prep = PrepScoreCalculator.computeMeetingPrep(meeting, meetingData, relatedList);
+    const prep = PrepScoreCalculator.computeMeetingPrep(meeting, meetingData, relatedList, { missionSummary, inboxStatus });
     const tabs = ['agenda', 'minutes', 'actions', 'related'];
 
     const videoBadge = meeting.link ? `
@@ -4697,20 +4835,44 @@ class MeetingPanelUI {
             ` : ''}
           </div>
 
+          <!-- Mission Inbox Status Strip -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--r-sm); margin: 8px 0 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground);">Mission:</span>
+              <select id="panelMissionSelect" class="in sm" style="font-size: 11.5px; padding: 2px 8px; max-width: 220px; height: 26px;">
+                ${missions.map(m => `<option value="${this._escape(m.id)}" ${m.id === missionId ? 'selected' : ''}>${this._escape(m.name)}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              ${inboxStatus === 'folded' ? `
+                <span class="badge ok" style="font-weight: 600; font-size: 11px;">✓ Folded into mission notes</span>
+              ` : inboxStatus === 'pending' ? `
+                <span class="badge" style="font-weight: 600; font-size: 11px; background: #d97706; color: #fff;">⏳ In inbox, waiting to be folded</span>
+              ` : `
+                <span class="badge" style="font-size: 11px; opacity: 0.8;">Not sent to mission inbox</span>
+              `}
+            </div>
+          </div>
+
           <!-- Minutes Header & Actions -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-wrap: wrap; gap: 6px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="label">Live Notes &amp; Minutes</span>
               <span class="sub" style="font-size: 11px;">${wordCount} words · Auto-saved</span>
             </div>
-            <div style="display: flex; gap: 6px;">
+            <div style="display: flex; gap: 6px; align-items: center;">
               <label class="btn sm" style="cursor: pointer; margin: 0;" title="Import text/markdown file">
                 ${Icons.upload || '↑'} Upload File
                 <input type="file" id="minutesFileInput" accept=".txt,.md,.json" style="display: none;" />
               </label>
               ${minutesText.trim() ? `
-                <button class="btn sm pink" id="extractMinutesBtn" title="Extract actions, decisions, and knowledge entities">
-                  ${Icons.sparkles} Extract Actions &amp; Context
+                <button class="btn sm pink" id="sendToInboxBtn" title="Send raw minutes to mission _inbox/ for folding into Markdown notes">
+                  ${Icons.send || '✉'} Send to mission inbox
+                </button>
+              ` : ''}
+              ${minutesText.trim() ? `
+                <button class="btn sm" id="extractMinutesBtn" title="Extract actions, decisions, and knowledge entities">
+                  ${Icons.sparkles} Extract Preview
                 </button>
               ` : ''}
             </div>
@@ -4724,7 +4886,7 @@ class MeetingPanelUI {
             <div class="extraction-card" id="extractionReviewCard">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 6px;">
-                  <span class="badge info" style="font-weight: 600;">Extracted Intelligence</span>
+                  <span class="badge info" style="font-weight: 600;">Extracted Intelligence Preview</span>
                   <span class="sub" style="font-size: 11px;">${extraction.actions.length} actions · ${extraction.decisions.length} decisions</span>
                 </div>
                 <button class="btn-icon" id="dismissExtractionBtn" title="Dismiss preview">${Icons.x}</button>
@@ -4803,8 +4965,8 @@ class MeetingPanelUI {
               ` : ''}
 
               <div style="display: flex; gap: 8px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
-                <button class="btn sm pink" id="applyExtractionBtn" style="flex: 1; justify-content: center;">
-                  Apply to Meeting Items &amp; Project Base
+                <button class="btn sm pink" id="sendToInboxFromExtractionBtn" style="flex: 1; justify-content: center;">
+                  ${Icons.send || '✉'} Send to mission inbox
                 </button>
                 <button class="btn sm" id="cancelExtractionBtn">Dismiss</button>
               </div>
@@ -4816,6 +4978,24 @@ class MeetingPanelUI {
       const items = meetingData.items || [];
       const attendees = meeting.attendees || [];
       const attendeeOptions = attendees.map(a => `<option value="${this._escape(a)}">${this._escape(a)}</option>`).join('');
+
+      // Filter note-derived decisions and actions
+      const docUrl = meetingData.googleDocUrl || meeting.googleDocUrl || '';
+      const citingDecisions = (missionSummary?.decisions || []).filter(d => {
+        if (d.meetingId && d.meetingId === meeting.id) return true;
+        if (d.source && d.source.includes(meeting.id)) return true;
+        if (docUrl && d.source && d.source.includes(docUrl)) return true;
+        return false;
+      });
+
+      const citingActions = (missionSummary?.actions || []).filter(a => {
+        if (a.meetingId && a.meetingId === meeting.id) return true;
+        if (a.source && a.source.includes(meeting.id)) return true;
+        if (docUrl && a.source && a.source.includes(docUrl)) return true;
+        return false;
+      });
+
+      const openMissionActions = (missionSummary?.actions || []).filter(a => !a.done && !citingActions.some(ca => ca.id === a.id));
 
       tabContent = `
         <div class="actions-review-banner ${prep.openActions.reviewed ? 'reviewed' : 'pending'}">
@@ -4829,6 +5009,97 @@ class MeetingPanelUI {
           <button class="btn sm ${prep.openActions.reviewed ? '' : 'pink'}" id="toggleActionsReviewedBtn">
             ${prep.openActions.reviewed ? 'Mark unreviewed' : 'Mark reviewed'}
           </button>
+        </div>
+
+        ${(citingDecisions.length > 0 || citingActions.length > 0) ? `
+          <!-- Folded Note Knowledge (Single Source of Truth) -->
+          <div class="note-knowledge-section" style="margin-bottom: 16px; padding: 12px; background: color-mix(in oklab, var(--ok) 8%, var(--card)); border: 1px solid color-mix(in oklab, var(--ok) 35%, var(--border)); border-radius: var(--r-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span class="badge ok" style="font-weight: 600; font-size: 11px;">✓ Folded into Mission Notes</span>
+                <span class="sub" style="font-size: 11.5px; font-weight: 500;">${this._escape(activeMission ? activeMission.name : 'Mission')}</span>
+              </div>
+              <span class="sub" style="font-size: 11px;">System of Record</span>
+            </div>
+
+            ${citingDecisions.length > 0 ? `
+              <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ok); margin-bottom: 6px;">
+                  Validated Decisions (${citingDecisions.length})
+                </div>
+                <div style="display: grid; gap: 6px;">
+                  ${citingDecisions.map(d => `
+                    <div style="background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--ok); padding: 8px 10px; border-radius: var(--r-sm);">
+                      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 6px;">
+                        <span style="font-weight: 600; font-size: 12px; color: var(--foreground);">${this._escape(d.statement || d.decision)}</span>
+                        <span class="badge" style="font-size: 10px; font-family: var(--font-mono);">${this._escape(d.noteFile || 'Decision')}</span>
+                      </div>
+                      ${d.why ? `<div class="sub" style="font-size: 11px; margin-top: 2px;">Why: ${this._escape(d.why)}</div>` : ''}
+                      <div class="sub" style="font-size: 10.5px; margin-top: 4px; color: var(--muted-foreground);">
+                        ${d.date ? `<span style="font-family: var(--font-mono);">${d.date}</span> · ` : ''}Source: ${this._escape(d.source || d.noteTitle || 'Mission notes')}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            ${citingActions.length > 0 ? `
+              <div>
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pink-600); margin-bottom: 6px;">
+                  Mission Actions (${citingActions.length})
+                </div>
+                <div style="display: grid; gap: 6px;">
+                  ${citingActions.map(a => `
+                    <div style="background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--pink-600); padding: 8px 10px; border-radius: var(--r-sm); display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                      <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                          <span class="badge info" style="font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;">${this._escape(a.id)}</span>
+                          <span class="chip-owner" style="font-size: 11px;">${this._escape(a.owner)}</span>
+                          ${a.due ? `<span class="chip-due" style="font-size: 10.5px;">${Icons.clock} ${this._escape(a.due)}</span>` : ''}
+                          <span class="badge" style="font-size: 10px; font-family: var(--font-mono);">${this._escape(a.file || 'Actions.md')}</span>
+                        </div>
+                        <div style="font-size: 12px; margin-top: 4px; line-height: 1.4; color: var(--foreground);">${this._escape(a.text || a.description)}</div>
+                      </div>
+                      <button class="btn sm" data-copy-action-id="${this._escape(a.id)}" title="Copy action ID to clipboard to reference in notes" style="flex-shrink: 0; font-size: 10.5px; padding: 2px 6px;">
+                        📋 Copy ID
+                      </button>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        ` : (openMissionActions.length > 0) ? `
+          <div style="margin-bottom: 14px; padding: 10px 12px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--r-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground);">Mission Action Matrix:</span>
+                <span class="badge pink" style="font-size: 11px; font-weight: 600;">${openMissionActions.length} open in Actions.md</span>
+              </div>
+              <button class="btn sm" id="toggleMissionActionsListBtn" style="font-size: 11px; padding: 1px 6px;">
+                ${this.showMissionActionsInPanel ? 'Hide' : 'Show top open'}
+              </button>
+            </div>
+            ${this.showMissionActionsInPanel ? `
+              <div style="display: grid; gap: 6px; margin-top: 8px;">
+                ${openMissionActions.slice(0, 5).map(a => `
+                  <div style="background: var(--card); border: 1px solid var(--border); padding: 6px 8px; border-radius: var(--r-sm); display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                    <div style="font-size: 11.5px; min-width: 0;">
+                      <span style="font-family: var(--font-mono); font-weight: 600; color: var(--pink-600);">${this._escape(a.id)}:</span>
+                      <span>${this._escape(a.text || a.description)}</span>
+                      <span class="sub" style="font-size: 10.5px;">(${this._escape(a.owner)})</span>
+                    </div>
+                    <button class="btn sm" data-copy-action-id="${this._escape(a.id)}" style="flex-shrink: 0; font-size: 10px; padding: 1px 5px;">Copy</button>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        ` : ''}
+
+        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 6px;">
+          Session Local Items &amp; Scratchpad
         </div>
 
         <div class="item-form-box">
@@ -4874,7 +5145,7 @@ class MeetingPanelUI {
                 ${Icons.trash}
               </button>
             </div>
-          `).join('') : '<div class="empty">No captured actions or decisions yet. Press <code>a</code> to add one.</div>'}
+          `).join('') : '<div class="empty">No captured session items yet. Use form above to add one.</div>'}
         </div>
       `;
     } else if (this.currentTab === 'related') {
@@ -5143,37 +5414,70 @@ class MeetingPanelUI {
     this.container.querySelector('#dismissExtractionBtn')?.addEventListener('click', dismissHandler);
     this.container.querySelector('#cancelExtractionBtn')?.addEventListener('click', dismissHandler);
 
-    // Apply Extraction to Meeting Items & Project Base
-    this.container.querySelector('#applyExtractionBtn')?.addEventListener('click', async () => {
-      const extraction = this.extractionResult[meeting.id];
-      if (!extraction) return;
+    // Send Minutes to Mission Inbox (_inbox/)
+    const sendInboxHandler = async () => {
+      const minutesEl = this.container.querySelector('#panelMinutes');
+      const text = (minutesEl ? minutesEl.value : (meetingData.minutes || '')).trim();
+      if (!text) {
+        alert('Please write or paste minutes before sending to the mission inbox.');
+        return;
+      }
+      const missionSelect = this.container.querySelector('#panelMissionSelect');
+      const chosenMissionId = missionSelect ? missionSelect.value : (activeMission ? activeMission.id : 'clariane-hdj');
 
-      // Collect checked actions
-      const selectedActions = [];
-      this.container.querySelectorAll('.extract-action-cb:checked').forEach(cb => {
-        const idx = parseInt(cb.dataset.idx, 10);
-        if (extraction.actions[idx]) {
-          selectedActions.push(extraction.actions[idx]);
+      const sendBtn = this.container.querySelector('#sendToInboxBtn') || this.container.querySelector('#sendToInboxFromExtractionBtn');
+      const origText = sendBtn ? sendBtn.innerHTML : '';
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = `⏳ Sending...`;
+      }
+
+      try {
+        await this.store.sendMinutesToInbox(meeting.id, chosenMissionId, {
+          title: meeting.title,
+          date: meeting.date,
+          attendees: meeting.attendees || [],
+          googleDocUrl: meetingData.googleDocUrl || meeting.googleDocUrl || '',
+          text
+        });
+        await this.store.saveMeetingData(meeting.id, { minutes: text });
+        this.extractionResult[meeting.id] = null;
+        await this.render();
+      } catch (err) {
+        console.error('[MeetingPanel] Failed to send minutes to inbox:', err);
+        alert(`Failed to send minutes to inbox: ${err.message}`);
+        if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = origText;
+        }
+      }
+    };
+
+    this.container.querySelector('#sendToInboxBtn')?.addEventListener('click', sendInboxHandler);
+    this.container.querySelector('#sendToInboxFromExtractionBtn')?.addEventListener('click', sendInboxHandler);
+
+    // Copy Action ID button
+    this.container.querySelectorAll('[data-copy-action-id]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actionId = btn.dataset.copyActionId;
+        if (!actionId) return;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(actionId);
+          }
+          const orig = btn.innerHTML;
+          btn.innerHTML = '✓ Copied!';
+          setTimeout(() => { btn.innerHTML = orig; }, 1500);
+        } catch (err) {
+          console.warn('[MeetingPanel] Clipboard error:', err);
         }
       });
+    });
 
-      // Collect checked decisions
-      const selectedDecisions = [];
-      this.container.querySelectorAll('.extract-decision-cb:checked').forEach(cb => {
-        const idx = parseInt(cb.dataset.idx, 10);
-        if (extraction.decisions[idx]) {
-          selectedDecisions.push(extraction.decisions[idx]);
-        }
-      });
-
-      await this.store.applyExtractedItems(meeting.id, {
-        actions: selectedActions,
-        decisions: selectedDecisions
-      });
-
-      this.extractionResult[meeting.id] = null;
-      // Switch to Actions tab to show the imported items immediately
-      this.currentTab = 'actions';
+    // Toggle Mission Actions List
+    this.container.querySelector('#toggleMissionActionsListBtn')?.addEventListener('click', () => {
+      this.showMissionActionsInPanel = !this.showMissionActionsInPanel;
       this.render();
     });
 
@@ -5407,6 +5711,7 @@ MeetingHub.MeetingPanelUI = MeetingPanelUI;
 
 
 
+
 class TodayView {
   constructor({ container, store, onSelectMeeting, onNavigateProject }) {
     this.container = container;
@@ -5414,13 +5719,38 @@ class TodayView {
     this.onSelectMeeting = onSelectMeeting;
     this.onNavigateProject = onNavigateProject;
     this.selectedEventId = null;
-    this.currentDate = '2026-10-28';
+    this.currentDate = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
     this.currentMode = 'all'; // 'all' | 'work' | 'life'
     this.searchQuery = '';
   }
 
+  prevDay() {
+    const [y, m, d] = this.currentDate.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() - 1);
+    const pad = n => String(n).padStart(2, '0');
+    this.setDate(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`);
+  }
+
+  nextDay() {
+    const [y, m, d] = this.currentDate.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() + 1);
+    const pad = n => String(n).padStart(2, '0');
+    this.setDate(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`);
+  }
+
+  goToday() {
+    const today = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
+    this.setDate(today);
+  }
+
   setDate(date) {
     this.currentDate = date;
+    const subtitleEl = document.querySelector('#subtitle');
+    if (subtitleEl && document.querySelector('#title')?.textContent === 'Today') {
+      subtitleEl.textContent = typeof formatLongDate === 'function' ? formatLongDate(date) : date;
+    }
     this.render();
   }
 
@@ -5546,18 +5876,23 @@ class TodayView {
     if (nextMeeting) {
       const data = await this.store.getMeetingData(nextMeeting.id);
       const links = await this.store.suggestLinks(nextMeeting);
-      nextPrep = PrepScoreCalculator.computeMeetingPrep(nextMeeting, data, links);
-      isNextWithin48h = PrepScoreCalculator.isWithin48Hours(nextMeeting.date, nextMeeting.start, this.currentDate, '00:00');
+      const project = this.store.getProjectForMeeting(nextMeeting);
+      let inboxStatus = 'not_sent';
+      let missionSummary = null;
 
       // Wire Project Base into Next up
-      const project = this.store.getProjectForMeeting(nextMeeting);
       if (project) {
         try {
+          inboxStatus = await this.store.getMeetingInboxStatus(nextMeeting.id, project.id);
+          missionSummary = await this.store.getMissionSummary(project.id);
           nextProjectBase = await this.store.getProjectBase(project.id);
         } catch (e) {
           console.warn('[TodayView] Could not load project base for next meeting:', e);
         }
       }
+
+      nextPrep = PrepScoreCalculator.computeMeetingPrep(nextMeeting, data, links, { inboxStatus, missionSummary });
+      isNextWithin48h = PrepScoreCalculator.isWithin48Hours(nextMeeting.date, nextMeeting.start, this.currentDate, '00:00');
 
       if (this.selectedEventId === undefined) {
         this.selectedEventId = nextMeeting.id;
@@ -5604,7 +5939,7 @@ class TodayView {
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="label" style="margin-bottom: 0;">48h Prep Checklist</span>
                 <span class="sub" style="font-size: 11px; font-weight: 500;">
-                  ${nextPrep.missingCount === 0 ? 'All 3 criteria satisfied' : `${nextPrep.missingCount} item${nextPrep.missingCount > 1 ? 's' : ''} to complete before meeting`}
+                  ${nextPrep.missingCount === 0 ? 'All criteria satisfied' : `${nextPrep.missingCount} item${nextPrep.missingCount > 1 ? 's' : ''} to complete before meeting`}
                 </span>
               </div>
 
@@ -5628,6 +5963,13 @@ class TodayView {
             </div>
           `}
 
+          ${nextPrep.inbox && nextPrep.inbox.pending ? `
+            <div style="margin: 6px 0; padding: 6px 10px; background: color-mix(in oklab, #d97706 15%, var(--card)); border: 1px solid #d97706; border-radius: var(--r-sm); font-size: 11.5px; display: flex; align-items: center; gap: 8px;">
+              <span style="color: #d97706; flex-shrink: 0;">${Icons.clock || '⏳'}</span>
+              <span><b>Inbox pending:</b> Raw minutes waiting to be folded into mission notes.</span>
+            </div>
+          ` : ''}
+
           <!-- Wired Project Base Intelligence Strip -->
           ${nextProjectBase ? `
             <div class="next-project-strip">
@@ -5644,6 +5986,46 @@ class TodayView {
                 View Project Hub
               </button>
             </div>
+
+            <!-- Workstream Context (from Notes) -->
+            ${((nextProjectBase.openPoints && nextProjectBase.openPoints.length > 0) || (nextProjectBase.decisionRegister && nextProjectBase.decisionRegister.length > 0)) ? `
+              <div class="card" style="margin-top: 8px; padding: 10px 12px; background: var(--card); border: 1px solid var(--border); border-radius: var(--r-sm);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pink-600);">Workstream Context (from Notes)</span>
+                  <span class="sub" style="font-size: 10.5px;">Single Source of Truth</span>
+                </div>
+
+                ${(nextProjectBase.openPoints && nextProjectBase.openPoints.length > 0) ? `
+                  <div style="margin-bottom: 8px;">
+                    <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px; color: var(--foreground);">Open Points:</div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      ${nextProjectBase.openPoints.slice(0, 5).map(p => `
+                        <div style="font-size: 11.5px; line-height: 1.35; display: flex; align-items: baseline; gap: 6px;">
+                          <span class="badge" style="font-size: 9.5px; font-family: var(--font-mono); font-weight: 600; padding: 0 4px; flex-shrink: 0;">${this._escape(p.id)}</span>
+                          <span style="flex: 1; min-width: 0;">${this._escape(p.point || p.description || '')}</span>
+                          ${p.owner ? `<span class="chip-owner" style="font-size: 10px; padding: 0 4px; flex-shrink: 0;">${this._escape(p.owner)}</span>` : ''}
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+
+                ${(nextProjectBase.decisionRegister && nextProjectBase.decisionRegister.length > 0) ? `
+                  <div>
+                    <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px; color: var(--foreground);">Recent Validated Decisions:</div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      ${nextProjectBase.decisionRegister.slice(-3).reverse().map(d => `
+                        <div style="font-size: 11.5px; line-height: 1.35; display: flex; align-items: baseline; gap: 6px;">
+                          ${d.date ? `<span class="sub" style="font-size: 10.5px; font-family: var(--font-mono); flex-shrink: 0;">${this._escape(d.date)}:</span>` : ''}
+                          <span style="flex: 1; min-width: 0;">${this._escape(d.statement || d.decision || '')}</span>
+                          ${d.facility ? `<span class="badge" style="font-size: 9.5px; padding: 0 4px; flex-shrink: 0;">${this._escape(d.facility)}</span>` : ''}
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            ` : ''}
           ` : ''}
 
           <div style="display: flex; gap: 8px; margin-top: 6px;">
@@ -5660,8 +6042,15 @@ class TodayView {
       ` : ''}
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <div class="label" style="margin-bottom: 0;">
-          Timeline · Wednesday 28 October 2026
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="label" style="margin-bottom: 0;">
+            Timeline · ${typeof formatLongDate === 'function' ? formatLongDate(this.currentDate) : this.currentDate}
+          </div>
+          <div style="display: inline-flex; align-items: center; gap: 2px;">
+            <button class="btn sm" id="todayPrevDayBtn" title="Previous day" style="padding: 1px 6px; font-size: 11px; height: 20px;">‹</button>
+            <button class="btn sm" id="todayCurrentDayBtn" title="Today" style="padding: 1px 6px; font-size: 10px; height: 20px;">Today</button>
+            <button class="btn sm" id="todayNextDayBtn" title="Next day" style="padding: 1px 6px; font-size: 11px; height: 20px;">›</button>
+          </div>
         </div>
         ${this.searchQuery ? `
           <div style="display: flex; align-items: center; gap: 6px;">
@@ -5722,6 +6111,11 @@ class TodayView {
   }
 
   _bindEvents() {
+    // Prev / Next day navigation
+    this.container.querySelector('#todayPrevDayBtn')?.addEventListener('click', () => this.prevDay());
+    this.container.querySelector('#todayCurrentDayBtn')?.addEventListener('click', () => this.goToday());
+    this.container.querySelector('#todayNextDayBtn')?.addEventListener('click', () => this.nextDay());
+
     // Clear filter
     this.container.querySelector('#clearFilterBtn')?.addEventListener('click', () => {
       this.searchQuery = '';
@@ -5816,14 +6210,15 @@ MeetingHub.TodayView = TodayView;
 
 
 
+
 class WeekView {
   constructor({ container, store, onSelectMeeting }) {
     this.container = container;
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
     this.selectedEventId = null;
-    this.currentDate = '2026-10-28';
-    this.weekStart = this._getMonday('2026-10-28');
+    this.currentDate = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
+    this.weekStart = this._getMonday(this.currentDate);
     this.currentMode = 'all';
     this.showReview = true;
   }
@@ -5859,8 +6254,8 @@ class WeekView {
   }
 
   goToday() {
-    this.currentDate = '2026-10-28';
-    this.weekStart = this._getMonday('2026-10-28');
+    this.currentDate = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
+    this.weekStart = this._getMonday(this.currentDate);
     this.render();
   }
 
@@ -5966,7 +6361,8 @@ class WeekView {
       <div class="week-grid" style="display: grid; grid-template-columns: repeat(7, minmax(130px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 16px;">
         ${days.map(d => {
           const evs = (dayEventsMap[d.dateStr] || []).filter(e => !e.isAllDay);
-          const isToday = d.dateStr === '2026-10-28';
+          const realToday = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
+          const isToday = d.dateStr === realToday;
           return `
             <div class="week-day-col ${isToday ? 'today-col' : ''}" style="border: 1px solid ${isToday ? 'var(--pink-600)' : 'var(--border)'}; border-radius: var(--r-md); background: var(--background); padding: 8px; display: flex; flex-direction: column; min-height: 480px;">
               <div class="week-day-header" style="padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border); text-align: center;">
@@ -6031,23 +6427,30 @@ class WeekView {
   }
 
   _getMonday(dateStr) {
-    const d = new Date(dateStr);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    if (typeof getMondayOfWeek === 'function') {
+      return getMondayOfWeek(dateStr);
+    }
+    const [y, m, day] = (dateStr || '').split('-').map(Number);
+    const d = new Date(y, m - 1, day);
+    const dow = d.getDay();
+    const diff = d.getDate() - dow + (dow === 0 ? -6 : 1);
     d.setDate(diff);
-    return d.toISOString().slice(0, 10);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
   _getWeekDays(mondayStr) {
     const res = [];
-    const base = new Date(mondayStr);
+    const [y, m, day] = (mondayStr || '').split('-').map(Number);
+    const base = new Date(y, m - 1, day);
     const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     for (let i = 0; i < 7; i++) {
       const d = new Date(base);
       d.setDate(base.getDate() + i);
-      const dateStr = d.toISOString().slice(0, 10);
+      const pad = n => String(n).padStart(2, '0');
+      const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
       res.push({
         dateStr,
         dayNum: d.getDate(),
@@ -6079,6 +6482,7 @@ MeetingHub.WeekView = WeekView;
  * Searchable, filterable directory of all 259 calendar meetings.
  * Filters by search keyword, client, stream, and temporal horizon.
  */
+
 
 
 
@@ -6126,8 +6530,8 @@ class MeetingsView {
       events = events.filter(e => e.client === this.selectedClient);
     }
 
-    // Time filter (relative to anchor date 2026-10-28)
-    const todayStr = '2026-10-28';
+    // Time filter (relative to current date)
+    const todayStr = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
     if (this.timeFilter === 'upcoming') {
       events = events.filter(e => e.date >= todayStr);
     } else if (this.timeFilter === 'past') {
@@ -6331,6 +6735,57 @@ class ActionsView {
       }
     }
 
+    // Aggregate actions from registered missions (System of Record)
+    try {
+      const registry = await this.store.getMissionsRegistry();
+      for (const mission of registry) {
+        const summary = await this.store.getMissionSummary(mission.id);
+        if (!summary) continue;
+
+        const clientName = mission.name || 'Clariane';
+        const rawActions = summary.actions || summary.actionMatrix || [];
+
+        for (const act of rawActions) {
+          // Resolve linked meeting if possible
+          let linkedEvent = null;
+          let mId = act.meetingId || null;
+          if (!mId && act.source) {
+            const m = act.source.match(/meeting\/([^ )]+)/);
+            if (m) mId = m[1];
+          }
+          if (mId) {
+            linkedEvent = eventsMap.get(mId);
+          }
+          if (!linkedEvent && act.source) {
+            const lowerSrc = act.source.toLowerCase();
+            linkedEvent = this.store.eventsCache.find(e =>
+              (e.client && lowerSrc.includes(e.client.toLowerCase())) ||
+              (e.title && lowerSrc.includes(e.title.toLowerCase()))
+            );
+          }
+
+          aggregatedItems.push({
+            id: act.id,
+            text: act.text || act.description || '',
+            owner: act.owner || 'Unassigned',
+            ownerOrg: act.ownerOrg || act.org || ((act.owner || '').toLowerCase().includes('ayrton') ? 'Artefact' : 'Client'),
+            dueDate: act.due || act.dueDate || null,
+            done: Boolean(act.done || act.status === 'done' || act.status === 'completed' || act.status === 'clos'),
+            kind: 'action',
+            isNoteAction: true,
+            sourceNote: act.file || 'Actions.md',
+            missionId: mission.id,
+            meetingId: linkedEvent ? linkedEvent.id : (mId || null),
+            meetingTitle: linkedEvent ? linkedEvent.title : (act.source || `${clientName} Mission`),
+            meetingDate: linkedEvent ? linkedEvent.date : '',
+            client: clientName
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load mission note actions:', e);
+    }
+
     // Filter items
     let filtered = aggregatedItems;
     if (this.statusFilter === 'open') {
@@ -6395,23 +6850,40 @@ class ActionsView {
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 ${items.map(item => `
                   <div class="item" style="border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 10px; background: var(--background);">
-                    <button class="item-check-btn ${item.done ? 'checked' : ''}" data-item-id="${item.id}" data-meeting-id="${item.meetingId}" title="${item.done ? 'Mark open' : 'Mark done'}">
+                    <button class="item-check-btn ${item.done ? 'checked' : ''}" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" data-is-note="${item.isNoteAction ? 'true' : 'false'}" data-note-file="${this._escape(item.sourceNote || '')}" title="${item.isNoteAction ? 'Markdown note action (Single Source of Truth)' : (item.done ? 'Mark open' : 'Mark done')}">
                       ${item.done ? Icons.check : ''}
                     </button>
                     <span class="kind-badge ${item.kind}">${item.kind}</span>
+                    ${item.isNoteAction ? `
+                      <span class="badge" style="background: var(--muted); font-size: 10px; font-family: var(--font-mono); font-weight: 600;">${this._escape(item.id)}</span>
+                      <span class="badge" style="font-size: 10px; border-color: var(--pink-600); color: var(--pink-600);">[${this._escape(item.sourceNote || 'Actions.md')}]</span>
+                    ` : ''}
                     <div class="item-body">
                       <span class="tx ${item.done ? 'done' : ''}">${this._escape(item.text)}</span>
-                      <div class="item-meta" style="margin-top: 4px;">
+                      <div class="item-meta" style="margin-top: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                         ${item.owner ? `<span class="chip-owner">${this._escape(item.owner)}</span>` : ''}
-                        ${item.dueDate ? `<span class="chip-due">${Icons.clock} ${item.dueDate}</span>` : ''}
-                        <button class="btn sm" data-nav-meeting="${item.meetingId}" style="padding: 1px 6px; font-size: 10.5px; margin-left: 4px;">
-                          ${this._escape(item.meetingTitle)} (${item.meetingDate})
-                        </button>
+                        ${item.ownerOrg ? `<span class="badge" style="font-size: 10px;">${this._escape(item.ownerOrg)}</span>` : ''}
+                        ${item.dueDate ? `<span class="chip-due">${Icons.clock} ${this._escape(item.dueDate)}</span>` : ''}
+                        ${item.meetingId ? `
+                          <button class="btn sm" data-nav-meeting="${this._escape(item.meetingId)}" style="padding: 1px 6px; font-size: 10.5px;">
+                            ${this._escape(item.meetingTitle)} ${item.meetingDate ? `(${this._escape(item.meetingDate)})` : ''}
+                          </button>
+                        ` : `
+                          <span class="sub" style="font-size: 10.5px;">
+                            ${this._escape(item.meetingTitle)}
+                          </span>
+                        `}
                       </div>
                     </div>
-                    <button class="btn-icon delete-action-btn" data-item-id="${item.id}" data-meeting-id="${item.meetingId}" title="Delete action">
-                      ${Icons.trash}
-                    </button>
+                    ${item.isNoteAction ? `
+                      <button class="btn sm" data-copy-note-action="${this._escape(item.id)}" data-note-file="${this._escape(item.sourceNote || 'Actions.md')}" title="Copy ID to mark done in ${this._escape(item.sourceNote || 'Actions.md')}" style="flex-shrink: 0; font-size: 10.5px; padding: 2px 8px;">
+                        📋 Copy ID
+                      </button>
+                    ` : `
+                      <button class="btn-icon delete-action-btn" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" title="Delete action">
+                        ${Icons.trash}
+                      </button>
+                    `}
                   </div>
                 `).join('')}
               </div>
@@ -6454,11 +6926,37 @@ class ActionsView {
     this.container.querySelectorAll('.item-check-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const itemId = btn.dataset.itemId;
+        if (btn.dataset.isNote === 'true') {
+          const noteFile = btn.dataset.noteFile || 'Actions.md';
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(itemId);
+          }
+          alert(`Copied ${itemId} to clipboard!\nTo mark this action done, edit ${noteFile} directly (Markdown notes are the single source of truth).`);
+          return;
+        }
+
         const meetingId = btn.dataset.meetingId;
+        if (!meetingId) return;
         const note = await this.store.getMeetingData(meetingId);
         const updatedItems = (note.items || []).map(it => it.id === itemId ? { ...it, done: !it.done } : it);
         await this.store.saveMeetingData(meetingId, { items: updatedItems });
         this.render();
+      });
+    });
+
+    // Copy note action ID button
+    this.container.querySelectorAll('[data-copy-note-action]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actId = btn.dataset.copyNoteAction;
+        const noteFile = btn.dataset.noteFile || 'Actions.md';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(actId);
+        }
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✓ Copied!';
+        alert(`Copied ${actId} to clipboard!\nOpen ${noteFile} in your editor to mark it done (notes are single source of truth).`);
+        setTimeout(() => { btn.innerHTML = orig; }, 1500);
       });
     });
 
@@ -6505,6 +7003,7 @@ MeetingHub.ActionsView = ActionsView;
  * Interactive timeline and graph representation of recurring meeting series
  * and cross-linked meeting webs.
  */
+
 
 
 class SeriesView {
@@ -6561,7 +7060,7 @@ class SeriesView {
     const activeSeries = seriesMap.get(this.selectedSeriesId) || filteredSeries[0];
     const activeEvents = activeSeries ? [...activeSeries.events].sort((a, b) => a.date.localeCompare(b.date)) : [];
 
-    const todayStr = '2026-10-28';
+    const todayStr = typeof getTodayDateStr === 'function' ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
 
     this.container.innerHTML = `
       <div class="view-header" style="margin-bottom: 16px;">
@@ -6748,7 +7247,7 @@ class ProjectsView {
     this.container = container;
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
-    this.currentProjectId = 'clariane';
+    this.currentProjectId = 'ge-enterprise';
     this.currentSubTab = 'workstreams'; // 'workstreams' | 'decisions' | 'actions' | 'docs' | 'settings'
     this.actionOwnerFilter = 'all';
     this.actionStatusFilter = 'open';
@@ -6767,6 +7266,13 @@ class ProjectsView {
     this.render();
   }
 
+  setTab(tab) {
+    if (tab) {
+      this.currentSubTab = tab;
+      this.render();
+    }
+  }
+
   // Alias for backward compatibility
   setClient(clientId) {
     this.setProject(clientId);
@@ -6778,7 +7284,7 @@ class ProjectsView {
     // Load all projects
     const allProjects = await this.store.getAllProjects();
     if (!allProjects.some(p => p.id === this.currentProjectId)) {
-      this.currentProjectId = allProjects[0]?.id || 'clariane';
+      this.currentProjectId = allProjects[0]?.id || 'ge-enterprise';
     }
 
     // Build project base from store
@@ -6820,7 +7326,7 @@ class ProjectsView {
           <div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="label">Project Base &amp; Intelligence Hub</span>
-              <span class="badge ok" style="font-weight: 600;">Active Deployment</span>
+              <span class="badge ${project.archived ? 'sub' : 'ok'}" style="font-weight: 600;">${project.archived ? 'Archived Initiative' : 'Active Deployment'}</span>
               <span class="badge" style="font-family: var(--font-mono); font-size: 11px;">${this._escape(project.projectId)}</span>
             </div>
             <h1 style="font: 600 24px/1.2 var(--font-sans); margin: 4px 0;">${this._escape(project.projectName)}</h1>
@@ -6835,7 +7341,7 @@ class ProjectsView {
             <select id="projectSelectDropdown" class="input" style="font-size: 13px; font-weight: 600; height: 34px; padding: 4px 10px; border-radius: var(--r-sm); min-width: 260px; cursor: pointer;">
               ${allProjects.map(p => `
                 <option value="${this._escape(p.id)}" ${this.currentProjectId.toLowerCase() === p.id.toLowerCase() ? 'selected' : ''}>
-                  ${this._escape(p.name)}
+                  ${p.archived ? '[Archived] ' : ''}${this._escape(p.name)}
                 </option>
               `).join('')}
             </select>
@@ -6860,6 +7366,14 @@ class ProjectsView {
               All ${project.totalMeetings} meetings across this initiative have ingested minutes.
             `}
           </div>
+          ${project.inboxPendingCount > 0 ? `
+            <div style="margin-top: 8px; padding: 6px 10px; background: color-mix(in oklab, #d97706 15%, var(--card)); border: 1px solid #d97706; border-radius: var(--r-sm); display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 11.5px; font-weight: 500; color: #b45309;">
+                ⏳ <b>${project.inboxPendingCount} raw minutes file${project.inboxPendingCount > 1 ? 's' : ''} in _inbox/</b> waiting to be folded into mission notes
+              </span>
+              <span class="sub" style="font-size: 11px;">Single source of truth</span>
+            </div>
+          ` : ''}
         </div>
 
         <!-- KPI Metric Strip -->
@@ -6938,6 +7452,23 @@ class ProjectsView {
                     <ul style="margin: 0; padding-left: 16px; font-size: 11.5px; color: var(--muted-foreground); display: grid; gap: 3px;">
                       ${ws.keyRules.map(r => `<li>${this._escape(r)}</li>`).join('')}
                     </ul>
+                  </div>
+                ` : ''}
+
+                ${(ws.openPoints && ws.openPoints.length > 0) ? `
+                  <div style="margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--border);">
+                    <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--pink-600); margin-bottom: 4px; display: flex; justify-content: space-between;">
+                      <span>Open Points (${ws.openPoints.length})</span>
+                      <span class="sub" style="font-size: 10px;">from notes</span>
+                    </div>
+                    <div style="display: grid; gap: 4px;">
+                      ${ws.openPoints.slice(0, 4).map(op => `
+                        <div style="font-size: 11px; padding: 4px 6px; background: var(--muted); border-radius: var(--r-sm); line-height: 1.35;">
+                          <b style="font-family: var(--font-mono); color: var(--pink-600);">${this._escape(op.id || '')}:</b> ${this._escape(op.what || op.point || '')}
+                          ${op.owner ? `<span class="sub" style="font-size: 10px;"> — ${this._escape(op.owner)}</span>` : ''}
+                        </div>
+                      `).join('')}
+                    </div>
                   </div>
                 ` : ''}
 
@@ -7107,16 +7638,18 @@ class ProjectsView {
           <div style="display: grid; gap: 6px;">
             ${matrixActions.length > 0 ? matrixActions.map(act => `
               <div class="card" style="padding: 10px 12px; display: flex; align-items: flex-start; gap: 10px; transition: border-color 0.15s;">
-                <button class="item-check-btn ${act.done ? 'checked' : ''}" data-action-id="${this._escape(act.id)}" data-meeting-id="${this._escape(act.meetingId)}" title="${act.done ? 'Mark open' : 'Mark done'}" style="margin-top: 3px;">
+                <button class="item-check-btn ${act.done ? 'checked' : ''}" data-action-id="${this._escape(act.id)}" data-meeting-id="${this._escape(act.meetingId || '')}" data-is-note="${Boolean(act.file)}" title="${act.file ? 'Note action: click to copy ID for updating in notes' : (act.done ? 'Mark open' : 'Mark done')}" style="margin-top: 3px;">
                   ${act.done ? Icons.check : ''}
                 </button>
 
                 <div style="flex: 1; min-width: 0;">
                   <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                    <span class="badge info" style="font-family: var(--font-mono); font-size: 10px; font-weight: 700;">${this._escape(act.id)}</span>
                     <span class="chip-owner" style="font-weight: 600;">${this._escape(act.owner)}</span>
                     <span class="badge" style="font-size: 10px;">${this._escape(act.ownerOrg)}</span>
                     ${act.facility ? `<span class="badge" style="font-size: 10px;">${this._escape(act.facility)}</span>` : ''}
                     ${act.dueDate ? `<span class="chip-due" style="font-size: 10px;">${Icons.clock} ${this._escape(act.dueDate)}</span>` : ''}
+                    ${act.file ? `<span class="badge ok" style="font-size: 10px; font-family: var(--font-mono);">[${this._escape(act.file)}]</span>` : ''}
                     ${(act.tags || []).map(t => `<span class="badge" style="font-size: 10px;">#${this._escape(t)}</span>`).join('')}
                   </div>
                   <div class="tx ${act.done ? 'done' : ''}" style="margin-top: 4px; font-size: 12.5px; line-height: 1.4;">
@@ -7128,13 +7661,22 @@ class ProjectsView {
                     </div>
                   ` : ''}
                   <div class="sub" style="font-size: 11px; margin-top: 4px;">
-                    ${act.meetingDate} · <i>${this._escape(act.meetingTitle)}</i>
+                    ${act.meetingDate ? `${act.meetingDate} · ` : ''}<i>${this._escape(act.meetingTitle || act.source || 'Mission Action')}</i>
                   </div>
                 </div>
 
-                <button class="btn sm" data-open-meeting="${this._escape(act.meetingId)}" style="flex-shrink: 0; font-size: 11px; margin-top: 2px;">
-                  Open Meeting
-                </button>
+                <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0; margin-top: 2px;">
+                  ${act.file ? `
+                    <button class="btn sm" data-copy-note-action="${this._escape(act.id)}" data-note-file="${this._escape(act.file)}" title="Copy action ID to clipboard to mark done in note" style="font-size: 11px;">
+                      📋 Copy ID
+                    </button>
+                  ` : ''}
+                  ${act.meetingId ? `
+                    <button class="btn sm" data-open-meeting="${this._escape(act.meetingId)}" style="font-size: 11px;">
+                      Open Meeting
+                    </button>
+                  ` : ''}
+                </div>
               </div>
             `).join('') : '<div class="empty">No matching actions found.</div>'}
           </div>
@@ -7319,6 +7861,13 @@ class ProjectsView {
     this.container.querySelectorAll('.item-check-btn[data-action-id]').forEach(btn => {
       btn.addEventListener('click', async () => {
         const actId = btn.dataset.actionId;
+        if (btn.dataset.isNote === 'true') {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(actId);
+          }
+          alert(`Copied ${actId} to clipboard!\nTo mark this action done, edit Actions.md directly (Markdown notes are the single source of truth).`);
+          return;
+        }
         const mId = btn.dataset.meetingId;
         if (!mId) return;
 
@@ -7326,6 +7875,22 @@ class ProjectsView {
         const items = (mData.items || []).map(it => it.id === actId ? { ...it, done: !it.done } : it);
         await this.store.saveMeetingData(mId, { items });
         this.render();
+      });
+    });
+
+    // Copy note action ID button
+    this.container.querySelectorAll('[data-copy-note-action]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actId = btn.dataset.copyNoteAction;
+        const noteFile = btn.dataset.noteFile || 'Actions.md';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(actId);
+        }
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✓ Copied!';
+        alert(`Copied ${actId} to clipboard!\nOpen ${noteFile} in your editor to mark it done (notes are single source of truth).`);
+        setTimeout(() => { btn.innerHTML = orig; }, 1500);
       });
     });
 
@@ -7441,11 +8006,14 @@ MeetingHub.ProjectsView = ProjectsView;
 
 /* === App Controller & Bootstrap === */
 const AppState = {
-  date: '2026-10-28',
-  view: 'today',
+  date: (typeof getTodayDateStr === 'function') ? getTodayDateStr() : new Date().toISOString().slice(0, 10),
+  view: 'mission',
+  calendarTab: 'today',
+  missionId: null,
+  tab: null,
   mode: 'all',
   selectedEventId: null,
-  isPanelCollapsed: false
+  isPanelCollapsed: true
 };
 
 let todayView;
@@ -7475,21 +8043,67 @@ function setPanelCollapsed(collapsed) {
   } catch (e) {}
 }
 
+async function resolveDefaultMissionId() {
+  try {
+    const registry = await MeetingHub.store.getMissionsRegistry();
+    const missions = registry?.missions || [];
+    const activeMissions = missions.filter(m => !m.archived && m.status !== 'archived');
+    const last = localStorage.getItem('mhub_last_mission');
+    if (last && missions.some(m => m.id === last && !m.archived && m.status !== 'archived')) {
+      return last;
+    }
+    if (activeMissions.length > 0) {
+      return activeMissions[0].id;
+    }
+    if (missions.length > 0) {
+      return missions[0].id;
+    }
+  } catch (e) {
+    console.warn('[MeetingHub] Could not resolve missions registry:', e);
+  }
+  return 'ge-enterprise';
+}
+
 function selectMeeting(eventId, tab = null) {
   if (tab && meetingPanel) {
     meetingPanel.currentTab = tab;
   }
   AppState.selectedEventId = eventId;
   setPanelCollapsed(false);
-  const targetHash = '#/meeting/' + encodeURIComponent(eventId);
-  if (window.location.hash !== targetHash) {
-    window.location.hash = targetHash;
+
+  // If already in a mission context, preserve mission in URL
+  if (AppState.view === 'mission' && AppState.missionId) {
+    const targetHash = '#/p/' + encodeURIComponent(AppState.missionId) + '/m/' + encodeURIComponent(eventId);
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    } else {
+      if (meetingPanel) meetingPanel.setMeeting(eventId, tab);
+    }
+  } else if (AppState.view === 'calendar') {
+    const sub = AppState.calendarTab && AppState.calendarTab !== 'today' ? '/' + AppState.calendarTab : '';
+    const targetHash = '#/calendar' + sub + '/m/' + encodeURIComponent(eventId);
+    if (window.location.hash !== targetHash) {
+      window.location.hash = targetHash;
+    } else {
+      if (meetingPanel) meetingPanel.setMeeting(eventId, tab);
+    }
   } else {
-    if (meetingPanel) meetingPanel.setMeeting(eventId, tab);
+    // Try to match mission for this meeting
+    const event = MeetingHub.store.getEvent(eventId);
+    const registry = MeetingHub.store.missionsRegistry || { missions: [] };
+    const match = (typeof matchMission === 'function')
+      ? matchMission(event, registry)
+      : (MeetingHub.matchMission ? MeetingHub.matchMission(event, registry) : null);
+    if (match && match.missionId) {
+      window.location.hash = '#/p/' + encodeURIComponent(match.missionId) + '/m/' + encodeURIComponent(eventId);
+    } else {
+      window.location.hash = '#/calendar/m/' + encodeURIComponent(eventId);
+    }
   }
-  if (todayView && AppState.view === 'today') todayView.setSelectedEvent(eventId);
-  if (weekView && AppState.view === 'week') weekView.setSelectedEvent(eventId);
-  if (meetingsView && AppState.view === 'meetings') meetingsView.setSelectedEvent(eventId);
+
+  if (todayView && AppState.view === 'calendar' && AppState.calendarTab === 'today') todayView.setSelectedEvent(eventId);
+  if (weekView && AppState.view === 'calendar' && AppState.calendarTab === 'week') weekView.setSelectedEvent(eventId);
+  if (meetingsView && AppState.view === 'calendar' && AppState.calendarTab === 'meetings') meetingsView.setSelectedEvent(eventId);
 }
 
 function renderActiveView() {
@@ -7499,58 +8113,228 @@ function renderActiveView() {
   shell.currentView = AppState.view;
   shell.renderSidebar(openActionsCount);
 
-  const headerTitles = {
-    today: { title: 'Today', sub: 'Wednesday 28 October 2026' },
-    week: { title: 'Week', sub: 'Multi-day review & meeting health' },
-    meetings: { title: 'Meetings', sub: 'Searchable calendar directory (259 events)' },
-    actions: { title: 'Open Actions', sub: 'Action items grouped by client' },
-    series: { title: 'Series & Links', sub: 'Recurring meeting series & linked lineages' },
-    projects: { title: 'Projects & Knowledge', sub: 'Initiative intelligence & minutes synthesis' }
-  };
-  const meta = headerTitles[AppState.view] || headerTitles.today;
-  const tEl = document.querySelector('#title');
-  const sEl = document.querySelector('#subtitle');
-  if (tEl) tEl.textContent = meta.title;
-  if (sEl) sEl.textContent = meta.sub;
+  if (AppState.view === 'mission') {
+    const missionName = MeetingHub.store.getProjectName(AppState.missionId) || AppState.missionId;
+    const tEl = document.querySelector('#title');
+    const sEl = document.querySelector('#subtitle');
+    if (tEl) tEl.textContent = missionName;
+    if (sEl) sEl.textContent = 'Mission Cockpit & Knowledge Base';
 
-  switch (AppState.view) {
-    case 'today':
-      if (todayView) {
-        todayView.container = leftCol;
-        todayView.render();
-      }
-      break;
-    case 'week':
-      if (weekView) {
-        weekView.container = leftCol;
-        weekView.render();
-      }
-      break;
-    case 'meetings':
-      if (meetingsView) {
-        meetingsView.container = leftCol;
-        meetingsView.render();
-      }
-      break;
-    case 'actions':
-      if (actionsView) {
-        actionsView.container = leftCol;
-        actionsView.render();
-      }
-      break;
-    case 'series':
-      if (seriesView) {
-        seriesView.container = leftCol;
-        seriesView.render();
-      }
-      break;
-    case 'projects':
-      if (projectsView) {
-        projectsView.container = leftCol;
-        projectsView.render();
-      }
-      break;
+    if (projectsView) {
+      projectsView.container = leftCol;
+      projectsView.render();
+    }
+    return;
   }
+
+  if (AppState.view === 'inbox') {
+    const tEl = document.querySelector('#title');
+    const sEl = document.querySelector('#subtitle');
+    if (tEl) tEl.textContent = 'Cross-Mission Inbox';
+    if (sEl) sEl.textContent = 'Pending meeting minutes waiting to be folded';
+    leftCol.innerHTML = `
+      <div class="card" style="padding: 24px;">
+        <div class="label">Cross-Mission Inbox</div>
+        <h2 style="margin: 8px 0;">Incoming Meeting Minutes</h2>
+        <p class="sub" style="margin-bottom: 16px;">Past meeting minutes awaiting folding into durable mission notes.</p>
+        <div id="inboxList">Loading inbox status...</div>
+      </div>
+    `;
+    (async () => {
+      try {
+        const reg = await MeetingHub.store.getMissionsRegistry();
+        const missions = reg?.missions || [];
+        const container = leftCol.querySelector('#inboxList');
+        if (!container) return;
+        let html = '';
+        for (const m of missions) {
+          const status = await MeetingHub.store.getInboxStatus(m.id);
+          const pending = status?.pendingCount || 0;
+          html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--secondary);">
+              <div>
+                <strong>${m.name}</strong>
+                <div class="sub" style="font-size: 11px;">${m.directory}</div>
+              </div>
+              <div>
+                ${pending > 0 ? `<span class="badge warn" style="color: var(--warn); font-weight: 600;">${pending} pending</span>` : '<span class="badge ok">0 pending</span>'}
+              </div>
+            </div>
+          `;
+        }
+        container.innerHTML = html;
+      } catch (e) {}
+    })();
+    return;
+  }
+
+  if (AppState.view === 'my-actions') {
+    const tEl = document.querySelector('#title');
+    const sEl = document.querySelector('#subtitle');
+    if (tEl) tEl.textContent = 'My Actions';
+    if (sEl) sEl.textContent = 'Cross-mission action matrix';
+    if (actionsView) {
+      actionsView.container = leftCol;
+      actionsView.render();
+    }
+    return;
+  }
+
+  if (AppState.view === 'calendar') {
+    const todayFormatted = (typeof formatLongDate === 'function') ? formatLongDate(AppState.date) : AppState.date;
+    const headerTitles = {
+      today: { title: 'Today', sub: todayFormatted },
+      week: { title: 'Week', sub: 'Multi-day review & meeting health' },
+      meetings: { title: 'Meetings', sub: 'Searchable calendar directory (259 events)' },
+      series: { title: 'Series & Links', sub: 'Recurring meeting series & linked lineages' }
+    };
+    const meta = headerTitles[AppState.calendarTab] || headerTitles.today;
+    const tEl = document.querySelector('#title');
+    const sEl = document.querySelector('#subtitle');
+    if (tEl) tEl.textContent = meta.title;
+    if (sEl) sEl.textContent = meta.sub;
+
+    switch (AppState.calendarTab) {
+      case 'today':
+        if (todayView) {
+          todayView.container = leftCol;
+          todayView.render();
+        }
+        break;
+      case 'week':
+        if (weekView) {
+          weekView.container = leftCol;
+          weekView.render();
+        }
+        break;
+      case 'meetings':
+        if (meetingsView) {
+          meetingsView.container = leftCol;
+          meetingsView.render();
+        }
+        break;
+      case 'series':
+        if (seriesView) {
+          seriesView.container = leftCol;
+          seriesView.render();
+        }
+        break;
+    }
+    return;
+  }
+}
+
+function showMissionSwitcher() {
+  const existingModal = document.querySelector('#missionSwitcherModal');
+  if (existingModal) {
+    existingModal.remove();
+    return;
+  }
+
+  const missions = MeetingHub.store.missionsRegistry?.missions || [];
+  const activeMissions = missions.filter(m => !m.archived && m.status !== 'archived');
+  const archivedMissions = missions.filter(m => m.archived || m.status === 'archived');
+
+  const overlay = document.createElement('div');
+  overlay.id = 'missionSwitcherModal';
+  overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); z-index: 9999; display: flex; align-items: flex-start; justify-content: center; padding-top: 15vh;';
+
+  overlay.innerHTML = `
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); width: 100%; max-width: 520px; box-shadow: 0 16px 32px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column;">
+      <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px;">
+        <span style="font-family: var(--font-mono); font-size: 11px; color: var(--pink-600); font-weight: 600;">SWITCH MISSION</span>
+        <input id="missionSearchInput" type="text" placeholder="Type to search active missions..." style="flex: 1; background: transparent; border: none; color: var(--foreground); font-family: var(--font-sans); font-size: 15px; outline: none;" autofocus autocomplete="off" />
+        <span style="font-size: 11px; color: var(--muted-foreground); font-family: var(--font-mono);">[Esc] Close</span>
+      </div>
+      <div id="missionList" style="max-height: 360px; overflow-y: auto; padding: 8px;"></div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const searchInput = overlay.querySelector('#missionSearchInput');
+  const listContainer = overlay.querySelector('#missionList');
+  let selectedIndex = 0;
+  let filteredMissions = [...activeMissions, ...archivedMissions];
+
+  function renderList() {
+    if (filteredMissions.length === 0) {
+      listContainer.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--muted-foreground); font-size: 13px;">No matching mission found.</div>';
+      return;
+    }
+    listContainer.innerHTML = filteredMissions.map((m, idx) => {
+      const isSelected = idx === selectedIndex;
+      const isArchived = m.archived || m.status === 'archived';
+      const numLabel = idx < 9 && !isArchived ? `<span style="font-family: var(--font-mono); font-size: 11px; background: var(--secondary); padding: 2px 6px; border-radius: 4px; margin-right: 8px; color: var(--muted-foreground);">${idx + 1}</span>` : '';
+      return `
+        <div class="mission-item" data-id="${m.id}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: var(--r-md); cursor: pointer; background: ${isSelected ? 'var(--secondary)' : 'transparent'}; border: 1px solid ${isSelected ? 'var(--pink-600)' : 'transparent'};">
+          <div style="display: flex; align-items: center;">
+            ${numLabel}
+            <div>
+              <div style="font-weight: 600; font-size: 14px; color: ${isSelected ? 'var(--foreground)' : 'var(--card-foreground)'};">${m.name}</div>
+              <div class="sub" style="font-size: 11px;">${m.client || 'Artefact'} · ${m.directory}</div>
+            </div>
+          </div>
+          <div>
+            ${isArchived ? '<span class="badge sub" style="font-size: 10px;">Archived</span>' : '<span class="badge ok" style="font-size: 10px;">Active</span>'}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listContainer.querySelectorAll('.mission-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const id = item.dataset.id;
+        overlay.remove();
+        window.location.hash = '#/p/' + encodeURIComponent(id);
+      });
+    });
+  }
+
+  function filter(query) {
+    const q = query.toLowerCase().trim();
+    if (!q) {
+      filteredMissions = [...activeMissions, ...archivedMissions];
+    } else {
+      filteredMissions = [...activeMissions, ...archivedMissions].filter(m => {
+        const text = `${m.name} ${m.id} ${m.directory} ${(m.clientMatch || []).join(' ')}`.toLowerCase();
+        return text.includes(q);
+      });
+    }
+    selectedIndex = 0;
+    renderList();
+  }
+
+  renderList();
+  setTimeout(() => searchInput.focus(), 30);
+
+  searchInput.addEventListener('input', (e) => filter(e.target.value));
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      overlay.remove();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIndex = Math.min(filteredMissions.length - 1, selectedIndex + 1);
+      renderList();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIndex = Math.max(0, selectedIndex - 1);
+      renderList();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const picked = filteredMissions[selectedIndex];
+      if (picked) {
+        overlay.remove();
+        window.location.hash = '#/p/' + encodeURIComponent(picked.id);
+      }
+    }
+  });
 }
 
 // Instantiate App Shell
@@ -7601,8 +8385,9 @@ const shell = new MeetingHub.ShellUI({
     if (meetingsView) meetingsView.setMode(newMode);
   },
   onTodayClick: () => {
-    AppState.date = '2026-10-28';
-    if (todayView) todayView.setDate('2026-10-28');
+    const today = (typeof getTodayDateStr === 'function') ? getTodayDateStr() : new Date().toISOString().slice(0, 10);
+    AppState.date = today;
+    if (todayView) todayView.setDate(today);
     if (weekView) weekView.goToday();
     if (AppState.view !== 'today' && AppState.view !== 'week') {
       AppState.view = 'today';
@@ -7690,41 +8475,120 @@ const shell = new MeetingHub.ShellUI({
 
 function handleHashRoute() {
   const hash = window.location.hash || '';
-  const meetingMatch = hash.match(/^#\/meeting\/([^/?#]+)/);
-  if (meetingMatch) {
-    const meetingId = decodeURIComponent(meetingMatch[1]);
-    AppState.selectedEventId = meetingId;
-    setPanelCollapsed(false);
-    if (meetingPanel) meetingPanel.setMeeting(meetingId);
-    if (todayView && AppState.view === 'today') todayView.setSelectedEvent(meetingId);
-    if (weekView && AppState.view === 'week') weekView.setSelectedEvent(meetingId);
-    if (meetingsView && AppState.view === 'meetings') meetingsView.setSelectedEvent(meetingId);
-  } else if (hash === '#/today' || hash === '' || hash === '#/') {
-    AppState.selectedEventId = null;
-    if (meetingPanel) meetingPanel.setMeeting(null);
-    if (AppState.view !== 'today') {
-      AppState.view = 'today';
-      renderActiveView();
+  const parsed = (typeof parseRoute === 'function')
+    ? parseRoute(hash)
+    : (MeetingHub.parseRoute ? MeetingHub.parseRoute(hash) : { view: 'root' });
+
+  // Handle legacy redirects
+  if (parsed.isLegacy && parsed.redirectTo) {
+    window.location.hash = parsed.redirectTo;
+    return;
+  }
+
+  // Handle root route (#/ or empty)
+  if (parsed.view === 'root') {
+    resolveDefaultMissionId().then((defaultMissionId) => {
+      window.location.hash = '#/p/' + encodeURIComponent(defaultMissionId);
+    });
+    return;
+  }
+
+  // Handle legacy meeting route: #/meeting/:eventId
+  if (parsed.view === 'legacy-meeting' && parsed.eventId) {
+    const event = MeetingHub.store.getEvent(parsed.eventId);
+    const registryPromise = MeetingHub.store.missionsRegistry
+      ? Promise.resolve(MeetingHub.store.missionsRegistry)
+      : MeetingHub.store.getMissionsRegistry();
+    registryPromise.then((registry) => {
+      const match = (typeof matchMission === 'function')
+        ? matchMission(event, registry)
+        : (MeetingHub.matchMission ? MeetingHub.matchMission(event, registry) : null);
+      if (match && match.missionId) {
+        window.location.hash = '#/p/' + encodeURIComponent(match.missionId) + '/m/' + encodeURIComponent(parsed.eventId);
+      } else {
+        window.location.hash = '#/calendar/m/' + encodeURIComponent(parsed.eventId);
+      }
+    });
+    return;
+  }
+
+  // Handle mission route: #/p/:missionId[/m/:eventId or /:tab]
+  if (parsed.view === 'mission') {
+    AppState.view = 'mission';
+    AppState.missionId = parsed.missionId;
+    AppState.tab = parsed.tab;
+    try {
+      localStorage.setItem('mhub_last_mission', parsed.missionId);
+    } catch (e) {}
+
+    if (parsed.eventId) {
+      AppState.selectedEventId = parsed.eventId;
+      setPanelCollapsed(false);
+      if (meetingPanel) meetingPanel.setMeeting(parsed.eventId);
     } else {
-      if (todayView) todayView.setSelectedEvent(null);
+      AppState.selectedEventId = null;
+      setPanelCollapsed(true);
+      if (meetingPanel) meetingPanel.setMeeting(null);
     }
-  } else {
-    const viewMatch = hash.match(/^#\/([a-z]+)/);
-    if (viewMatch) {
-      const v = viewMatch[1];
-      if (['today', 'week', 'meetings', 'actions', 'series', 'projects'].includes(v)) {
-        AppState.selectedEventId = null;
-        if (meetingPanel) meetingPanel.setMeeting(null);
-        if (AppState.view !== v) {
-          AppState.view = v;
-          renderActiveView();
-        }
+
+    if (projectsView) {
+      projectsView.setProject(parsed.missionId);
+      if (parsed.tab && typeof projectsView.setTab === 'function') {
+        projectsView.setTab(parsed.tab);
       }
     }
+    renderActiveView();
+    return;
+  }
+
+  // Handle inbox route: #/inbox
+  if (parsed.view === 'inbox') {
+    AppState.view = 'inbox';
+    AppState.selectedEventId = null;
+    setPanelCollapsed(true);
+    if (meetingPanel) meetingPanel.setMeeting(null);
+    renderActiveView();
+    return;
+  }
+
+  // Handle my-actions route: #/my-actions
+  if (parsed.view === 'my-actions') {
+    AppState.view = 'my-actions';
+    AppState.selectedEventId = null;
+    setPanelCollapsed(true);
+    if (meetingPanel) meetingPanel.setMeeting(null);
+    renderActiveView();
+    return;
+  }
+
+  // Handle calendar route: #/calendar[/:tab][/m/:eventId]
+  if (parsed.view === 'calendar') {
+    AppState.view = 'calendar';
+    AppState.calendarTab = parsed.tab || 'today';
+
+    if (parsed.eventId) {
+      AppState.selectedEventId = parsed.eventId;
+      setPanelCollapsed(false);
+      if (meetingPanel) meetingPanel.setMeeting(parsed.eventId);
+      if (todayView && AppState.calendarTab === 'today') todayView.setSelectedEvent(parsed.eventId);
+      if (weekView && AppState.calendarTab === 'week') weekView.setSelectedEvent(parsed.eventId);
+      if (meetingsView && AppState.calendarTab === 'meetings') meetingsView.setSelectedEvent(parsed.eventId);
+    } else {
+      AppState.selectedEventId = null;
+      if (meetingPanel) meetingPanel.setMeeting(null);
+      if (todayView) todayView.setSelectedEvent(null);
+      if (weekView) weekView.setSelectedEvent(null);
+      if (meetingsView) meetingsView.setSelectedEvent(null);
+    }
+    renderActiveView();
+    return;
   }
 }
 
-// Global Keyboard Navigation (j, k, a, /, Escape, )
+// Global Keyboard Navigation (j, k, a, /, Escape, \, g p, g i, g c, 1-9)
+let lastLeaderKey = '';
+let leaderTimeout = null;
+
 window.addEventListener('keydown', (e) => {
   const activeEl = document.activeElement;
   const isInputActive = activeEl && (
@@ -7734,7 +8598,7 @@ window.addEventListener('keydown', (e) => {
     activeEl.isContentEditable
   );
 
-  // Esc clears quick search, collapses drawer or resets selected meeting
+  // Esc order: blur input -> close drawer -> go back from tab to stream
   if (e.key === 'Escape') {
     if (isInputActive) {
       const isSearch = activeEl.id === 'quickSearch';
@@ -7746,35 +8610,98 @@ window.addEventListener('keydown', (e) => {
         if (AppState.view === 'actions' && actionsView) actionsView.setSearchQuery('');
         if (AppState.view === 'series' && seriesView) seriesView.setSearchQuery('');
       }
-    } else if (!AppState.isPanelCollapsed) {
+      return;
+    }
+    if (!AppState.isPanelCollapsed) {
       setPanelCollapsed(true);
-    } else if (AppState.selectedEventId) {
-      window.location.hash = AppState.view === 'today' ? '#/today' : '#/' + AppState.view;
+      if (AppState.view === 'mission' && AppState.missionId) {
+        window.location.hash = '#/p/' + encodeURIComponent(AppState.missionId);
+      } else if (AppState.view === 'calendar') {
+        const sub = AppState.calendarTab && AppState.calendarTab !== 'today' ? '/' + AppState.calendarTab : '';
+        window.location.hash = '#/calendar' + sub;
+      }
+      return;
+    }
+    if (AppState.view === 'mission' && AppState.tab) {
+      window.location.hash = '#/p/' + encodeURIComponent(AppState.missionId);
+      return;
     }
     return;
   }
 
-  // Single-letter shortcuts only fire when not typing in editable fields
+  // Single-letter and sequence shortcuts only fire when not typing in editable fields
   if (isInputActive) return;
 
-  // '\' -> toggle right meeting panel
+  // Leader sequence: g p, g i, g c
+  if (lastLeaderKey === 'g') {
+    lastLeaderKey = '';
+    clearTimeout(leaderTimeout);
+    if (e.key === 'p' || e.key === 'P') {
+      e.preventDefault();
+      showMissionSwitcher();
+      return;
+    }
+    if (e.key === 'i' || e.key === 'I') {
+      e.preventDefault();
+      window.location.hash = '#/inbox';
+      return;
+    }
+    if (e.key === 'c' || e.key === 'C') {
+      e.preventDefault();
+      window.location.hash = '#/calendar';
+      return;
+    }
+  }
+
+  if (e.key === 'g' || e.key === 'G') {
+    lastLeaderKey = 'g';
+    clearTimeout(leaderTimeout);
+    leaderTimeout = setTimeout(() => { lastLeaderKey = ''; }, 1000);
+    return;
+  }
+
+  // 1-9 jump to Nth active mission in rail
+  if (e.key >= '1' && e.key <= '9' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const idx = parseInt(e.key, 10) - 1;
+    const missions = MeetingHub.store.missionsRegistry?.missions || [];
+    const activeMissions = missions.filter(m => !m.archived && m.status !== 'archived');
+    if (activeMissions[idx]) {
+      e.preventDefault();
+      window.location.hash = '#/p/' + encodeURIComponent(activeMissions[idx].id);
+      return;
+    }
+  }
+
+  // '\\' -> toggle right meeting panel
   if (e.key === '\\') {
     e.preventDefault();
     setPanelCollapsed(!AppState.isPanelCollapsed);
     return;
   }
 
-  // 'j' or ArrowDown -> next meeting
+  // 'j' or ArrowDown -> next meeting (in stream or calendar)
   if (e.key === 'j' || e.key === 'ArrowDown') {
     e.preventDefault();
-    if (todayView && AppState.view === 'today') todayView.selectNextMeeting();
+    if (AppState.view === 'mission') {
+      if (projectsView && typeof projectsView.selectNextMeeting === 'function') {
+        projectsView.selectNextMeeting();
+      }
+    } else if (todayView && AppState.view === 'calendar' && AppState.calendarTab === 'today') {
+      todayView.selectNextMeeting();
+    }
     return;
   }
 
-  // 'k' or ArrowUp -> previous meeting
+  // 'k' or ArrowUp -> previous meeting (in stream or calendar)
   if (e.key === 'k' || e.key === 'ArrowUp') {
     e.preventDefault();
-    if (todayView && AppState.view === 'today') todayView.selectPreviousMeeting();
+    if (AppState.view === 'mission') {
+      if (projectsView && typeof projectsView.selectPreviousMeeting === 'function') {
+        projectsView.selectPreviousMeeting();
+      }
+    } else if (todayView && AppState.view === 'calendar' && AppState.calendarTab === 'today') {
+      todayView.selectPreviousMeeting();
+    }
     return;
   }
 
@@ -7817,7 +8744,8 @@ async function bootstrap() {
     
     openActionsCount = await MeetingHub.store.getOpenActionsCount();
     shell.renderSidebar(openActionsCount);
-    shell.renderHeader('Today', 'Wednesday 28 October 2026');
+    const initialTodaySub = (typeof formatLongDate === 'function') ? formatLongDate(AppState.date) : AppState.date;
+    shell.renderHeader('Today', initialTodaySub);
 
     // Retrieve & render initial sync status in sidebar
     try {
@@ -7891,7 +8819,14 @@ async function bootstrap() {
       },
       onClose: () => {
         setPanelCollapsed(true);
-        window.location.hash = AppState.view === 'today' ? '#/today' : '#/' + AppState.view;
+        if (AppState.view === 'mission' && AppState.missionId) {
+          window.location.hash = '#/p/' + encodeURIComponent(AppState.missionId);
+        } else if (AppState.view === 'calendar') {
+          const sub = AppState.calendarTab && AppState.calendarTab !== 'today' ? '/' + AppState.calendarTab : '';
+          window.location.hash = '#/calendar' + sub;
+        } else {
+          window.location.hash = AppState.view === 'today' ? '#/today' : '#/' + AppState.view;
+        }
       },
       onCollapse: () => {
         setPanelCollapsed(true);
@@ -7928,20 +8863,24 @@ async function bootstrap() {
       }
     } catch (e) {}
 
-    // Handle initial route or default flagship meeting
+    // Handle initial route
     handleHashRoute();
     renderActiveView();
 
-    if (!window.location.hash || window.location.hash === '#/' || window.location.hash === '#/today') {
-      const todayEvents = MeetingHub.store.getEventsByDate(AppState.date, 'work');
-      const defaultMeeting = todayEvents.find(e => e.title.includes('MO - Suivi anomalies')) || todayEvents[0];
-      if (defaultMeeting && !AppState.isPanelCollapsed) {
-        window.location.hash = '#/meeting/' + encodeURIComponent(defaultMeeting.id);
-      }
-    }
-
     const activeEngine = MeetingHub.store.db.engineName || 'IndexedDB';
-    console.log('[MeetingHub] Ready. 259 events loaded via ' + activeEngine + '.');
+    const initialEventsList = await MeetingHub.store.getAllEvents();
+    console.log('[MeetingHub] Ready. ' + initialEventsList.length + ' events loaded via ' + activeEngine + '.');
+
+    // Non-blocking background sync pass to pull fresh calendar changes from backend
+    setTimeout(async () => {
+      try {
+        await MeetingHub.CalendarSyncService.syncAll(MeetingHub.store.db, MeetingHub.store);
+        const freshStatus = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
+        shell.setSyncStatus(freshStatus);
+      } catch (e) {
+        // Silent background sync fail
+      }
+    }, 600);
   } catch (err) {
     console.error('[MeetingHub] Initialization error:', err);
     if (leftCol) {

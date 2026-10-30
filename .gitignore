@@ -16,6 +16,8 @@ gcp_token.json
 drive_token.json
 docs_cache.json
 meeting_hub/data/docs_cache.json
+meeting_hub/_backup/
+_backup/
 calendar_data/
 calendar_sync_status.json
 cached_unified_events.json

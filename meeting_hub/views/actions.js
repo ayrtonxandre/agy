@@ -45,6 +45,57 @@ export class ActionsView {
       }
     }
 
+    // Aggregate actions from registered missions (System of Record)
+    try {
+      const registry = await this.store.getMissionsRegistry();
+      for (const mission of registry) {
+        const summary = await this.store.getMissionSummary(mission.id);
+        if (!summary) continue;
+
+        const clientName = mission.name || 'Clariane';
+        const rawActions = summary.actions || summary.actionMatrix || [];
+
+        for (const act of rawActions) {
+          // Resolve linked meeting if possible
+          let linkedEvent = null;
+          let mId = act.meetingId || null;
+          if (!mId && act.source) {
+            const m = act.source.match(/meeting\/([^ )]+)/);
+            if (m) mId = m[1];
+          }
+          if (mId) {
+            linkedEvent = eventsMap.get(mId);
+          }
+          if (!linkedEvent && act.source) {
+            const lowerSrc = act.source.toLowerCase();
+            linkedEvent = this.store.eventsCache.find(e =>
+              (e.client && lowerSrc.includes(e.client.toLowerCase())) ||
+              (e.title && lowerSrc.includes(e.title.toLowerCase()))
+            );
+          }
+
+          aggregatedItems.push({
+            id: act.id,
+            text: act.text || act.description || '',
+            owner: act.owner || 'Unassigned',
+            ownerOrg: act.ownerOrg || act.org || ((act.owner || '').toLowerCase().includes('ayrton') ? 'Artefact' : 'Client'),
+            dueDate: act.due || act.dueDate || null,
+            done: Boolean(act.done || act.status === 'done' || act.status === 'completed' || act.status === 'clos'),
+            kind: 'action',
+            isNoteAction: true,
+            sourceNote: act.file || 'Actions.md',
+            missionId: mission.id,
+            meetingId: linkedEvent ? linkedEvent.id : (mId || null),
+            meetingTitle: linkedEvent ? linkedEvent.title : (act.source || `${clientName} Mission`),
+            meetingDate: linkedEvent ? linkedEvent.date : '',
+            client: clientName
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load mission note actions:', e);
+    }
+
     // Filter items
     let filtered = aggregatedItems;
     if (this.statusFilter === 'open') {
@@ -109,23 +160,40 @@ export class ActionsView {
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 ${items.map(item => `
                   <div class="item" style="border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 10px; background: var(--background);">
-                    <button class="item-check-btn ${item.done ? 'checked' : ''}" data-item-id="${item.id}" data-meeting-id="${item.meetingId}" title="${item.done ? 'Mark open' : 'Mark done'}">
+                    <button class="item-check-btn ${item.done ? 'checked' : ''}" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" data-is-note="${item.isNoteAction ? 'true' : 'false'}" data-note-file="${this._escape(item.sourceNote || '')}" title="${item.isNoteAction ? 'Markdown note action (Single Source of Truth)' : (item.done ? 'Mark open' : 'Mark done')}">
                       ${item.done ? Icons.check : ''}
                     </button>
                     <span class="kind-badge ${item.kind}">${item.kind}</span>
+                    ${item.isNoteAction ? `
+                      <span class="badge" style="background: var(--muted); font-size: 10px; font-family: var(--font-mono); font-weight: 600;">${this._escape(item.id)}</span>
+                      <span class="badge" style="font-size: 10px; border-color: var(--pink-600); color: var(--pink-600);">[${this._escape(item.sourceNote || 'Actions.md')}]</span>
+                    ` : ''}
                     <div class="item-body">
                       <span class="tx ${item.done ? 'done' : ''}">${this._escape(item.text)}</span>
-                      <div class="item-meta" style="margin-top: 4px;">
+                      <div class="item-meta" style="margin-top: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                         ${item.owner ? `<span class="chip-owner">${this._escape(item.owner)}</span>` : ''}
-                        ${item.dueDate ? `<span class="chip-due">${Icons.clock} ${item.dueDate}</span>` : ''}
-                        <button class="btn sm" data-nav-meeting="${item.meetingId}" style="padding: 1px 6px; font-size: 10.5px; margin-left: 4px;">
-                          ${this._escape(item.meetingTitle)} (${item.meetingDate})
-                        </button>
+                        ${item.ownerOrg ? `<span class="badge" style="font-size: 10px;">${this._escape(item.ownerOrg)}</span>` : ''}
+                        ${item.dueDate ? `<span class="chip-due">${Icons.clock} ${this._escape(item.dueDate)}</span>` : ''}
+                        ${item.meetingId ? `
+                          <button class="btn sm" data-nav-meeting="${this._escape(item.meetingId)}" style="padding: 1px 6px; font-size: 10.5px;">
+                            ${this._escape(item.meetingTitle)} ${item.meetingDate ? `(${this._escape(item.meetingDate)})` : ''}
+                          </button>
+                        ` : `
+                          <span class="sub" style="font-size: 10.5px;">
+                            ${this._escape(item.meetingTitle)}
+                          </span>
+                        `}
                       </div>
                     </div>
-                    <button class="btn-icon delete-action-btn" data-item-id="${item.id}" data-meeting-id="${item.meetingId}" title="Delete action">
-                      ${Icons.trash}
-                    </button>
+                    ${item.isNoteAction ? `
+                      <button class="btn sm" data-copy-note-action="${this._escape(item.id)}" data-note-file="${this._escape(item.sourceNote || 'Actions.md')}" title="Copy ID to mark done in ${this._escape(item.sourceNote || 'Actions.md')}" style="flex-shrink: 0; font-size: 10.5px; padding: 2px 8px;">
+                        📋 Copy ID
+                      </button>
+                    ` : `
+                      <button class="btn-icon delete-action-btn" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" title="Delete action">
+                        ${Icons.trash}
+                      </button>
+                    `}
                   </div>
                 `).join('')}
               </div>
@@ -168,11 +236,37 @@ export class ActionsView {
     this.container.querySelectorAll('.item-check-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const itemId = btn.dataset.itemId;
+        if (btn.dataset.isNote === 'true') {
+          const noteFile = btn.dataset.noteFile || 'Actions.md';
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(itemId);
+          }
+          alert(`Copied ${itemId} to clipboard!\nTo mark this action done, edit ${noteFile} directly (Markdown notes are the single source of truth).`);
+          return;
+        }
+
         const meetingId = btn.dataset.meetingId;
+        if (!meetingId) return;
         const note = await this.store.getMeetingData(meetingId);
         const updatedItems = (note.items || []).map(it => it.id === itemId ? { ...it, done: !it.done } : it);
         await this.store.saveMeetingData(meetingId, { items: updatedItems });
         this.render();
+      });
+    });
+
+    // Copy note action ID button
+    this.container.querySelectorAll('[data-copy-note-action]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actId = btn.dataset.copyNoteAction;
+        const noteFile = btn.dataset.noteFile || 'Actions.md';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(actId);
+        }
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✓ Copied!';
+        alert(`Copied ${actId} to clipboard!\nOpen ${noteFile} in your editor to mark it done (notes are single source of truth).`);
+        setTimeout(() => { btn.innerHTML = orig; }, 1500);
       });
     });
 
