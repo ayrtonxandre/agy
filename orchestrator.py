@@ -842,7 +842,7 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(resp, indent=2).encode("utf-8"))
 
         # Main Athlete Headquarters Dashboard
-        elif clean_path in ("/", "/workout", "/index.html", "/garmin_workout.html"):
+        elif clean_path in ("/", "/workout", "/index.html", "/garmin_workout.html", "/athx", "/athx/", "/athx/index.html", "/athx/garmin_workout.html"):
             target_file = WORKOUT_HTML if WORKOUT_HTML.exists() else (BASE_DIR / "garmin_workout.html")
             if not target_file.exists() and (BASE_DIR / "index.html").exists():
                 target_file = BASE_DIR / "index.html"
@@ -1773,8 +1773,8 @@ def run_server(port: int | None = None):
     if port is None:
         port = int(os.environ.get("PORT", os.environ.get("AGY_PORT", "8080")))
 
-    # Security Hardening: Bind exclusively to 127.0.0.1 loopback
-    bind_host = os.environ.get("AGY_BIND_HOST", "127.0.0.1")
+    # Local LAN / Wi-Fi binding for iOS Health Auto Export webhooks
+    bind_host = os.environ.get("AGY_BIND_HOST", "0.0.0.0")
 
     # Check if port is already bound
     try:

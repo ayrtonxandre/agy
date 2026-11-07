@@ -305,6 +305,9 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     "Toes to Bar": "Core",
     "Toes To Bar": "Core",
     "Burpee": "Full Body",
+    "Burpees": "Full Body",
+    "Burpee Box Jump": "Full Body",
+    "Burpee Box Jumps": "Full Body",
     "Jump Rope": "Full Body",
     "Jumping Jacks": "Full Body",
     "Warm Up": "Warmup",
@@ -410,6 +413,9 @@ EXERCISE_COMPOUND_VOLUME: dict[str, dict[str, float]] = {
     "Clean": {"Quads": 0.5, "Hamstrings/Glutes": 0.5, "Lats/Back": 0.5},
     "Devil Press": {"Shoulders": 0.75, "Hamstrings/Glutes": 0.5, "Chest": 0.5},
     "Single Arm Dumbbells Devil Press": {"Shoulders": 0.75, "Hamstrings/Glutes": 0.5, "Chest": 0.5},
+    "Burpee": {"Quads": 0.35, "Chest": 0.35, "Core": 0.3},
+    "Burpee Box Jump": {"Quads": 0.5, "Chest": 0.25, "Core": 0.25},
+    "Burpee Box Jumps": {"Quads": 0.5, "Chest": 0.25, "Core": 0.25},
 
     # Carries
     "Farmers Walk": {"Forearms": 1.0, "Core": 0.5},
@@ -424,6 +430,10 @@ EXERCISE_COMPOUND_VOLUME: dict[str, dict[str, float]] = {
 # Loads outside these ranges are flagged as Garmin stack/per-side/auto-weight artifacts,
 # excluded from e1RM / PR detection, and reported in the Data Quality audit panel.
 PLAUSIBLE_LOAD_RANGES: dict[str, tuple[float, float]] = {
+    "Burpee": (0.0, 50.0),
+    "Burpees": (0.0, 50.0),
+    "Burpee Box Jump": (0.0, 50.0),
+    "Burpee Box Jumps": (0.0, 50.0),
     "Push Up": (0.0, 45.0),            # Weight > 45 kg on pushups is user-bodyweight artifact (e.g. 90 kg)
     "Pull Up": (0.0, 50.0),            # Added weight > 50 kg is artifact (e.g. 110 kg entered as bodyweight)
     "Chin Up": (0.0, 50.0),

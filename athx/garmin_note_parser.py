@@ -211,6 +211,18 @@ EXERCISE_ALIASES: dict[str, str] = {
     "c&j": "Clean and Jerk",
     "burpees": "Burpee",
     "burpee": "Burpee",
+    "burpee box jump": "Burpee Box Jump",
+    "burpees box jump": "Burpee Box Jump",
+    "burpee box jumps": "Burpee Box Jump",
+    "burpees box jumps": "Burpee Box Jump",
+    "burpee box jump over": "Burpee Box Jump",
+    "burpee box jump overs": "Burpee Box Jump",
+    "burpees box jump over": "Burpee Box Jump",
+    "burpees box jump overs": "Burpee Box Jump",
+    "burpee over bar": "Burpee",
+    "burpees over bar": "Burpee",
+    "burpee bar over": "Burpee",
+    "burpees bar over": "Burpee",
     "leg raise": "Leg Raise",
     "leg raises": "Leg Raise",
     "legs raise": "Leg Raise",
@@ -402,7 +414,7 @@ def parse_single_movement(sm: str, default_sets: int = 1) -> dict[str, Any] | No
     # 2. Conditioning: duration / calories / machine
     is_cardio = False
     if not is_strength_row:
-        if re.search(r"\b(rowing|rameur|bike|assault bike|echo bike|air bike|skierg|ski erg|ski|running|run|course)\b", sm, re.I):
+        if re.search(r"\b(rowing|rameur|bike|biking|bikes|cycling|velo|vélo|assault bike|echo bike|air bike|skierg|ski erg|ski|running|run|course)\b", sm, re.I):
             is_cardio = True
         elif re.search(r"\b(?<!ring\s)(?<!barbell\s)(?<!dumbbell\s)(?<!db\s)(?<!inverted\s)(?<!upright\s)row\b", sm, re.I):
             is_cardio = True
@@ -410,14 +422,14 @@ def parse_single_movement(sm: str, default_sets: int = 1) -> dict[str, Any] | No
     has_time = bool(re.search(r"(\d+:[0-5]\d|\b\d+(?:[.,]\d+)?\s*(?:s|sec|secs|seconds?|min|mins|minutes?)\b)", sm, re.I))
     has_cal = bool(re.search(r"\b\d+\s*(?:cal|calories?|cals?|kcal)\b", sm, re.I))
 
-    if is_cardio or (has_time and has_cal):
+    if is_cardio or (has_time and has_cal) or (has_cal and not re.search(r"(?:kg|lbs|reps?)", sm, re.I)):
         mov = "Conditioning"
         sm_low = sm.lower()
         if "row" in sm_low or "rameur" in sm_low:
             mov = "Rowing"
         elif "assault bike" in sm_low or "echo bike" in sm_low or "air bike" in sm_low:
             mov = "Assault Bike"
-        elif "bike" in sm_low or "velo" in sm_low or "vélo" in sm_low:
+        elif "bike" in sm_low or "biking" in sm_low or "velo" in sm_low or "vélo" in sm_low or "cycling" in sm_low:
             mov = "Bike"
         elif "ski" in sm_low:
             mov = "SkiErg"
@@ -650,7 +662,8 @@ def parse_note_rules(text: str) -> dict[str, Any]:
             continue
 
         # 3. Section headers without rounds
-        if re.match(r"^(strength\s*(?:part)?|force|partie\s*1|wod|metcon|part\s*b|circuit|warmup|warm\s*up|échauffement|then|puis|after|practice)\b", line, re.IGNORECASE):
+        if re.match(r"^(for\s*time|ft|amrap|emom|tabata|chipper|ladder|metcon|wod|strength\s*(?:part)?|force|partie\s*[0-9a-z]|part\s*[0-9a-z]|circuit|warmup|warm\s*up|échauffement|then|puis|after|practice|cash\s*out|buy\s*in|finisher)\b", line, re.IGNORECASE):
+            current_rounds = 1
             current_exercise = None
             in_round_block = False
             i += 1
