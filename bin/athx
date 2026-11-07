@@ -425,7 +425,7 @@ def start_server_daemon(agy_dir: Path, venv_py: Path, port: int = 8080):
         return
 
     net = get_network_endpoints(port)
-    env = dict(os.environ, PORT=str(port), AGY_PORT=str(port))
+    env = dict(os.environ, PORT=str(port), AGY_PORT=str(port), AGY_BIND_HOST=os.environ.get("AGY_BIND_HOST", "0.0.0.0"))
 
     with open(log_file_path, "a", encoding="utf-8") as log_f:
         proc = subprocess.Popen(
@@ -683,11 +683,15 @@ def run_garmin_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
         return "warning", "Garmin: No API key or cached tokens (skipped)"
 
     try:
+        env = dict(os.environ)
+        if api_key:
+            env["GARMIN_PERSONAL_API_KEY"] = api_key
         res = subprocess.run(
             [str(venv_py), str(garmin_script)],
             cwd=str(athx_dir),
             capture_output=True,
             text=True,
+            env=env,
             timeout=60
         )
         if res.returncode == 0:
@@ -728,7 +732,7 @@ def run_calendar_sync(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
         return "warning", f"Multi-Calendar: {e}"
 
 
-def run_athlete_dashboard_build(agy_dir: Path, venv_py: Path) -> tuple[str, str]:
+def run_athlete_dashboard_build(agy_dir: Path, venv_py: Path, force_coach: bool = False) -> tuple[str, str]:
     """Rebuilds the ATHX 2027 Unified Athlete Headquarters (garmin_workout.html)."""
     athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
     builder_script = athx_dir / "generate_unified_athlete_dashboard.py"
@@ -738,12 +742,15 @@ def run_athlete_dashboard_build(agy_dir: Path, venv_py: Path) -> tuple[str, str]
         return "error", "generate_unified_athlete_dashboard.py not found"
 
     try:
+        cmd = [str(venv_py), str(builder_script)]
+        if force_coach:
+            cmd.append("--force")
         res = subprocess.run(
-            [str(venv_py), str(builder_script)],
+            cmd,
             cwd=str(athx_dir),
             capture_output=True,
             text=True,
-            timeout=25
+            timeout=35
         )
         if res.returncode == 0:
             return "success", "ATHX 2027: Rebuilt athlete headquarters (garmin_workout.html)"
@@ -904,7 +911,7 @@ def handle_serve_command(agy_dir: Path, venv_py: Path, sub_args: list[str]):
         print(f"  • Local Dashboard  : {TerminalUI.CYAN}{net['dashboard_local']}{TerminalUI.RESET}")
         print(f"  {TerminalUI.GRAY}Press Ctrl+C to stop the server (or use -d for background daemon).{TerminalUI.RESET}\n")
         try:
-            env = dict(os.environ, PORT=str(port), AGY_PORT=str(port))
+            env = dict(os.environ, PORT=str(port), AGY_PORT=str(port), AGY_BIND_HOST=os.environ.get("AGY_BIND_HOST", "0.0.0.0"))
             subprocess.run([str(venv_py), str(orch_py), "serve"], cwd=str(agy_dir), env=env)
         except KeyboardInterrupt:
             print("\n👋 ATHX Orchestrator stopped.")
@@ -1095,7 +1102,10 @@ def handle_health_command(agy_dir: Path, venv_py: Path, sub_args: list[str]):
     args = parser.parse_args(sub_args)
 
     orch_py = agy_dir / "orchestrator.py"
-    last_payload = agy_dir / "last_payload.json"
+    athx_dir = agy_dir / "athx" if (agy_dir / "athx").is_dir() else agy_dir
+    last_payload = athx_dir / "last_payload.json"
+    if not last_payload.exists():
+        last_payload = agy_dir / "last_payload.json"
 
     # Re-ingest flag
     if args.reingest:
@@ -1309,7 +1319,11 @@ def handle_garmin_command(agy_dir: Path, venv_py: Path, sub_args: list[str]):
         if not sync_script.exists():
             print(f"  {yellow}⚠️ garmin_personal_sync.py not found in {athx_dir}{reset}\n")
             return
-        res = subprocess.run([str(venv_py), str(sync_script)], cwd=str(athx_dir))
+        api_key = get_garmin_api_key(agy_dir)
+        env = dict(os.environ)
+        if api_key:
+            env["GARMIN_PERSONAL_API_KEY"] = api_key
+        res = subprocess.run([str(venv_py), str(sync_script)], cwd=str(athx_dir), env=env)
         if res.returncode == 0:
             print(f"\n  {green}✔ Garmin Personal API Synchronization completed successfully.{reset}\n")
         else:
@@ -1525,10 +1539,16 @@ def main():
     # Coach commands: `athx coach [...]` or `athx ask [...]`
     if raw_sub in ["coach", "ask"] or (len(sys.argv) > 1 and sys.argv[1] in ["coach", "ask"]):
         ensure_correct_python(AGY_DIR)
-        import athx_ai_coach
         sub_args = sys.argv[2:]
         if raw_sub == "ask":
             sub_args = ["--ask"] + sub_args
+        if raw_sub == "coach" and any(a in sub_args for a in ["refresh", "update", "sync"]):
+            weekly_script = (AGY_DIR / "athx" / "weekly_coach_update.py") if (AGY_DIR / "athx" / "weekly_coach_update.py").exists() else (AGY_DIR / "weekly_coach_update.py")
+            if weekly_script.exists():
+                venv_py = find_virtualenv_python(AGY_DIR) or Path(sys.executable)
+                subprocess.run([str(venv_py), str(weekly_script)], cwd=str(weekly_script.parent))
+                return
+        import athx_ai_coach
         athx_ai_coach.run_coach_cli(sub_args)
         return
 
@@ -1622,6 +1642,8 @@ def main():
     parser.add_argument("--sleep", action="store_true", help="Show sleep extraction status or log sleep")
     parser.add_argument("--garmin", action="store_true", help="Inspect Garmin Connect Developer Personal API and telemetry")
     parser.add_argument("--doctor", action="store_true", help="Run system diagnostics across all integrations")
+    parser.add_argument("--test", action="store_true", help="Run ATHX sports science test suite")
+    parser.add_argument("--force-coach", action="store_true", help="Force recalculate AI Coach sports science briefing")
     args = parser.parse_args(cli_args)
 
     if args.sleep:
@@ -1653,6 +1675,11 @@ def main():
     if args.doctor:
         handle_doctor_command(AGY_DIR, venv_py)
         return
+
+    if getattr(args, "test", False):
+        test_script = AGY_DIR / "athx" / "tests" / "test_analytics.py"
+        cmd = [str(venv_py), str(test_script)]
+        sys.exit(subprocess.run(cmd).returncode)
 
     if args.serve:
         handle_serve_command(AGY_DIR, venv_py, [])
@@ -1689,7 +1716,7 @@ def main():
         steps.append(("Extracting Garmin strength, running & workouts", lambda: run_garmin_sync(AGY_DIR, venv_py)))
     if not args.skip_cal:
         steps.append(("Syncing legacy calendar cache [DEPRECATED -> Meeting Hub]", lambda: run_calendar_sync(AGY_DIR, venv_py)))
-    steps.append(("Rebuilding ATHX 2027 Athlete Headquarters", lambda: run_athlete_dashboard_build(AGY_DIR, venv_py)))
+    steps.append(("Rebuilding ATHX 2027 Athlete Headquarters", lambda: run_athlete_dashboard_build(AGY_DIR, venv_py, force_coach=args.force_coach)))
     if not args.no_push:
         steps.append(("Pushing updated datasets & dashboards to GitHub", lambda: run_git_push(AGY_DIR)))
 

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="athxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF3377" />
+      <stop offset="100%" stop-color="#E6005C" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181926" />
+      <stop offset="100%" stop-color="#0E0F17" />
+    </linearGradient>
+  </defs>
+  
+  <!-- App Icon Background matching Arty Design System Dark Theme -->
+  <rect width="64" height="64" rx="16" fill="url(#bgGrad)" stroke="#FF3377" stroke-opacity="0.35" stroke-width="2" />
+
+  <!-- Dynamic Athletic "X" with speed cuts -->
+  <g fill="url(#athxGrad)">
+    <!-- Main Left-to-Right Slash -->
+    <polygon points="14,14 24,14 50,50 40,50" />
+    <!-- Segmented Right-to-Left Slash (giving the high-perf athletic badge look) -->
+    <polygon points="40,14 50,14 38,30 31,23" />
+    <polygon points="14,50 24,50 33,37 26,30" />
+  </g>
+
+  <!-- Accent Performance Dot / Energy Node -->
+  <circle cx="50" cy="14" r="3" fill="#00FFA3" />
+</svg>

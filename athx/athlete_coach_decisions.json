@@ -1,0 +1,62 @@
+[
+  {
+    "id": "DEC-2026-11-06-CS",
+    "date": "2026-11-06",
+    "title": "Critical Speed (CS) Pacing Threshold Lock",
+    "trigger": "5km Aerobic Pace Benchmark (+42s/km gap vs 4:30 ATHX qualification)",
+    "action": "rebalance",
+    "action_label": "Threshold Architecture",
+    "action_badge": "badge-neutral",
+    "why_rationale": "Running above Critical Speed (3.16 m/s / 5:16/km) drains the finite 156.8m D' battery, inducing metabolic acidosis and cellular fatigue that directly blunts subsequent heavy squat hypertrophic adaptation. Capping continuous aerobic running at CS allows mitochondrial biogenesis while isolating high-velocity sprint capacity to controlled 1k repeats.",
+    "pre_metric": "Historical 5k Pace: 5:41/km \u00b7 GCT 307.6 ms \u00b7 Anaerobic fatigue leakage",
+    "post_metric": "Nov 6 Paris Run: 4.71 km @ 5:12/km \u00b7 Fastest 1k split 4:05/km \u00b7 GCT 257.7 ms \u00b7 D' battery protected",
+    "outcome": "IMPROVED",
+    "outcome_badge": "badge-ok",
+    "outcome_note": "+29s/km velocity progression with optimized ground contact (257.7 ms) and zero systemic interference."
+  },
+  {
+    "id": "DEC-2026-11-06-CF",
+    "date": "2026-11-06",
+    "title": "CrossFit Work-Rate Pacing Stabilization",
+    "trigger": "Durability Fade Alert (Historic late-round power loss in functional circuit)",
+    "action": "rebalance",
+    "action_label": "Pacing Stabilization",
+    "action_badge": "badge-warning",
+    "why_rationale": "Analysis of multi-set circuits revealed severe late-round volume blowout when tier 1 is opened at maximal anaerobic velocity. Enforced steady-state pacing at 85% effort across the initial 33% of working sets to protect power output across the final 33%.",
+    "pre_metric": "Historic Circuits: Up to 66.6% volume fade \u00b7 Early-round anaerobic blowout",
+    "post_metric": "Nov 6 CrossFit: 0.0% fade (100% durability) \u00b7 Nov 5 Strength: 7.3% fade \u00b7 Composite Durability 85.9%",
+    "outcome": "IMPROVED",
+    "outcome_badge": "badge-ok",
+    "outcome_note": "Elite stamina restored with sustained round density and zero tier-3 volume degradation."
+  },
+  {
+    "id": "DEC-2026-11-05-VOL",
+    "date": "2026-11-05",
+    "title": "Lower-Body & Heavy Compound MEV Volume Injection",
+    "trigger": "Volume Starvation Guardrail (Lower-Body Compound MEV Deficit)",
+    "action": "intensify",
+    "action_label": "Volume Infusion",
+    "action_badge": "badge-sweetspot",
+    "why_rationale": "ATHX Games 2027 benchmark deficit is concentrated in the barbell back squat (-41.0 kg delta) and deadlift (-31.7 kg delta). With systemic ACWR safely in the adaptation corridor (0.80), the neuromuscular system possesses biological bandwidth to absorb a mandatory +4 to +6 weekly set lower-body stimulus without spiking injury hazard.",
+    "pre_metric": "Lower-Body MEV Starvation \u00b7 Squat/Deadlift Delta Deficit \u00b7 Pre-HRV 28 ms",
+    "post_metric": "Nov 5 Session executed (22 sets, 9.68 tons) \u00b7 140 kg Deadlift e1RM \u00b7 56 kg Carries \u00b7 ACWR 0.80 Sweet Spot",
+    "outcome": "IMPROVED",
+    "outcome_badge": "badge-ok",
+    "outcome_note": "Immediate volume absorption with zero gait asymmetry compensation."
+  },
+  {
+    "id": "DEC-2026-11-04-HRV",
+    "date": "2026-11-04",
+    "title": "Autonomic Protection & Active Deload Shift",
+    "trigger": "Morning Health Check (Garmin Overnight HRV plunged to 28 ms vs 52 ms baseline)",
+    "action": "lighten",
+    "action_label": "Active Recovery",
+    "action_badge": "badge-warning",
+    "why_rationale": "A steep overnight drop in Garmin HRV (28 ms, UNBALANCED) signals acute sympathetic dominance and blunted vagal reactivation. Executing high-glycolytic conditioning in this compromised state blunts muscle protein synthesis (mTOR) and degrades power output. Substituted high-intensity work with tissue recovery and restorative sleep.",
+    "pre_metric": "Garmin Overnight HRV: 28 ms (Suppressed Vagal Tone) \u00b7 ACWR 0.91",
+    "post_metric": "Garmin Overnight HRV: 49 ms (+75% rebound) \u00b7 Plews SWC Band (45.7\u201363.1 ms) restored \u00b7 RHR 60 bpm",
+    "outcome": "OPTIMIZED",
+    "outcome_badge": "badge-ok",
+    "outcome_note": "Parasympathetic restoration achieved in 48h window; vagal tone safely back in Plews SWC band."
+  }
+]

@@ -941,6 +941,21 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404, "Coach briefing not found. Generate dashboard or run 'athx coach' first.")
 
+        # AI Coach Briefing On-Demand / Scheduled Refresh API
+        elif clean_path in ("/api/coach/refresh", "/api/coach/update"):
+            try:
+                import weekly_coach_update
+                res = weekly_coach_update.run_weekly_coach_update(force=True, push_git=False)
+                content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+            except Exception as e:
+                self.send_error(500, f"Error refreshing coach briefing: {e}")
+
         # Calendar Sync Status API
         elif clean_path in ("/api/sync/status", "/api/calendar/status"):
             sync_file = CAL_DATA_DIR / "calendar_sync_status.json"
@@ -1115,6 +1130,44 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     self.send_response(400)
                     self.send_cors_headers()
                     self.end_headers()
+
+        # Granola Status API (Phase 5)
+        elif clean_path in ("/api/granola", "/api/granola/status"):
+            folder_cfg = mission_notes.get_granola_folder_config() if mission_notes else None
+            api_key = mission_notes.get_granola_api_key() if mission_notes else None
+            unassigned = mission_notes.list_unassigned_inbox_files() if mission_notes else []
+            data = {
+                "configured": bool(folder_cfg or api_key),
+                "active": bool(folder_cfg or api_key),
+                "folder": str(folder_cfg) if folder_cfg else None,
+                "hasApiKey": bool(api_key),
+                "pendingFilesCount": len(unassigned)
+            }
+            content = json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(content)))
+            self.send_cors_headers()
+            self.end_headers()
+            self.wfile.write(content)
+
+        # Unassigned Inbox Files Listing (Phase 5)
+        elif clean_path == "/api/inbox/unassigned":
+            if not mission_notes:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "mission_notes module not available"}).encode("utf-8"))
+            else:
+                files = mission_notes.list_unassigned_inbox_files()
+                content = json.dumps({"status": "success", "files": files, "count": len(files)}, indent=2, ensure_ascii=False).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
 
         else:
             self.send_error(404, f"Path not found: {clean_path}")
@@ -1295,6 +1348,25 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                         self.end_headers()
                         self.wfile.write(json.dumps({"error": f"Coach consultation error: {e}"}).encode("utf-8"))
 
+            # AI Coach Briefing On-Demand Refresh Trigger
+            elif clean_path in ("/api/coach/refresh", "/api/coach/update"):
+                try:
+                    import weekly_coach_update
+                    res = weekly_coach_update.run_weekly_coach_update(force=True, push_git=False)
+                    content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Content-Length", str(len(content)))
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(content)
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": f"Failed to refresh coach briefing: {e}"}).encode("utf-8"))
+
             # Google Docs Fetch API for Meeting Hub
             elif clean_path == "/api/docs/fetch":
                 doc_ref = payload.get("docId", payload.get("url", "")).strip()
@@ -1352,9 +1424,17 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                                     raise ValueError("No pending inbox files to fold")
                                 filename = pending[0]["filename"]
 
-                            res = mission_notes.generate_fold_proposal(mission_id, filename)
+                            if payload.get("apply"):
+                                res = mission_notes.apply_fold(mission_id, filename)
+                                self.send_response(200 if res.get("status") in ("folded", "already_folded") else 500)
+                            else:
+                                res = mission_notes.generate_fold_proposal(mission_id, filename)
+                                self.send_response(200 if res.get("status") in ("success", "proposal_generated") else 500)
                             content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
-                            self.send_response(200 if res.get("status") in ("success", "proposal_generated") else 500)
+                        elif action in ("fold-all", "fold_all"):
+                            res = mission_notes.fold_all_pending(mission_id)
+                            content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                            self.send_response(200 if res.get("status") == "success" else 500)
                         else:
                             self.send_response(404)
                             content = json.dumps({"error": f"Unknown mission POST action: {action}"}).encode("utf-8")
@@ -1392,6 +1472,254 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     self.send_response(400)
                     self.send_cors_headers()
                     self.end_headers()
+
+            # Action Completion Toggling in Actions.md
+            elif clean_path in ("/api/actions/toggle", "/api/missions/action/toggle"):
+                if not self._is_localhost():
+                    self.send_response(403)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Forbidden: Restricted to localhost"}).encode("utf-8"))
+                    return
+                if not mission_notes:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "mission_notes module not available"}).encode("utf-8"))
+                    return
+
+                action_id = payload.get("actionId") or payload.get("id")
+                mission_id = payload.get("missionId")
+                done = payload.get("done")  # bool or None
+                if not action_id:
+                    self.send_response(400)
+                    content = json.dumps({"error": "Missing 'actionId' in request body"}).encode("utf-8")
+                else:
+                    try:
+                        res = mission_notes.toggle_action(action_id, done=done, mission_id=mission_id)
+                        content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                        self.send_response(200)
+                    except ValueError as ve:
+                        self.send_response(404)
+                        content = json.dumps({"error": str(ve)}).encode("utf-8")
+                    except Exception as e:
+                        self.send_response(500)
+                        content = json.dumps({"error": str(e)}).encode("utf-8")
+
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+
+            # Action Attribute Updating in Actions.md (name, sub-stream, owner, due date, status)
+            elif clean_path in ("/api/actions/update", "/api/missions/action/update"):
+                if not self._is_localhost():
+                    self.send_response(403)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Forbidden: Restricted to localhost"}).encode("utf-8"))
+                    return
+                if not mission_notes:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "mission_notes module not available"}).encode("utf-8"))
+                    return
+
+                action_id = payload.get("actionId") or payload.get("id")
+                mission_id = payload.get("missionId")
+                updates = payload.get("updates")
+                if updates is None or not isinstance(updates, dict):
+                    updates = payload
+                if not action_id:
+                    self.send_response(400)
+                    content = json.dumps({"error": "Missing 'actionId' in request body"}).encode("utf-8")
+                else:
+                    try:
+                        res = mission_notes.update_action(action_id, updates, mission_id=mission_id)
+                        content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                        self.send_response(200)
+                    except ValueError as ve:
+                        self.send_response(404)
+                        content = json.dumps({"error": str(ve)}).encode("utf-8")
+                    except Exception as e:
+                        self.send_response(500)
+                        content = json.dumps({"error": str(e)}).encode("utf-8")
+
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+
+            # Granola Sync API (Phase 5)
+            elif clean_path in ("/api/granola/sync", "/api/sync/granola"):
+                if not self._is_localhost():
+                    self.send_response(403)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Forbidden: Restricted to localhost"}).encode("utf-8"))
+                    return
+                if not mission_notes:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "mission_notes module not available"}).encode("utf-8"))
+                    return
+
+                events_data = payload.get("events")
+                api_key = mission_notes.get_granola_api_key()
+                res = None
+                if api_key:
+                    try:
+                        res = mission_notes.sync_granola_api(api_key=api_key, auto_fold=True, events_data=events_data)
+                    except Exception as ge:
+                        log_event(f"Granola API sync notice: {ge}")
+                if not res or res.get("status") in ("skipped", "error"):
+                    folder_res = mission_notes.process_granola_folder(events_data=events_data)
+                    if res and res.get("status") == "error":
+                        folder_res["api_error"] = res.get("message")
+                    res = folder_res
+
+                content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                self.send_response(200 if res.get("status") != "error" else 500)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+
+            # Unassigned Inbox Capture (Phase 5)
+            elif clean_path == "/api/inbox/unassigned":
+                if not self._is_localhost():
+                    self.send_response(403)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Forbidden: Restricted to localhost"}).encode("utf-8"))
+                    return
+                if not mission_notes:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "mission_notes module not available"}).encode("utf-8"))
+                    return
+
+                try:
+                    res = mission_notes.write_unassigned_inbox_file(payload)
+                    content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                    self.send_response(200 if res.get("status") in ("created", "exists") else 400)
+                except Exception as e:
+                    content = json.dumps({"error": str(e)}).encode("utf-8")
+                    self.send_response(400)
+
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+
+            # Assign Unassigned Capture to Mission (Phase 5)
+            elif clean_path == "/api/inbox/assign":
+                if not self._is_localhost():
+                    self.send_response(403)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Forbidden: Restricted to localhost"}).encode("utf-8"))
+                    return
+                if not mission_notes:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "mission_notes module not available"}).encode("utf-8"))
+                    return
+
+                filename = payload.get("filename", "")
+                mission_id = payload.get("missionId", "")
+                event_id = payload.get("eventId")
+                try:
+                    res = mission_notes.assign_inbox_file(filename, mission_id, event_id)
+                    content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                    self.send_response(200 if res.get("status") == "assigned" else 400)
+                except Exception as e:
+                    content = json.dumps({"error": str(e)}).encode("utf-8")
+                    self.send_response(400)
+
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+
+            # Google Docs Auto-Pull (Phase 5)
+            elif clean_path == "/api/docs/auto-pull":
+                if not self._is_localhost():
+                    self.send_response(403)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Forbidden: Restricted to localhost"}).encode("utf-8"))
+                    return
+                if not mission_notes:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "mission_notes module not available"}).encode("utf-8"))
+                    return
+
+                events_list = payload.get("events")
+                try:
+                    res = mission_notes.auto_pull_google_docs(events_list=events_list, fetch_doc_fn=fetch_google_doc)
+                    content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                    self.send_response(200)
+                except Exception as e:
+                    content = json.dumps({"error": str(e), "pulledCount": 0}).encode("utf-8")
+                    self.send_response(500)
+
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+
+            # Calendar Deletion & Restore Endpoints
+            elif clean_path in ("/api/calendar/delete", "/api/calendar/restore"):
+                event_id = payload.get("id") or payload.get("eventId")
+                del_file = CAL_DATA_DIR / "deleted_event_ids.json"
+                deleted_ids = []
+                if del_file.exists():
+                    try:
+                        deleted_ids = json.loads(del_file.read_text(encoding="utf-8"))
+                    except Exception:
+                        deleted_ids = []
+                if event_id:
+                    if clean_path == "/api/calendar/delete" and event_id not in deleted_ids:
+                        deleted_ids.append(str(event_id))
+                    elif clean_path == "/api/calendar/restore" and str(event_id) in deleted_ids:
+                        deleted_ids.remove(str(event_id))
+                    try:
+                        del_file.parent.mkdir(parents=True, exist_ok=True)
+                        del_file.write_text(json.dumps(deleted_ids, indent=2), encoding="utf-8")
+                    except Exception:
+                        pass
+                content = json.dumps({"status": "success", "deleted_ids": deleted_ids}).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
 
             else:
                 self.send_error(404, f"API endpoint not found: {clean_path}")
@@ -1509,6 +1837,30 @@ def run_server(port: int | None = None):
                     log_event(f"Periodic sync warning: {ex}")
 
         threading.Thread(target=background_scheduler, daemon=True).start()
+
+    # Weekly Sunday AI Coach Briefing Scheduler
+    # Runs automatically every Sunday evening (20:00 Europe/Paris)
+    def weekly_sunday_coach_scheduler():
+        log_event("🧠 Weekly Sunday AI Coach scheduler active (evaluates on Sundays at 20:00 Europe/Paris)")
+        state_file = DATA_DIR / ".last_sunday_coach_sync"
+        while True:
+            try:
+                now = datetime.now(LOCAL_TZ)
+                # 6 is Sunday (0=Monday, 6=Sunday)
+                if now.weekday() == 6 and now.hour >= 20:
+                    current_week_marker = f"{now.year}-W{now.isocalendar().week:02d}"
+                    last_synced = state_file.read_text(encoding="utf-8").strip() if state_file.exists() else ""
+                    if last_synced != current_week_marker:
+                        log_event(f"⏰ [Sunday AI Coach] Triggering scheduled briefing refresh ({current_week_marker})...")
+                        weekly_script = ATHX_DIR / "weekly_coach_update.py"
+                        if weekly_script.exists():
+                            subprocess.run([sys.executable, str(weekly_script), "--push"], cwd=str(ATHX_DIR), timeout=120)
+                            log_event(f"✔ [Sunday AI Coach] Completed scheduled briefing refresh ({current_week_marker})")
+            except Exception as e:
+                log_event(f"⚠️ [Sunday AI Coach] Scheduler warning: {e}")
+            time.sleep(900)
+
+    threading.Thread(target=weekly_sunday_coach_scheduler, daemon=True).start()
 
     try:
         server.serve_forever()

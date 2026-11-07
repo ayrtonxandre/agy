@@ -13,18 +13,67 @@ export class EventsImporter {
    * @param {DatabaseAdapter} db - Active database adapter
    * @param {Object} options - { force: boolean, dataUrl: string, rawEvents: Array }
    */
+  static async _loadDeletedIdsSet(db) {
+    const set = new Set();
+    try {
+      const meta = await db.get('meta', 'deleted_event_ids');
+      if (meta && Array.isArray(meta.value)) {
+        for (const id of meta.value) if (id) set.add(String(id));
+      }
+    } catch (e) {}
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('mhub_deleted_events');
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            for (const id of arr) if (id) set.add(String(id));
+          }
+        }
+      }
+    } catch (e) {}
+    return set;
+  }
+
   static async importInitialData(db, options = {}) {
     const existingCount = await db.count('events');
     const seedVersionMeta = await db.get('meta', 'seed_version');
-    const currentSeedVersion = 3; // version 3 includes unified multi-mission calendar events and Friday Oct 30 schedule
+    const currentSeedVersion = 6; // version 6 refreshes live calendar seeds for Nov 2026
+    const deletedIdsSet = await EventsImporter._loadDeletedIdsSet(db);
 
     let rawList = options.rawEvents;
     if (!rawList && typeof window !== 'undefined' && window.INITIAL_EVENTS && Array.isArray(window.INITIAL_EVENTS)) {
       rawList = window.INITIAL_EVENTS;
     }
 
-    // If store already has events and up-to-date seed version, skip cleanly
+    // If store already has events and up-to-date seed version, ensure no baseline events are missing
     if (existingCount > 0 && !options.force && seedVersionMeta && seedVersionMeta.value >= currentSeedVersion) {
+      if (deletedIdsSet.size > 0) {
+        const currentEvents = await db.getAll('events');
+        for (const ev of currentEvents) {
+          if (EventModel.isDeletedOrDeclined(ev, deletedIdsSet)) {
+            await db.delete('events', ev.id);
+          }
+        }
+      }
+
+      // Self-healing: verify that baseline events from initial snapshot are present
+      if (rawList && Array.isArray(rawList)) {
+        const currentEvents = await db.getAll('events');
+        const currentIds = new Set(currentEvents.map(e => e.id));
+        const missingBaseline = rawList
+          .filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet))
+          .map(e => EventModel.normalize(e))
+          .filter(e => !currentIds.has(e.id));
+        if (missingBaseline.length > 0) {
+          console.log(`[Importer] Ingesting ${missingBaseline.length} missing baseline mission events...`);
+          await db.bulkPut('events', missingBaseline);
+          const updatedEvents = await db.getAll('events');
+          const updatedSeries = SeriesModel.collapse(updatedEvents);
+          await db.bulkPut('series', updatedSeries);
+        }
+      }
+
       console.log(`[Importer] Store already populated with ${existingCount} events (seed v${seedVersionMeta.value}).`);
       return { skipped: true, eventCount: existingCount };
     }
@@ -85,8 +134,21 @@ export class EventsImporter {
       return { skipped: true, eventCount: 0 };
     }
 
-    // 1. Normalize events
-    const normalizedEvents = rawList.map(e => EventModel.normalize(e));
+    // 1. Filter out deleted/declined events and normalize
+    const activeRawList = rawList.filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet));
+    const normalizedEvents = activeRawList.filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet)).map(e => EventModel.normalize(e)).filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet));
+    const validIds = new Set(normalizedEvents.map(e => e.id));
+
+    // Prune stale non-custom calendar events that are no longer in the clean seed or were deleted
+    if (existingCount > 0 && !options.rawEvents) {
+      const existingEvents = await db.getAll('events');
+      for (const oldEv of existingEvents) {
+        const isCustom = Boolean(oldEv.isCustom || String(oldEv.id || '').startsWith('custom-') || String(oldEv.id || '').startsWith('evt-'));
+        if (deletedIdsSet.has(oldEv.id) || EventModel.isDeletedOrDeclined(oldEv, deletedIdsSet) || (!isCustom && validIds.size > 0 && !validIds.has(oldEv.id))) {
+          await db.delete('events', oldEv.id);
+        }
+      }
+    }
 
     // 2. Collapse into series
     const collapsedSeries = SeriesModel.collapse(normalizedEvents);

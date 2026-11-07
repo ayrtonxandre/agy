@@ -402,16 +402,59 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
     all_strength_sets.sort(key=lambda x: (x.get("Date", ""), x.get("Activity_ID", 0), x.get("Set", 0)), reverse=True)
     with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(all_strength_sets, f, indent=2)
-    with open(OUTPUT_VOL_JSON, "w", encoding="utf-8") as f:
-        json.dump(all_strength_sets, f, indent=2)
+    try:
+        if OUTPUT_VOL_JSON.is_symlink() or OUTPUT_VOL_JSON.exists():
+            OUTPUT_VOL_JSON.unlink()
+        OUTPUT_VOL_JSON.symlink_to(OUTPUT_JSON.name)
+    except Exception:
+        with open(OUTPUT_VOL_JSON, "w", encoding="utf-8") as f:
+            json.dump(all_strength_sets, f, indent=2)
     if all_strength_sets:
         with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=list(all_strength_sets[0].keys()), extrasaction="ignore")
             writer.writeheader()
             writer.writerows(all_strength_sets)
-    print(f"✔ Strength sets: {len(all_strength_sets)} records -> {OUTPUT_JSON.name} & {OUTPUT_VOL_JSON.name}")
+    print(f"✔ Strength sets: {len(all_strength_sets)} records -> {OUTPUT_JSON.name} (volume symlinked)")
 
     # Running Activities
+    # Merge known split sessions (e.g. 2026-10-30 split interval run: 24907338044 + 24907458907)
+    split_running = [r for r in all_running_records if r.get("Activity_ID") in (24907338044, 24907458907)]
+    if split_running:
+        all_running_records = [r for r in all_running_records if r.get("Activity_ID") not in (24907338044, 24907458907)]
+        merged_run = {
+            "Activity_ID": 24907338044,
+            "Date": "2026-10-30",
+            "Start_Time": "2026-10-30 17:46:27",
+            "Activity_Name": "Paris Running (Intervals 4x ~800m-1k)",
+            "Activity_Type": "running",
+            "Distance_km": 4.99,
+            "Duration_min": 27.4,
+            "Duration_s": 1644.4,
+            "Average_Speed_ms": 3.035,
+            "Pace_s_per_km": 329.4,
+            "Pace_formatted": "5:29/km",
+            "Average_HR": 126.8,
+            "Max_HR": 159.0,
+            "Cadence_spm": 141.4,
+            "VO2Max": None,
+            "Elevation_Gain_m": 18.0,
+            "Elevation_Loss_m": 8.0,
+            "Calories_kcal": 329,
+            "Training_Effect_Label": "TEMPO",
+            "Aerobic_TE_Message": "MAINTAINING_TEMPO_21",
+            "Anaerobic_TE_Message": "MINOR_ANAEROBIC_BENEFIT_15",
+            "Fastest_1k_s": 267.9,
+            "Fastest_5k_s": None,
+            "Steps": 4046,
+            "Ground_Contact_Time_ms": 259.3,
+            "Vertical_Oscillation_cm": 9.31,
+            "Vertical_Ratio_pct": 7.65,
+            "Ground_Contact_Balance_pct": None,
+            "Grade_Adjusted_Speed_ms": None,
+            "Training_Load": None,
+        }
+        all_running_records.append(merged_run)
+
     all_running_records.sort(key=lambda x: x.get("Start_Time", ""), reverse=True)
     with open(OUTPUT_RUNNING_JSON, "w", encoding="utf-8") as f:
         json.dump(all_running_records, f, indent=2)
@@ -434,6 +477,27 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
     print(f"✔ Other workouts: {len(all_workout_records)} records -> {OUTPUT_WORKOUTS_JSON.name}")
 
     # Master Activities
+    # Merge known split sessions (e.g. 2026-10-30 split interval run: 24907338044 + 24907458907)
+    split_master = [r for r in all_master_activities if r.get("Activity_ID") in (24907338044, 24907458907)]
+    if split_master:
+        all_master_activities = [r for r in all_master_activities if r.get("Activity_ID") not in (24907338044, 24907458907)]
+        merged_master = {
+            "Activity_ID": 24907338044,
+            "Date": "2026-10-30",
+            "Start_Time": "2026-10-30 17:46:27",
+            "Activity_Name": "Paris Running (Intervals 4x ~800m-1k)",
+            "Activity_Type": "running",
+            "Primary_Category": "Running",
+            "Duration_min": 27.4,
+            "Distance_km": 4.99,
+            "Calories_kcal": 329,
+            "Average_HR": 127.0,
+            "Max_HR": 159.0,
+            "Training_Effect": "TEMPO",
+            "Notes": "Interval session: 4 reps (~800m-1k). Rep 1: 868m @ 4:14/km | Rep 2: 745m @ 3:56/km | Rep 3: 848m @ 4:14/km | Rep 4: 1,000m @ 4:27/km (Fastest 1k PR: 4:27)",
+        }
+        all_master_activities.append(merged_master)
+
     all_master_activities.sort(key=lambda x: x.get("Start_Time", ""), reverse=True)
     with open(OUTPUT_ALL_JSON, "w", encoding="utf-8") as f:
         json.dump(all_master_activities, f, indent=2)

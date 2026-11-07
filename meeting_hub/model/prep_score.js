@@ -206,6 +206,74 @@ export class PrepScoreCalculator {
   }
 
   /**
+   * Evaluates the Phase 4 prep checklist (from notes and meeting context only, 3-4 dots, NO percentage):
+   * 1. previous meeting of this series folded
+   * 2. mission inbox has nothing older than this meeting's previous occurrence
+   * 3. open actions for this workstream reviewed (UI tick, UI state)
+   * 4. agenda notes written (optional)
+   */
+  static computeCockpitChecklist(meeting, meetingData = {}, options = {}) {
+    const { prevMeeting = null, prevMeetingFolded = false, inboxStatus = null, missionSummary = null } = options;
+
+    // 1. Previous meeting of this series folded (or standalone/first meeting)
+    const dot1Ok = !prevMeeting || Boolean(prevMeetingFolded);
+    const dot1 = {
+      key: 'prevFolded',
+      label: 'Previous meeting folded',
+      ok: dot1Ok,
+      detail: !prevMeeting ? 'First occurrence / standalone' : (dot1Ok ? 'Previous session folded' : 'Previous session not folded')
+    };
+
+    // 2. Mission inbox has nothing older than this meeting's previous occurrence
+    let dot2Ok = true;
+    let dot2Detail = 'Inbox up to date';
+    if (inboxStatus && Array.isArray(inboxStatus.files) && inboxStatus.files.length > 0) {
+      if (prevMeeting && prevMeeting.date) {
+        const hasOlder = inboxStatus.files.some(f => {
+          const fDate = f.date || (typeof f === 'string' && f.slice(0, 10)) || (f.filename && f.filename.slice(0, 10));
+          return fDate && fDate <= prevMeeting.date;
+        });
+        if (hasOlder) {
+          dot2Ok = false;
+          dot2Detail = 'Pending inbox file from prior cycle';
+        }
+      } else {
+        dot2Detail = `${inboxStatus.pendingCount || inboxStatus.files.length} pending in inbox`;
+      }
+    }
+    const dot2 = {
+      key: 'cleanInbox',
+      label: 'Inbox clean',
+      ok: dot2Ok,
+      detail: dot2Detail
+    };
+
+    // 3. Open actions for this workstream reviewed (UI tick, UI state)
+    const dot3Ok = Boolean(meetingData.actionsReviewed);
+    const dot3 = {
+      key: 'actionsReviewed',
+      label: 'Actions reviewed',
+      ok: dot3Ok,
+      detail: dot3Ok ? 'Reviewed' : 'Review pending'
+    };
+
+    // 4. Agenda notes written (optional)
+    const hasAgenda = Boolean(meetingData.agenda && meetingData.agenda.trim().length > 0);
+    const dot4 = {
+      key: 'agendaDrafted',
+      label: 'Agenda notes',
+      ok: hasAgenda,
+      optional: true,
+      detail: hasAgenda ? 'Drafted' : 'Optional scratchpad'
+    };
+
+    return {
+      dots: [dot1, dot2, dot3, dot4],
+      allRequiredMet: dot1Ok && dot2Ok && dot3Ok
+    };
+  }
+
+  /**
    * Helper to check if a meeting is scheduled within the next 48 hours.
    */
   static isWithin48Hours(meetingDate, meetingStart = '00:00', refDateStr = null, refTimeStr = '00:00') {

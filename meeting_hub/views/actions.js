@@ -6,6 +6,7 @@
  * Allows inline completion toggling, filtering by owner, and direct navigation.
  */
 import { Icons } from '../ui/icons.js';
+import { openActionEditModal } from '../ui/action_modal.js';
 
 export class ActionsView {
   constructor({ container, store, onSelectMeeting }) {
@@ -60,7 +61,7 @@ export class ActionsView {
           let linkedEvent = null;
           let mId = act.meetingId || null;
           if (!mId && act.source) {
-            const m = act.source.match(/meeting\/([^ )]+)/);
+            const m = act.source.match(/(?:meeting\/|\/m\/)([a-zA-Z0-9_\-]+)/);
             if (m) mId = m[1];
           }
           if (mId) {
@@ -78,6 +79,7 @@ export class ActionsView {
             id: act.id,
             text: act.text || act.description || '',
             owner: act.owner || 'Unassigned',
+            workstream: act.workstream || act.substream || act.org || act.ownerOrg || '',
             ownerOrg: act.ownerOrg || act.org || ((act.owner || '').toLowerCase().includes('ayrton') ? 'Artefact' : 'Client'),
             dueDate: act.due || act.dueDate || null,
             done: Boolean(act.done || act.status === 'done' || act.status === 'completed' || act.status === 'clos'),
@@ -95,6 +97,8 @@ export class ActionsView {
     } catch (e) {
       console.warn('Could not load mission note actions:', e);
     }
+
+    this.itemsMap = new Map(aggregatedItems.map(i => [i.id, i]));
 
     // Filter items
     let filtered = aggregatedItems;
@@ -160,7 +164,7 @@ export class ActionsView {
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 ${items.map(item => `
                   <div class="item" style="border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 10px; background: var(--background);">
-                    <button class="item-check-btn ${item.done ? 'checked' : ''}" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" data-is-note="${item.isNoteAction ? 'true' : 'false'}" data-note-file="${this._escape(item.sourceNote || '')}" title="${item.isNoteAction ? 'Markdown note action (Single Source of Truth)' : (item.done ? 'Mark open' : 'Mark done')}">
+                    <button class="item-check-btn ${item.done ? 'checked' : ''}" data-item-id="${this._escape(item.id)}" data-mission-id="${this._escape(item.missionId || '')}" data-meeting-id="${this._escape(item.meetingId || '')}" data-is-note="${item.isNoteAction ? 'true' : 'false'}" data-note-file="${this._escape(item.sourceNote || '')}" title="${item.done ? 'Mark open' : 'Mark done'}">
                       ${item.done ? Icons.check : ''}
                     </button>
                     <span class="kind-badge ${item.kind}">${item.kind}</span>
@@ -168,11 +172,11 @@ export class ActionsView {
                       <span class="badge" style="background: var(--muted); font-size: 10px; font-family: var(--font-mono); font-weight: 600;">${this._escape(item.id)}</span>
                       <span class="badge" style="font-size: 10px; border-color: var(--pink-600); color: var(--pink-600);">[${this._escape(item.sourceNote || 'Actions.md')}]</span>
                     ` : ''}
-                    <div class="item-body">
+                    <div class="item-body item-body-clickable" data-item-id="${this._escape(item.id)}" title="Click to edit action" style="cursor: pointer;">
                       <span class="tx ${item.done ? 'done' : ''}">${this._escape(item.text)}</span>
                       <div class="item-meta" style="margin-top: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                         ${item.owner ? `<span class="chip-owner">${this._escape(item.owner)}</span>` : ''}
-                        ${item.ownerOrg ? `<span class="badge" style="font-size: 10px;">${this._escape(item.ownerOrg)}</span>` : ''}
+                        ${(item.workstream || item.ownerOrg) ? `<span class="badge" style="font-size: 10px;">${this._escape(item.workstream || item.ownerOrg)}</span>` : ''}
                         ${item.dueDate ? `<span class="chip-due">${Icons.clock} ${this._escape(item.dueDate)}</span>` : ''}
                         ${item.meetingId ? `
                           <button class="btn sm" data-nav-meeting="${this._escape(item.meetingId)}" style="padding: 1px 6px; font-size: 10.5px;">
@@ -185,15 +189,20 @@ export class ActionsView {
                         `}
                       </div>
                     </div>
-                    ${item.isNoteAction ? `
-                      <button class="btn sm" data-copy-note-action="${this._escape(item.id)}" data-note-file="${this._escape(item.sourceNote || 'Actions.md')}" title="Copy ID to mark done in ${this._escape(item.sourceNote || 'Actions.md')}" style="flex-shrink: 0; font-size: 10.5px; padding: 2px 8px;">
-                        📋 Copy ID
+                    <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                      <button class="btn sm edit-action-btn" data-item-id="${this._escape(item.id)}" title="Edit action: name, sub-stream, owner, due date" style="font-size: 10.5px; padding: 2px 7px; display: inline-flex; align-items: center; gap: 4px;">
+                        ${Icons.edit} Edit
                       </button>
-                    ` : `
-                      <button class="btn-icon delete-action-btn" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" title="Delete action">
-                        ${Icons.trash}
-                      </button>
-                    `}
+                      ${item.isNoteAction ? `
+                        <button class="btn sm" data-copy-note-action="${this._escape(item.id)}" data-note-file="${this._escape(item.sourceNote || 'Actions.md')}" title="Copy ID: ${this._escape(item.id)}" style="font-size: 10.5px; padding: 2px 7px;">
+                          Copy ID
+                        </button>
+                      ` : `
+                        <button class="btn-icon delete-action-btn" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" title="Delete action">
+                          ${Icons.trash}
+                        </button>
+                      `}
+                    </div>
                   </div>
                 `).join('')}
               </div>
@@ -232,16 +241,73 @@ export class ActionsView {
       });
     }
 
+    // Edit action modal handler
+    const handleEditAction = (itemId) => {
+      const item = this.itemsMap?.get(itemId);
+      if (!item) return;
+      openActionEditModal({
+        action: {
+          id: item.id,
+          title: item.text,
+          description: item.text,
+          owner: item.owner === 'Unassigned' ? '' : item.owner,
+          workstream: item.workstream || item.ownerOrg,
+          dueDate: item.dueDate,
+          missionId: item.missionId
+        },
+        missionId: item.missionId,
+        store: this.store,
+        onSave: async (updated) => {
+          if (!item.isNoteAction && item.meetingId) {
+            try {
+              const note = await this.store.getMeetingData(item.meetingId);
+              if (note && Array.isArray(note.items)) {
+                const target = note.items.find(i => i.id === item.id);
+                if (target) {
+                  target.text = updated.title || updated.text || target.text;
+                  target.owner = updated.owner;
+                  target.dueDate = updated.dueDate || updated.due;
+                  await this.store.saveMeetingData(item.meetingId, { items: note.items });
+                }
+              }
+            } catch (e) {
+              console.warn('[ActionsView] Local action edit update failed:', e);
+            }
+          }
+          await this.render();
+        }
+      });
+    };
+
+    this.container.querySelectorAll('.edit-action-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleEditAction(btn.dataset.itemId);
+      });
+    });
+
+    this.container.querySelectorAll('.item-body-clickable').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-nav-meeting]')) return;
+        e.stopPropagation();
+        handleEditAction(el.dataset.itemId);
+      });
+    });
+
     // Toggle item completion
     this.container.querySelectorAll('.item-check-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const itemId = btn.dataset.itemId;
         if (btn.dataset.isNote === 'true') {
-          const noteFile = btn.dataset.noteFile || 'Actions.md';
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(itemId);
+          const missionId = btn.dataset.missionId;
+          btn.disabled = true;
+          try {
+            await this.store.toggleAction(itemId, missionId);
+            await this.render();
+          } catch (err) {
+            console.error('[ActionsView] Failed to toggle note action:', err);
+            btn.disabled = false;
           }
-          alert(`Copied ${itemId} to clipboard!\nTo mark this action done, edit ${noteFile} directly (Markdown notes are the single source of truth).`);
           return;
         }
 

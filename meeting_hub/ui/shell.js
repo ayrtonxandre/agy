@@ -290,7 +290,12 @@ export class ShellUI {
         const missionId = btn.dataset.navMission;
         this.activeProjectId = missionId;
         this.currentView = 'mission';
-        window.location.hash = '#/p/' + encodeURIComponent(missionId);
+        const target = '#/p/' + encodeURIComponent(missionId);
+        if (window.location.hash === target) {
+          if (typeof handleHashRoute === 'function') handleHashRoute();
+        } else {
+          window.location.hash = target;
+        }
       });
     });
 
@@ -305,12 +310,20 @@ export class ShellUI {
       btn.addEventListener('click', () => {
         const view = btn.dataset.navView;
         this.currentView = view;
+        let target = '';
         if (view === 'inbox') {
-          window.location.hash = '#/inbox';
+          target = '#/inbox';
         } else if (view === 'my-actions') {
-          window.location.hash = '#/my-actions';
+          target = '#/my-actions';
         } else if (view === 'calendar') {
-          window.location.hash = '#/calendar';
+          target = '#/calendar';
+        }
+        if (target) {
+          if (window.location.hash === target) {
+            if (typeof handleHashRoute === 'function') handleHashRoute();
+          } else {
+            window.location.hash = target;
+          }
         }
       });
     });

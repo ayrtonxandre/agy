@@ -379,25 +379,28 @@ export class TodayView {
           const mPrep = collectionPrep.evaluations.get(m.id);
 
           return `
-            <button class="row ${isTraining ? 'training' : ''} ${isSelected ? 'sel' : ''}" data-event-id="${m.id}">
+            <div class="row ${isTraining ? 'training' : ''} ${isSelected ? 'sel' : ''}" data-event-id="${m.id}" role="button" tabindex="0">
               <span class="t">${m.start}<br>${m.end}</span>
               <span class="bar" style="background: ${colorBar};"></span>
               <span>
                 <div class="ttl">${this._escape(m.title)}</div>
                 <div class="meta">${this._escape(metaParts.join(' · '))}</div>
               </span>
-              ${m.stream === 'work' ? (mPrep ? `
-                <span class="badge ${mPrep.missingCount === 0 ? 'ok' : 'warn'}" title="${mPrep.missingSummary}">
-                  ${mPrep.missingCount === 0 ? 'Prepared' : `${mPrep.missingCount} missing`}
-                </span>
-              ` : `
-                <span class="badge ${isSelected ? 'info' : ''}">Work</span>
-              `) : isTraining ? `
-                <span class="badge warn">ATHX Training</span>
-              ` : `
-                <span class="badge">Life</span>
-              `}
-            </button>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                ${m.stream === 'work' ? (mPrep ? `
+                  <span class="badge ${mPrep.missingCount === 0 ? 'ok' : 'warn'}" title="${mPrep.missingSummary}">
+                    ${mPrep.missingCount === 0 ? 'Prepared' : `${mPrep.missingCount} missing`}
+                  </span>
+                ` : `
+                  <span class="badge ${isSelected ? 'info' : ''}">Work</span>
+                `) : isTraining ? `
+                  <span class="badge warn">ATHX Training</span>
+                ` : `
+                  <span class="badge">Life</span>
+                `}
+                <button class="btn-delete-meeting" data-delete-event="${this._escape(m.id)}" title="Remove meeting from dashboard" aria-label="Delete meeting">${Icons.trash}</button>
+              </div>
+            </div>
           `;
         }).join('') : `
           <div class="empty" style="padding: 40px 0;">
@@ -471,9 +474,25 @@ export class TodayView {
       });
     }
 
+    // Delete meeting button on timeline rows
+    this.container.querySelectorAll('[data-delete-event]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const eventId = btn.dataset.deleteEvent;
+        if (!eventId) return;
+        if (typeof window !== 'undefined' && typeof window.__deleteMeetingWithUndo === 'function') {
+          await window.__deleteMeetingWithUndo(eventId);
+        } else {
+          await this.store.deleteEvent(eventId);
+          await this.render();
+        }
+      });
+    });
+
     // Timeline row click
     this.container.querySelectorAll('.row[data-event-id]').forEach(row => {
-      row.addEventListener('click', () => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('[data-delete-event]')) return;
         const id = row.dataset.eventId;
         this.selectedEventId = id;
         this.container.querySelectorAll('.row').forEach(r => r.classList.remove('sel'));

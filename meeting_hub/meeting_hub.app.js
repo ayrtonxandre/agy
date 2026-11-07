@@ -1,6 +1,6 @@
 /**
  * Meeting Hub Compiled Application Bundle
- * Generated: 2026-10-30T14:11:49.890Z
+ * Generated: 2026-11-07T07:49:29.950Z
  */
 (function(window, document) {
 'use strict';
@@ -10,6 +10,61 @@ window.DOCS_CACHE = {};
 // Auto-generated missions registry snapshot (file:// fallback)
 var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MISSIONS_SNAPSHOT = {
   "missions": [
+    {
+      "id": "leclerc-siplec",
+      "name": "Leclerc : Siplec Referential and AI Augmentation",
+      "client": "E.Leclerc / Siplec",
+      "directory": "Leclerc Siplec",
+      "status": "active",
+      "archived": false,
+      "brief": "Leclerc Siplec/Agent brief.md",
+      "overview": "Leclerc Siplec/Mission Overview.md",
+      "actions": "Leclerc Siplec/Actions.md",
+      "inbox": "Leclerc Siplec/_inbox",
+      "clientMatch": [
+        "siplec",
+        "leclerc",
+        "entretien siplec",
+        "calypso",
+        "helios",
+        "ulysse",
+        "tata platform",
+        "[main mission]",
+        "main mission"
+      ],
+      "contacts": [
+        "jérôme harousseau",
+        "jerome harousseau",
+        "qing zhou",
+        "juliette lacroix",
+        "gaëtan",
+        "zineb",
+        "guilhem"
+      ],
+      "workstreams": [
+        {
+          "id": "ws-data-industrialization",
+          "name": "Data Architecture & Industrialization",
+          "phase": "Actif",
+          "summary": "Migration des cas d'usage sandbox vers la plateforme cible (Collect -> Data -> Expo, GitLab, DBT, GCP)",
+          "note": "Leclerc Siplec/Data Architecture & Industrialization.md"
+        },
+        {
+          "id": "ws-match-merge",
+          "name": "Referential Quality & Match-Merge",
+          "phase": "Actif",
+          "summary": "Qualité de données et déduplication des 4 000 doublons usines/fournisseurs dans Calypso / Helios",
+          "note": "Leclerc Siplec/Referential Quality & Match-Merge.md"
+        },
+        {
+          "id": "ws-ai-textile-composition",
+          "name": "AI Textile Product Composition",
+          "phase": "Actif",
+          "summary": "Extraction automatisée par IA des compositions textiles à partir de données non structurées",
+          "note": "Leclerc Siplec/AI Textile Product Composition.md"
+        }
+      ]
+    },
     {
       "id": "ge-enterprise",
       "name": "GE Enterprise & UC Wizard",
@@ -31,7 +86,22 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "[mandat ge]",
         "mandat ge",
         "mo & ge",
-        "updates mo & ge"
+        "updates mo & ge",
+        "dyoc",
+        "one pager",
+        "one pager generation",
+        "edward",
+        "feedback edward",
+        "[ge]",
+        "ge",
+        "team work",
+        "[team work]"
+      ],
+      "contacts": [
+        "louis bechu",
+        "edward toulemonde",
+        "paul bouche",
+        "camille kugler"
       ],
       "workstreams": [
         {
@@ -65,6 +135,7 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "care dispensing",
         "[care dispensing]",
         "healthcare",
+        "[healthcare]",
         "healthoween",
         "healthcare practice"
       ],
@@ -137,11 +208,20 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "counselling",
         "counselor",
         "counselee",
+        "[counseling/hr]",
+        "counseling/hr",
+        "[counseling]",
         "roland juilhard",
         "jamila nasri",
         "eval h2",
         "eval h2 2026",
         "[itw] - slot"
+      ],
+      "contacts": [
+        "roland juilhard",
+        "jamila nasri",
+        "roland j.",
+        "jamila n."
       ],
       "workstreams": [
         {
@@ -181,8 +261,10 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
       "clientMatch": [
         "[planning hdj]",
         "[planning manager]",
+        "[clariane]",
         "planning hdj",
         "planning manager",
+        "planification des interventions",
         "hdj",
         "arbelles",
         "mariena",
@@ -1027,21 +1109,52 @@ MeetingHub.formatRoute = formatRoute;
  * Pure function that resolves which mission an event belongs to.
  * Priority:
  * 1. Bracket title tags (e.g. [MANDAT GE], [CARE DISPENSING], [PrideFact], [HDJ], [MO])
- * 2. clientMatch entries from missions.yaml against title, tags, or client field
- * 3. Attendee overlap with the mission's contacts
+ * 2. Visual Calendar Color Tags (e.g. [MAIN MISSION], [COUNSELING/HR], Team Work / [GE], [HEALTHCARE], [PRIDEFACT])
+ * 3. clientMatch entries from missions.yaml against title, tags, or client field
+ * 4. Attendee overlap with the mission's contacts
  * Ambiguous matches return confidence: 'ambiguous'.
  */
+
+const CALENDAR_COLOR_TAGS = {
+  '1': '[ARTEFACT INTERNAL]',
+  '2': '[COUNSELING/HR]',
+  '3': '[ARTEFACT INTERNAL]',
+  '4': '[PRIDEFACT]',
+  '5': '[HEALTHCARE]',
+  '6': 'Team Work',
+  '7': '[MAIN MISSION]',
+  '8': 'Me-time',
+  '9': '[ARTEFACT INTERNAL]',
+  '10': '[COUNSELING/HR]',
+  '11': '[PRIDEFACT]'
+};
 
 function matchMission(event, registry) {
   if (!event) return null;
   const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
   if (!missions.length) return null;
 
-  const rawTitle = (event.title || '').trim();
+  const rawTitle = (event.title || event.summary || '').trim();
   const title = rawTitle.toLowerCase();
   const client = (event.client || '').toLowerCase().trim();
   const tags = (Array.isArray(event.tags) ? event.tags : []).map(t => String(t).toLowerCase().trim());
-  const attendees = (Array.isArray(event.attendees) ? event.attendees : []).map(a => String(a).toLowerCase().trim());
+  const attendees = (Array.isArray(event.attendees) ? event.attendees : []).map(a => {
+    if (typeof a === 'string') return a.toLowerCase().trim();
+    return (a.name || a.email || '').toLowerCase().trim();
+  });
+
+  // 0. Priority 0: Explicit mission/project ID on event
+  if (event.projectId || event.missionId) {
+    const explicitId = (event.projectId || event.missionId).toLowerCase().trim();
+    const explicitMission = missions.find(m => m.id.toLowerCase() === explicitId);
+    if (explicitMission) {
+      return {
+        missionId: explicitMission.id,
+        confidence: 'high',
+        reason: `Explicit mission assignment (${explicitMission.id})`
+      };
+    }
+  }
 
   // 1. First priority: Bracket title tags (e.g. [MANDAT GE], [CARE DISPENSING], [PrideFact], [HDJ], [MO])
   const bracketMatches = rawTitle.match(/\[(.*?)\]/g) || [];
@@ -1085,7 +1198,73 @@ function matchMission(event, registry) {
     }
   }
 
-  // 2. Second priority: clientMatch entries, title match, event tags, client field
+  // 2. Second priority: Calendar Color Tag (visual color assigned in Google Calendar)
+  const colorId = event.colorId !== undefined && event.colorId !== null ? String(event.colorId) : '';
+  const colorTag = (event.colorTag || (colorId && CALENDAR_COLOR_TAGS[colorId]) || '').trim();
+  if (colorTag) {
+    const colorClean = colorTag.toLowerCase().trim();
+    const colorInner = colorClean.replace(/[\[\]]/g, '').trim();
+    const colorHits = [];
+
+    for (const m of missions) {
+      const patterns = (m.clientMatch || [m.name, m.id]).map(s => String(s).toLowerCase().trim());
+      if (patterns.some(pattern => {
+        const cleanPat = pattern.replace(/[\[\]]/g, '').trim();
+        return pattern === colorClean || pattern === colorInner || cleanPat === colorInner;
+      })) {
+        colorHits.push(m);
+      }
+    }
+
+    // Check if title explicitly specifies a different client/mission (e.g. "Échange mission Leclerc" miscolored)
+    const titleOverrides = [];
+    for (const m of missions) {
+      const patterns = (m.clientMatch || [m.name, m.id]).map(s => String(s).toLowerCase().trim());
+      for (const pat of patterns) {
+        const cleanPat = pat.replace(/[\[\]]/g, '').trim();
+        if (cleanPat && cleanPat.length >= 4 && !cleanPat.startsWith('main mission') && !cleanPat.startsWith('team work')) {
+          // Check whole word or clear substring in title
+          if (title.includes(cleanPat)) {
+            titleOverrides.push(m);
+            break;
+          }
+        }
+      }
+    }
+
+    if (colorHits.length === 1) {
+      if (titleOverrides.length === 1 && titleOverrides[0].id !== colorHits[0].id) {
+        return {
+          missionId: titleOverrides[0].id,
+          confidence: 'high',
+          reason: `Title keyword match "${titleOverrides[0].name}" overrides calendar color tag "${colorTag}"`
+        };
+      }
+      return {
+        missionId: colorHits[0].id,
+        confidence: 'high',
+        reason: `Calendar color tag "${colorTag}" (colorId ${colorId}) matched mission "${colorHits[0].name}"`
+      };
+    } else if (colorHits.length > 1) {
+      const uniqueIds = [...new Set(colorHits.map(m => m.id))];
+      if (uniqueIds.length === 1) {
+        if (titleOverrides.length === 1 && titleOverrides[0].id !== uniqueIds[0]) {
+          return {
+            missionId: titleOverrides[0].id,
+            confidence: 'high',
+            reason: `Title keyword match "${titleOverrides[0].name}" overrides calendar color tag "${colorTag}"`
+          };
+        }
+        return {
+          missionId: uniqueIds[0],
+          confidence: 'high',
+          reason: `Calendar color tag "${colorTag}" matched mission "${colorHits[0].name}"`
+        };
+      }
+    }
+  }
+
+  // 3. Third priority: clientMatch entries, title match, event tags, client field
   const scoredMissions = [];
   for (const m of missions) {
     let score = 0;
@@ -1142,15 +1321,9 @@ function matchMission(event, registry) {
     };
   }
 
-  // 3. Third priority: Attendee overlap with mission contacts if available
+  // 4. Fourth priority: Attendee overlap with mission contacts if available
   for (const m of missions) {
     const contactNames = (m.contacts || []).map(c => (typeof c === 'string' ? c : c.name || '').toLowerCase().trim());
-    if (m.id === 'counseling') {
-      contactNames.push('roland juilhard', 'jamila nasri', 'roland j.', 'jamila n.');
-    }
-    if (m.id === 'ge-enterprise') {
-      contactNames.push('louis bechu', 'edward toulemonde', 'paul bouche', 'camille kugler');
-    }
     const matchedContacts = attendees.filter(att => 
       contactNames.some(c => c && (att.includes(c) || c.includes(att)))
     );
@@ -1166,6 +1339,7 @@ function matchMission(event, registry) {
   return null;
 }
 
+MeetingHub.CALENDAR_COLOR_TAGS = CALENDAR_COLOR_TAGS;
 MeetingHub.matchMission = matchMission;
 
 /* === Module: model/lane_classifier.js === */
@@ -1237,6 +1411,11 @@ function classifyMeeting(event, inboxStatus, now = new Date(), prepWindowHours =
 
   // Case 1: Event has ended
   if (endMs <= nowMs) {
+    // Minutes waiting in the inbox always need folding, however old the meeting is
+    const isPending = typeof inboxStatus === 'string'
+      ? inboxStatus === 'pending'
+      : Boolean(inboxStatus && inboxStatus.status === 'pending');
+    if (isPending) return 'fold';
     const timeSinceEnd = nowMs - endMs;
     if (timeSinceEnd <= foldWindowMs) {
       return 'fold';
@@ -1263,7 +1442,43 @@ MeetingHub.classifyMeeting = classifyMeeting;
  * the clean, standardized Meeting Hub domain model.
  */
 
+
+
+
 class EventModel {
+  static isDeletedOrDeclined(raw, deletedIdsSet = null) {
+    if (!raw || typeof raw !== 'object') return true;
+    const id = String(raw.id || '');
+    if (deletedIdsSet && id && deletedIdsSet.has(id)) {
+      return true;
+    }
+    const status = String(raw.status || '').toLowerCase();
+    if (status === 'cancelled' || status === 'canceled' || status === 'declined') {
+      return true;
+    }
+    const summary = String(raw.summary || raw.title || '').trim().toLowerCase();
+    if (
+      summary.startsWith('canceled:') ||
+      summary.startsWith('cancelled:') ||
+      summary.startsWith('annulé:') ||
+      summary.startsWith('annulé :')
+    ) {
+      return true;
+    }
+    if (Array.isArray(raw.attendees)) {
+      for (const att of raw.attendees) {
+        if (att && typeof att === 'object') {
+          const isSelf = Boolean(att.self) || String(att.email || '').toLowerCase().includes('ayrton.andre');
+          const attStatus = String(att.status || att.responseStatus || '').toLowerCase();
+          if (isSelf && attStatus === 'declined') {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   static normalize(raw) {
     let id = raw.id || '';
     const recurrenceId = raw.recurrenceId || raw.recurrence_id || raw.recurrence || (raw.originalStartTime && (raw.originalStartTime.dateTime || raw.originalStartTime.date)) || '';
@@ -1293,9 +1508,19 @@ class EventModel {
     }
 
     const durationMin = raw.durationMin !== undefined ? raw.durationMin : EventModel.calculateDuration(start, end);
-    const { stream, client, isTraining } = EventModel.detectStreamAndClient(summary, source, desc, location, raw.attendees, raw.organizer);
+    const colorId = raw.colorId !== undefined && raw.colorId !== null
+      ? String(raw.colorId)
+      : (raw.color_id !== undefined && raw.color_id !== null ? String(raw.color_id) : '');
+    const colorTag = raw.colorTag || (colorId && CALENDAR_COLOR_TAGS[colorId]) || '';
+
+    const { stream, client, isTraining } = EventModel.detectStreamAndClient(summary, source, desc, location, raw.attendees, raw.organizer, colorId, colorTag);
     const series = raw.series || EventModel.extractSeriesId(id, summary);
-    const tags = raw.tags || EventModel.extractTags(`${summary} ${desc}`);
+    const tags = Array.isArray(raw.tags) ? [...raw.tags] : EventModel.extractTags(`${summary} ${desc}`);
+    if (colorTag) {
+      if (!tags.includes(colorTag)) tags.push(colorTag);
+      const cleanTag = colorTag.replace(/[\[\]]/g, '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      if (cleanTag && !tags.includes(cleanTag)) tags.push(cleanTag);
+    }
     const attendees = Array.isArray(raw.attendees) ? EventModel.formatAttendees(raw.attendees) : [];
     const videoUrl = raw.videoUrl || raw.video_link || raw.videoLink || '';
     const link = raw.link || EventModel.detectVideoPlatform(videoUrl);
@@ -1319,9 +1544,13 @@ class EventModel {
       googleDocUrl,
       isAllDay,
       isTraining,
+      isCustom: Boolean(raw.isCustom || String(id).startsWith('custom-') || String(id).startsWith('evt-')),
+      status: raw.status || 'confirmed',
       location,
       description: desc,
-      source
+      source,
+      colorId,
+      colorTag
     };
   }
 
@@ -1337,13 +1566,42 @@ class EventModel {
     }
   }
 
-  static detectStreamAndClient(summary, source, desc, location, attendees = [], organizer = {}) {
+  static detectStreamAndClient(summary, source, desc, location, attendees = [], organizer = {}, colorId = '', colorTag = '') {
+    const cId = String(colorId || '');
+    const cTag = String(colorTag || (cId && CALENDAR_COLOR_TAGS[cId]) || '');
+
+    // Calendar Color Tag has explicit precedence when set
+    if (cId === '8' || cTag === 'Me-time') {
+      return { stream: 'life', client: 'ATHX', isTraining: true };
+    }
+    if (cId === '7' || cTag === '[MAIN MISSION]') {
+      return { stream: 'work', client: 'Leclerc / Siplec', isTraining: false };
+    }
+    if (cId === '2' || cId === '10' || cTag === '[COUNSELING/HR]') {
+      return { stream: 'work', client: 'Counseling', isTraining: false };
+    }
+    if (cId === '5' || cTag === '[HEALTHCARE]') {
+      return { stream: 'work', client: 'Healthcare', isTraining: false };
+    }
+    if (cId === '4' || cId === '11' || cTag === '[PRIDEFACT]') {
+      return { stream: 'work', client: 'PrideFact', isTraining: false };
+    }
+    if (cId === '6' || cTag === 'Team Work' || cTag === '[GE]') {
+      return { stream: 'work', client: 'GE Enterprise', isTraining: false };
+    }
+    if (cId === '3' || cId === '1' || cId === '9' || cTag === '[ARTEFACT INTERNAL]') {
+      return { stream: 'work', client: 'Artefact Internal', isTraining: false };
+    }
+
     const orgEmail = (organizer && organizer.email) || '';
     const attEmails = Array.isArray(attendees) ? attendees.map(a => (typeof a === 'string' ? a : a.email || '')).join(' ') : '';
     const corpus = `${summary} ${source} ${desc} ${location} ${orgEmail} ${attEmails}`.toLowerCase();
 
     if (corpus.includes('athx') || corpus.includes('training') || corpus.includes('wod') || corpus.includes('crossfit')) {
       return { stream: 'life', client: 'ATHX', isTraining: true };
+    }
+    if (corpus.includes('siplec') || corpus.includes('leclerc')) {
+      return { stream: 'work', client: 'Leclerc / Siplec', isTraining: false };
     }
     if (corpus.includes('clariane') || corpus.includes('inicea') || corpus.includes('estela') || corpus.includes('@clariane.fr') ||
         corpus.includes('hdj') || corpus.includes('netsoins') || corpus.includes('molécules onéreuses') || corpus.includes('molecules onereuses') ||
@@ -2291,18 +2549,67 @@ class EventsImporter {
    * @param {DatabaseAdapter} db - Active database adapter
    * @param {Object} options - { force: boolean, dataUrl: string, rawEvents: Array }
    */
+  static async _loadDeletedIdsSet(db) {
+    const set = new Set();
+    try {
+      const meta = await db.get('meta', 'deleted_event_ids');
+      if (meta && Array.isArray(meta.value)) {
+        for (const id of meta.value) if (id) set.add(String(id));
+      }
+    } catch (e) {}
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('mhub_deleted_events');
+        if (raw) {
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            for (const id of arr) if (id) set.add(String(id));
+          }
+        }
+      }
+    } catch (e) {}
+    return set;
+  }
+
   static async importInitialData(db, options = {}) {
     const existingCount = await db.count('events');
     const seedVersionMeta = await db.get('meta', 'seed_version');
-    const currentSeedVersion = 3; // version 3 includes unified multi-mission calendar events and Friday Oct 30 schedule
+    const currentSeedVersion = 6; // version 6 refreshes live calendar seeds for Nov 2026
+    const deletedIdsSet = await EventsImporter._loadDeletedIdsSet(db);
 
     let rawList = options.rawEvents;
     if (!rawList && typeof window !== 'undefined' && window.INITIAL_EVENTS && Array.isArray(window.INITIAL_EVENTS)) {
       rawList = window.INITIAL_EVENTS;
     }
 
-    // If store already has events and up-to-date seed version, skip cleanly
+    // If store already has events and up-to-date seed version, ensure no baseline events are missing
     if (existingCount > 0 && !options.force && seedVersionMeta && seedVersionMeta.value >= currentSeedVersion) {
+      if (deletedIdsSet.size > 0) {
+        const currentEvents = await db.getAll('events');
+        for (const ev of currentEvents) {
+          if (EventModel.isDeletedOrDeclined(ev, deletedIdsSet)) {
+            await db.delete('events', ev.id);
+          }
+        }
+      }
+
+      // Self-healing: verify that baseline events from initial snapshot are present
+      if (rawList && Array.isArray(rawList)) {
+        const currentEvents = await db.getAll('events');
+        const currentIds = new Set(currentEvents.map(e => e.id));
+        const missingBaseline = rawList
+          .filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet))
+          .map(e => EventModel.normalize(e))
+          .filter(e => !currentIds.has(e.id));
+        if (missingBaseline.length > 0) {
+          console.log(`[Importer] Ingesting ${missingBaseline.length} missing baseline mission events...`);
+          await db.bulkPut('events', missingBaseline);
+          const updatedEvents = await db.getAll('events');
+          const updatedSeries = SeriesModel.collapse(updatedEvents);
+          await db.bulkPut('series', updatedSeries);
+        }
+      }
+
       console.log(`[Importer] Store already populated with ${existingCount} events (seed v${seedVersionMeta.value}).`);
       return { skipped: true, eventCount: existingCount };
     }
@@ -2363,8 +2670,21 @@ class EventsImporter {
       return { skipped: true, eventCount: 0 };
     }
 
-    // 1. Normalize events
-    const normalizedEvents = rawList.map(e => EventModel.normalize(e));
+    // 1. Filter out deleted/declined events and normalize
+    const activeRawList = rawList.filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet));
+    const normalizedEvents = activeRawList.filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet)).map(e => EventModel.normalize(e)).filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet));
+    const validIds = new Set(normalizedEvents.map(e => e.id));
+
+    // Prune stale non-custom calendar events that are no longer in the clean seed or were deleted
+    if (existingCount > 0 && !options.rawEvents) {
+      const existingEvents = await db.getAll('events');
+      for (const oldEv of existingEvents) {
+        const isCustom = Boolean(oldEv.isCustom || String(oldEv.id || '').startsWith('custom-') || String(oldEv.id || '').startsWith('evt-'));
+        if (deletedIdsSet.has(oldEv.id) || EventModel.isDeletedOrDeclined(oldEv, deletedIdsSet) || (!isCustom && validIds.size > 0 && !validIds.has(oldEv.id))) {
+          await db.delete('events', oldEv.id);
+        }
+      }
+    }
 
     // 2. Collapse into series
     const collapsedSeries = SeriesModel.collapse(normalizedEvents);
@@ -2682,6 +3002,9 @@ class CalendarSyncService {
           if (data.sources) {
             backendSources = data.sources;
           }
+          if (Array.isArray(data.deletedIds) && store && typeof store.mergeDeletedEventIds === 'function') {
+            await store.mergeDeletedEventIds(data.deletedIds);
+          }
           console.log(`[SyncService] Live orchestrator sync returned ${syncedEvents.length} events.`);
         }
       }
@@ -2699,8 +3022,36 @@ class CalendarSyncService {
       }
     }
 
-    // 3. Normalize incoming events
-    const normalizedList = syncedEvents.map(e => EventModel.normalize(e));
+    const deletedIdsSet = new Set();
+    if (store && typeof store.getDeletedEventIds === 'function') {
+      for (const id of store.getDeletedEventIds()) deletedIdsSet.add(String(id));
+    }
+    try {
+      const metaDel = await db.get('meta', 'deleted_event_ids');
+      if (metaDel && Array.isArray(metaDel.value)) {
+        for (const id of metaDel.value) if (id) deletedIdsSet.add(String(id));
+      }
+    } catch (e) {}
+
+    // 3. Filter and normalize incoming events
+    const activeRaw = syncedEvents.filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet));
+    const normalizedList = activeRaw
+      .map(e => EventModel.normalize(e))
+      .filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet));
+    const syncedIds = new Set(normalizedList.map(e => e.id));
+
+    // Prune stale non-custom events when backend sync succeeds, and always prune deleted/declined events
+    const currentEvents = await db.getAll('events');
+    for (const oldEv of currentEvents) {
+      const isCustom = Boolean(oldEv.isCustom || String(oldEv.id || '').startsWith('custom-') || String(oldEv.id || '').startsWith('evt-'));
+      if (
+        deletedIdsSet.has(oldEv.id) ||
+        EventModel.isDeletedOrDeclined(oldEv, deletedIdsSet) ||
+        (backendSuccess && !isCustom && syncedIds.size > 0 && !syncedIds.has(oldEv.id))
+      ) {
+        await db.delete('events', oldEv.id);
+      }
+    }
 
     // 4. Idempotently write to 'events' store
     // Important: 'meeting_data' (agenda, minutes, actions, links) is keyed strictly
@@ -2963,6 +3314,74 @@ class PrepScoreCalculator {
   }
 
   /**
+   * Evaluates the Phase 4 prep checklist (from notes and meeting context only, 3-4 dots, NO percentage):
+   * 1. previous meeting of this series folded
+   * 2. mission inbox has nothing older than this meeting's previous occurrence
+   * 3. open actions for this workstream reviewed (UI tick, UI state)
+   * 4. agenda notes written (optional)
+   */
+  static computeCockpitChecklist(meeting, meetingData = {}, options = {}) {
+    const { prevMeeting = null, prevMeetingFolded = false, inboxStatus = null, missionSummary = null } = options;
+
+    // 1. Previous meeting of this series folded (or standalone/first meeting)
+    const dot1Ok = !prevMeeting || Boolean(prevMeetingFolded);
+    const dot1 = {
+      key: 'prevFolded',
+      label: 'Previous meeting folded',
+      ok: dot1Ok,
+      detail: !prevMeeting ? 'First occurrence / standalone' : (dot1Ok ? 'Previous session folded' : 'Previous session not folded')
+    };
+
+    // 2. Mission inbox has nothing older than this meeting's previous occurrence
+    let dot2Ok = true;
+    let dot2Detail = 'Inbox up to date';
+    if (inboxStatus && Array.isArray(inboxStatus.files) && inboxStatus.files.length > 0) {
+      if (prevMeeting && prevMeeting.date) {
+        const hasOlder = inboxStatus.files.some(f => {
+          const fDate = f.date || (typeof f === 'string' && f.slice(0, 10)) || (f.filename && f.filename.slice(0, 10));
+          return fDate && fDate <= prevMeeting.date;
+        });
+        if (hasOlder) {
+          dot2Ok = false;
+          dot2Detail = 'Pending inbox file from prior cycle';
+        }
+      } else {
+        dot2Detail = `${inboxStatus.pendingCount || inboxStatus.files.length} pending in inbox`;
+      }
+    }
+    const dot2 = {
+      key: 'cleanInbox',
+      label: 'Inbox clean',
+      ok: dot2Ok,
+      detail: dot2Detail
+    };
+
+    // 3. Open actions for this workstream reviewed (UI tick, UI state)
+    const dot3Ok = Boolean(meetingData.actionsReviewed);
+    const dot3 = {
+      key: 'actionsReviewed',
+      label: 'Actions reviewed',
+      ok: dot3Ok,
+      detail: dot3Ok ? 'Reviewed' : 'Review pending'
+    };
+
+    // 4. Agenda notes written (optional)
+    const hasAgenda = Boolean(meetingData.agenda && meetingData.agenda.trim().length > 0);
+    const dot4 = {
+      key: 'agendaDrafted',
+      label: 'Agenda notes',
+      ok: hasAgenda,
+      optional: true,
+      detail: hasAgenda ? 'Drafted' : 'Optional scratchpad'
+    };
+
+    return {
+      dots: [dot1, dot2, dot3, dot4],
+      allRequiredMet: dot1Ok && dot2Ok && dot3Ok
+    };
+  }
+
+  /**
    * Helper to check if a meeting is scheduled within the next 48 hours.
    */
   static isWithin48Hours(meetingDate, meetingStart = '00:00', refDateStr = null, refTimeStr = '00:00') {
@@ -3048,6 +3467,8 @@ MeetingHub.PrepScoreCalculator = PrepScoreCalculator;
 
 
 
+
+
 class MeetingHubStore {
   constructor() {
     this.db = null;
@@ -3057,6 +3478,7 @@ class MeetingHubStore {
     this.missionsCache = [];
     this.missionSummariesCache = new Map();
     this.inboxStatusCache = new Map();
+    this.deletedEventIds = new Set();
     this.activeProjectId = 'ge-enterprise';
     this.subscribers = new Set();
     this.initialized = false;
@@ -3183,9 +3605,73 @@ class MeetingHubStore {
     };
   }
 
+  async _loadDeletedIds() {
+    try {
+      const meta = await this.db.get('meta', 'deleted_event_ids');
+      if (meta && Array.isArray(meta.value)) {
+        for (const id of meta.value) if (id) this.deletedEventIds.add(String(id));
+      }
+    } catch (e) {}
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('mhub_deleted_events');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            for (const id of parsed) if (id) this.deletedEventIds.add(String(id));
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  async _persistDeletedIds() {
+    const arr = Array.from(this.deletedEventIds);
+    try {
+      if (this.db) {
+        await this.db.put('meta', { key: 'deleted_event_ids', value: arr });
+      }
+    } catch (e) {}
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('mhub_deleted_events', JSON.stringify(arr));
+      }
+    } catch (e) {}
+  }
+
+  getDeletedEventIds() {
+    return Array.from(this.deletedEventIds);
+  }
+
+  async mergeDeletedEventIds(ids = []) {
+    if (!Array.isArray(ids)) return;
+    let changed = false;
+    for (const id of ids) {
+      if (id && !this.deletedEventIds.has(String(id))) {
+        this.deletedEventIds.add(String(id));
+        changed = true;
+      }
+    }
+    if (changed) {
+      await this._persistDeletedIds();
+    }
+  }
+
   async refreshCache() {
-    this.eventsCache = await this.db.getAll('events');
-    this.seriesCache = await this.db.getAll('series');
+    await this._loadDeletedIds();
+    const allRawEvents = await this.db.getAll('events');
+    const activeEvents = [];
+    for (const ev of allRawEvents) {
+      if (EventModel.isDeletedOrDeclined(ev, this.deletedEventIds)) {
+        try {
+          await this.db.delete('events', ev.id);
+        } catch (e) {}
+      } else {
+        activeEvents.push(ev);
+      }
+    }
+    this.eventsCache = activeEvents;
+    this.seriesCache = SeriesModel.collapse(this.eventsCache);
 
     // 1. Load missions from registry
     const missions = await this.getMissionsRegistry();
@@ -3282,8 +3768,76 @@ class MeetingHubStore {
     return this.seriesCache.find(s => s.id === seriesId) || null;
   }
 
+  getEventsForSeries(seriesId) {
+    if (!seriesId) return [];
+    return (this.eventsCache || []).filter(e => e.seriesId === seriesId);
+  }
+
   getAllSeries() {
     return this.seriesCache;
+  }
+
+  /**
+   * Deletes an event from the dashboard, persists its ID in deletedEventIds so future syncs/imports
+   * do not resurrect it, notifies backend /api/calendar/delete if reachable, and emits 'event_deleted'.
+   */
+  async deleteEvent(eventId) {
+    if (!eventId) return null;
+    if (!this.db) await this.init();
+    const idStr = String(eventId);
+    const deletedEvent = this.getEvent(idStr);
+
+    this.deletedEventIds.add(idStr);
+    await this._persistDeletedIds();
+
+    try {
+      await this.db.delete('events', idStr);
+    } catch (e) {}
+
+    this.eventsCache = this.eventsCache.filter(e => String(e.id) !== idStr);
+    this.seriesCache = SeriesModel.collapse(this.eventsCache);
+
+    if (typeof fetch !== 'undefined') {
+      fetch('/api/calendar/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: idStr })
+      }).catch(() => {});
+    }
+
+    this.notify({ type: 'event_deleted', eventId: idStr, deletedEvent });
+    return deletedEvent;
+  }
+
+  /**
+   * Restores a previously deleted event (Undo support).
+   */
+  async restoreEvent(eventObj) {
+    if (!eventObj || !eventObj.id) return null;
+    if (!this.db) await this.init();
+    const idStr = String(eventObj.id);
+
+    this.deletedEventIds.delete(idStr);
+    await this._persistDeletedIds();
+
+    const normalized = EventModel.normalize(eventObj);
+    await this.db.put('events', normalized);
+
+    if (!this.eventsCache.some(e => String(e.id) === idStr)) {
+      this.eventsCache.push(normalized);
+    }
+    this.seriesCache = SeriesModel.collapse(this.eventsCache);
+
+    if (typeof fetch !== 'undefined') {
+      fetch('/api/calendar/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: idStr })
+      }).catch(() => {});
+    }
+
+    this.notify({ type: 'event_restored', eventId: idStr, event: normalized });
+    return normalized;
   }
 
   /* ================= Project Management Methods ================= */
@@ -3332,6 +3886,18 @@ class MeetingHubStore {
 
   getActiveProjectId() {
     return this.activeProjectId;
+  }
+
+  getProjectName(id) {
+    if (!id) return '';
+    const norm = (id === 'clariane' ? 'clariane-hdj' : id).toLowerCase();
+    let registry = (this.missionsCache && this.missionsCache.length > 0) ? this.missionsCache : null;
+    if (!registry && typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
+      registry = window.MISSIONS_SNAPSHOT.missions;
+    }
+    const list = [...(registry || []), ...(this.projectsCache || []), ...DEFAULT_PROJECTS];
+    const found = list.find(p => p && String(p.id || '').toLowerCase() === norm);
+    return found ? found.name : id;
   }
 
   setActiveProjectId(id) {
@@ -3386,10 +3952,10 @@ class MeetingHubStore {
     return null;
   }
 
-  getEventsForProject(projectId) {
+  getEventsForProject(projectId, registryOverride = null) {
     if (!projectId) return [];
     const pId = projectId.toLowerCase();
-    let registry = (this.missionsCache && this.missionsCache.length > 0) ? this.missionsCache : null;
+    let registry = registryOverride || ((this.missionsCache && this.missionsCache.length > 0) ? this.missionsCache : null);
     if (!registry && typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
       registry = window.MISSIONS_SNAPSHOT.missions;
     }
@@ -3529,6 +4095,13 @@ class MeetingHubStore {
     return updated;
   }
 
+  /**
+   * Alias for saveMeetingData (used by meeting_panel.js and tests).
+   */
+  async updateMeetingData(eventId, patch) {
+    return this.saveMeetingData(eventId, patch);
+  }
+
   /* ================= Google Docs & Minutes Intelligence ================= */
 
   /**
@@ -3536,24 +4109,41 @@ class MeetingHubStore {
    * Client minutes are never bundled into the frontend application bundle.
    */
   async fetchGoogleDoc(docRef) {
-    if (!docRef) throw new Error('Missing document ID or URL');
+    const rawStr = (typeof docRef === 'object' && docRef !== null)
+      ? (docRef.url || docRef.docId || '')
+      : String(docRef || '').trim();
+    if (!rawStr) throw new Error('Missing document ID or URL');
 
-    const cleanRef = docRef.trim();
-    const docIdMatch = cleanRef.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    const docId = docIdMatch ? docIdMatch[1] : cleanRef.split('/')[0].split('?')[0].split('#')[0];
+    const docIdMatch = rawStr.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    const docId = docIdMatch ? docIdMatch[1] : rawStr.split('/')[0].split('?')[0].split('#')[0];
 
-    // Try orchestrator.py backend endpoint
+    // Try GET endpoint first
     try {
       const resp = await fetch(`/api/docs/fetch?docId=${encodeURIComponent(docId)}`);
       if (resp.ok) {
         const json = await resp.json();
         if (json.status === 'success') {
-          return json;
+          return { ...json, text: json.content || json.text || '' };
         }
       }
     } catch (e) {
       // Backend not running or offline
     }
+
+    // Fallback to POST endpoint
+    try {
+      const resp = await fetch('/api/docs/fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docId, url: rawStr })
+      });
+      if (resp.ok) {
+        const json = await resp.json();
+        if (json.status === 'success') {
+          return { ...json, text: json.content || json.text || '' };
+        }
+      }
+    } catch (e) {}
 
     throw new Error('Start the server (python3 orchestrator.py serve) to fetch Google Docs minutes.');
   }
@@ -3699,6 +4289,24 @@ class MeetingHubStore {
       }
     } catch (e) {}
 
+    // Node test environment fallback (for automated test suite)
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.list_inbox_files('${id}')))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        return {
+          status: 'ok',
+          pendingCount: res.total_pending !== undefined ? res.total_pending : (res.pending || []).length,
+          files: res.pending || [],
+          foldedCount: res.total_folded !== undefined ? res.total_folded : (res.folded || []).length,
+          foldedFiles: res.folded || [],
+          isOffline: false
+        };
+      } catch (err) {}
+    }
+
     return {
       status: 'offline',
       pendingCount: 0,
@@ -3713,6 +4321,30 @@ class MeetingHubStore {
    * Checks whether a specific meeting has its minutes folded, pending in inbox, or not sent.
    * Returns: 'folded' | 'pending' | 'not_sent'
    */
+  /**
+   * Synchronous per-meeting inbox state from an already-loaded mission inbox and summary.
+   * Inbox entries may be strings (filenames) or objects ({ filename, eventId, ... }).
+   * Returns: 'folded' | 'pending' | 'not_sent'
+   */
+  meetingInboxState(meetingId, inboxStatus, summary = null) {
+    if (!meetingId) return 'not_sent';
+    const mId = String(meetingId);
+    const has = (list) => Array.isArray(list) && list.some(item => {
+      if (typeof item === 'string') return item.includes(mId);
+      return Boolean(item) && ((item.eventId && item.eventId === mId) ||
+             (item.filename && item.filename.includes(mId)));
+    });
+    const inbox = inboxStatus || {};
+    if (has(inbox.foldedFiles) || has(inbox.folded)) return 'folded';
+    if (has(inbox.files) || has(inbox.pending)) return 'pending';
+    if (summary) {
+      const citesAction = (summary.actions || []).some(a => a.source && String(a.source).includes(mId));
+      const citesDecision = (summary.decisions || []).some(d => d.meetingId === mId || (d.source && String(d.source).includes(mId)));
+      if (citesAction || citesDecision) return 'folded';
+    }
+    return 'not_sent';
+  }
+
   async getMeetingInboxStatus(meetingId, missionId) {
     if (!meetingId || !missionId) return 'not_sent';
     const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId);
@@ -3765,6 +4397,7 @@ class MeetingHubStore {
    */
   async sendMinutesToInbox(meetingId, missionId, payload = {}) {
     const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'clariane-hdj';
+    const textContent = payload.text || payload.content || '';
     const body = {
       eventId: meetingId,
       title: payload.title || '',
@@ -3772,25 +4405,314 @@ class MeetingHubStore {
       attendees: payload.attendees || [],
       googleDocUrl: payload.googleDocUrl || '',
       source: payload.source || 'meeting_hub',
-      text: payload.text || ''
+      text: textContent,
+      content: textContent
     };
 
-    const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/inbox`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    try {
+      const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/inbox`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
 
-    if (!resp.ok) {
-      const errText = await resp.text();
-      throw new Error(`Failed to send to inbox: HTTP ${resp.status} - ${errText}`);
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`Failed to send to inbox: HTTP ${resp.status} - ${errText}`);
+      }
+
+      const result = await resp.json();
+      this.inboxStatusCache.delete(id);
+      this.missionSummariesCache.delete(id);
+      this.notify({ type: 'inbox_updated', missionId: id, meetingId });
+      return result;
+    } catch (e) {
+      if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+        try {
+          const { execSync } = await import('child_process');
+          const escapedBody = JSON.stringify(body).replace(/"/g, '\\"');
+          const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; res = mission_notes.write_inbox_file('${id}', json.loads('${escapedBody}')); print(json.dumps(res))"`;
+          const out = execSync(cmd, { encoding: 'utf8' });
+          const res = JSON.parse(out);
+          this.inboxStatusCache.delete(id);
+          this.missionSummariesCache.delete(id);
+          this.notify({ type: 'inbox_updated', missionId: id, meetingId });
+          return res;
+        } catch (err) {}
+      }
+      throw e;
     }
+  }
 
-    const result = await resp.json();
-    this.inboxStatusCache.delete(id);
-    this.missionSummariesCache.delete(id);
-    this.notify({ type: 'inbox_updated', missionId: id, meetingId });
-    return result;
+  /**
+   * Toggles or sets an action's completion state (Open <-> Done) in mission Actions.md.
+   * Invalidates mission summaries cache and notifies subscribers.
+   */
+  async toggleAction(actionId, missionId = null, done = null) {
+    if (!actionId) throw new Error("Missing actionId");
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || null;
+    const body = { actionId, missionId: id, done };
+
+    try {
+      const resp = await fetch('/api/actions/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`Failed to toggle action: HTTP ${resp.status} - ${errText}`);
+      }
+      const result = await resp.json();
+      const targetMission = result.missionId || id;
+      if (targetMission) {
+        this.missionSummariesCache.delete(targetMission);
+      } else {
+        this.missionSummariesCache.clear();
+      }
+      this.notify({ type: 'action_toggled', actionId, missionId: targetMission, done: result.done });
+      return result;
+    } catch (e) {
+      if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+        try {
+          const { execSync } = await import('child_process');
+          const mArg = id ? `'${id}'` : 'None';
+          const dArg = done === null ? 'None' : (done ? 'True' : 'False');
+          const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; res = mission_notes.toggle_action('${actionId}', done=${dArg}, mission_id=${mArg}); print(json.dumps(res))"`;
+          const out = execSync(cmd, { encoding: 'utf8' });
+          const res = JSON.parse(out);
+          const targetMission = res.missionId || id;
+          if (targetMission) {
+            this.missionSummariesCache.delete(targetMission);
+          } else {
+            this.missionSummariesCache.clear();
+          }
+          this.notify({ type: 'action_toggled', actionId, missionId: targetMission, done: res.done });
+          return res;
+        } catch (err) {}
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * Updates an action's attributes (title, owner, workstream, due date, status) in mission Actions.md.
+   * Invalidates mission summaries cache and notifies subscribers.
+   */
+  async updateAction(actionId, updates = {}, missionId = null) {
+    if (!actionId) throw new Error("Missing actionId");
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || null;
+    const body = { actionId, missionId: id, updates };
+
+    try {
+      const url = (typeof window === 'undefined') ? 'http://localhost:8080/api/actions/update' : '/api/actions/update';
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`Failed to update action: HTTP ${resp.status} - ${errText}`);
+      }
+      const result = await resp.json();
+      const targetMission = result.missionId || id;
+      if (targetMission) {
+        this.missionSummariesCache.delete(targetMission);
+      } else {
+        this.missionSummariesCache.clear();
+      }
+      this.notify({ type: 'action_updated', actionId, missionId: targetMission, action: result, updates });
+      return result;
+    } catch (e) {
+      if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+        try {
+          const { execSync } = await import('child_process');
+          const mArg = id ? `'${id}'` : 'None';
+          const b64 = Buffer.from(JSON.stringify(updates), 'utf8').toString('base64');
+          const cmd = `python3 -c "import sys, base64, json; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes; u = json.loads(base64.b64decode('${b64}').decode('utf-8')); res = mission_notes.update_action('${actionId}', u, mission_id=${mArg}); print(json.dumps(res))"`;
+          const out = execSync(cmd, { encoding: 'utf8' });
+          const res = JSON.parse(out);
+          const targetMission = res.missionId || id;
+          if (targetMission) {
+            this.missionSummariesCache.delete(targetMission);
+          } else {
+            this.missionSummariesCache.clear();
+          }
+          this.notify({ type: 'action_updated', actionId, missionId: targetMission, action: res, updates });
+          return res;
+        } catch (err) {}
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * Lists unassigned inbox files awaiting a mission home (Phase 5).
+   */
+  async getUnassignedInboxFiles() {
+    try {
+      const resp = await fetch('/api/inbox/unassigned');
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.list_unassigned_inbox_files()))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        return JSON.parse(out);
+      } catch (err) {}
+    }
+    return { count: 0, files: [] };
+  }
+
+  /**
+   * Writes an ambiguous capture to unassigned inbox (Phase 5).
+   */
+  async writeUnassignedInboxFile(payload = {}) {
+    const body = {
+      title: payload.title || 'Untitled note',
+      text: payload.text || '',
+      date: payload.date || new Date().toISOString().slice(0, 10),
+      time: payload.time || '',
+      attendees: payload.attendees || [],
+      source: payload.source || 'paste_anywhere',
+      docUrl: payload.docUrl || ''
+    };
+
+    try {
+      const resp = await fetch('/api/inbox/unassigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const result = await resp.json();
+        this.notify({ type: 'unassigned_inbox_updated' });
+        return result;
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const escapedBody = JSON.stringify(body).replace(/"/g, '\\"');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; res = mission_notes.write_unassigned_inbox_file(json.loads('${escapedBody}')); print(json.dumps(res))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        this.notify({ type: 'unassigned_inbox_updated' });
+        return res;
+      } catch (err) {}
+    }
+    throw new Error('Failed to write unassigned inbox file');
+  }
+
+  /**
+   * Assigns an unassigned capture to target mission and optional event (Phase 5).
+   */
+  async assignInboxFile(filename, targetMissionId, targetEventId = null) {
+    const body = { filename, missionId: targetMissionId, eventId: targetEventId };
+    try {
+      const resp = await fetch('/api/inbox/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const res = await resp.json();
+        this.inboxStatusCache.delete(targetMissionId);
+        this.missionSummariesCache.delete(targetMissionId);
+        this.notify({ type: 'inbox_assigned', filename, missionId: targetMissionId });
+        return res;
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.assign_inbox_file('${filename}', '${targetMissionId}', ${targetEventId ? `'${targetEventId}'` : 'None'})))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        this.inboxStatusCache.delete(targetMissionId);
+        this.missionSummariesCache.delete(targetMissionId);
+        this.notify({ type: 'inbox_assigned', filename, missionId: targetMissionId });
+        return res;
+      } catch (err) {}
+    }
+    throw new Error('Failed to assign inbox file');
+  }
+
+  /**
+   * Granola status check (Phase 5).
+   */
+  async getGranolaStatus() {
+    try {
+      const resp = await fetch('/api/granola/status');
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch (e) {}
+    return { configured: false, active: false, folder: null, pendingFilesCount: 0 };
+  }
+
+  /**
+   * Triggers Granola watched folder processing (Phase 5).
+   */
+  async syncGranola(events = null) {
+    const body = { events: events || this.eventsCache || [] };
+    try {
+      const resp = await fetch('/api/granola/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const res = await resp.json();
+        this.inboxStatusCache.clear();
+        this.missionSummariesCache.clear();
+        this.notify({ type: 'granola_synced', result: res });
+        return res;
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.process_granola_folder()))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        this.inboxStatusCache.clear();
+        this.missionSummariesCache.clear();
+        this.notify({ type: 'granola_synced', result: res });
+        return res;
+      } catch (err) {}
+    }
+    return { status: 'skipped', error: 'Sync unavailable' };
+  }
+
+  /**
+   * Triggers Google Docs auto-pull for opted-in missions (Phase 5).
+   */
+  async autoPullGoogleDocs(events = null) {
+    const body = { events: events || this.eventsCache || [] };
+    try {
+      const resp = await fetch('/api/docs/auto-pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const res = await resp.json();
+        this.inboxStatusCache.clear();
+        this.missionSummariesCache.clear();
+        this.notify({ type: 'docs_auto_pulled', result: res });
+        return res;
+      }
+    } catch (e) {}
+    return { status: 'skipped', pulledCount: 0 };
   }
 
   /**
@@ -3974,7 +4896,8 @@ class MeetingHubStore {
    */
   async getMissionHubData(missionId, now = new Date()) {
     const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'ge-enterprise';
-    const missions = await this.getMissionsRegistry();
+    const registry = await this.getMissionsRegistry();
+    const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
     const mission = missions.find(m => m.id === id) || { id, name: id, client: 'Artefact Internal' };
     const summary = await this.getMissionSummary(id);
     let inboxStatus = this.inboxStatusCache.get(id);
@@ -3986,7 +4909,7 @@ class MeetingHubStore {
       }
     }
 
-    const events = this.getEventsForProject(id);
+    const events = this.getEventsForProject(id, missions);
     
     // Classify meetings into lanes
     const lanes = {
@@ -3997,13 +4920,16 @@ class MeetingHubStore {
     };
 
     events.forEach(e => {
+      // classifyMeeting expects the per-meeting state, not the mission-level inbox object
+      const inboxState = this.meetingInboxState(e.id, inboxStatus, summary);
       const lane = (typeof classifyMeeting === 'function')
-        ? classifyMeeting(e, inboxStatus, now)
-        : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxStatus, now) : 'hidden');
+        ? classifyMeeting(e, inboxState, now)
+        : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxState, now) : 'hidden');
+      const item = { ...e, inboxState };
       if (lanes[lane]) {
-        lanes[lane].push(e);
+        lanes[lane].push(item);
       } else {
-        lanes.hidden.push(e);
+        lanes.hidden.push(item);
       }
     });
 
@@ -4056,9 +4982,9 @@ class MeetingHubStore {
     const todayStr = (typeof getTodayDateStr === 'function') ? getTodayDateStr(now) : now.toISOString().slice(0, 10);
     const nowTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-    // 1. Next meeting today across all missions
+    // 1. Next meeting today across all missions (work meetings only)
     const todayEvents = (this.eventsCache || [])
-      .filter(e => e.date === todayStr && !e.isAllDay && (e.start || '') >= nowTimeStr)
+      .filter(e => e.date === todayStr && !e.isAllDay && !e.isTraining && e.stream !== 'life' && (e.start || '') >= nowTimeStr)
       .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
 
     let todayNextMeeting = null;
@@ -4095,11 +5021,13 @@ class MeetingHubStore {
 
       totalPendingInbox += (inboxStatus.pendingCount || 0);
 
+      const mSummary = this.missionSummariesCache.get(m.id) || null;
       let foldCount = 0;
       mEvents.forEach(e => {
+        const inboxState = this.meetingInboxState(e.id, inboxStatus, mSummary);
         const lane = (typeof classifyMeeting === 'function')
-          ? classifyMeeting(e, inboxStatus, now)
-          : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxStatus, now) : 'hidden');
+          ? classifyMeeting(e, inboxState, now)
+          : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxState, now) : 'hidden');
         if (lane === 'fold') {
           foldCount++;
           totalFoldMeetings++;
@@ -4446,6 +5374,7 @@ const Icons = {
   upload: `<svg class="i" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
   database: `<svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
   chevronDown: `<svg class="i" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>`,
+  chevronUp: `<svg class="i" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>`,
   edit: `<svg class="i" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
   folder: `<svg class="i" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
   panelRightClose: `<svg class="i" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/><path d="m8 9 3 3-3 3"/></svg>`,
@@ -4454,6 +5383,360 @@ const Icons = {
 };
 
 MeetingHub.Icons = Icons;
+
+/* === Module: ui/action_modal.js === */
+/**
+ * Action Edit Modal Component
+ * 
+ * Provides an inline / modal dialog allowing users to edit:
+ * - Name / Description
+ * - Sub-stream / Workstream
+ * - Owner / Assignee
+ * - Due Date
+ * 
+ * Persists directly into Missions/<Mission>/Actions.md via Store.updateAction.
+ * Conforms strictly to Arty Design System: Lucide icons only, zero emojis.
+ */
+
+
+class ActionModal {
+  constructor(options = {}) {
+    this.store = options.store || null;
+    this.onSave = options.onSave || null;
+    this.overlay = null;
+    this._keyHandler = null;
+  }
+
+  /**
+   * Opens the edit modal for a given action.
+   * 
+   * @param {Object} params
+   * @param {Object} params.action - Action object ({ id, text/title, owner, workstream/org, dueDate/due })
+   * @param {string} [params.missionId] - Mission identifier
+   * @param {Function} [params.onSave] - Callback executed on successful save
+   */
+  async open({ action, missionId = null, onSave = null }) {
+    if (!action || !action.id) {
+      console.warn('[ActionModal] Cannot open edit modal without a valid action');
+      return;
+    }
+
+    const currentTitle = action.title || action.text || action.description || '';
+    const currentOwner = action.owner || '';
+    const currentWs = action.workstream || action.substream || action.ownerOrg || action.org || '';
+    const currentDue = action.dueDate || action.due || action.date || '';
+    const targetMissionId = missionId || action.missionId || null;
+    const saveCb = onSave || this.onSave;
+
+    // Gather auto-complete suggestions from store if available
+    let workstreamSuggestions = new Set();
+    let ownerSuggestions = new Set(['Ayrton André', 'Camille Kugler', 'Thomas', 'Baptiste Pasquier']);
+
+    if (currentWs) workstreamSuggestions.add(currentWs);
+    if (currentOwner) ownerSuggestions.add(currentOwner);
+
+    if (this.store) {
+      try {
+        const registry = await this.store.getMissionsRegistry();
+        const mList = Array.isArray(registry) ? registry : (registry?.missions || []);
+        
+        // Find mission workstreams
+        const targetM = targetMissionId ? mList.find(m => m.id === targetMissionId) : null;
+        if (targetM && Array.isArray(targetM.workstreams)) {
+          targetM.workstreams.forEach(ws => {
+            if (ws.name) workstreamSuggestions.add(ws.name);
+            if (ws.id) workstreamSuggestions.add(ws.id);
+          });
+        } else {
+          // Add from all missions
+          mList.forEach(m => {
+            if (Array.isArray(m.workstreams)) {
+              m.workstreams.forEach(ws => {
+                if (ws.name) workstreamSuggestions.add(ws.name);
+              });
+            }
+          });
+        }
+
+        // Find contacts from mission summary
+        if (targetMissionId) {
+          const summary = await this.store.getMissionSummary(targetMissionId);
+          if (summary) {
+            if (Array.isArray(summary.contacts)) {
+              summary.contacts.forEach(c => {
+                if (c.name) ownerSuggestions.add(c.name);
+              });
+            }
+            if (Array.isArray(summary.actions)) {
+              summary.actions.forEach(a => {
+                if (a.owner) ownerSuggestions.add(a.owner);
+                if (a.workstream) workstreamSuggestions.add(a.workstream);
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[ActionModal] Error fetching suggestions:', err);
+      }
+    }
+
+    // Build modal overlay
+    this.close(); // Clean up any existing instance
+
+    const overlay = document.createElement('div');
+    overlay.className = 'action-modal-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 15, 29, 0.75);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      padding: 16px;
+      box-sizing: border-box;
+      animation: actionModalFadeIn 0.15s ease-out;
+    `;
+
+    const wsOptionsHtml = Array.from(workstreamSuggestions)
+      .map(ws => `<option value="${this._escape(ws)}">`)
+      .join('');
+
+    const ownerOptionsHtml = Array.from(ownerSuggestions)
+      .map(o => `<option value="${this._escape(o)}">`)
+      .join('');
+
+    overlay.innerHTML = `
+      <div class="card action-modal-card" style="
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+        width: 100%;
+        max-width: 520px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      " role="dialog" aria-modal="true" aria-labelledby="actionModalTitleHeader">
+        
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--navy-1);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; background: var(--muted);">${this._escape(action.id)}</span>
+            <h3 id="actionModalTitleHeader" style="margin: 0; font-size: 14px; font-weight: 600; color: var(--foreground); display: flex; align-items: center; gap: 6px;">
+              ${Icons.edit} Edit Action
+            </h3>
+          </div>
+          <button class="btn-icon btn-close-action-modal" title="Close (Esc)" style="background: transparent; border: none; cursor: pointer; color: var(--muted-foreground); display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 4px;">
+            ${Icons.x}
+          </button>
+        </div>
+
+        <!-- Body Form -->
+        <form id="actionEditForm" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; margin: 0;">
+          
+          <!-- Name / Description -->
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label for="modalActionTitleInput" style="font-size: 11.5px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.04em;">
+              Action Name / Description <span style="color: var(--pink-600); font-weight: 700;">*</span>
+            </label>
+            <textarea class="in" id="modalActionTitleInput" rows="3" required placeholder="What needs to be done?" style="width: 100%; resize: vertical; min-height: 64px; font-size: 13px; line-height: 1.45;">${this._escape(currentTitle)}</textarea>
+          </div>
+
+          <!-- Sub-stream / Workstream & Owner (2-col grid) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <!-- Sub-stream -->
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <label for="modalActionWsInput" style="font-size: 11.5px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.04em;">
+                Sub-stream / Workstream
+              </label>
+              <input class="in" id="modalActionWsInput" list="modalActionWsDataList" placeholder="e.g. UC Wizard" value="${this._escape(currentWs)}" style="width: 100%;" />
+              <datalist id="modalActionWsDataList">
+                ${wsOptionsHtml}
+              </datalist>
+            </div>
+
+            <!-- Owner -->
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+              <label for="modalActionOwnerInput" style="font-size: 11.5px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.04em;">
+                Owner / Assignee
+              </label>
+              <input class="in" id="modalActionOwnerInput" list="modalActionOwnerDataList" placeholder="e.g. Ayrton André" value="${this._escape(currentOwner)}" style="width: 100%;" />
+              <datalist id="modalActionOwnerDataList">
+                ${ownerOptionsHtml}
+              </datalist>
+            </div>
+          </div>
+
+          <!-- Due Date -->
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <label for="modalActionDueInput" style="font-size: 11.5px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.04em;">
+              Due Date
+            </label>
+            <div style="position: relative;">
+              <input class="in" id="modalActionDueInput" placeholder="e.g. 2026-11-20, Novembre 2026, Fin Nov" value="${this._escape(currentDue)}" style="width: 100%; padding-left: 28px;" />
+              <span style="position: absolute; left: 8px; top: 8px; color: var(--muted-foreground); pointer-events: none; display: flex; align-items: center;">
+                ${Icons.clock}
+              </span>
+            </div>
+          </div>
+
+          <!-- Error Feedback Container -->
+          <div id="modalActionErrorMsg" style="display: none; font-size: 12px; color: var(--pink-600); background: rgba(225, 29, 72, 0.08); padding: 8px 10px; border-radius: var(--r-sm); border: 1px solid rgba(225, 29, 72, 0.2);"></div>
+
+          <!-- Actions Footer -->
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--border);">
+            <button type="button" class="btn sm btn-cancel-action-modal">Cancel</button>
+            <button type="submit" class="btn sm pink btn-save-action-modal" style="display: inline-flex; align-items: center; gap: 6px;">
+              ${Icons.check} Save Action
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    this.overlay = overlay;
+
+    // Focus title input
+    const titleInput = overlay.querySelector('#modalActionTitleInput');
+    if (titleInput) {
+      setTimeout(() => titleInput.focus(), 50);
+    }
+
+    // Wire close triggers
+    overlay.querySelector('.btn-close-action-modal')?.addEventListener('click', () => this.close());
+    overlay.querySelector('.btn-cancel-action-modal')?.addEventListener('click', () => this.close());
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) this.close();
+    });
+
+    this._keyHandler = (e) => {
+      if (e.key === 'Escape') {
+        this.close();
+      }
+    };
+    window.addEventListener('keydown', this._keyHandler);
+
+    // Wire submit
+    const form = overlay.querySelector('#actionEditForm');
+    const saveBtn = overlay.querySelector('.btn-save-action-modal');
+    const errorDiv = overlay.querySelector('#modalActionErrorMsg');
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const updatedTitle = titleInput?.value.trim();
+      const updatedWs = overlay.querySelector('#modalActionWsInput')?.value.trim();
+      const updatedOwner = overlay.querySelector('#modalActionOwnerInput')?.value.trim();
+      const updatedDue = overlay.querySelector('#modalActionDueInput')?.value.trim();
+
+      if (!updatedTitle) {
+        if (errorDiv) {
+          errorDiv.textContent = 'Action name/description cannot be empty.';
+          errorDiv.style.display = 'block';
+        }
+        titleInput?.focus();
+        return;
+      }
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `${Icons.refreshCw} Saving...`;
+      }
+      if (errorDiv) errorDiv.style.display = 'none';
+
+      const updates = {
+        title: updatedTitle,
+        description: updatedTitle,
+        text: updatedTitle,
+        workstream: updatedWs,
+        ownerOrg: updatedWs,
+        owner: updatedOwner,
+        dueDate: updatedDue,
+        due: updatedDue
+      };
+
+      try {
+        let result = null;
+        if (this.store && typeof this.store.updateAction === 'function') {
+          result = await this.store.updateAction(action.id, updates, targetMissionId);
+        } else {
+          // Direct fetch fallback
+          const resp = await fetch('/api/actions/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ actionId: action.id, missionId: targetMissionId, updates })
+          });
+          if (!resp.ok) {
+            const err = await resp.text();
+            throw new Error(`Server returned HTTP ${resp.status}: ${err}`);
+          }
+          result = await resp.json();
+        }
+
+        this.close();
+
+        if (typeof saveCb === 'function') {
+          saveCb(result || { ...action, ...updates });
+        }
+      } catch (err) {
+        console.error('[ActionModal] Failed to update action:', err);
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = `${Icons.check} Save Action`;
+        }
+        if (errorDiv) {
+          errorDiv.textContent = `Failed to save: ${err.message || 'Unknown error'}`;
+          errorDiv.style.display = 'block';
+        }
+      }
+    });
+  }
+
+  /**
+   * Closes and removes the modal from the DOM.
+   */
+  close() {
+    if (this._keyHandler) {
+      window.removeEventListener('keydown', this._keyHandler);
+      this._keyHandler = null;
+    }
+    if (this.overlay && this.overlay.parentNode) {
+      this.overlay.parentNode.removeChild(this.overlay);
+    }
+    this.overlay = null;
+  }
+
+  _escape(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+}
+
+// Global modal instance helper
+let _activeActionModal = null;
+
+function openActionEditModal({ action, missionId = null, store = null, onSave = null }) {
+  if (!_activeActionModal) {
+    _activeActionModal = new ActionModal({ store });
+  } else if (store) {
+    _activeActionModal.store = store;
+  }
+  return _activeActionModal.open({ action, missionId, onSave });
+}
+
+MeetingHub.ActionModal = ActionModal;
+MeetingHub.openActionEditModal = openActionEditModal;
 
 /* === Module: ui/shell.js === */
 /**
@@ -4748,7 +6031,12 @@ class ShellUI {
         const missionId = btn.dataset.navMission;
         this.activeProjectId = missionId;
         this.currentView = 'mission';
-        window.location.hash = '#/p/' + encodeURIComponent(missionId);
+        const target = '#/p/' + encodeURIComponent(missionId);
+        if (window.location.hash === target) {
+          if (typeof handleHashRoute === 'function') handleHashRoute();
+        } else {
+          window.location.hash = target;
+        }
       });
     });
 
@@ -4763,12 +6051,20 @@ class ShellUI {
       btn.addEventListener('click', () => {
         const view = btn.dataset.navView;
         this.currentView = view;
+        let target = '';
         if (view === 'inbox') {
-          window.location.hash = '#/inbox';
+          target = '#/inbox';
         } else if (view === 'my-actions') {
-          window.location.hash = '#/my-actions';
+          target = '#/my-actions';
         } else if (view === 'calendar') {
-          window.location.hash = '#/calendar';
+          target = '#/calendar';
+        }
+        if (target) {
+          if (window.location.hash === target) {
+            if (typeof handleHashRoute === 'function') handleHashRoute();
+          } else {
+            window.location.hash = target;
+          }
         }
       });
     });
@@ -4976,56 +6272,143 @@ MeetingHub.ShellUI = ShellUI;
 
 /* === Module: ui/meeting_panel.js === */
 /**
- * Meeting Panel Component
+ * Meeting Drawer Component (Phase 4 Meeting Drawer)
  * 
- * Manages the right-hand meeting drawer with tabs for:
- * Agenda, Minutes, Actions/Decisions/Questions, and Related (Minutes Intelligence).
+ * Replaces the legacy 5-tab drawer with a unified, lane-driven Cockpit Drawer:
+ * 1. Header: Breadcrumb (Mission › Workstream › Meeting, clickable), date/time, attendees, Google Doc link.
+ * 2. Automatic Mode Selection (based on meeting state, not user tabs):
+ *    - Prep Mode (upcoming): Workstream open points & actions, last 3 decisions, previous series meeting,
+ *      prep checklist (3-4 dots, NO percentage), and "My agenda notes" scratchpad.
+ *    - Capture Mode (past, no minutes): Drop/paste zone, Fetch Google Doc, Upload file, instant confirmation banner.
+ *    - In Inbox Mode (past, waiting to fold): File name/size/timestamp, 6-line preview, "Fold now" (copies Antigravity prompt), "Replace minutes".
+ *    - Folded Mode (past, in notes): Decisions, actions, open points citing this meeting from notes system of record.
+ * 3. Related Section: Collapsible section at the bottom of EVERY mode (series lineage + connected meetings).
  * 
- * Features:
- * - Kind-aware items (action, decision, question, topic) with owner and due date.
- * - Prep score calculation with dynamic indicator.
- * - Minutes intelligence: deterministic & LLM link discovery.
- * - Explicit Accept / Reject for suggestions (never auto-links silently).
- * - Connected prior meetings list with unlink action.
- * - Manual meeting linking over all calendar events.
+ * Design Rules:
+ * - Strictly Lucide SVG stroke icons from ui/icons.js (Zero emojis).
+ * - System of record is Markdown notes in Missions/ directory.
+ * - Prep checklist is dots-only, strictly NO percentages.
  */
 
 
 
+
 class MeetingPanelUI {
-  constructor({ container, store, onOpenMeeting, onClose, onCollapse }) {
+  constructor({ container, store, onOpenMeeting, onClose, onCollapse } = {}) {
     this.container = container;
     this.store = store;
     this.onOpenMeeting = onOpenMeeting;
     this.onClose = onClose;
     this.onCollapse = onCollapse;
+
     this.currentMeetingId = null;
-    this.currentTab = 'agenda';
-    this.llmActiveForMeeting = {};
-    this.manualLinkSearchOpen = false;
-    this.extractionResult = {};
+    this.currentTab = 'prep'; // Kept for compatibility, modes are auto-selected
+    this.isRelatedExpanded = false;
     this.isFetchingDoc = false;
     this.docFetchError = null;
-    this.manualDocInputOpen = false;
+    this.captureConfirmation = null; // Banner state after capture
+    this.isReplaceMode = false;
+    this.manualLinkSearchOpen = false;
   }
 
   setMeeting(meetingId, tab = null) {
     this.currentMeetingId = meetingId;
+    this.captureConfirmation = null;
+    this.isReplaceMode = false;
+    this.docFetchError = null;
     if (tab) this.currentTab = tab;
     return this.render();
   }
 
   focusActionInput() {
-    if (this.currentTab !== 'actions') {
-      this.currentTab = 'actions';
-      this.render().then(() => {
-        const input = this.container.querySelector('#newItemText');
-        if (input) input.focus();
-      });
-    } else {
-      const input = this.container.querySelector('#newItemText');
-      if (input) input.focus();
+    const input = this.container?.querySelector('#myAgendaNotes') || this.container?.querySelector('#captureNotesText');
+    if (input) input.focus();
+  }
+
+  _escape(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  _formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        return d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      }
+    } catch (e) {}
+    return dateStr;
+  }
+
+  _formatFileSize(bytes) {
+    if (!bytes || isNaN(bytes)) return '0 B';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  _formatTimeAgo(isoStr) {
+    if (!isoStr) return 'recently';
+    try {
+      const dt = new Date(isoStr);
+      const now = new Date();
+      const diffSec = Math.floor((now - dt) / 1000);
+      if (diffSec < 60) return 'just now';
+      if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+      if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+      return dt.toLocaleDateString();
+    } catch (e) {
+      return 'recently';
     }
+  }
+
+  /**
+   * Matches meeting to a specific workstream within the mission.
+   */
+  _resolveWorkstream(meeting, summary) {
+    const workstreams = summary?.workstreams || summary?.facilities || [];
+    if (!workstreams || workstreams.length === 0) {
+      return { id: 'general', name: 'General' };
+    }
+
+    const title = (meeting.title || '').toLowerCase();
+    const tags = (meeting.tags || []).map(t => t.toLowerCase());
+
+    for (const ws of workstreams) {
+      const name = (ws.name || ws.id || '').toLowerCase();
+      // Match keywords e.g. "Mariena", "Les Arbelles", "Glanum", "UC Wizard", "Datastore"
+      const tokens = name.split(/[\s\-_(),]+/).filter(t => t.length > 2);
+      for (const token of tokens) {
+        if (title.includes(token) || tags.some(t => t.includes(token))) {
+          return ws;
+        }
+      }
+    }
+
+    return workstreams[0] || { id: 'general', name: 'General' };
+  }
+
+  /**
+   * Evaluates the automatic mode for the given meeting.
+   * Returns: 'prep' | 'capture' | 'inbox' | 'folded'
+   */
+  _computeMeetingMode(meeting, inboxState, now = new Date()) {
+    if (inboxState === 'folded') return 'folded';
+    if (inboxState === 'pending') return 'inbox';
+
+    // Neither folded nor in inbox: Check if upcoming (<= 48h or in future) vs past
+    const todayStr = (typeof getTodayDateStr === 'function') ? getTodayDateStr(now) : now.toISOString().slice(0, 10);
+    const nowTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    const isUpcoming = (meeting.date > todayStr) || (meeting.date === todayStr && (meeting.start || '') >= nowTimeStr);
+    return isUpcoming ? 'prep' : 'capture';
   }
 
   async render() {
@@ -5033,983 +6416,1030 @@ class MeetingPanelUI {
 
     if (!this.currentMeetingId) {
       this.container.innerHTML = `
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
-          <button class="btn sm" id="collapsePanelEmptyBtn" title="Collapse meeting panel">
-            ${Icons.panelRightClose} Collapse
-          </button>
-        </div>
-        <div class="empty" style="padding-top: 60px;">
-          ${Icons.calendar}
-          <div style="margin-top: 8px;">Select a meeting from the timeline or press <code>j/k</code> to navigate.</div>
+        <div style="padding: 40px 24px; text-align: center; color: var(--muted-foreground);">
+          <div style="margin-bottom: 12px; display: flex; justify-content: center; opacity: 0.5;">
+            ${Icons.calendar}
+          </div>
+          <div style="font-weight: 500; font-size: 14px;">No meeting selected</div>
+          <div style="font-size: 12px; margin-top: 4px;">Click any meeting card in the cockpit to inspect or capture</div>
         </div>
       `;
-      this.container.querySelector('#collapsePanelEmptyBtn')?.addEventListener('click', () => {
-        if (this.onCollapse) this.onCollapse();
-      });
       return;
     }
 
     const meeting = this.store.getEvent(this.currentMeetingId);
     if (!meeting) {
-      this.container.innerHTML = `<div class="empty">Meeting not found.</div>`;
+      this.container.innerHTML = `
+        <div style="padding: 24px; text-align: center;">
+          <p class="sub">Meeting not found (ID: ${this._escape(this.currentMeetingId)})</p>
+          <button class="btn sm" id="mhubDrawerCloseNotFound">Close</button>
+        </div>
+      `;
+      this.container.querySelector('#mhubDrawerCloseNotFound')?.addEventListener('click', () => this.onClose && this.onClose());
       return;
     }
 
-    const meetingData = await this.store.getMeetingData(meeting.id);
-    const matchedProject = this.store.getProjectForMeeting(meeting);
-    const allProjects = await this.store.getAllProjects();
-    const missions = allProjects.filter(p => p.isMission);
-    const activeMission = (matchedProject && matchedProject.isMission) ? matchedProject : (missions[0] || null);
-    const missionId = activeMission ? activeMission.id : 'clariane-hdj';
-    const inboxStatus = await this.store.getMeetingInboxStatus(meeting.id, missionId);
-    let missionSummary = null;
-    try {
-      missionSummary = await this.store.getMissionSummary(missionId);
-    } catch (e) {
-      console.warn('[MeetingPanel] Error loading mission summary:', e);
+    const now = new Date();
+    const meetingData = (await this.store.getMeetingData(meeting.id)) || {};
+    const project = this.store.getProjectForMeeting(meeting);
+    const missionId = project ? project.id : (typeof AppState !== 'undefined' && AppState.missionId ? AppState.missionId : 'ge-enterprise');
+    const missionName = (typeof this.store.getProjectName === 'function' ? this.store.getProjectName(missionId) : missionId) || missionId;
+
+    // Load mission summary & inbox status from system of record
+    const summary = (await this.store.getMissionSummary(missionId)) || {};
+    let inboxStatus = this.store.inboxStatusCache?.get(missionId);
+    if (!inboxStatus) {
+      try {
+        inboxStatus = await this.store.getInboxStatus(missionId);
+      } catch (e) {
+        inboxStatus = { pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] };
+      }
     }
 
-    const isLlmActive = Boolean(this.llmActiveForMeeting[meeting.id]);
-    const linkData = await this.store.getMeetingLinks(meeting, { includeLlm: isLlmActive });
-    const relatedList = [...linkData.accepted, ...linkData.suggestions];
-    const prep = PrepScoreCalculator.computeMeetingPrep(meeting, meetingData, relatedList, { missionSummary, inboxStatus });
-    const tabs = ['agenda', 'minutes', 'actions', 'related'];
+    // Determine current inbox state
+    const inboxState = this.store.meetingInboxState(meeting.id, inboxStatus, summary);
+    let mode = this._computeMeetingMode(meeting, inboxState, now);
+    if (this.isReplaceMode) {
+      mode = 'capture';
+    }
 
-    const videoBadge = meeting.link ? `
-      <a href="${meeting.videoUrl || '#'}" target="_blank" rel="noopener" class="btn sm" style="margin-left: auto;">
-        ${Icons.video} Join ${this._escape(meeting.link)}
-      </a>
-    ` : '';
+    // Find workstream context
+    const workstream = this._resolveWorkstream(meeting, summary);
+    const workstreamName = workstream?.name || 'General';
 
-    let tabContent = '';
+    // Find inbox file matching this meeting if in inbox
+    const allInboxFiles = [...(inboxStatus.files || []), ...(inboxStatus.pending || [])];
+    const meetingInboxFile = allInboxFiles.find(f => {
+      if (typeof f === 'string') return f.includes(meeting.id);
+      return f && ((f.eventId && f.eventId === meeting.id) || (f.filename && f.filename.includes(meeting.id)));
+    }) || null;
 
-    if (this.currentTab === 'agenda') {
-      tabContent = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span class="label">Prep Objectives</span>
-          <span class="agenda-status-indicator ${prep.agenda.ok ? 'ok' : 'missing'}">
-            ${prep.agenda.ok ? Icons.check : Icons.alertCircle} ${prep.agenda.label}
-          </span>
-        </div>
-        <textarea id="panelAgenda" placeholder="What are the key goals, decisions needed, or talking points for this meeting?">${this._escape(meetingData.agenda || '')}</textarea>
-        <div class="sub" style="margin-top: 8px; font-size: 11.5px;">
-          ${prep.agenda.ok ? 'Objectives drafted. Counts towards dynamic prep score.' : 'Add at least one talking point or goal to fulfill the agenda criterion.'}
-        </div>
-      `;
-    } else if (this.currentTab === 'minutes') {
-      const docUrl = meetingData.googleDocUrl || meeting.googleDocUrl || '';
-      const extraction = this.extractionResult[meeting.id] || null;
-      const minutesText = meetingData.minutes || '';
-      const wordCount = minutesText.trim() ? minutesText.trim().split(/\s+/).length : 0;
+    // Compute Cockpit Checklist for Prep mode (Dots only, strictly NO percentage)
+    const checklistOptions = {
+      seriesMeetings: this.store.getEventsForSeries ? this.store.getEventsForSeries(meeting.seriesId) : [],
+      inboxStatus
+    };
+    const checklist = PrepScoreCalculator.computeCockpitChecklist(meeting, meetingData, checklistOptions);
 
-      tabContent = `
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Google Doc Connection Banner -->
-          <div class="google-doc-card ${docUrl ? 'connected' : 'unconnected'}">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-              <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                <span class="doc-icon">${Icons.fileText}</span>
-                <div style="min-width: 0;">
-                  <div style="font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    ${docUrl ? 'Connected Google Doc' : 'No Google Doc Linked'}
-                  </div>
-                  ${docUrl ? `
-                    <a href="${this._escape(docUrl)}" target="_blank" rel="noopener" class="sub" style="color: var(--pink-600); text-decoration: underline; font-size: 11px;">
-                      Open document
-                    </a>
-                  ` : `
-                    <div class="sub" style="font-size: 11px;">Link a collaborative doc to ingest minutes</div>
-                  `}
-                </div>
-              </div>
-              <div style="display: flex; gap: 6px; align-items: center; flex-shrink: 0;">
-                ${docUrl ? `
-                  <button class="btn sm ${this.isFetchingDoc ? 'loading' : 'pink'}" id="fetchGoogleDocBtn" ${this.isFetchingDoc ? 'disabled' : ''}>
-                    ${this.isFetchingDoc ? 'Fetching...' : `${Icons.sparkles} Fetch from Google Doc`}
-                  </button>
-                  <button class="btn-icon" id="editDocUrlBtn" title="Change linked URL" style="padding: 2px 4px;">
-                    ${Icons.settings || '⚙'}
-                  </button>
-                ` : `
-                  <button class="btn sm" id="toggleDocInputBtn">
-                    ${Icons.plus} Link Google Doc
-                  </button>
-                `}
-              </div>
-            </div>
+    // Find previous meeting of same series
+    let prevSeriesMeeting = null;
+    let prevSeriesFolded = false;
+    if (meeting.seriesId) {
+      const seriesEvents = typeof this.store.getEventsForSeries === 'function' ? this.store.getEventsForSeries(meeting.seriesId) : [];
+      const priorEvents = seriesEvents.filter(e => e.id !== meeting.id && (e.date < meeting.date || (e.date === meeting.date && e.start < meeting.start)));
+      if (priorEvents.length > 0) {
+        priorEvents.sort((a, b) => b.date.localeCompare(a.date) || b.start.localeCompare(a.start));
+        prevSeriesMeeting = priorEvents[0];
+        const prevInboxState = this.store.meetingInboxState(prevSeriesMeeting.id, inboxStatus, summary);
+        prevSeriesFolded = (prevInboxState === 'folded');
+      }
+    }
 
-            <!-- Manual Doc URL Input Form -->
-            ${(this.manualDocInputOpen || (!docUrl && this.manualDocInputOpen)) ? `
-              <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; gap: 6px;">
-                <input class="in sm" id="inputGoogleDocUrl" placeholder="Paste Google Doc URL (https://docs.google.com/document/d/...)" value="${this._escape(docUrl)}" style="flex: 1; font-size: 11px;" />
-                <button class="btn sm pink" id="saveGoogleDocUrlBtn">Connect</button>
-                <button class="btn sm" id="cancelGoogleDocUrlBtn">${Icons.x}</button>
-              </div>
-            ` : ''}
+    // Gather last 3 decisions for this mission / workstream
+    const allDecisions = summary.decisions || summary.decisionRegister || [];
+    const relevantDecisions = allDecisions
+      .filter(d => !workstream.name || !d.workstream || d.workstream.toLowerCase() === workstreamName.toLowerCase() || d.workstream === 'General')
+      .slice(0, 3);
 
-            ${this.docFetchError ? `
-              <div style="margin-top: 8px; font-size: 11.5px; color: var(--destructive); background: color-mix(in oklab, var(--destructive) 10%, transparent); padding: 6px 8px; border-radius: var(--r-sm);">
-                ${this._escape(this.docFetchError)}
-              </div>
-            ` : ''}
+    // Open points and actions for this workstream
+    const wsOpenPoints = (summary.openPoints || []).filter(p => !p.workstream || p.workstream.toLowerCase() === workstreamName.toLowerCase() || p.workstream === 'General');
+    const wsOpenActions = (summary.actions || summary.actionMatrix || []).filter(a => !a.done && (!a.workstream || a.workstream.toLowerCase() === workstreamName.toLowerCase() || a.workstream === 'General'));
+
+    // Cited decisions and actions in system of record (for Folded mode)
+    const citedDecisions = allDecisions.filter(d => d.meetingId === meeting.id || (d.source && String(d.source).includes(meeting.id)));
+    const citedActions = (summary.actions || summary.actionMatrix || []).filter(a => a.source && String(a.source).includes(meeting.id));
+
+    // Attendees list
+    const attendeesList = meeting.attendees || [];
+    const googleDocUrl = meeting.googleDocUrl || meetingData.googleDocUrl || this._extractGoogleDocUrl(meeting.description);
+
+    this.container.innerHTML = `
+      <div class="drawer-layout" style="display: flex; flex-direction: column; height: 100%; overflow: hidden; background: var(--card);">
+        
+        <!-- 1. Header: Breadcrumb (Mission > Workstream > Meeting) & Close -->
+        <div class="drawer-header" style="padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; background: var(--navy-2);">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <!-- Clickable Breadcrumb -->
+            <nav class="drawer-breadcrumb" style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <a href="#/p/${encodeURIComponent(missionId)}" class="breadcrumb-link" style="color: var(--pink-600); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                ${Icons.folder} ${this._escape(missionName)}
+              </a>
+              <span class="sub" style="opacity: 0.5;">${Icons.chevronRight}</span>
+              <a href="#/p/${encodeURIComponent(missionId)}/workstreams" class="breadcrumb-link" style="color: var(--muted-foreground); text-decoration: none;">
+                ${this._escape(workstreamName)}
+              </a>
+              <span class="sub" style="opacity: 0.5;">${Icons.chevronRight}</span>
+              <span style="color: var(--foreground); font-weight: 600; overflow: hidden; text-overflow: ellipsis;">
+                ${this._escape(meeting.title)}
+              </span>
+            </nav>
+
+            <!-- Close Drawer Button -->
+            <button id="drawerCloseBtn" class="btn sm" style="padding: 4px 8px; line-height: 1; border-radius: var(--r-sm);" title="Close drawer (returns to mission cockpit)" aria-label="Close drawer">
+              ${Icons.x}
+            </button>
           </div>
 
-          <!-- Mission Inbox Status Strip -->
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--r-sm); margin: 8px 0 10px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground);">Mission:</span>
-              <select id="panelMissionSelect" class="in sm" style="font-size: 11.5px; padding: 2px 8px; max-width: 220px; height: 26px;">
-                ${missions.map(m => `<option value="${this._escape(m.id)}" ${m.id === missionId ? 'selected' : ''}>${this._escape(m.name)}</option>`).join('')}
-              </select>
-            </div>
-            <div>
-              ${inboxStatus === 'folded' ? `
-                <span class="badge ok" style="font-weight: 600; font-size: 11px;">✓ Folded into mission notes</span>
-              ` : inboxStatus === 'pending' ? `
-                <span class="badge" style="font-weight: 600; font-size: 11px; background: #d97706; color: #fff;">⏳ In inbox, waiting to be folded</span>
+          <!-- Meeting Title & Mode Badge -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+            <h2 style="font: 600 17px/1.3 var(--font-sans); margin: 0; color: var(--foreground);">
+              ${this._escape(meeting.title)}
+            </h2>
+            
+            <div style="flex-shrink: 0;">
+              ${mode === 'prep' ? `
+                <span class="badge ok" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+                  ${Icons.sparkles} Prep Mode
+                </span>
+              ` : mode === 'inbox' ? `
+                <span class="badge amber" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+                  ${Icons.clock} In Inbox
+                </span>
+              ` : mode === 'folded' ? `
+                <span class="badge ok" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+                  ${Icons.check} Folded
+                </span>
               ` : `
-                <span class="badge" style="font-size: 11px; opacity: 0.8;">Not sent to mission inbox</span>
+                <span class="badge sub" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+                  ${Icons.upload} Capture Mode
+                </span>
               `}
             </div>
           </div>
 
-          <!-- Minutes Header & Actions -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-wrap: wrap; gap: 6px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="label">Live Notes &amp; Minutes</span>
-              <span class="sub" style="font-size: 11px;">${wordCount} words · Auto-saved</span>
-            </div>
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <label class="btn sm" style="cursor: pointer; margin: 0;" title="Import text/markdown file">
-                ${Icons.upload || '↑'} Upload File
-                <input type="file" id="minutesFileInput" accept=".txt,.md,.json" style="display: none;" />
-              </label>
-              ${minutesText.trim() ? `
-                <button class="btn sm pink" id="sendToInboxBtn" title="Send raw minutes to mission _inbox/ for folding into Markdown notes">
-                  ${Icons.send || '✉'} Send to mission inbox
-                </button>
-              ` : ''}
-              ${minutesText.trim() ? `
-                <button class="btn sm" id="extractMinutesBtn" title="Extract actions, decisions, and knowledge entities">
-                  ${Icons.sparkles} Extract Preview
-                </button>
-              ` : ''}
-            </div>
+          <!-- Meta Row: Date, Time, Meet Link, Google Doc -->
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted-foreground);">
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              ${Icons.calendar} ${this._formatDate(meeting.date)}
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono);">
+              ${Icons.clock} ${this._escape(meeting.start)} - ${this._escape(meeting.end)}
+            </span>
+            ${meeting.videoUrl ? `
+              <a href="${this._escape(meeting.videoUrl)}" target="_blank" rel="noopener" class="badge" style="display: inline-flex; align-items: center; gap: 4px; color: var(--pink-600); text-decoration: none;">
+                ${Icons.video} Join Meet
+              </a>
+            ` : ''}
+            ${googleDocUrl ? `
+              <a href="${this._escape(googleDocUrl)}" target="_blank" rel="noopener" class="badge" style="display: inline-flex; align-items: center; gap: 4px; text-decoration: none;" title="Google Doc for this meeting">
+                ${Icons.externalLink} Google Doc
+              </a>
+            ` : ''}
           </div>
 
-          <!-- Textarea for minutes -->
-          <textarea id="panelMinutes" style="min-height: 180px; font-family: var(--font-mono); font-size: 12px; line-height: 1.5;" placeholder="Paste meeting notes, transcript, or fetch from Google Docs...">${this._escape(minutesText)}</textarea>
-
-          <!-- Extraction Review Card -->
-          ${extraction ? `
-            <div class="extraction-card" id="extractionReviewCard">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span class="badge info" style="font-weight: 600;">Extracted Intelligence Preview</span>
-                  <span class="sub" style="font-size: 11px;">${extraction.actions.length} actions · ${extraction.decisions.length} decisions</span>
-                </div>
-                <button class="btn-icon" id="dismissExtractionBtn" title="Dismiss preview">${Icons.x}</button>
-              </div>
-
-              <!-- Extracted Actions -->
-              ${extraction.actions.length > 0 ? `
-                <div style="margin-bottom: 12px;">
-                  <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--foreground); margin-bottom: 6px;">
-                    Proposed Actions (${extraction.actions.length})
-                  </div>
-                  <div style="display: grid; gap: 6px;">
-                    ${extraction.actions.map((act, idx) => `
-                      <label class="extracted-item-row" style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; cursor: pointer;">
-                        <input type="checkbox" class="extract-action-cb" data-idx="${idx}" checked style="margin-top: 3px;" />
-                        <div style="flex: 1;">
-                          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                            <span class="chip-owner">${this._escape(act.owner)}</span>
-                            ${act.dueDate ? `<span class="chip-due">${this._escape(act.dueDate)}</span>` : ''}
-                            ${(act.tags || []).map(t => `<span class="badge" style="font-size: 10px;">#${this._escape(t)}</span>`).join('')}
-                          </div>
-                          <div style="margin-top: 3px; color: var(--foreground);">${this._escape(act.text)}</div>
-                          ${act.quote ? `
-                            <div class="quote-box" style="margin-top: 4px;">
-                              “${this._escape(act.quote)}”
-                            </div>
-                          ` : ''}
-                        </div>
-                      </label>
-                    `).join('')}
-                  </div>
-                </div>
+          <!-- Attendees Bar -->
+          ${attendeesList.length > 0 ? `
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+              <span class="sub" style="font-size: 11px; display: inline-flex; align-items: center; gap: 3px;">
+                ${Icons.users} Attendees:
+              </span>
+              ${attendeesList.slice(0, 6).map(a => `
+                <span class="badge ${a.toLowerCase().includes('ayrton') ? 'ok' : 'sub'}" style="font-size: 11px; padding: 1px 6px;">
+                  ${this._escape(a.split('@')[0])}
+                </span>
+              `).join('')}
+              ${attendeesList.length > 6 ? `
+                <span class="sub" style="font-size: 11px;">+${attendeesList.length - 6} more</span>
               ` : ''}
-
-              <!-- Extracted Decisions -->
-              ${extraction.decisions.length > 0 ? `
-                <div style="margin-bottom: 12px;">
-                  <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--foreground); margin-bottom: 6px;">
-                    Extracted Decisions (${extraction.decisions.length})
-                  </div>
-                  <div style="display: grid; gap: 6px;">
-                    ${extraction.decisions.map((dec, idx) => `
-                      <label class="extracted-item-row" style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; cursor: pointer;">
-                        <input type="checkbox" class="extract-decision-cb" data-idx="${idx}" checked style="margin-top: 3px;" />
-                        <div style="flex: 1;">
-                          <div style="display: flex; gap: 6px; align-items: center;">
-                            <span class="badge" style="font-size: 10px; font-weight: 600; background: var(--ok-bg, rgba(16, 185, 129, 0.15)); color: var(--ok);">
-                              ${this._escape(dec.label || 'Décision')}
-                            </span>
-                            <span class="sub" style="font-size: 11px;">${this._escape(dec.context || 'Général')}</span>
-                          </div>
-                          <div style="margin-top: 3px; color: var(--foreground);">${this._escape(dec.statement)}</div>
-                          ${dec.quote ? `
-                            <div class="quote-box decision" style="margin-top: 4px;">
-                              “${this._escape(dec.quote)}”
-                            </div>
-                          ` : ''}
-                        </div>
-                      </label>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : ''}
-
-              <!-- Extracted Knowledge -->
-              ${(extraction.knowledge && (extraction.knowledge.tools.length > 0 || extraction.knowledge.concepts.length > 0)) ? `
-                <div style="margin-bottom: 12px; font-size: 11px;">
-                  <div style="font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 4px;">
-                    Domain Knowledge Entities
-                  </div>
-                  <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                    ${extraction.knowledge.tools.map(t => `<span class="badge" style="font-size: 10px; font-family: var(--font-mono);">${this._escape(t.name)}</span>`).join('')}
-                    ${extraction.knowledge.concepts.map(c => `<span class="badge" style="font-size: 10px;">${this._escape(c.name)}</span>`).join('')}
-                  </div>
-                </div>
-              ` : ''}
-
-              <div style="display: flex; gap: 8px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
-                <button class="btn sm pink" id="sendToInboxFromExtractionBtn" style="flex: 1; justify-content: center;">
-                  ${Icons.send || '✉'} Send to mission inbox
-                </button>
-                <button class="btn sm" id="cancelExtractionBtn">Dismiss</button>
-              </div>
             </div>
           ` : ''}
         </div>
-      `;
-    } else if (this.currentTab === 'actions') {
-      const items = meetingData.items || [];
-      const attendees = meeting.attendees || [];
-      const attendeeOptions = attendees.map(a => `<option value="${this._escape(a)}">${this._escape(a)}</option>`).join('');
 
-      // Filter note-derived decisions and actions
-      const docUrl = meetingData.googleDocUrl || meeting.googleDocUrl || '';
-      const citingDecisions = (missionSummary?.decisions || []).filter(d => {
-        if (d.meetingId && d.meetingId === meeting.id) return true;
-        if (d.source && d.source.includes(meeting.id)) return true;
-        if (docUrl && d.source && d.source.includes(docUrl)) return true;
-        return false;
-      });
-
-      const citingActions = (missionSummary?.actions || []).filter(a => {
-        if (a.meetingId && a.meetingId === meeting.id) return true;
-        if (a.source && a.source.includes(meeting.id)) return true;
-        if (docUrl && a.source && a.source.includes(docUrl)) return true;
-        return false;
-      });
-
-      const openMissionActions = (missionSummary?.actions || []).filter(a => !a.done && !citingActions.some(ca => ca.id === a.id));
-
-      tabContent = `
-        <div class="actions-review-banner ${prep.openActions.reviewed ? 'reviewed' : 'pending'}">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            ${prep.openActions.reviewed ? Icons.check : Icons.alertCircle}
-            <div>
-              <b style="font-size: 12.5px;">${prep.openActions.reviewed ? 'Actions reviewed for this session' : (prep.openActions.totalOpen > 0 ? `${prep.openActions.totalOpen} open action${prep.openActions.totalOpen > 1 ? 's' : ''} require review` : 'Action review pending')}</b>
-              <div style="font-size: 11.5px; color: var(--muted-foreground);">${this._escape(prep.openActions.detail)}</div>
-            </div>
-          </div>
-          <button class="btn sm ${prep.openActions.reviewed ? '' : 'pink'}" id="toggleActionsReviewedBtn">
-            ${prep.openActions.reviewed ? 'Mark unreviewed' : 'Mark reviewed'}
-          </button>
-        </div>
-
-        ${(citingDecisions.length > 0 || citingActions.length > 0) ? `
-          <!-- Folded Note Knowledge (Single Source of Truth) -->
-          <div class="note-knowledge-section" style="margin-bottom: 16px; padding: 12px; background: color-mix(in oklab, var(--ok) 8%, var(--card)); border: 1px solid color-mix(in oklab, var(--ok) 35%, var(--border)); border-radius: var(--r-sm);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <span class="badge ok" style="font-weight: 600; font-size: 11px;">✓ Folded into Mission Notes</span>
-                <span class="sub" style="font-size: 11.5px; font-weight: 500;">${this._escape(activeMission ? activeMission.name : 'Mission')}</span>
+        <!-- Scrollable Body with Mode View -->
+        <div class="drawer-body" style="flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 18px;">
+          
+          <!-- Confirmation Banner (if just saved) -->
+          ${this.captureConfirmation ? `
+            <div class="card" style="border-color: var(--ok); background: color-mix(in oklab, var(--ok) 10%, var(--card)); padding: 12px 14px;">
+              <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ok); font-size: 13px;">
+                ${Icons.check} Minutes captured successfully
               </div>
-              <span class="sub" style="font-size: 11px;">System of Record</span>
-            </div>
-
-            ${citingDecisions.length > 0 ? `
-              <div style="margin-bottom: 10px;">
-                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ok); margin-bottom: 6px;">
-                  Validated Decisions (${citingDecisions.length})
-                </div>
-                <div style="display: grid; gap: 6px;">
-                  ${citingDecisions.map(d => `
-                    <div style="background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--ok); padding: 8px 10px; border-radius: var(--r-sm);">
-                      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 6px;">
-                        <span style="font-weight: 600; font-size: 12px; color: var(--foreground);">${this._escape(d.statement || d.decision)}</span>
-                        <span class="badge" style="font-size: 10px; font-family: var(--font-mono);">${this._escape(d.noteFile || 'Decision')}</span>
-                      </div>
-                      ${d.why ? `<div class="sub" style="font-size: 11px; margin-top: 2px;">Why: ${this._escape(d.why)}</div>` : ''}
-                      <div class="sub" style="font-size: 10.5px; margin-top: 4px; color: var(--muted-foreground);">
-                        ${d.date ? `<span style="font-family: var(--font-mono);">${d.date}</span> · ` : ''}Source: ${this._escape(d.source || d.noteTitle || 'Mission notes')}
-                      </div>
-                    </div>
-                  `).join('')}
-                </div>
+              <div class="sub" style="font-size: 12px; margin-top: 4px;">
+                ${this._escape(this.captureConfirmation)}
               </div>
-            ` : ''}
-
-            ${citingActions.length > 0 ? `
-              <div>
-                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--pink-600); margin-bottom: 6px;">
-                  Mission Actions (${citingActions.length})
-                </div>
-                <div style="display: grid; gap: 6px;">
-                  ${citingActions.map(a => `
-                    <div style="background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--pink-600); padding: 8px 10px; border-radius: var(--r-sm); display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-                      <div style="flex: 1; min-width: 0;">
-                        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                          <span class="badge info" style="font-family: var(--font-mono); font-size: 10.5px; font-weight: 700;">${this._escape(a.id)}</span>
-                          <span class="chip-owner" style="font-size: 11px;">${this._escape(a.owner)}</span>
-                          ${a.due ? `<span class="chip-due" style="font-size: 10.5px;">${Icons.clock} ${this._escape(a.due)}</span>` : ''}
-                          <span class="badge" style="font-size: 10px; font-family: var(--font-mono);">${this._escape(a.file || 'Actions.md')}</span>
-                        </div>
-                        <div style="font-size: 12px; margin-top: 4px; line-height: 1.4; color: var(--foreground);">${this._escape(a.text || a.description)}</div>
-                      </div>
-                      <button class="btn sm" data-copy-action-id="${this._escape(a.id)}" title="Copy action ID to clipboard to reference in notes" style="flex-shrink: 0; font-size: 10.5px; padding: 2px 6px;">
-                        📋 Copy ID
-                      </button>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        ` : (openMissionActions.length > 0) ? `
-          <div style="margin-bottom: 14px; padding: 10px 12px; background: var(--muted); border: 1px solid var(--border); border-radius: var(--r-sm);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground);">Mission Action Matrix:</span>
-                <span class="badge pink" style="font-size: 11px; font-weight: 600;">${openMissionActions.length} open in Actions.md</span>
-              </div>
-              <button class="btn sm" id="toggleMissionActionsListBtn" style="font-size: 11px; padding: 1px 6px;">
-                ${this.showMissionActionsInPanel ? 'Hide' : 'Show top open'}
-              </button>
             </div>
-            ${this.showMissionActionsInPanel ? `
-              <div style="display: grid; gap: 6px; margin-top: 8px;">
-                ${openMissionActions.slice(0, 5).map(a => `
-                  <div style="background: var(--card); border: 1px solid var(--border); padding: 6px 8px; border-radius: var(--r-sm); display: flex; justify-content: space-between; align-items: center; gap: 6px;">
-                    <div style="font-size: 11.5px; min-width: 0;">
-                      <span style="font-family: var(--font-mono); font-weight: 600; color: var(--pink-600);">${this._escape(a.id)}:</span>
-                      <span>${this._escape(a.text || a.description)}</span>
-                      <span class="sub" style="font-size: 10.5px;">(${this._escape(a.owner)})</span>
-                    </div>
-                    <button class="btn sm" data-copy-action-id="${this._escape(a.id)}" style="flex-shrink: 0; font-size: 10px; padding: 1px 5px;">Copy</button>
-                  </div>
-                `).join('')}
-              </div>
-            ` : ''}
-          </div>
-        ` : ''}
+          ` : ''}
 
-        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 6px;">
-          Session Local Items &amp; Scratchpad
+          <!-- MODE 1: PREP (Upcoming) -->
+          ${mode === 'prep' ? this._renderPrepMode({ meeting, meetingData, checklist, prevSeriesMeeting, prevSeriesFolded, relevantDecisions, wsOpenPoints, wsOpenActions, workstreamName, missionName, missionId }) : ''}
+
+          <!-- MODE 2: CAPTURE (Past, no minutes) -->
+          ${mode === 'capture' ? this._renderCaptureMode({ meeting, meetingData, googleDocUrl, missionName, isReplace: this.isReplaceMode }) : ''}
+
+          <!-- MODE 3: IN INBOX (Minutes waiting to fold) -->
+          ${mode === 'inbox' ? this._renderInboxMode({ meeting, meetingInboxFile, missionName }) : ''}
+
+          <!-- MODE 4: FOLDED (Past, in notes) -->
+          ${mode === 'folded' ? this._renderFoldedMode({ meeting, citedDecisions, citedActions, workstreamName, missionName, summary, missionId }) : ''}
+
+          <!-- 3. Related Meetings & Lineage Section (Collapsible in EVERY mode) -->
+          ${this._renderRelatedSection(meeting)}
         </div>
 
-        <div class="item-form-box">
-          <div style="display: flex; gap: 6px; margin-bottom: 8px;">
-            <select id="itemKind" class="in" style="width: 110px; font-weight: 500;">
-              <option value="action">Action</option>
-              <option value="decision">Decision</option>
-              <option value="question">Question</option>
-              <option value="topic">Topic</option>
-            </select>
-            <input class="in" id="newItemText" placeholder="Add item... (Press 'a' anywhere to focus)" style="flex: 1;" />
-          </div>
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <select id="itemOwner" class="in" style="flex: 1; max-width: 170px; font-size: 12px;">
-              <option value="Me">Owner: Me</option>
-              ${attendeeOptions}
-            </select>
-            <input type="date" id="itemDueDate" class="in" style="width: 135px; font-size: 12px;" title="Due date (optional)" />
-            <button class="btn sm pink" id="addItemBtn" style="margin-left: auto;">${Icons.plus} Add</button>
-          </div>
-        </div>
-
-        <div class="items-list">
-          ${items.length > 0 ? items.map(item => `
-            <div class="item" data-item-id="${item.id}">
-              <button class="item-check-btn ${item.done ? 'checked' : ''}" data-id="${item.id}" title="${item.done ? 'Mark open' : 'Mark done'}">
-                ${item.done ? Icons.check : ''}
-              </button>
-              <span class="kind-badge ${item.kind}">${item.kind}</span>
-              <div class="item-body">
-                <span class="tx ${item.done ? 'done' : ''}">${this._escape(item.text)}</span>
-                ${item.quote ? `
-                  <div class="quote-box ${item.kind === 'decision' ? 'decision' : ''}" style="margin-top: 4px; font-size: 11px;">
-                    “${this._escape(item.quote)}”
-                  </div>
-                ` : ''}
-                <div class="item-meta">
-                  ${item.owner ? `<span class="chip-owner">${this._escape(item.owner)}</span>` : ''}
-                  ${item.dueDate ? `<span class="chip-due">${Icons.clock} ${this._formatDue(item.dueDate)}</span>` : ''}
-                </div>
-              </div>
-              <button class="btn-icon item-delete-btn" data-id="${item.id}" title="Delete item">
-                ${Icons.trash}
-              </button>
-            </div>
-          `).join('') : '<div class="empty">No captured session items yet. Use form above to add one.</div>'}
-        </div>
-      `;
-    } else if (this.currentTab === 'related') {
-      tabContent = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <div>
-            <div class="label">Minutes Intelligence</div>
-            <div class="sub" style="font-size: 11px;">Link meetings to surface carried-over actions and prior decisions</div>
-          </div>
-          <button class="btn sm ${isLlmActive ? 'pink' : ''}" id="toggleLlmBtn" title="Run LLM semantic search over minutes and agendas">
-            ${Icons.sparkles} ${isLlmActive ? 'LLM Active' : 'Run LLM Discovery'}
-          </button>
-        </div>
-
-        ${linkData.accepted.length > 0 ? `
-          <div style="margin-bottom: 16px;">
-            <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ok); margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
-              ${Icons.check} Connected Prior Meetings (${linkData.accepted.length})
-            </div>
-            <div style="display: grid; gap: 8px;">
-              ${linkData.accepted.map(a => `
-                <div class="link-card accepted">
-                  <div class="link-card-header">
-                    <span class="link-card-title" data-open-meeting="${a.id}">${this._escape(a.event.title)}</span>
-                    <button class="btn-icon" data-unlink-meeting="${a.id}" title="Unlink this meeting" style="padding: 2px;">
-                      ${Icons.unlink}
-                    </button>
-                  </div>
-                  <div class="link-card-meta">
-                    <span style="font-family: var(--font-mono);">${a.event.date}</span>
-                    ${a.event.client ? `<span>·</span><span>${this._escape(a.event.client)}</span>` : ''}
-                    <span>·</span><span style="color: var(--ok);">${this._escape(a.reason)}</span>
-                    ${a.openActionsCount > 0 ? `<span>·</span><span style="color: var(--pink-600); font-weight: 600;">${a.openActionsCount} open action${a.openActionsCount > 1 ? 's' : ''}</span>` : ''}
-                  </div>
-                  ${a.lastMinutesSummary ? `
-                    <div style="font-size: 12px; color: var(--muted-foreground); font-style: italic; background: var(--muted); padding: 6px 8px; border-radius: var(--r-sm);">
-                      "${this._escape(a.lastMinutesSummary)}..."
-                    </div>
-                  ` : ''}
-                  <div class="link-card-actions">
-                    <button class="btn sm" data-open-meeting="${a.id}">Open Meeting</button>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        <div style="margin-bottom: 14px;">
-          <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <span>Suggestions (${linkData.suggestions.length})</span>
-            <span style="font-size: 11px; text-transform: none; font-weight: 400;">Explicit review required</span>
-          </div>
-
-          ${linkData.suggestions.length > 0 ? `
-            <div style="display: grid; gap: 8px;">
-              ${linkData.suggestions.map(s => `
-                <div class="link-card ${s.isLlm ? 'llm-suggested' : 'suggested'}">
-                  <div class="link-card-header">
-                    <span class="link-card-title" data-open-meeting="${s.id}">${this._escape(s.event.title)}</span>
-                    <span class="badge ${s.isLlm ? 'info' : ''}" style="font-size: 10px; font-weight: 600;">
-                      ${s.isLlm ? `${Icons.sparkles} ${s.matchPercent}% Match` : `${s.matchPercent}% Match`}
-                    </span>
-                  </div>
-                  <div class="link-card-meta">
-                    <span style="font-family: var(--font-mono);">${s.event.date}</span>
-                    ${s.event.client ? `<span>·</span><span>${this._escape(s.event.client)}</span>` : ''}
-                    <span>·</span><span style="color: var(--foreground);">${this._escape(s.reason)}</span>
-                    ${s.openActionsCount > 0 ? `<span>·</span><span style="color: var(--pink-600); font-weight: 600;">${s.openActionsCount} open action${s.openActionsCount > 1 ? 's' : ''}</span>` : ''}
-                  </div>
-                  ${s.lastMinutesSummary ? `
-                    <div style="font-size: 12px; color: var(--muted-foreground); font-style: italic; background: var(--muted); padding: 6px 8px; border-radius: var(--r-sm);">
-                      "${this._escape(s.lastMinutesSummary)}..."
-                    </div>
-                  ` : ''}
-                  <div class="link-card-actions">
-                    <button class="btn sm pink" data-accept-link="${s.id}" data-reason="${this._escape(s.reason)}">
-                      ${Icons.check} Accept Link
-                    </button>
-                    <button class="btn sm" data-reject-link="${s.id}">
-                      ${Icons.x} Reject
-                    </button>
-                    <button class="btn sm" data-open-meeting="${s.id}" style="margin-left: auto;">
-                      Preview
-                    </button>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          ` : `
-            <div class="empty" style="padding: 16px 0;">
-              No pending suggestions found.
-            </div>
-          `}
-        </div>
-
-        <div style="margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px;">
-          ${!this.manualLinkSearchOpen ? `
-            <button class="btn sm" id="openManualLinkBtn" style="width: 100%; justify-content: center;">
-              ${Icons.plus} Manually link another meeting
-            </button>
-          ` : `
-            <div class="manual-link-picker">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span class="label" style="font-size: 11px;">Search Calendar (259 events)</span>
-                <button class="btn sm" id="closeManualLinkBtn" style="padding: 0 4px;">${Icons.x}</button>
-              </div>
-              <input class="in" id="manualSearchInput" placeholder="Type title or client to link..." autofocus />
-              <div id="manualSearchResults" style="max-height: 160px; overflow-y: auto; display: grid; gap: 4px; margin-top: 4px;"></div>
-            </div>
-          `}
-        </div>
-      `;
-    }
-
-    this.container.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span class="label">Meeting Details</span>
-        ${meeting.client ? `<span class="badge">${this._escape(meeting.client)}</span>` : ''}
-        <span class="badge ${prep.badgeClass}" title="Prep score computed from agenda, last minutes, open actions">
-          ${prep.badgeText} · ${prep.scorePercent}%
-        </span>
-        ${videoBadge}
-        <div style="margin-left: ${meeting.link ? '6px' : 'auto'}; display: flex; align-items: center; gap: 4px;">
-          <button class="btn sm" id="collapsePanelBtn" title="Collapse meeting panel" style="padding: 0 6px;">
-            ${Icons.panelRightClose}
-          </button>
-          <button class="btn sm" id="closePanelBtn" title="Close meeting drawer (Esc)" style="padding: 0 6px;">
-            ${Icons.x}
-          </button>
-        </div>
-      </div>
-
-      <h2 style="font: 600 20px/1.25 var(--font-sans); margin: 6px 0;">${this._escape(meeting.title)}</h2>
-      <div class="sub">
-        ${meeting.date} · ${meeting.start}–${meeting.end}
-        ${meeting.attendees && meeting.attendees.length ? ` · ${this._escape(meeting.attendees.join(', '))}` : ''}
-      </div>
-
-      ${meeting.tags && meeting.tags.length ? `
-        <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
-          ${meeting.tags.map(t => `<span class="badge">#${this._escape(t)}</span>`).join('')}
-        </div>
-      ` : ''}
-
-      <div class="tabs">
-        ${tabs.map(t => `
-          <button data-tab="${t}" class="${this.currentTab === t ? 'on' : ''}">
-            ${t.charAt(0).toUpperCase() + t.slice(1)}
-          </button>
-        `).join('')}
-      </div>
-
-      <div class="tab-body">
-        ${tabContent}
       </div>
     `;
 
-    this._bindEvents(meeting, meetingData);
+    this._bindEvents(meeting, mode, missionId, missionName, googleDocUrl);
   }
 
-  _bindEvents(meeting, meetingData) {
-    // Collapse button
-    this.container.querySelector('#collapsePanelBtn')?.addEventListener('click', () => {
-      if (this.onCollapse) this.onCollapse();
-    });
+  /* -------------------------------------------------------------------------- */
+  /*  MODE 1: PREP RENDERER                                                     */
+  /* -------------------------------------------------------------------------- */
+  _renderPrepMode({ meeting, meetingData, checklist, prevSeriesMeeting, prevSeriesFolded, relevantDecisions, wsOpenPoints, wsOpenActions, workstreamName, missionName, missionId }) {
+    const agendaText = meetingData.agenda || '';
+    const dots = checklist.dots || [];
 
-    // Close button
-    this.container.querySelector('#closePanelBtn')?.addEventListener('click', () => {
+    return `
+      <!-- Prep Checklist (DOTS ONLY, STRICTLY NO PERCENTAGE) -->
+      <div class="card" style="padding: 14px; background: var(--navy-2); border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted-foreground);">
+            Prep Checklist
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            ${dots.map(d => `
+              <span class="prep-dot ${d.ok ? 'done' : ''}" style="width: 8px; height: 8px; border-radius: 50%; background: ${d.ok ? 'var(--ok)' : 'var(--border)'}; display: inline-block;" title="${this._escape(d.label)}: ${this._escape(d.detail)}"></span>
+            `).join('')}
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+          ${dots.map((d, idx) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span style="display: inline-flex; align-items: center; gap: 6px; color: ${d.ok ? 'var(--foreground)' : 'var(--muted-foreground)'};">
+                <span style="color: ${d.ok ? 'var(--ok)' : 'var(--border)'};">${d.ok ? Icons.check : Icons.alertCircle}</span>
+                ${this._escape(d.label)} ${d.optional ? '<span class="sub" style="font-size: 11px;">(optional)</span>' : ''}
+              </span>
+              ${d.key === 'actionsReviewed' ? `
+                <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; cursor: pointer;">
+                  <input type="checkbox" id="chkActionsReviewed" ${meetingData.actionsReviewed ? 'checked' : ''} style="cursor: pointer;">
+                  <span class="sub">${meetingData.actionsReviewed ? 'Reviewed' : 'Mark reviewed'}</span>
+                </label>
+              ` : `
+                <span class="sub" style="font-family: var(--font-mono); font-size: 11px;">${this._escape(d.detail)}</span>
+              `}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Previous Meeting in Series (with Folded Badge) -->
+      ${prevSeriesMeeting ? `
+        <div class="card" style="padding: 12px 14px; border: 1px solid var(--border);">
+          <div style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 6px;">
+            Previous in Series
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div>
+              <div style="font-weight: 600; font-size: 13px;">${this._escape(prevSeriesMeeting.title)}</div>
+              <div class="sub" style="font-size: 11.5px;">${this._formatDate(prevSeriesMeeting.date)} · ${this._escape(prevSeriesMeeting.start)}</div>
+            </div>
+            <div>
+              ${prevSeriesFolded ? `
+                <span class="badge ok" style="font-size: 11px; display: inline-flex; align-items: center; gap: 3px;">
+                  ${Icons.check} Folded
+                </span>
+              ` : `
+                <span class="badge amber" style="font-size: 11px; display: inline-flex; align-items: center; gap: 3px;">
+                  ${Icons.clock} To fold
+                </span>
+              `}
+            </div>
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- Workstream Open Points & Actions from Notes -->
+      <div class="card" style="padding: 14px; border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground);">
+            ${this._escape(workstreamName)} · Open Context
+          </div>
+          <span class="sub" style="font-size: 11.5px;">from note system of record</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Open points -->
+          <div>
+            <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--foreground);">
+              Open Points (${wsOpenPoints.length})
+            </div>
+            ${wsOpenPoints.length === 0 ? `
+              <div class="sub" style="font-size: 12px;">No open points currently recorded.</div>
+            ` : `
+              <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--foreground); display: flex; flex-direction: column; gap: 4px;">
+                ${wsOpenPoints.slice(0, 4).map(p => `
+                  <li>${this._escape(p.text || p.title || p.statement)}</li>
+                `).join('')}
+              </ul>
+            `}
+          </div>
+
+          <!-- Open actions -->
+          <div style="border-top: 1px solid var(--border); padding-top: 8px;">
+            <div style="font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--foreground);">
+              Open Actions (${wsOpenActions.length})
+            </div>
+            ${wsOpenActions.length === 0 ? `
+              <div class="sub" style="font-size: 12px;">No pending actions for this workstream.</div>
+            ` : `
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                ${wsOpenActions.slice(0, 5).map(a => `
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; background: var(--navy-1); padding: 5px 8px; border-radius: var(--r-sm);">
+                    <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; flex: 1;">
+                      <button class="item-check-btn action-toggle-btn ${a.done ? 'checked' : ''}" data-action-id="${this._escape(a.id)}" data-mission-id="${this._escape(missionId)}" title="${a.done ? 'Mark open' : 'Mark done'}" style="flex-shrink: 0; width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--border); background: var(--card); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;">
+                        ${a.done ? Icons.check : ''}
+                      </button>
+                      <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <span class="badge" style="font-size: 10px; font-family: var(--font-mono); margin-right: 4px;">${this._escape(a.id)}</span>
+                        <span style="font-weight: 500;">${this._escape(a.text || a.description || a.title || a.id)}</span>
+                      </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                      <span class="badge sub" style="font-size: 10.5px;">${this._escape(a.owner || 'Ayrton')}</span>
+                      <button class="btn sm action-edit-btn" data-action-id="${this._escape(a.id)}" data-mission-id="${this._escape(missionId)}" title="Edit action: name, sub-stream, owner, due date" style="font-size: 10px; padding: 2px 5px; display: inline-flex; align-items: center; gap: 3px;">
+                        ${Icons.edit}
+                      </button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+        </div>
+      </div>
+
+      <!-- Last 3 Decisions from Notes -->
+      <div class="card" style="padding: 14px; border: 1px solid var(--border);">
+        <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 8px;">
+          Last 3 Decisions
+        </div>
+        ${relevantDecisions.length === 0 ? `
+          <div class="sub" style="font-size: 12px;">No logged decisions found for this stream yet.</div>
+        ` : `
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${relevantDecisions.map(d => `
+              <div style="font-size: 12.5px; background: var(--navy-1); padding: 8px 10px; border-radius: var(--r-sm); border-left: 3px solid var(--ok);">
+                <div style="font-weight: 500;">${this._escape(d.statement || d.title)}</div>
+                <div class="sub" style="font-size: 11px; margin-top: 3px; display: flex; justify-content: space-between;">
+                  <span>${this._escape(d.date || '')} · ${this._escape(d.workstream || workstreamName)}</span>
+                  ${d.note ? `<span style="font-family: var(--font-mono);">${this._escape(d.note.split('/').pop())}</span>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+
+      <!-- "My Agenda Notes" Scratchpad (UI state only, prepended on capture) -->
+      <div class="card" style="padding: 14px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <label for="myAgendaNotes" style="font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground);">
+            My Agenda Notes
+          </label>
+          <span class="sub" style="font-size: 11px;" id="agendaAutoSaveStatus">Auto-saved</span>
+        </div>
+        <p class="sub" style="font-size: 11.5px; margin: 0;">
+          UI state only. Pre-meeting notes will automatically be prepended to minutes when capturing.
+        </p>
+        <textarea id="myAgendaNotes" class="input" style="min-height: 90px; width: 100%; font-family: var(--font-sans); font-size: 13px; line-height: 1.4; resize: vertical; padding: 8px;" placeholder="Points to raise, questions, quick reminders...">${this._escape(agendaText)}</textarea>
+      </div>
+    `;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  MODE 2: CAPTURE RENDERER                                                  */
+  /* -------------------------------------------------------------------------- */
+  _renderCaptureMode({ meeting, meetingData, googleDocUrl, missionName, isReplace }) {
+    const prefillAgenda = meetingData.agenda ? `## Agenda Notes\n${meetingData.agenda}\n\n## Minutes\n` : '';
+
+    return `
+      <div class="card" style="padding: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <h3 style="font: 600 15px/1.3 var(--font-sans); margin: 0 0 4px 0;">
+            ${isReplace ? 'Replace Meeting Minutes' : 'Capture Meeting Minutes'}
+          </h3>
+          <p class="sub" style="font-size: 12px; margin: 0;">
+            Drop a markdown/text file, paste notes, or fetch directly from Google Docs to write into <code style="font-family: var(--font-mono);">${this._escape(missionName)}/_inbox/</code>.
+          </p>
+        </div>
+
+        <!-- Large Drop / Paste Zone -->
+        <div id="captureDropZone" style="border: 2px dashed var(--border); border-radius: var(--r-md); padding: 24px; text-align: center; background: var(--navy-1); transition: all 0.15s ease; cursor: pointer;">
+          <div style="color: var(--muted-foreground); margin-bottom: 8px;">
+            ${Icons.upload}
+          </div>
+          <div style="font-weight: 600; font-size: 13px; margin-bottom: 4px;">
+            Drag & drop raw minutes file here, or click to upload
+          </div>
+          <div class="sub" style="font-size: 11.5px;">
+            Supports .md, .txt, .doc, or paste plain text into the box below
+          </div>
+          <input type="file" id="captureFileInput" style="display: none;" accept=".md,.txt,.doc,.docx">
+        </div>
+
+        <!-- Google Doc Fetch Action if URL is present -->
+        ${googleDocUrl ? `
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; background: var(--navy-2); border-radius: var(--r-sm); border: 1px solid var(--border);">
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px;">
+              <span class="sub" style="margin-right: 6px;">${Icons.fileText}</span>
+              <b>Google Doc detected</b>
+            </div>
+            <button id="btnFetchGoogleDoc" class="btn sm primary" style="flex-shrink: 0;" ${this.isFetchingDoc ? 'disabled' : ''}>
+              ${this.isFetchingDoc ? 'Fetching...' : `${Icons.download} Fetch Doc Content`}
+            </button>
+          </div>
+          ${this.docFetchError ? `
+            <div class="sub" style="color: var(--destructive); font-size: 12px;">${this._escape(this.docFetchError)}</div>
+          ` : ''}
+        ` : ''}
+
+        <!-- Paste / Direct Edit Zone -->
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <label for="captureNotesText" class="sub" style="font-size: 12px; font-weight: 600;">
+            Minutes Content (Markdown)
+          </label>
+          <textarea id="captureNotesText" class="input" style="min-height: 180px; width: 100%; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.45; resize: vertical; padding: 10px;" placeholder="Paste meeting notes, takeaways, actions, decisions...">${this._escape(prefillAgenda)}</textarea>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+          ${isReplace ? `
+            <button id="btnCancelReplace" class="btn sm">Cancel</button>
+          ` : `<span></span>`}
+          <button id="btnSaveToInbox" class="btn primary" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+            ${Icons.upload} Save to Mission Inbox
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  MODE 3: IN INBOX RENDERER                                                 */
+  /* -------------------------------------------------------------------------- */
+  _renderInboxMode({ meeting, meetingInboxFile, missionName }) {
+    const filename = meetingInboxFile?.filename || `${meeting.date}_${meeting.id}.md`;
+    const size = meetingInboxFile?.size ? this._formatFileSize(meetingInboxFile.size) : 'Cached in _inbox';
+    const capturedAt = meetingInboxFile?.captured_at ? this._formatTimeAgo(meetingInboxFile.captured_at) : 'recently';
+    
+    // Preview lines: take first 6 non-empty lines from server preview (string or array) or fallback
+    let previewLines = [];
+    if (meetingInboxFile && meetingInboxFile.preview) {
+      if (Array.isArray(meetingInboxFile.preview)) {
+        previewLines = meetingInboxFile.preview.slice(0, 6);
+      } else if (typeof meetingInboxFile.preview === 'string') {
+        previewLines = meetingInboxFile.preview.split(/\r?\n/).slice(0, 6);
+      }
+    }
+    if (previewLines.length === 0) {
+      previewLines = [
+        `# ${meeting.title}`,
+        `Date: ${meeting.date} · Attendees: ${(meeting.attendees || []).join(', ')}`,
+        '',
+        'Raw minutes waiting in inbox to be folded into authoritative notes.',
+        'Click "Fold now" below to copy the folding prompt to your clipboard.'
+      ];
+    }
+
+    const foldPrompt = `Fold the inbox for ${missionName} following Missions/_fold.md, then show me the change summary.`;
+
+    return `
+      <div class="card" style="padding: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 14px;">
+        
+        <!-- Header Info -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+          <div>
+            <div style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; color: var(--amber); letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px;">
+              ${Icons.clock} In Inbox · Waiting to fold
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--foreground); margin-top: 4px; word-break: break-all;">
+              ${this._escape(filename)}
+            </div>
+            <div class="sub" style="font-size: 11.5px; margin-top: 2px;">
+              Size: ${this._escape(size)} · Captured: ${this._escape(capturedAt)}
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview Box (First 6 lines) -->
+        <div style="background: var(--navy-1); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px 12px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.45; color: var(--foreground); overflow-x: auto; max-height: 140px;">
+          ${previewLines.map(line => `<div>${this._escape(line) || '&nbsp;'}</div>`).join('')}
+        </div>
+
+        <!-- Fold Now Antigravity Prompt Button -->
+        <div style="display: flex; flex-direction: column; gap: 8px; background: color-mix(in oklab, var(--amber) 10%, var(--navy-2)); border: 1px solid color-mix(in oklab, var(--amber) 30%, transparent); border-radius: var(--r-md); padding: 12px 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div style="font-weight: 600; font-size: 13px; color: var(--foreground);">
+              Ready to reconcile into notes?
+            </div>
+            <div style="display: inline-flex; gap: 8px;">
+              <button id="btnFoldNow" class="btn primary" style="background: var(--amber); color: #000; font-weight: 600; border: none; display: inline-flex; align-items: center; gap: 6px;">
+                ${Icons.sparkles} Fold now
+              </button>
+              <button id="btnCopyFoldPrompt" class="btn sm" style="display: inline-flex; align-items: center; gap: 4px;" title="Copy Antigravity fold prompt to clipboard">
+                ${Icons.copy} Copy prompt
+              </button>
+            </div>
+          </div>
+          <p class="sub" style="font-size: 11.5px; margin: 0;">
+            Reconciles raw minutes directly into notes, or copies agent prompt: <code style="font-family: var(--font-mono); font-size: 10.5px;">${this._escape(foldPrompt)}</code>
+          </p>
+          <div id="foldNowToast" style="display: none; font-size: 11.5px; color: var(--ok); font-weight: 600;">
+            ${Icons.check} Copied Antigravity fold prompt to clipboard! Paste into your agent.
+          </div>
+        </div>
+
+        <!-- Replace Minutes Button -->
+        <div style="display: flex; justify-content: flex-end; pt: 4px;">
+          <button id="btnTriggerReplaceMinutes" class="btn sm" style="display: inline-flex; align-items: center; gap: 4px;">
+            ${Icons.edit} Replace minutes
+          </button>
+        </div>
+
+      </div>
+    `;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  MODE 4: FOLDED RENDERER                                                   */
+  /* -------------------------------------------------------------------------- */
+  _renderFoldedMode({ meeting, citedDecisions, citedActions, workstreamName, missionName, summary, missionId }) {
+    const overviewFile = summary?.overview || `${missionName}/Mission Overview.md`;
+
+    return `
+      <div class="card" style="padding: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 14px;">
+        
+        <div>
+          <div style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; color: var(--ok); letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 4px;">
+            ${Icons.check} Folded into System of Record
+          </div>
+          <h3 style="font: 600 15px/1.3 var(--font-sans); margin: 4px 0 2px 0;">
+            Authoritative Notes Cite This Meeting
+          </h3>
+          <p class="sub" style="font-size: 12px; margin: 0;">
+            Meeting notes have been reconciled into authoritative Markdown files in <code style="font-family: var(--font-mono);">${this._escape(missionName)}/</code>.
+          </p>
+        </div>
+
+        <!-- Cited Decisions -->
+        <div>
+          <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Cited Decisions (${citedDecisions.length})</span>
+            <span class="sub" style="font-size: 11px;">System of Record</span>
+          </div>
+          ${citedDecisions.length === 0 ? `
+            <div class="sub" style="font-size: 12px; background: var(--navy-1); padding: 8px 10px; border-radius: var(--r-sm);">
+              Decisions folded in workstream note: <code style="font-family: var(--font-mono); font-size: 11px;">${this._escape(workstreamName)}.md</code>
+            </div>
+          ` : `
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              ${citedDecisions.map(d => `
+                <div style="background: var(--navy-1); border-left: 3px solid var(--ok); padding: 8px 10px; border-radius: var(--r-sm); font-size: 12.5px;">
+                  <div style="font-weight: 500;">${this._escape(d.statement || d.title)}</div>
+                  <div class="sub" style="font-size: 11px; margin-top: 3px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>${this._escape(d.date || meeting.date)} · ${this._escape(d.workstream || workstreamName)}</span>
+                    ${d.note ? `<span style="font-family: var(--font-mono); font-size: 10.5px;">${this._escape(d.note.split('/').pop())}</span>` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+
+        <!-- Cited Actions -->
+        <div>
+          <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Cited Actions (${citedActions.length})</span>
+            <span class="sub" style="font-size: 11px;">Actions.md</span>
+          </div>
+          ${citedActions.length === 0 ? `
+            <div class="sub" style="font-size: 12px; background: var(--navy-1); padding: 8px 10px; border-radius: var(--r-sm);">
+              Actions registered in <code style="font-family: var(--font-mono); font-size: 11px;">Actions.md</code>
+            </div>
+          ` : `
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              ${citedActions.map(a => `
+                <div style="background: var(--navy-1); padding: 6px 10px; border-radius: var(--r-sm); font-size: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                  <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; flex: 1;">
+                    <button class="item-check-btn action-toggle-btn ${a.done ? 'checked' : ''}" data-action-id="${this._escape(a.id)}" data-mission-id="${this._escape(missionId)}" title="${a.done ? 'Mark open' : 'Mark done'}" style="flex-shrink: 0; width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--border); background: var(--card); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;">
+                      ${a.done ? Icons.check : ''}
+                    </button>
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                      <span class="badge" style="font-size: 10px; font-family: var(--font-mono); margin-right: 4px;">${this._escape(a.id)}</span>
+                      <span style="font-weight: 500; ${a.done ? 'text-decoration: line-through; opacity: 0.7;' : ''}">${this._escape(a.text || a.description || a.title || a.id)}</span>
+                      <span class="sub" style="margin-left: 6px;">(${this._escape(a.owner || 'Ayrton')})</span>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                    <button class="btn sm action-edit-btn" data-action-id="${this._escape(a.id || a.title)}" data-mission-id="${this._escape(missionId)}" title="Edit action: name, sub-stream, owner, due date" style="font-size: 10px; padding: 2px 5px; display: inline-flex; align-items: center; gap: 3px;">
+                      ${Icons.edit} Edit
+                    </button>
+                    <button class="btn sm" data-copy-action-id="${this._escape(a.id || a.title)}" style="font-size: 10.5px; padding: 2px 6px; flex-shrink: 0;" title="Copy action ID">
+                      Copy ID
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+
+        <!-- Open Note Link Info -->
+        <div style="border-top: 1px solid var(--border); padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <span class="sub" style="font-size: 11.5px;">Note location: <code style="font-family: var(--font-mono);">${this._escape(overviewFile)}</code></span>
+          <button id="btnCopyNotePath" class="btn sm" data-note-path="${this._escape(overviewFile)}" style="font-size: 11px;">
+            Copy Note Path
+          </button>
+        </div>
+
+      </div>
+    `;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  COLLAPSIBLE RELATED SECTION (In EVERY Mode)                              */
+  /* -------------------------------------------------------------------------- */
+  _renderRelatedSection(meeting) {
+    const isExpanded = this.isRelatedExpanded;
+    const seriesEvents = (meeting.seriesId && typeof this.store.getEventsForSeries === 'function')
+      ? this.store.getEventsForSeries(meeting.seriesId)
+      : [];
+    const priorOccurrences = seriesEvents.filter(e => e.id !== meeting.id);
+
+    return `
+      <div class="card" style="border: 1px solid var(--border); overflow: hidden; padding: 0;">
+        
+        <!-- Toggle Header -->
+        <button id="btnToggleRelated" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--navy-2); border: none; cursor: pointer; text-align: left; color: var(--foreground); font-size: 13px; font-weight: 600;">
+          <span style="display: inline-flex; align-items: center; gap: 6px;">
+            ${Icons.link} Related Meetings & Lineage (${priorOccurrences.length})
+          </span>
+          <span style="color: var(--muted-foreground);">
+            ${isExpanded ? Icons.chevronUp : Icons.chevronDown}
+          </span>
+        </button>
+
+        ${isExpanded ? `
+          <div style="padding: 14px; display: flex; flex-direction: column; gap: 12px; border-top: 1px solid var(--border);">
+            
+            <!-- Recurring Series Lineage -->
+            <div>
+              <div style="font-size: 11.5px; font-weight: 600; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 6px;">
+                Series Lineage (${meeting.series || 'Recurring'})
+              </div>
+              ${priorOccurrences.length === 0 ? `
+                <div class="sub" style="font-size: 12px;">No other occurrences found in calendar.</div>
+              ` : `
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  ${priorOccurrences.slice(0, 5).map(occ => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; background: var(--navy-1); padding: 6px 8px; border-radius: var(--r-sm); cursor: pointer;" data-open-related="${this._escape(occ.id)}">
+                      <span>${this._formatDate(occ.date)} · ${this._escape(occ.start)}</span>
+                      <span class="sub" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">${this._escape(occ.title)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+            </div>
+
+            <!-- Manual link meeting -->
+            <div style="border-top: 1px solid var(--border); padding-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="sub" style="font-size: 11.5px;">Connected meetings</span>
+                <button id="btnSearchLinkMeeting" class="btn sm" style="font-size: 11px;">
+                  ${Icons.plus} Link meeting
+                </button>
+              </div>
+            </div>
+
+          </div>
+        ` : ''}
+
+      </div>
+    `;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*  EVENT BINDINGS                                                            */
+  /* -------------------------------------------------------------------------- */
+  _bindEvents(meeting, mode, missionId, missionName, googleDocUrl) {
+    // 1. Close button -> calls onClose (returns to #/p/<missionId>)
+    this.container.querySelector('#drawerCloseBtn')?.addEventListener('click', () => {
       if (this.onClose) this.onClose();
     });
 
-    // Tab switching
-    this.container.querySelectorAll('.tabs button[data-tab]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.currentTab = btn.dataset.tab;
-        this.render();
-      });
+    // 2. Prep mode: Actions reviewed checkbox
+    this.container.querySelector('#chkActionsReviewed')?.addEventListener('change', async (e) => {
+      const isChecked = e.target.checked;
+      await this.store.saveMeetingData(meeting.id, { actionsReviewed: isChecked });
+      await this.render();
     });
 
-    // Auto-save agenda
-    const agendaEl = this.container.querySelector('#panelAgenda');
-    if (agendaEl) {
-      agendaEl.addEventListener('input', (e) => {
-        this.store.saveMeetingData(meeting.id, { agenda: e.target.value });
+    // 3. Prep mode: Agenda scratchpad auto-save (UI state)
+    const agendaInput = this.container.querySelector('#myAgendaNotes');
+    if (agendaInput) {
+      let timer = null;
+      agendaInput.addEventListener('input', () => {
+        const val = agendaInput.value;
+        const statusEl = this.container.querySelector('#agendaAutoSaveStatus');
+        if (statusEl) statusEl.textContent = 'Saving...';
+        clearTimeout(timer);
+        timer = setTimeout(async () => {
+          await this.store.saveMeetingData(meeting.id, { agenda: val });
+          if (statusEl) statusEl.textContent = 'Saved';
+        }, 400);
       });
     }
 
-    // Auto-save minutes
-    const minutesEl = this.container.querySelector('#panelMinutes');
-    if (minutesEl) {
-      minutesEl.addEventListener('input', (e) => {
-        this.store.saveMeetingData(meeting.id, { minutes: e.target.value });
+    // 4. Capture mode: File Drop and Upload
+    const dropZone = this.container.querySelector('#captureDropZone');
+    const fileInput = this.container.querySelector('#captureFileInput');
+    if (dropZone && fileInput) {
+      dropZone.addEventListener('click', () => fileInput.click());
+      
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--pink-600)';
+        dropZone.style.background = 'var(--navy-2)';
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = 'var(--border)';
+        dropZone.style.background = 'var(--navy-1)';
+      });
+
+      dropZone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--border)';
+        dropZone.style.background = 'var(--navy-1)';
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          const file = e.dataTransfer.files[0];
+          const text = await file.text();
+          const textarea = this.container.querySelector('#captureNotesText');
+          if (textarea) textarea.value = text;
+        }
+      });
+
+      fileInput.addEventListener('change', async () => {
+        if (fileInput.files && fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          const text = await file.text();
+          const textarea = this.container.querySelector('#captureNotesText');
+          if (textarea) textarea.value = text;
+        }
       });
     }
 
-    // Fetch Google Doc Button
-    this.container.querySelector('#fetchGoogleDocBtn')?.addEventListener('click', async () => {
-      const docUrl = meetingData.googleDocUrl || meeting.googleDocUrl || '';
-      if (!docUrl) return;
-
+    // 5. Capture mode: Fetch Google Doc button
+    this.container.querySelector('#btnFetchGoogleDoc')?.addEventListener('click', async () => {
+      if (!googleDocUrl) return;
       this.isFetchingDoc = true;
       this.docFetchError = null;
       await this.render();
 
       try {
-        const fetched = await this.store.fetchGoogleDoc(docUrl);
-        const content = fetched.content || '';
-        await this.store.saveMeetingData(meeting.id, { minutes: content });
-
-        // Auto-extract actions & context for immediate review
-        const extracted = await this.store.extractMinutes(meeting.id, content);
-        this.extractionResult[meeting.id] = extracted;
-        this.isFetchingDoc = false;
-        this.render();
+        const resp = await fetch(`/api/docs/fetch?url=${encodeURIComponent(googleDocUrl)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.text) {
+            const textarea = this.container.querySelector('#captureNotesText');
+            if (textarea) {
+              const current = textarea.value.trim();
+              textarea.value = current ? `${current}\n\n## Fetched from Google Doc\n${data.text}` : data.text;
+            }
+          } else {
+            this.docFetchError = 'Could not extract text from Google Doc';
+          }
+        } else {
+          this.docFetchError = `Server returned ${resp.status} when fetching Google Doc`;
+        }
       } catch (err) {
-        console.error('[MeetingPanel] Failed to fetch Google Doc:', err);
+        this.docFetchError = `Network error fetching doc: ${err.message}`;
+      } finally {
         this.isFetchingDoc = false;
-        this.docFetchError = err.message || 'Failed to fetch document';
-        this.render();
+        await this.render();
       }
     });
 
-    // Toggle Manual Doc Input
-    this.container.querySelector('#toggleDocInputBtn')?.addEventListener('click', () => {
-      this.manualDocInputOpen = !this.manualDocInputOpen;
-      this.render();
-    });
-
-    this.container.querySelector('#editDocUrlBtn')?.addEventListener('click', () => {
-      this.manualDocInputOpen = true;
-      this.render();
-    });
-
-    this.container.querySelector('#cancelGoogleDocUrlBtn')?.addEventListener('click', () => {
-      this.manualDocInputOpen = false;
-      this.render();
-    });
-
-    // Save Manual Google Doc URL
-    this.container.querySelector('#saveGoogleDocUrlBtn')?.addEventListener('click', async () => {
-      const input = this.container.querySelector('#inputGoogleDocUrl');
-      const val = input ? input.value.trim() : '';
-      if (!val) return;
-
-      await this.store.saveMeetingData(meeting.id, { googleDocUrl: val });
-      this.manualDocInputOpen = false;
-      this.render();
-    });
-
-    // Extract Minutes Action
-    this.container.querySelector('#extractMinutesBtn')?.addEventListener('click', async () => {
-      const currentText = meetingData.minutes || '';
-      if (!currentText.trim()) return;
-
-      const extracted = await this.store.extractMinutes(meeting.id, currentText);
-      this.extractionResult[meeting.id] = extracted;
-      this.render();
-    });
-
-    // Dismiss Extraction Card
-    const dismissHandler = () => {
-      this.extractionResult[meeting.id] = null;
-      this.render();
-    };
-    this.container.querySelector('#dismissExtractionBtn')?.addEventListener('click', dismissHandler);
-    this.container.querySelector('#cancelExtractionBtn')?.addEventListener('click', dismissHandler);
-
-    // Send Minutes to Mission Inbox (_inbox/)
-    const sendInboxHandler = async () => {
-      const minutesEl = this.container.querySelector('#panelMinutes');
-      const text = (minutesEl ? minutesEl.value : (meetingData.minutes || '')).trim();
-      if (!text) {
-        alert('Please write or paste minutes before sending to the mission inbox.');
+    // 6. Capture mode: Save to Mission Inbox button
+    this.container.querySelector('#btnSaveToInbox')?.addEventListener('click', async () => {
+      const textarea = this.container.querySelector('#captureNotesText');
+      const content = textarea ? textarea.value.trim() : '';
+      if (!content) {
+        alert('Please paste or type minutes content before saving.');
         return;
       }
-      const missionSelect = this.container.querySelector('#panelMissionSelect');
-      const chosenMissionId = missionSelect ? missionSelect.value : (activeMission ? activeMission.id : 'clariane-hdj');
 
-      const sendBtn = this.container.querySelector('#sendToInboxBtn') || this.container.querySelector('#sendToInboxFromExtractionBtn');
-      const origText = sendBtn ? sendBtn.innerHTML : '';
-      if (sendBtn) {
-        sendBtn.disabled = true;
-        sendBtn.innerHTML = `⏳ Sending...`;
+      const saveBtn = this.container.querySelector('#btnSaveToInbox');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving to inbox...';
       }
 
       try {
-        await this.store.sendMinutesToInbox(meeting.id, chosenMissionId, {
+        const result = await this.store.sendMinutesToInbox(meeting.id, missionId, {
           title: meeting.title,
           date: meeting.date,
+          content,
+          text: content,
           attendees: meeting.attendees || [],
-          googleDocUrl: meetingData.googleDocUrl || meeting.googleDocUrl || '',
-          text
+          googleDocUrl
         });
-        await this.store.saveMeetingData(meeting.id, { minutes: text });
-        this.extractionResult[meeting.id] = null;
+
+        const savedFilename = result?.filename || result?.file || `${meeting.date}_${meeting.id}.md`;
+        this.captureConfirmation = `Saved to ${missionName} inbox as ${savedFilename}`;
+        this.isReplaceMode = false;
+        
+        // Refresh store caches and re-render
+        if (this.store.inboxStatusCache) {
+          this.store.inboxStatusCache.delete(missionId);
+        }
         await this.render();
       } catch (err) {
-        console.error('[MeetingPanel] Failed to send minutes to inbox:', err);
-        alert(`Failed to send minutes to inbox: ${err.message}`);
-        if (sendBtn) {
-          sendBtn.disabled = false;
-          sendBtn.innerHTML = origText;
+        alert(`Failed to save minutes to inbox: ${err.message}`);
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save to Mission Inbox';
         }
       }
-    };
+    });
 
-    this.container.querySelector('#sendToInboxBtn')?.addEventListener('click', sendInboxHandler);
-    this.container.querySelector('#sendToInboxFromExtractionBtn')?.addEventListener('click', sendInboxHandler);
+    // 7. Cancel replace mode
+    this.container.querySelector('#btnCancelReplace')?.addEventListener('click', async () => {
+      this.isReplaceMode = false;
+      await this.render();
+    });
 
-    // Copy Action ID button
-    this.container.querySelectorAll('[data-copy-action-id]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const actionId = btn.dataset.copyActionId;
-        if (!actionId) return;
+    // 8. In Inbox Mode: "Fold now" button -> executes fold via backend API, falls back to clipboard
+    this.container.querySelector('#btnFoldNow')?.addEventListener('click', async () => {
+      const foldBtn = this.container.querySelector('#btnFoldNow');
+      const toast = this.container.querySelector('#foldNowToast');
+      const foldPrompt = `Fold the inbox for ${missionName} following Missions/_fold.md, then show me the change summary.`;
+
+      if (foldBtn) {
+        foldBtn.disabled = true;
+        foldBtn.textContent = 'Folding...';
+      }
+
+      if (missionId) {
         try {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(actionId);
-          }
-          const orig = btn.innerHTML;
-          btn.innerHTML = '✓ Copied!';
-          setTimeout(() => { btn.innerHTML = orig; }, 1500);
-        } catch (err) {
-          console.warn('[MeetingPanel] Clipboard error:', err);
-        }
-      });
-    });
-
-    // Toggle Mission Actions List
-    this.container.querySelector('#toggleMissionActionsListBtn')?.addEventListener('click', () => {
-      this.showMissionActionsInPanel = !this.showMissionActionsInPanel;
-      this.render();
-    });
-
-    // Minutes File Upload
-    const fileInput = this.container.querySelector('#minutesFileInput');
-    if (fileInput) {
-      fileInput.addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = async (evt) => {
-          const content = evt.target.result;
-          await this.store.saveMeetingData(meeting.id, { minutes: content });
-          const extracted = await this.store.extractMinutes(meeting.id, content);
-          this.extractionResult[meeting.id] = extracted;
-          this.render();
-        };
-        reader.readAsText(file);
-      });
-    }
-
-    // Toggle actions reviewed state
-    this.container.querySelector('#toggleActionsReviewedBtn')?.addEventListener('click', async () => {
-      const nextReviewed = !meetingData.actionsReviewed;
-      await this.store.saveMeetingData(meeting.id, { actionsReviewed: nextReviewed });
-      this.render();
-    });
-
-    // Add action/decision/question/topic
-    const addBtn = this.container.querySelector('#addItemBtn');
-    const inputEl = this.container.querySelector('#newItemText');
-    const kindEl = this.container.querySelector('#itemKind');
-    const ownerEl = this.container.querySelector('#itemOwner');
-    const dueEl = this.container.querySelector('#itemDueDate');
-
-    const handleAddItem = async () => {
-      if (!inputEl) return;
-      const text = inputEl.value.trim();
-      if (!text) return;
-
-      const items = [...(meetingData.items || [])];
-      items.push({
-        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        kind: kindEl ? kindEl.value : 'action',
-        text,
-        owner: ownerEl ? ownerEl.value : 'Me',
-        dueDate: dueEl && dueEl.value ? dueEl.value : null,
-        done: false,
-        createdAt: new Date().toISOString()
-      });
-
-      await this.store.saveMeetingData(meeting.id, { items });
-      this.render().then(() => {
-        const nextInput = this.container.querySelector('#newItemText');
-        if (nextInput) nextInput.focus();
-      });
-    };
-
-    if (addBtn) addBtn.addEventListener('click', handleAddItem);
-    if (inputEl) {
-      inputEl.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') handleAddItem();
-      });
-    }
-
-    // Toggle item completion
-    this.container.querySelectorAll('.item-check-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.id;
-        const items = (meetingData.items || []).map(it => it.id === id ? { ...it, done: !it.done } : it);
-        await this.store.saveMeetingData(meeting.id, { items });
-        this.render();
-      });
-    });
-
-    // Delete item
-    this.container.querySelectorAll('.item-delete-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.id;
-        const items = (meetingData.items || []).filter(it => it.id !== id);
-        await this.store.saveMeetingData(meeting.id, { items });
-        this.render();
-      });
-    });
-
-    // Accept suggested link
-    this.container.querySelectorAll('[data-accept-link]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const targetId = btn.dataset.acceptLink;
-        const reason = btn.dataset.reason || 'Accepted suggestion';
-        await this.store.acceptLink(meeting.id, targetId, reason);
-        this.render();
-      });
-    });
-
-    // Reject suggested link
-    this.container.querySelectorAll('[data-reject-link]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const targetId = btn.dataset.rejectLink;
-        await this.store.rejectLink(meeting.id, targetId);
-        this.render();
-      });
-    });
-
-    // Unlink meeting
-    this.container.querySelectorAll('[data-unlink-meeting]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const targetId = btn.dataset.unlinkMeeting;
-        await this.store.unlinkMeeting(meeting.id, targetId);
-        this.render();
-      });
-    });
-
-    // Toggle LLM pass
-    this.container.querySelector('#toggleLlmBtn')?.addEventListener('click', () => {
-      this.llmActiveForMeeting[meeting.id] = !this.llmActiveForMeeting[meeting.id];
-      this.render();
-    });
-
-    // Manual Link Search Trigger & Execution
-    const openManualBtn = this.container.querySelector('#openManualLinkBtn');
-    if (openManualBtn) {
-      openManualBtn.addEventListener('click', () => {
-        this.manualLinkSearchOpen = true;
-        this.render();
-      });
-    }
-    const closeManualBtn = this.container.querySelector('#closeManualLinkBtn');
-    if (closeManualBtn) {
-      closeManualBtn.addEventListener('click', () => {
-        this.manualLinkSearchOpen = false;
-        this.render();
-      });
-    }
-
-    const manualSearchInput = this.container.querySelector('#manualSearchInput');
-    const manualResults = this.container.querySelector('#manualSearchResults');
-    if (manualSearchInput && manualResults) {
-      manualSearchInput.addEventListener('input', (e) => {
-        const q = e.target.value.trim().toLowerCase();
-        if (!q) {
-          manualResults.innerHTML = '';
-          return;
-        }
-        const candidates = this.store.eventsCache.filter(ev =>
-          ev.id !== meeting.id &&
-          (ev.title.toLowerCase().includes(q) || (ev.client && ev.client.toLowerCase().includes(q)))
-        ).slice(0, 6);
-
-        if (candidates.length === 0) {
-          manualResults.innerHTML = '<div style="font-size: 11px; color: var(--muted-foreground); padding: 4px;">No matching meetings found.</div>';
-          return;
-        }
-
-        manualResults.innerHTML = candidates.map(c => `
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--background);">
-            <div>
-              <div style="font-size: 12px; font-weight: 500;">${this._escape(c.title)}</div>
-              <div style="font-size: 10px; color: var(--muted-foreground);">${c.date} · ${c.client || 'General'}</div>
-            </div>
-            <button class="btn sm pink" data-manual-link-id="${c.id}">Link</button>
-          </div>
-        `).join('');
-
-        manualResults.querySelectorAll('[data-manual-link-id]').forEach(linkBtn => {
-          linkBtn.addEventListener('click', async () => {
-            const tId = linkBtn.dataset.manualLinkId;
-            await this.store.acceptLink(meeting.id, tId, 'Explicit manual link');
-            this.manualLinkSearchOpen = false;
-            this.render();
+          const resp = await fetch(`/api/missions/${encodeURIComponent(missionId)}/fold`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apply: true })
           });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.status === 'success') {
+              if (this.store && this.store.inboxStatusCache) {
+                this.store.inboxStatusCache.clear();
+                this.store.missionSummariesCache.clear();
+              }
+              if (toast) {
+                toast.innerHTML = `${Icons.check} Successfully folded minutes into mission notes!`;
+                toast.style.display = 'block';
+              }
+              setTimeout(async () => {
+                await this.render();
+              }, 1200);
+              return;
+            }
+          }
+        } catch (e) {
+          // Backend offline or error -> fallback to copying prompt
+        }
+      }
+
+      // Fallback: copy prompt to clipboard
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(foldPrompt);
+      }
+      if (toast) {
+        toast.innerHTML = `${Icons.check} Copied Antigravity fold prompt to clipboard! Paste into your agent.`;
+        toast.style.display = 'block';
+        setTimeout(() => { if (toast) toast.style.display = 'none'; }, 4000);
+      }
+      if (foldBtn) {
+        foldBtn.disabled = false;
+        foldBtn.innerHTML = `${Icons.sparkles} Fold now`;
+      }
+    });
+
+    // 8b. Copy fold prompt button
+    this.container.querySelector('#btnCopyFoldPrompt')?.addEventListener('click', async () => {
+      const foldPrompt = `Fold the inbox for ${missionName} following Missions/_fold.md, then show me the change summary.`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(foldPrompt);
+      }
+      const toast = this.container.querySelector('#foldNowToast');
+      if (toast) {
+        toast.innerHTML = `${Icons.check} Copied Antigravity fold prompt to clipboard! Paste into your agent.`;
+        toast.style.display = 'block';
+        setTimeout(() => { if (toast) toast.style.display = 'none'; }, 4000);
+      }
+    });
+
+    // 9. In Inbox Mode: "Replace minutes" button
+    this.container.querySelector('#btnTriggerReplaceMinutes')?.addEventListener('click', async () => {
+      this.isReplaceMode = true;
+      await this.render();
+    });
+
+    // 10. Folded Mode: Copy action ID buttons
+    this.container.querySelectorAll('[data-copy-action-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const actId = btn.dataset.copyActionId;
+        if (actId && navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(actId);
+        }
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:3px;">${Icons.check} Copied</span>`;
+        setTimeout(() => { btn.innerHTML = orig; }, 1500);
+      });
+    });
+
+    // 10b. Action toggle checkbox buttons (Prep and Folded modes)
+    this.container.querySelectorAll('.action-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actionId = btn.dataset.actionId;
+        const targetMissionId = btn.dataset.missionId || missionId;
+        if (!actionId) return;
+        btn.disabled = true;
+        try {
+          await this.store.toggleAction(actionId, targetMissionId);
+          await this.render();
+        } catch (err) {
+          console.error('[MeetingPanel] Toggle action failed:', err);
+          btn.disabled = false;
+        }
+      });
+    });
+
+    // 10c. Action edit buttons (Prep and Folded modes)
+    this.container.querySelectorAll('.action-edit-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actionId = btn.dataset.actionId;
+        const targetMissionId = btn.dataset.missionId || missionId;
+        if (!actionId) return;
+
+        let actionObj = null;
+        try {
+          const summary = await this.store.getMissionSummary(targetMissionId);
+          if (summary && Array.isArray(summary.actions)) {
+            actionObj = summary.actions.find(a => a.id === actionId);
+          }
+        } catch (err) {}
+
+        if (!actionObj) {
+          actionObj = { id: actionId, missionId: targetMissionId };
+        }
+
+        openActionEditModal({
+          action: actionObj,
+          missionId: targetMissionId,
+          store: this.store,
+          onSave: async () => {
+            await this.render();
+          }
         });
       });
-    }
+    });
 
-    // Open related meeting in panel
-    this.container.querySelectorAll('[data-open-meeting]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.openMeeting;
-        if (id && this.onOpenMeeting) {
-          this.onOpenMeeting(id);
+    // 11. Copy note path button
+    this.container.querySelector('#btnCopyNotePath')?.addEventListener('click', async (e) => {
+      const path = e.target.dataset.notePath;
+      if (path && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(path);
+      }
+      const orig = e.target.textContent;
+      e.target.textContent = 'Path Copied!';
+      setTimeout(() => { e.target.textContent = orig; }, 1500);
+    });
+
+    // 12. Toggle Related Section
+    this.container.querySelector('#btnToggleRelated')?.addEventListener('click', async () => {
+      this.isRelatedExpanded = !this.isRelatedExpanded;
+      await this.render();
+    });
+
+    // 13. Open related meeting
+    this.container.querySelectorAll('[data-open-related]').forEach(el => {
+      el.addEventListener('click', () => {
+        const relId = el.dataset.openRelated;
+        if (relId && this.onOpenMeeting) {
+          this.onOpenMeeting(relId);
         }
       });
     });
   }
 
-  _formatDue(dateStr) {
-    if (!dateStr) return '';
-    try {
-      const parts = dateStr.split('-');
-      if (parts.length === 3) {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const mIdx = parseInt(parts[1], 10) - 1;
-        return `${parseInt(parts[2], 10)} ${months[mIdx] || ''}`;
-      }
-      return dateStr;
-    } catch {
-      return dateStr;
-    }
-  }
-
-  _escape(str) {
-    return String(str || '').replace(/[&<>"']/g, c => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    }[c]));
+  _extractGoogleDocUrl(description) {
+    if (!description) return null;
+    const match = description.match(/https:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9_-]+/);
+    return match ? match[0] : null;
   }
 }
 
@@ -6397,25 +7827,28 @@ class TodayView {
           const mPrep = collectionPrep.evaluations.get(m.id);
 
           return `
-            <button class="row ${isTraining ? 'training' : ''} ${isSelected ? 'sel' : ''}" data-event-id="${m.id}">
+            <div class="row ${isTraining ? 'training' : ''} ${isSelected ? 'sel' : ''}" data-event-id="${m.id}" role="button" tabindex="0">
               <span class="t">${m.start}<br>${m.end}</span>
               <span class="bar" style="background: ${colorBar};"></span>
               <span>
                 <div class="ttl">${this._escape(m.title)}</div>
                 <div class="meta">${this._escape(metaParts.join(' · '))}</div>
               </span>
-              ${m.stream === 'work' ? (mPrep ? `
-                <span class="badge ${mPrep.missingCount === 0 ? 'ok' : 'warn'}" title="${mPrep.missingSummary}">
-                  ${mPrep.missingCount === 0 ? 'Prepared' : `${mPrep.missingCount} missing`}
-                </span>
-              ` : `
-                <span class="badge ${isSelected ? 'info' : ''}">Work</span>
-              `) : isTraining ? `
-                <span class="badge warn">ATHX Training</span>
-              ` : `
-                <span class="badge">Life</span>
-              `}
-            </button>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                ${m.stream === 'work' ? (mPrep ? `
+                  <span class="badge ${mPrep.missingCount === 0 ? 'ok' : 'warn'}" title="${mPrep.missingSummary}">
+                    ${mPrep.missingCount === 0 ? 'Prepared' : `${mPrep.missingCount} missing`}
+                  </span>
+                ` : `
+                  <span class="badge ${isSelected ? 'info' : ''}">Work</span>
+                `) : isTraining ? `
+                  <span class="badge warn">ATHX Training</span>
+                ` : `
+                  <span class="badge">Life</span>
+                `}
+                <button class="btn-delete-meeting" data-delete-event="${this._escape(m.id)}" title="Remove meeting from dashboard" aria-label="Delete meeting">${Icons.trash}</button>
+              </div>
+            </div>
           `;
         }).join('') : `
           <div class="empty" style="padding: 40px 0;">
@@ -6489,9 +7922,25 @@ class TodayView {
       });
     }
 
+    // Delete meeting button on timeline rows
+    this.container.querySelectorAll('[data-delete-event]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const eventId = btn.dataset.deleteEvent;
+        if (!eventId) return;
+        if (typeof window !== 'undefined' && typeof window.__deleteMeetingWithUndo === 'function') {
+          await window.__deleteMeetingWithUndo(eventId);
+        } else {
+          await this.store.deleteEvent(eventId);
+          await this.render();
+        }
+      });
+    });
+
     // Timeline row click
     this.container.querySelectorAll('.row[data-event-id]').forEach(row => {
-      row.addEventListener('click', () => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('[data-delete-event]')) return;
         const id = row.dataset.eventId;
         this.selectedEventId = id;
         this.container.querySelectorAll('.row').forEach(r => r.classList.remove('sel'));
@@ -6865,11 +8314,12 @@ class MeetingsView {
       });
     }
 
-    // Sort: earliest date first for upcoming, latest first for past/all
+    // Sort: earliest date first for upcoming, latest first for past
     events.sort((a, b) => {
-      const cmp = a.date.localeCompare(b.date);
-      if (cmp !== 0) return cmp;
-      return (a.start || '').localeCompare(b.start || '');
+      const cmp = this.timeFilter === 'past'
+        ? b.date.localeCompare(a.date) || (b.start || '').localeCompare(a.start || '')
+        : a.date.localeCompare(b.date) || (a.start || '').localeCompare(b.start || '');
+      return cmp;
     });
 
     // Unique clients for filter pills
@@ -6945,6 +8395,7 @@ class MeetingsView {
               <div style="display: flex; align-items: center; gap: 8px;">
                 ${e.link ? `<span title="Video call">${Icons.video}</span>` : ''}
                 <button class="btn sm" data-open-id="${e.id}">Open</button>
+                <button class="btn-delete-meeting" data-delete-event="${this._escape(e.id)}" title="Remove meeting from dashboard" aria-label="Delete meeting">${Icons.trash}</button>
               </div>
             </div>
           `;
@@ -6983,8 +8434,23 @@ class MeetingsView {
       });
     });
 
+    this.container.querySelectorAll('[data-delete-event]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const eventId = btn.dataset.deleteEvent;
+        if (!eventId) return;
+        if (typeof window !== 'undefined' && typeof window.__deleteMeetingWithUndo === 'function') {
+          await window.__deleteMeetingWithUndo(eventId);
+        } else {
+          await this.store.deleteEvent(eventId);
+          await this.render();
+        }
+      });
+    });
+
     this.container.querySelectorAll('[data-event-id]').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-delete-event]')) return;
         const id = el.dataset.eventId;
         if (id && this.onSelectMeeting) {
           this.onSelectMeeting(id);
@@ -7014,6 +8480,7 @@ MeetingHub.MeetingsView = MeetingsView;
  * grouped by client (Artefact, Clariane, Internal, etc.).
  * Allows inline completion toggling, filtering by owner, and direct navigation.
  */
+
 
 
 class ActionsView {
@@ -7069,7 +8536,7 @@ class ActionsView {
           let linkedEvent = null;
           let mId = act.meetingId || null;
           if (!mId && act.source) {
-            const m = act.source.match(/meeting\/([^ )]+)/);
+            const m = act.source.match(/(?:meeting\/|\/m\/)([a-zA-Z0-9_\-]+)/);
             if (m) mId = m[1];
           }
           if (mId) {
@@ -7087,6 +8554,7 @@ class ActionsView {
             id: act.id,
             text: act.text || act.description || '',
             owner: act.owner || 'Unassigned',
+            workstream: act.workstream || act.substream || act.org || act.ownerOrg || '',
             ownerOrg: act.ownerOrg || act.org || ((act.owner || '').toLowerCase().includes('ayrton') ? 'Artefact' : 'Client'),
             dueDate: act.due || act.dueDate || null,
             done: Boolean(act.done || act.status === 'done' || act.status === 'completed' || act.status === 'clos'),
@@ -7104,6 +8572,8 @@ class ActionsView {
     } catch (e) {
       console.warn('Could not load mission note actions:', e);
     }
+
+    this.itemsMap = new Map(aggregatedItems.map(i => [i.id, i]));
 
     // Filter items
     let filtered = aggregatedItems;
@@ -7169,7 +8639,7 @@ class ActionsView {
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 ${items.map(item => `
                   <div class="item" style="border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 10px; background: var(--background);">
-                    <button class="item-check-btn ${item.done ? 'checked' : ''}" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" data-is-note="${item.isNoteAction ? 'true' : 'false'}" data-note-file="${this._escape(item.sourceNote || '')}" title="${item.isNoteAction ? 'Markdown note action (Single Source of Truth)' : (item.done ? 'Mark open' : 'Mark done')}">
+                    <button class="item-check-btn ${item.done ? 'checked' : ''}" data-item-id="${this._escape(item.id)}" data-mission-id="${this._escape(item.missionId || '')}" data-meeting-id="${this._escape(item.meetingId || '')}" data-is-note="${item.isNoteAction ? 'true' : 'false'}" data-note-file="${this._escape(item.sourceNote || '')}" title="${item.done ? 'Mark open' : 'Mark done'}">
                       ${item.done ? Icons.check : ''}
                     </button>
                     <span class="kind-badge ${item.kind}">${item.kind}</span>
@@ -7177,11 +8647,11 @@ class ActionsView {
                       <span class="badge" style="background: var(--muted); font-size: 10px; font-family: var(--font-mono); font-weight: 600;">${this._escape(item.id)}</span>
                       <span class="badge" style="font-size: 10px; border-color: var(--pink-600); color: var(--pink-600);">[${this._escape(item.sourceNote || 'Actions.md')}]</span>
                     ` : ''}
-                    <div class="item-body">
+                    <div class="item-body item-body-clickable" data-item-id="${this._escape(item.id)}" title="Click to edit action" style="cursor: pointer;">
                       <span class="tx ${item.done ? 'done' : ''}">${this._escape(item.text)}</span>
                       <div class="item-meta" style="margin-top: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                         ${item.owner ? `<span class="chip-owner">${this._escape(item.owner)}</span>` : ''}
-                        ${item.ownerOrg ? `<span class="badge" style="font-size: 10px;">${this._escape(item.ownerOrg)}</span>` : ''}
+                        ${(item.workstream || item.ownerOrg) ? `<span class="badge" style="font-size: 10px;">${this._escape(item.workstream || item.ownerOrg)}</span>` : ''}
                         ${item.dueDate ? `<span class="chip-due">${Icons.clock} ${this._escape(item.dueDate)}</span>` : ''}
                         ${item.meetingId ? `
                           <button class="btn sm" data-nav-meeting="${this._escape(item.meetingId)}" style="padding: 1px 6px; font-size: 10.5px;">
@@ -7194,15 +8664,20 @@ class ActionsView {
                         `}
                       </div>
                     </div>
-                    ${item.isNoteAction ? `
-                      <button class="btn sm" data-copy-note-action="${this._escape(item.id)}" data-note-file="${this._escape(item.sourceNote || 'Actions.md')}" title="Copy ID to mark done in ${this._escape(item.sourceNote || 'Actions.md')}" style="flex-shrink: 0; font-size: 10.5px; padding: 2px 8px;">
-                        📋 Copy ID
+                    <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                      <button class="btn sm edit-action-btn" data-item-id="${this._escape(item.id)}" title="Edit action: name, sub-stream, owner, due date" style="font-size: 10.5px; padding: 2px 7px; display: inline-flex; align-items: center; gap: 4px;">
+                        ${Icons.edit} Edit
                       </button>
-                    ` : `
-                      <button class="btn-icon delete-action-btn" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" title="Delete action">
-                        ${Icons.trash}
-                      </button>
-                    `}
+                      ${item.isNoteAction ? `
+                        <button class="btn sm" data-copy-note-action="${this._escape(item.id)}" data-note-file="${this._escape(item.sourceNote || 'Actions.md')}" title="Copy ID: ${this._escape(item.id)}" style="font-size: 10.5px; padding: 2px 7px;">
+                          Copy ID
+                        </button>
+                      ` : `
+                        <button class="btn-icon delete-action-btn" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" title="Delete action">
+                          ${Icons.trash}
+                        </button>
+                      `}
+                    </div>
                   </div>
                 `).join('')}
               </div>
@@ -7241,16 +8716,73 @@ class ActionsView {
       });
     }
 
+    // Edit action modal handler
+    const handleEditAction = (itemId) => {
+      const item = this.itemsMap?.get(itemId);
+      if (!item) return;
+      openActionEditModal({
+        action: {
+          id: item.id,
+          title: item.text,
+          description: item.text,
+          owner: item.owner === 'Unassigned' ? '' : item.owner,
+          workstream: item.workstream || item.ownerOrg,
+          dueDate: item.dueDate,
+          missionId: item.missionId
+        },
+        missionId: item.missionId,
+        store: this.store,
+        onSave: async (updated) => {
+          if (!item.isNoteAction && item.meetingId) {
+            try {
+              const note = await this.store.getMeetingData(item.meetingId);
+              if (note && Array.isArray(note.items)) {
+                const target = note.items.find(i => i.id === item.id);
+                if (target) {
+                  target.text = updated.title || updated.text || target.text;
+                  target.owner = updated.owner;
+                  target.dueDate = updated.dueDate || updated.due;
+                  await this.store.saveMeetingData(item.meetingId, { items: note.items });
+                }
+              }
+            } catch (e) {
+              console.warn('[ActionsView] Local action edit update failed:', e);
+            }
+          }
+          await this.render();
+        }
+      });
+    };
+
+    this.container.querySelectorAll('.edit-action-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleEditAction(btn.dataset.itemId);
+      });
+    });
+
+    this.container.querySelectorAll('.item-body-clickable').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-nav-meeting]')) return;
+        e.stopPropagation();
+        handleEditAction(el.dataset.itemId);
+      });
+    });
+
     // Toggle item completion
     this.container.querySelectorAll('.item-check-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const itemId = btn.dataset.itemId;
         if (btn.dataset.isNote === 'true') {
-          const noteFile = btn.dataset.noteFile || 'Actions.md';
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(itemId);
+          const missionId = btn.dataset.missionId;
+          btn.disabled = true;
+          try {
+            await this.store.toggleAction(itemId, missionId);
+            await this.render();
+          } catch (err) {
+            console.error('[ActionsView] Failed to toggle note action:', err);
+            btn.disabled = false;
           }
-          alert(`Copied ${itemId} to clipboard!\nTo mark this action done, edit ${noteFile} directly (Markdown notes are the single source of truth).`);
           return;
         }
 
@@ -7560,10 +9092,11 @@ MeetingHub.SeriesView = SeriesView;
 
 
 class ProjectsView {
-  constructor({ container, store, onSelectMeeting } = {}) {
+  constructor({ container, store, onSelectMeeting, now } = {}) {
     this.container = container;
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
+    this.now = now || null;
     this.currentProjectId = 'ge-enterprise';
     this.currentSubTab = null; // 'workstreams' | 'decisions' | 'actions' | 'contacts' | 'brief'
     this.isFoldedOpen = false;
@@ -7571,6 +9104,8 @@ class ProjectsView {
     this.actionStatusFilter = 'open';
     this.decisionWsFilter = 'all';
     this.searchQuery = '';
+    this._renderSeq = 0;
+    this._renderedProjectId = null;
   }
 
   setSearchQuery(q) {
@@ -7578,15 +9113,19 @@ class ProjectsView {
     this.render();
   }
 
-  setProject(projectId) {
+  setProject(projectId, renderImmediately = true) {
     if (!projectId) return;
     this.currentProjectId = projectId;
-    this.render();
+    if (renderImmediately) {
+      this.render(projectId);
+    }
   }
 
-  setTab(tab) {
+  setTab(tab, renderImmediately = true) {
     this.currentSubTab = tab || null;
-    this.render();
+    if (renderImmediately) {
+      this.render();
+    }
   }
 
   // Alias for backward compatibility
@@ -7630,19 +9169,54 @@ class ProjectsView {
     }
   }
 
-  async render() {
+  async render(targetProjectId = null) {
     if (!this.container) return;
+    if (targetProjectId) {
+      this.currentProjectId = targetProjectId;
+    } else if (typeof AppState !== 'undefined' && AppState.missionId) {
+      this.currentProjectId = AppState.missionId;
+    }
+    const seq = ++this._renderSeq;
+    const currentId = this.currentProjectId;
 
-    // Retrieve full cockpit data from system of record
-    const data = await this.store.getMissionHubData(this.currentProjectId);
-    const mission = data.mission || { id: this.currentProjectId, name: this.currentProjectId };
+    // Immediately clear stale HTML when switching to a different mission
+    if (this._renderedProjectId && this._renderedProjectId !== currentId) {
+      this.container.innerHTML = `
+        <div style="padding: 28px; display: flex; align-items: center; gap: 10px; color: var(--muted-foreground); font-size: 13px;">
+          <span style="display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--pink-600); border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
+          <span>Loading mission cockpit for <b>${this._escape(currentId)}</b>...</span>
+        </div>
+      `;
+    }
+
+    let data;
+    try {
+      // Retrieve full cockpit data from system of record
+      data = await this.store.getMissionHubData(currentId, this.now || new Date());
+      if (seq !== this._renderSeq) return;
+    } catch (err) {
+      console.warn(`[ProjectsView] Error loading mission data for ${currentId}:`, err);
+      if (seq !== this._renderSeq) return;
+      data = {
+        mission: { id: currentId, name: currentId },
+        summary: {},
+        lanes: { prep: [], fold: [], folded: [], hidden: [] },
+        inboxStatus: { pendingCount: 0, files: [] },
+        openActionsCount: 0,
+        toFoldCount: 0,
+        nextMeeting: null
+      };
+    }
+
+    const mission = data.mission || { id: currentId, name: currentId };
     const summary = data.summary || {};
     const lanes = data.lanes || { prep: [], fold: [], folded: [], hidden: [] };
     const inboxStatus = data.inboxStatus || { pendingCount: 0, files: [] };
 
     // Registry missions for dropdown
     const registry = await this.store.getMissionsRegistry();
-    const allMissions = registry?.missions || [];
+    if (seq !== this._renderSeq) return;
+    const allMissions = Array.isArray(registry) ? registry : (registry?.missions || []);
 
     // Filter lanes by search query if present
     let prepMeetings = lanes.prep;
@@ -7674,7 +9248,8 @@ class ProjectsView {
       nextMeetingText = `${data.nextMeeting.date} ${data.nextMeeting.start} · ${data.nextMeeting.title}`;
     }
 
-    this.container.innerHTML = `
+    try {
+      this.container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
         
         <!-- 3.2 Cockpit Header -->
@@ -7690,7 +9265,7 @@ class ProjectsView {
               </span>
             </div>
             <h1 style="font: 600 24px/1.2 var(--font-sans); margin: 6px 0 2px 0;">
-              ${this._escape(mission.name)}
+              ${this._escape(mission.name || mission.id)}
             </h1>
             <div class="cockpit-meta-row">
               <span class="badge ${data.openActionsCount > 0 ? '' : 'ok'}">
@@ -7706,8 +9281,8 @@ class ProjectsView {
               <span style="font-family: var(--font-mono); font-size: 11.5px;">
                 Next: <b>${this._escape(nextMeetingText)}</b>
               </span>
-              <span class="sub" style="font-size: 11px;" title="Mission notes folder in system of record">
-                📁 ${this._escape(mission.directory || mission.id)}
+              <span class="sub" style="font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Mission notes folder in system of record">
+                ${Icons.folder} ${this._escape(mission.directory || mission.id)}
               </span>
             </div>
           </div>
@@ -7715,10 +9290,10 @@ class ProjectsView {
           <!-- Mission Switcher Dropdown (Updates URL directly) -->
           <div style="display: flex; gap: 8px; align-items: center;">
             <label for="projectSelectDropdown" class="sub" style="font-size: 12px; font-weight: 500;">Mission:</label>
-            <select id="projectSelectDropdown" class="input" style="font-size: 13px; font-weight: 600; height: 34px; padding: 4px 10px; border-radius: var(--r-sm); min-width: 250px; cursor: pointer;">
+            <select id="projectSelectDropdown" class="in" style="font-size: 13px; font-weight: 600; height: 34px; padding: 4px 10px; border-radius: var(--r-sm); min-width: 250px; cursor: pointer; background: var(--card, #161f30); color: var(--foreground, #f0f4fc); border: 1px solid var(--border);">
               ${allMissions.map(m => `
-                <option value="${this._escape(m.id)}" ${this.currentProjectId.toLowerCase() === m.id.toLowerCase() ? 'selected' : ''}>
-                  ${m.archived ? '[Archived] ' : ''}${this._escape(m.name)}
+                <option value="${this._escape(m.id)}" style="background: var(--card, #161f30); color: var(--foreground, #f0f4fc);" ${currentId.toLowerCase() === (m.id || '').toLowerCase() ? 'selected' : ''}>
+                  ${m.archived || m.status === 'archived' ? '[Archived] ' : ''}${this._escape(m.name || m.id)}
                 </option>
               `).join('')}
             </select>
@@ -7761,9 +9336,9 @@ class ProjectsView {
           <!-- Lane 3: Folded (collapsed 1-line strip, expandable) -->
           ${foldedMeetings.length > 0 ? `
             <div class="folded-summary-strip" id="toggleFoldedStripBtn" title="Click to ${this.isFoldedOpen ? 'collapse' : 'expand'} folded meetings">
-              <span style="font-weight: 600;">✔ ${foldedMeetings.length} folded meeting${foldedMeetings.length !== 1 ? 's' : ''}</span>
-              <span style="font-size: 11.5px; opacity: 0.85;">
-                ${this.isFoldedOpen ? '▲ Click to collapse' : '▼ Click to show folded meetings'}
+              <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">${Icons.check} ${foldedMeetings.length} folded meeting${foldedMeetings.length !== 1 ? 's' : ''}</span>
+              <span style="font-size: 11.5px; opacity: 0.85; display: inline-flex; align-items: center; gap: 4px;">
+                ${this.isFoldedOpen ? `${Icons.chevronUp} Click to collapse` : `${Icons.chevronDown} Click to show folded meetings`}
               </span>
             </div>
             ${this.isFoldedOpen ? `
@@ -7775,7 +9350,10 @@ class ProjectsView {
                         <span class="meeting-card-time">${this._escape(m.date)} ${this._escape(m.start)}</span>
                         <span class="meeting-card-title">${this._escape(m.title)}</span>
                       </div>
-                      <span class="badge ok" style="font-size: 10px;">Folded in notes</span>
+                      <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="badge ok" style="font-size: 10px;">Folded in notes</span>
+                        <button class="btn-delete-meeting" data-delete-event="${this._escape(m.id)}" title="Remove meeting from dashboard" aria-label="Delete meeting">${Icons.trash}</button>
+                      </div>
                     </div>
                   </div>
                 `).join('')}
@@ -7813,6 +9391,16 @@ class ProjectsView {
         <!-- Tab Body (Only rendered when a tab is selected) -->
         ${this.currentSubTab ? `
           <div id="cockpitTabContent" style="background: var(--card); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+              <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span class="label" style="margin: 0; text-transform: uppercase;">Knowledge View</span>
+                <span style="font-weight: 600; font-size: 14px; text-transform: capitalize;">${this._escape(this.currentSubTab)}</span>
+              </div>
+              <button class="btn sm" data-close-cockpit-tab style="display: flex; align-items: center; gap: 4px; cursor: pointer;" title="Close knowledge tab and return to meeting stream">
+                ${Icons.x}
+                <span>Close tab</span>
+              </button>
+            </div>
             ${this._renderTabBody(summary, data)}
           </div>
         ` : ''}
@@ -7820,7 +9408,22 @@ class ProjectsView {
       </div>
     `;
 
-    this._bindEvents(data);
+      this._bindEvents(data);
+      this._renderedProjectId = currentId;
+    } catch (renderErr) {
+      console.error(`[ProjectsView] Error rendering cockpit for ${currentId}:`, renderErr);
+      this.container.innerHTML = `
+        <div style="padding: 24px; background: color-mix(in oklab, var(--danger, #ef4444) 10%, var(--card)); border: 1px solid var(--danger, #ef4444); border-radius: var(--r-md); margin: 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--danger, #ef4444); margin-bottom: 8px;">
+            ${Icons.alertCircle || ''} Mission Cockpit Render Error
+          </div>
+          <div style="font-size: 13px; color: var(--foreground); margin-bottom: 12px;">
+            Failed to render mission cockpit for <b>${this._escape(currentId)}</b>: ${this._escape(renderErr.message || String(renderErr))}
+          </div>
+          <button class="btn sm" onclick="window.location.reload()" style="cursor: pointer;">Retry Reload</button>
+        </div>
+      `;
+    }
   }
 
   _renderPrepCard(meeting, summary, inboxStatus) {
@@ -7860,10 +9463,13 @@ class ProjectsView {
             <span class="meeting-card-title">${this._escape(meeting.title)}</span>
             ${ws ? `<span class="badge info" style="font-size: 10px;">${this._escape(ws.badge || ws.title)}</span>` : ''}
           </div>
-          <div class="prep-dots" title="Prep Checklist: (1) Agenda drafted, (2) Previous folded, (3) Actions clear">
-            <span class="prep-dot ${dot1 ? 'ok' : ''}"></span>
-            <span class="prep-dot ${dot2 ? 'ok' : ''}"></span>
-            <span class="prep-dot ${dot3 ? 'ok' : ''}"></span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="prep-dots" title="Prep Checklist: (1) Agenda drafted, (2) Previous folded, (3) Actions clear">
+              <span class="prep-dot ${dot1 ? 'ok' : ''}"></span>
+              <span class="prep-dot ${dot2 ? 'ok' : ''}"></span>
+              <span class="prep-dot ${dot3 ? 'ok' : ''}"></span>
+            </div>
+            <button class="btn-delete-meeting" data-delete-event="${this._escape(meeting.id)}" title="Remove meeting from dashboard" aria-label="Delete meeting">${Icons.trash}</button>
           </div>
         </div>
 
@@ -7885,11 +9491,10 @@ class ProjectsView {
   }
 
   _renderFoldCard(meeting, inboxStatus) {
-    // Check if a file is already in inbox for this meeting
-    const hasInboxFile = (inboxStatus.files || []).some(f => 
-      f.includes(meeting.id) ||
-      f.toLowerCase().includes((meeting.title || '').slice(0, 15).toLowerCase().replace(/[^a-z0-9]+/g, '_'))
-    );
+    // Per-meeting state is computed in store.getMissionHubData (inbox files are objects, not strings)
+    const hasInboxFile = meeting.inboxState
+      ? meeting.inboxState === 'pending'
+      : this.store.meetingInboxState(meeting.id, inboxStatus) === 'pending';
 
     return `
       <div class="meeting-card fold-card" data-event-id="${this._escape(meeting.id)}">
@@ -7898,11 +9503,14 @@ class ProjectsView {
             <span class="meeting-card-time">${this._escape(meeting.date)} · ${this._escape(meeting.start)} - ${this._escape(meeting.end)}</span>
             <span class="meeting-card-title">${this._escape(meeting.title)}</span>
           </div>
-          ${hasInboxFile ? `
-            <div class="fold-state-pill inbox">⏳ In inbox, waiting to fold</div>
-          ` : `
-            <div class="fold-state-pill empty">⚠️ No minutes yet · Drop or paste</div>
-          `}
+          <div style="display: flex; align-items: center; gap: 6px;">
+            ${hasInboxFile ? `
+              <div class="fold-state-pill inbox" style="display: inline-flex; align-items: center; gap: 4px;">${Icons.clock} In inbox, waiting to fold</div>
+            ` : `
+              <div class="fold-state-pill empty" style="display: inline-flex; align-items: center; gap: 4px;">${Icons.alertCircle} No minutes yet · Drop or paste</div>
+            `}
+            <button class="btn-delete-meeting" data-delete-event="${this._escape(meeting.id)}" title="Remove meeting from dashboard" aria-label="Delete meeting">${Icons.trash}</button>
+          </div>
         </div>
       </div>
     `;
@@ -8072,12 +9680,74 @@ Iron Rules:
       });
     }
 
-    // 2. Meeting card clicks -> selects meeting & opens drawer
+    // 2. Delete meeting button on cards
+    this.container.querySelectorAll('[data-delete-event]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const eventId = btn.dataset.deleteEvent;
+        if (!eventId) return;
+        if (typeof window !== 'undefined' && typeof window.__deleteMeetingWithUndo === 'function') {
+          await window.__deleteMeetingWithUndo(eventId);
+        } else {
+          await this.store.deleteEvent(eventId);
+          await this.render();
+        }
+      });
+    });
+
+    // 3. Meeting card clicks -> selects meeting & opens drawer
     this.container.querySelectorAll('[data-event-id]').forEach(card => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('[data-delete-event]')) return;
         const eventId = card.dataset.eventId;
         if (eventId && this.onSelectMeeting) {
           this.onSelectMeeting(eventId);
+        }
+      });
+    });
+
+    // 3b. Drag & Drop on Fold Cards (Phase 5)
+    this.container.querySelectorAll('.fold-card[data-event-id]').forEach(card => {
+      const eventId = card.dataset.eventId;
+      const currentPid = this.currentProjectId;
+
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        card.style.borderColor = 'var(--pink-600)';
+        card.style.background = 'oklch(0.25 0.05 300 / 30%)';
+      });
+
+      card.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        card.style.borderColor = '';
+        card.style.background = '';
+      });
+
+      card.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        card.style.borderColor = '';
+        card.style.background = '';
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          const file = e.dataTransfer.files[0];
+          try {
+            const text = await file.text();
+            await this.store.sendMinutesToInbox(eventId, currentPid, {
+              text,
+              title: file.name,
+              source: 'drag_and_drop'
+            });
+            if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
+              window.showHubToast(`Captured ${file.name} to inbox`);
+            }
+            await this.render();
+          } catch (err) {
+            console.error('[ProjectsView] Drop error:', err);
+            if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
+              window.showHubToast(`Capture failed: ${err.message}`);
+            }
+          }
         }
       });
     });
@@ -8103,6 +9773,14 @@ Iron Rules:
       });
     });
 
+    // 4b. Close tab button inside tab content
+    this.container.querySelectorAll('[data-close-cockpit-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.currentSubTab = null;
+        window.location.hash = '#/p/' + encodeURIComponent(this.currentProjectId);
+      });
+    });
+
     // 5. Actions filters
     this.container.querySelectorAll('[data-act-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -8120,7 +9798,7 @@ Iron Rules:
           await navigator.clipboard.writeText(actId);
         }
         const orig = btn.innerHTML;
-        btn.innerHTML = '✓ Copied';
+        btn.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 4px;">${Icons.check} Copied</span>`;
         alert(`Copied action ID "${actId}" to clipboard.\nEdit Actions.md directly in your editor to modify (notes are the single source of truth).`);
         setTimeout(() => { btn.innerHTML = orig; }, 1200);
       });
@@ -8141,6 +9819,493 @@ Iron Rules:
 
 MeetingHub.ProjectsView = ProjectsView;
 
+/* === Module: views/inbox.js === */
+/**
+ * Cross-Mission Inbox View (Phase 5: Frictionless Capture)
+ * 
+ * Aggregates all incoming meeting notes across missions into three distinct groups:
+ * 1. Needs a home: Ambiguous captures requiring mission assignment
+ * 2. No minutes yet: Past fold-lane meetings across missions with inline drop zones
+ * 3. Waiting to fold: Pending inbox files per mission + "Fold now" clipboard action
+ */
+
+
+class InboxView {
+  constructor({ container, store, onSelectMeeting, onNavigateMission } = {}) {
+    this.container = container;
+    this.store = store;
+    this.onSelectMeeting = onSelectMeeting;
+    this.onNavigateMission = onNavigateMission;
+    this.isSyncingGranola = false;
+    this.isAutoPulling = false;
+  }
+
+  _escape(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  async render() {
+    if (!this.container) return;
+
+    this.container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="sub" style="font-size: 13px;">Loading cross-mission inbox...</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 1. Fetch registry and unassigned inbox
+    const registry = await this.store.getMissionsRegistry();
+    const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
+    const unassignedData = await this.store.getUnassignedInboxFiles();
+    const unassignedFiles = Array.isArray(unassignedData) ? unassignedData : (unassignedData?.files || []);
+    const granolaStatus = await this.store.getGranolaStatus();
+
+    // 2. Fetch fold meetings and pending inbox per mission
+    const foldMeetingsAcross = [];
+    const waitingToFoldMissions = [];
+
+    for (const m of missions) {
+      try {
+        const hubData = await this.store.getMissionHubData(m.id);
+        const foldLane = hubData?.lanes?.fold || [];
+        
+        foldLane.forEach(meeting => {
+          if (meeting.inboxState !== 'pending' && meeting.inboxState !== 'folded') {
+            foldMeetingsAcross.push({
+              ...meeting,
+              missionId: m.id,
+              missionName: m.name
+            });
+          }
+        });
+
+        const inboxStatus = hubData?.inboxStatus || {};
+        const pendingFiles = inboxStatus.pending || inboxStatus.files || [];
+        if (pendingFiles.length > 0) {
+          waitingToFoldMissions.push({
+            mission: m,
+            pendingFiles,
+            pendingCount: inboxStatus.pendingCount || pendingFiles.length
+          });
+        }
+      } catch (err) {
+        console.warn(`[InboxView] Failed to load data for mission ${m.id}:`, err);
+      }
+    }
+
+    // Sort fold meetings: oldest first (most overdue on top)
+    foldMeetingsAcross.sort((a, b) => {
+      const cmpDate = (a.date || '').localeCompare(b.date || '');
+      if (cmpDate !== 0) return cmpDate;
+      return (a.start || '').localeCompare(b.start || '');
+    });
+
+    const totalWaiting = unassignedFiles.length + foldMeetingsAcross.length + waitingToFoldMissions.reduce((acc, m) => acc + m.pendingCount, 0);
+
+    // 3. Render container HTML
+    this.container.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        
+        <!-- Header & Action Toolbar -->
+        <div class="card" style="padding: 16px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="label" style="margin-bottom: 0;">Cross-Mission Hub</span>
+              <span class="badge ${totalWaiting > 0 ? 'amber' : 'ok'}">
+                ${totalWaiting} item${totalWaiting !== 1 ? 's' : ''} to review
+              </span>
+              ${granolaStatus.active ? `
+                <span class="badge ok" style="font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Watched directory: ${this._escape(granolaStatus.folder || '_granola')}">
+                  ${Icons.folder} Watched folder active
+                </span>
+              ` : ''}
+            </div>
+            <h1 style="font: 600 22px/1.2 var(--font-sans); margin: 6px 0 2px 0;">
+              Incoming Meeting Minutes &amp; Capture Stream
+            </h1>
+            <div class="sub" style="font-size: 12px; color: var(--muted-foreground);">
+              Route raw minutes, drop meeting transcripts, and trigger Antigravity folding.
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn sm" id="btnSyncGranola" ${this.isSyncingGranola ? 'disabled' : ''} style="display: inline-flex; align-items: center; gap: 6px;">
+              ${Icons.refreshCw} <span>${this.isSyncingGranola ? 'Syncing...' : 'Sync Granola'}</span>
+            </button>
+            <button class="btn sm" id="btnAutoPullDocs" ${this.isAutoPulling ? 'disabled' : ''} style="display: inline-flex; align-items: center; gap: 6px;">
+              ${Icons.download} <span>${this.isAutoPulling ? 'Pulling Docs...' : 'Auto-pull Docs'}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Group 1: Needs a Home (Ambiguous Captures) -->
+        <div class="stream-lane" style="border-color: ${unassignedFiles.length > 0 ? 'var(--pink-600)' : 'var(--border)'};">
+          <div class="lane-header" style="color: ${unassignedFiles.length > 0 ? 'var(--pink-400)' : 'var(--muted-foreground)'}; display: flex; justify-content: space-between; align-items: center;">
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+              ${Icons.alertCircle} Needs a home
+            </span>
+            <span class="badge ${unassignedFiles.length > 0 ? 'pink' : 'ok'}">${unassignedFiles.length}</span>
+          </div>
+
+          ${unassignedFiles.length === 0 ? `
+            <div class="empty-lane" style="border-left: 3px solid var(--ok); color: var(--ok);">
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                ${Icons.check} All incoming notes assigned to a mission
+              </span>
+            </div>
+          ` : `
+            <div class="lane-cards" style="display: flex; flex-direction: column; gap: 10px;">
+              ${unassignedFiles.map(f => this._renderUnassignedCard(f, missions)).join('')}
+            </div>
+          `}
+        </div>
+
+        <!-- Group 2: No Minutes Yet (Fold Lane Across Missions) -->
+        <div class="stream-lane" style="border-color: ${foldMeetingsAcross.length > 0 ? 'oklch(0.78 0.16 75 / 45%)' : 'var(--border)'};">
+          <div class="lane-header" style="color: ${foldMeetingsAcross.length > 0 ? 'oklch(0.85 0.16 75)' : 'var(--muted-foreground)'}; display: flex; justify-content: space-between; align-items: center;">
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+              ${Icons.clock} No minutes yet (past meetings across missions)
+            </span>
+            <span class="badge ${foldMeetingsAcross.length > 0 ? 'amber' : 'ok'}">${foldMeetingsAcross.length}</span>
+          </div>
+
+          ${foldMeetingsAcross.length === 0 ? `
+            <div class="empty-lane" style="border-left: 3px solid var(--ok); color: var(--ok);">
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                ${Icons.check} All past meetings have minutes attached
+              </span>
+            </div>
+          ` : `
+            <div class="lane-cards" style="display: flex; flex-direction: column; gap: 10px;">
+              ${foldMeetingsAcross.map(m => this._renderNoMinutesCard(m)).join('')}
+            </div>
+          `}
+        </div>
+
+        <!-- Group 3: Waiting to Fold (Pending Files per Mission) -->
+        <div class="stream-lane" style="border-color: ${waitingToFoldMissions.length > 0 ? 'oklch(0.7 0.14 200 / 45%)' : 'var(--border)'};">
+          <div class="lane-header" style="color: ${waitingToFoldMissions.length > 0 ? 'oklch(0.8 0.14 200)' : 'var(--muted-foreground)'}; display: flex; justify-content: space-between; align-items: center;">
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+              ${Icons.fileText} Waiting to fold (pending inbox files per mission)
+            </span>
+            <span class="badge ${waitingToFoldMissions.length > 0 ? 'info' : 'ok'}">
+              ${waitingToFoldMissions.reduce((acc, m) => acc + m.pendingCount, 0)} files in ${waitingToFoldMissions.length} mission${waitingToFoldMissions.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          ${waitingToFoldMissions.length === 0 ? `
+            <div class="empty-lane" style="border-left: 3px solid var(--ok); color: var(--ok);">
+              <span style="display: inline-flex; align-items: center; gap: 6px;">
+                ${Icons.check} No pending inbox files across missions
+              </span>
+            </div>
+          ` : `
+            <div style="display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));">
+              ${waitingToFoldMissions.map(item => this._renderWaitingMissionCard(item)).join('')}
+            </div>
+          `}
+        </div>
+
+      </div>
+    `;
+
+    // 4. Attach event listeners
+    this._attachEventListeners(missions);
+  }
+
+  _renderUnassignedCard(f, missions) {
+    const filename = f.filename || '';
+    const title = f.title || filename;
+    const date = f.date || '';
+    const source = f.source || 'unassigned';
+    const preview = (f.preview || f.text || '').slice(0, 180);
+
+    return `
+      <div class="card" style="padding: 14px; border-left: 3px solid var(--pink-600); display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+              <span class="badge pink" style="font-size: 10px;">Needs Mission Home</span>
+              <span class="sub" style="font-size: 11px;">Source: ${this._escape(source)}</span>
+              ${date ? `<span class="sub" style="font-size: 11px;">${this._escape(date)}</span>` : ''}
+            </div>
+            <h3 style="font: 600 15px/1.3 var(--font-sans); margin: 0;">${this._escape(title)}</h3>
+          </div>
+          <span style="font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground);">${this._escape(filename)}</span>
+        </div>
+
+        ${preview ? `
+          <div style="font-size: 12px; color: var(--muted-foreground); line-height: 1.4; background: var(--secondary); padding: 8px 10px; border-radius: var(--r-sm);">
+            ${this._escape(preview)}${preview.length >= 180 ? '...' : ''}
+          </div>
+        ` : ''}
+
+        <!-- 1-Click Assignment Row -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px;">
+          <label class="sub" style="font-size: 12px;">Assign to:</label>
+          <select class="input sm" data-assign-select="${this._escape(filename)}" style="min-width: 220px; font-weight: 500;">
+            <option value="">Select target mission...</option>
+            ${missions.map(m => `
+              <option value="${this._escape(m.id)}">${m.archived ? '[Archived] ' : ''}${this._escape(m.name)}</option>
+            `).join('')}
+          </select>
+          <button class="btn sm" data-btn-assign="${this._escape(filename)}" style="display: inline-flex; align-items: center; gap: 4px;">
+            ${Icons.check} Assign &amp; Move
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  _renderNoMinutesCard(meeting) {
+    return `
+      <div class="meeting-card fold-card" data-inbox-meeting-id="${this._escape(meeting.id)}" data-inbox-mission-id="${this._escape(meeting.missionId)}" style="cursor: pointer;">
+        <div class="meeting-card-head" style="margin-bottom: 8px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+              <span class="badge" style="font-size: 10px; font-weight: 600;">${this._escape(meeting.missionName || meeting.missionId)}</span>
+              <span class="meeting-card-time">${this._escape(meeting.date)} · ${this._escape(meeting.start)} - ${this._escape(meeting.end)}</span>
+            </div>
+            <span class="meeting-card-title">${this._escape(meeting.title)}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="fold-state-pill empty" style="display: inline-flex; align-items: center; gap: 4px;">
+              ${Icons.alertCircle} No minutes yet
+            </span>
+          </div>
+        </div>
+
+        <!-- Inline Drop & Browse Zone -->
+        <div class="inbox-card-dropzone" data-inline-drop-event="${this._escape(meeting.id)}" data-inline-drop-mission="${this._escape(meeting.missionId)}" style="border: 1.5px dashed var(--border); border-radius: var(--r-sm); padding: 8px 12px; text-align: center; font-size: 11.5px; color: var(--muted-foreground); background: var(--secondary); transition: all 0.15s ease;">
+          <span style="display: inline-flex; align-items: center; gap: 5px;">
+            ${Icons.upload} Drop .md / .txt / .docx here or click to browse
+          </span>
+          <input type="file" data-inline-file-input="${this._escape(meeting.id)}" data-inline-file-mission="${this._escape(meeting.missionId)}" accept=".md,.txt,.docx" style="display: none;" />
+        </div>
+      </div>
+    `;
+  }
+
+  _renderWaitingMissionCard(item) {
+    const m = item.mission;
+    const files = item.pendingFiles;
+    const count = item.pendingCount;
+
+    return `
+      <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px; border-left: 3px solid oklch(0.7 0.14 200);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <span class="badge info" style="font-size: 10px; margin-bottom: 4px;">${this._escape(m.client || 'Mission')}</span>
+            <h3 style="font: 600 16px/1.3 var(--font-sans); margin: 2px 0;">${this._escape(m.name)}</h3>
+            <div class="sub" style="font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+              ${Icons.folder} ${this._escape(m.directory)}/_inbox
+            </div>
+          </div>
+          <span class="badge amber" style="font-size: 12px; font-weight: 600;">
+            ${count} pending file${count !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        <!-- File List -->
+        <div style="background: var(--secondary); border-radius: var(--r-sm); padding: 8px 12px; max-height: 120px; overflow-y: auto;">
+          <ul style="margin: 0; padding-left: 16px; font-size: 11.5px; font-family: var(--font-mono); color: var(--muted-foreground); display: grid; gap: 4px;">
+            ${files.map(f => {
+              const name = typeof f === 'string' ? f : (f.filename || f.title || 'inbox file');
+              return `<li>${this._escape(name)}</li>`;
+            }).join('')}
+          </ul>
+        </div>
+
+        <!-- Action Row -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: auto; padding-top: 4px;">
+          <button class="btn sm" data-nav-cockpit="${this._escape(m.id)}" style="display: inline-flex; align-items: center; gap: 4px;">
+            ${Icons.layers} Open Cockpit
+          </button>
+          <button class="btn sm" data-btn-fold-prompt="${this._escape(m.id)}" data-mission-name="${this._escape(m.name)}" data-mission-dir="${this._escape(m.directory)}" style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+            ${Icons.sparkles} Fold Now
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  _attachEventListeners(missions) {
+    // 1. Sync Granola button
+    this.container.querySelector('#btnSyncGranola')?.addEventListener('click', async () => {
+      this.isSyncingGranola = true;
+      this.render();
+      try {
+        const res = await this.store.syncGranola();
+        this._showToast(`Granola sync complete: ${res.processed || 0} processed, ${res.matched?.length || 0} matched`);
+      } catch (e) {
+        this._showToast(`Granola sync error: ${e.message}`);
+      } finally {
+        this.isSyncingGranola = false;
+        this.render();
+      }
+    });
+
+    // 2. Auto-pull Google Docs button
+    this.container.querySelector('#btnAutoPullDocs')?.addEventListener('click', async () => {
+      this.isAutoPulling = true;
+      this.render();
+      try {
+        const res = await this.store.autoPullGoogleDocs();
+        this._showToast(`Docs auto-pull complete: ${res.pulledCount || 0} pulled`);
+      } catch (e) {
+        this._showToast(`Auto-pull error: ${e.message}`);
+      } finally {
+        this.isAutoPulling = false;
+        this.render();
+      }
+    });
+
+    // 3. Assign unassigned card
+    this.container.querySelectorAll('[data-btn-assign]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const filename = btn.dataset.btnAssign;
+        const select = this.container.querySelector(`[data-assign-select="${filename}"]`);
+        const targetMission = select ? select.value : '';
+        if (!targetMission) {
+          alert('Please select a target mission first.');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Assigning...';
+        try {
+          await this.store.assignInboxFile(filename, targetMission);
+          this._showToast(`Assigned ${filename} to ${targetMission}`);
+          await this.render();
+        } catch (e) {
+          this._showToast(`Assignment failed: ${e.message}`);
+          btn.disabled = false;
+          btn.textContent = 'Assign & Move';
+        }
+      });
+    });
+
+    // 4. Meeting card clicks (opens meeting panel)
+    this.container.querySelectorAll('[data-inbox-meeting-id]').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.inbox-card-dropzone')) return;
+        const meetingId = card.dataset.inboxMeetingId;
+        const missionId = card.dataset.inboxMissionId;
+        if (meetingId && this.onSelectMeeting) {
+          this.onSelectMeeting(meetingId, missionId);
+        }
+      });
+    });
+
+    // 5. Inline Drop & Browse Zones for meetings
+    this.container.querySelectorAll('.inbox-card-dropzone').forEach(zone => {
+      const eventId = zone.dataset.inlineDropEvent;
+      const missionId = zone.dataset.inlineDropMission;
+      const fileInput = this.container.querySelector(`[data-inline-file-input="${eventId}"]`);
+
+      zone.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput?.click();
+      });
+
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.style.borderColor = 'var(--pink-600)';
+        zone.style.background = 'oklch(0.25 0.05 300 / 30%)';
+      });
+
+      zone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        zone.style.borderColor = 'var(--border)';
+        zone.style.background = 'var(--secondary)';
+      });
+
+      const handleFiles = async (files) => {
+        if (!files || files.length === 0) return;
+        const file = files[0];
+        try {
+          const text = await file.text();
+          zone.innerHTML = `<span style="color: var(--ok);">${Icons.clock} Uploading to inbox...</span>`;
+          await this.store.sendMinutesToInbox(eventId, missionId, {
+            text,
+            title: file.name,
+            source: 'drag_and_drop'
+          });
+          this._showToast(`Captured ${file.name} to inbox for ${missionId}`);
+          await this.render();
+        } catch (err) {
+          this._showToast(`Upload failed: ${err.message}`);
+          zone.style.borderColor = 'var(--border)';
+          zone.style.background = 'var(--secondary)';
+        }
+      };
+
+      zone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.style.borderColor = 'var(--border)';
+        zone.style.background = 'var(--secondary)';
+        await handleFiles(e.dataTransfer.files);
+      });
+
+      fileInput?.addEventListener('change', async (e) => {
+        e.stopPropagation();
+        await handleFiles(fileInput.files);
+      });
+    });
+
+    // 6. Navigate to Cockpit button
+    this.container.querySelectorAll('[data-nav-cockpit]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mid = btn.dataset.navCockpit;
+        if (mid && this.onNavigateMission) {
+          this.onNavigateMission(mid);
+        } else {
+          window.location.hash = '#/p/' + encodeURIComponent(mid);
+        }
+      });
+    });
+
+    // 7. Fold Now prompt copy button
+    this.container.querySelectorAll('[data-btn-fold-prompt]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const mid = btn.dataset.btnFoldPrompt;
+        const name = btn.dataset.missionName || mid;
+        const dir = btn.dataset.missionDir || name;
+
+        const promptText = `Please review and fold all raw minutes currently in "${dir}/_inbox/" for mission "${name}" (${mid}).\nFollow AGY system of record guidelines:\n1. Reconcile open actions into "${dir}/Actions.md"\n2. Reconcile key decisions into "${dir}/Mission Overview.md"\n3. Update relevant workstream files in "${dir}/"\n4. Move folded minutes from "${dir}/_inbox/" to "${dir}/_inbox/_folded/"`;
+
+        try {
+          await navigator.clipboard.writeText(promptText);
+          this._showToast(`Copied Antigravity fold prompt for ${name} to clipboard`);
+        } catch (e) {
+          prompt('Copy Antigravity fold prompt:', promptText);
+        }
+      });
+    });
+  }
+
+  _showToast(msg) {
+    if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
+      window.showHubToast(msg);
+    } else {
+      console.log(`[Toast] ${msg}`);
+    }
+  }
+}
+
+MeetingHub.InboxView = InboxView;
+
 
 /* === App Controller & Bootstrap === */
 const AppState = {
@@ -8160,6 +10325,7 @@ let meetingsView;
 let actionsView;
 let seriesView;
 let projectsView;
+let inboxView;
 let meetingPanel;
 let openActionsCount = 0;
 
@@ -8184,7 +10350,7 @@ function setPanelCollapsed(collapsed) {
 async function resolveDefaultMissionId() {
   try {
     const registry = await MeetingHub.store.getMissionsRegistry();
-    const missions = registry?.missions || [];
+    const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
     const activeMissions = missions.filter(m => !m.archived && m.status !== 'archived');
     const last = localStorage.getItem('mhub_last_mission');
     if (last && missions.some(m => m.id === last && !m.archived && m.status !== 'archived')) {
@@ -8244,6 +10410,305 @@ function selectMeeting(eventId, tab = null) {
   if (meetingsView && AppState.view === 'calendar' && AppState.calendarTab === 'meetings') meetingsView.setSelectedEvent(eventId);
 }
 
+function showDeleteUndoToast(deletedEvent) {
+  if (!deletedEvent) return;
+  const existing = document.querySelector('#mhubDeleteToast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'mhubDeleteToast';
+  toast.className = 'delete-toast';
+  const safeTitle = String(deletedEvent.title || 'Meeting').replace(/[&<>"']/g, '');
+  toast.innerHTML =
+    '<span>Removed <b>' + safeTitle.slice(0, 38) + '</b></span>' +
+    '<button class="btn sm" id="mhubUndoDeleteBtn" style="padding: 2px 8px; font-size: 11.5px;">Undo</button>';
+  document.body.appendChild(toast);
+
+  const timer = setTimeout(() => {
+    toast.remove();
+  }, 6000);
+
+  const undoBtn = toast.querySelector('#mhubUndoDeleteBtn');
+  if (undoBtn) {
+    undoBtn.addEventListener('click', async () => {
+      clearTimeout(timer);
+      toast.remove();
+      await MeetingHub.store.restoreEvent(deletedEvent);
+    });
+  }
+}
+
+window.__deleteMeetingWithUndo = async function(eventId) {
+  if (!eventId || !MeetingHub.store) return;
+  const deletedEvent = await MeetingHub.store.deleteEvent(eventId);
+  if (AppState.selectedEventId === eventId) {
+    AppState.selectedEventId = null;
+    setPanelCollapsed(true);
+    if (AppState.view === 'mission' && AppState.missionId) {
+      window.location.hash = '#/p/' + encodeURIComponent(AppState.missionId);
+    } else if (AppState.view === 'calendar') {
+      const sub = AppState.calendarTab && AppState.calendarTab !== 'today' ? '/' + AppState.calendarTab : '';
+      window.location.hash = '#/calendar' + sub;
+    }
+  }
+  showDeleteUndoToast(deletedEvent);
+};
+
+function showHubToast(msg) {
+  const existing = document.querySelector('#mhubNoticeToast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'mhubNoticeToast';
+  toast.className = 'delete-toast';
+  toast.style.borderColor = 'var(--pink-600)';
+  toast.innerHTML = `<span style="font-size: 12.5px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">${MeetingHub.Icons?.sparkles || ''} ${String(msg).replace(/[&<>"']/g, '')}</span>`;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    if (toast.parentNode) toast.remove();
+  }, 4000);
+}
+window.showHubToast = showHubToast;
+
+// Phase 5: Global Paste Anywhere
+let pasteToastTimer = null;
+let pasteCountdownInterval = null;
+let pendingPasteAction = null;
+
+function cancelPendingPaste() {
+  if (pasteToastTimer) {
+    clearTimeout(pasteToastTimer);
+    pasteToastTimer = null;
+  }
+  if (pasteCountdownInterval) {
+    clearInterval(pasteCountdownInterval);
+    pasteCountdownInterval = null;
+  }
+  const toast = document.querySelector('#mhubPasteToast');
+  if (toast) toast.remove();
+  pendingPasteAction = null;
+}
+
+async function executePendingPaste() {
+  if (!pendingPasteAction) return;
+  const action = pendingPasteAction;
+  cancelPendingPaste();
+
+  let finalText = action.text;
+  const isDocUrl = action.rawText.trim().startsWith('https://docs.google.com/document/d/');
+
+  if (isDocUrl) {
+    try {
+      showHubToast('Fetching Google Doc content...');
+      const docData = await MeetingHub.store.fetchGoogleDoc(action.rawText.trim());
+      if (docData && docData.text) {
+        finalText = docData.text;
+      }
+    } catch (e) {
+      console.warn('[PasteAnywhere] Could not fetch Google Doc, using raw text/URL:', e);
+    }
+  }
+
+  try {
+    if (action.targetType === 'meeting' && action.targetEventId) {
+      await MeetingHub.store.sendMinutesToInbox(action.targetEventId, action.targetMissionId, {
+        text: finalText,
+        title: action.targetTitle || 'Pasted minutes',
+        source: 'paste_anywhere',
+        googleDocUrl: isDocUrl ? action.rawText.trim() : ''
+      });
+      showHubToast(`Captured minutes to inbox for ${action.targetTitle}`);
+    } else {
+      await MeetingHub.store.writeUnassignedInboxFile({
+        title: action.targetTitle || 'Pasted capture',
+        text: finalText,
+        source: 'paste_anywhere',
+        docUrl: isDocUrl ? action.rawText.trim() : ''
+      });
+      showHubToast('Captured note to unassigned inbox');
+    }
+    renderActiveView();
+  } catch (err) {
+    showHubToast(`Capture failed: ${err.message}`);
+  }
+}
+
+async function showPasteAnywhereBanner(rawText) {
+  cancelPendingPaste();
+
+  const isDocUrl = rawText.trim().startsWith('https://docs.google.com/document/d/');
+  const registry = await MeetingHub.store.getMissionsRegistry();
+  const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
+
+  let candidateTargets = [];
+  let defaultTarget = null;
+
+  // 1. If drawer is open with a selected meeting
+  if (AppState.selectedEventId && !AppState.isPanelCollapsed) {
+    const evt = MeetingHub.store.getEvent(AppState.selectedEventId);
+    if (evt) {
+      defaultTarget = {
+        type: 'meeting',
+        eventId: evt.id,
+        missionId: AppState.missionId || 'ge-enterprise',
+        title: evt.title || 'Selected meeting'
+      };
+      candidateTargets.push(defaultTarget);
+    }
+  }
+
+  // 2. Current mission fold lane meetings
+  const activeMid = AppState.missionId || 'ge-enterprise';
+  try {
+    const currentData = await MeetingHub.store.getMissionHubData(activeMid);
+    (currentData?.lanes?.fold || []).forEach(m => {
+      const target = {
+        type: 'meeting',
+        eventId: m.id,
+        missionId: activeMid,
+        title: `[${activeMid}] ${m.title} (${m.date})`
+      };
+      if (!candidateTargets.some(c => c.eventId === m.id)) {
+        candidateTargets.push(target);
+      }
+      if (!defaultTarget) {
+        defaultTarget = target;
+      }
+    });
+  } catch (e) {}
+
+  // 3. Across all active missions fold lane
+  for (const m of missions) {
+    if (m.id === activeMid) continue;
+    try {
+      const data = await MeetingHub.store.getMissionHubData(m.id);
+      (data?.lanes?.fold || []).forEach(evt => {
+        const target = {
+          type: 'meeting',
+          eventId: evt.id,
+          missionId: m.id,
+          title: `[${m.id}] ${evt.title} (${evt.date})`
+        };
+        if (!candidateTargets.some(c => c.eventId === evt.id)) {
+          candidateTargets.push(target);
+        }
+        if (!defaultTarget) {
+          defaultTarget = target;
+        }
+      });
+    } catch (e) {}
+  }
+
+  if (!defaultTarget) {
+    defaultTarget = {
+      type: 'unassigned',
+      eventId: null,
+      missionId: null,
+      title: 'Unassigned (Needs a home)'
+    };
+  }
+
+  candidateTargets.push({
+    type: 'unassigned',
+    eventId: null,
+    missionId: null,
+    title: 'Unassigned (Needs a home)'
+  });
+
+  pendingPasteAction = {
+    rawText,
+    text: rawText,
+    targetType: defaultTarget.type,
+    targetEventId: defaultTarget.eventId,
+    targetMissionId: defaultTarget.missionId,
+    targetTitle: defaultTarget.title
+  };
+
+  const toast = document.createElement('div');
+  toast.id = 'mhubPasteToast';
+  toast.className = 'delete-toast';
+  toast.style.cssText = 'position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.6); border: 1.5px solid var(--pink-600); background: var(--card); border-radius: var(--r-md); padding: 12px 18px; display: flex; align-items: center; gap: 14px; max-width: 90vw; flex-wrap: wrap;';
+
+  toast.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="badge pink" style="font-size: 11px; font-weight: 600;">Paste Anywhere</span>
+      <span style="font-size: 12.5px;">Capturing to:</span>
+      <select id="mhubPasteTargetSelect" class="in sm" style="font-size: 12px; font-weight: 500; min-width: 220px; max-width: 340px; background: var(--card); color: var(--foreground); border: 1px solid var(--border);">
+        ${candidateTargets.map((c, i) => `
+          <option value="${i}" style="background: var(--card); color: var(--foreground);" ${c.eventId === defaultTarget.eventId && c.type === defaultTarget.type ? 'selected' : ''}>
+            ${String(c.title).slice(0, 42)}
+          </option>
+        `).join('')}
+      </select>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span id="mhubPasteCountdown" class="sub" style="font-size: 12px; font-weight: 600; font-family: var(--font-mono); color: var(--pink-400);">8s</span>
+      <button class="btn sm" id="mhubPasteConfirmBtn" style="font-weight: 600; padding: 3px 10px;">Confirm</button>
+      <button class="btn sm" id="mhubPasteCancelBtn" title="Press Cmd+Z or click to cancel" style="padding: 3px 10px;">Cancel (Cmd+Z)</button>
+    </div>
+  `;
+  document.body.appendChild(toast);
+
+  const selectEl = toast.querySelector('#mhubPasteTargetSelect');
+  if (selectEl) {
+    selectEl.addEventListener('change', (e) => {
+      const idx = parseInt(e.target.value, 10);
+      const chosen = candidateTargets[idx];
+      if (chosen && pendingPasteAction) {
+        pendingPasteAction.targetType = chosen.type;
+        pendingPasteAction.targetEventId = chosen.eventId;
+        pendingPasteAction.targetMissionId = chosen.missionId;
+        pendingPasteAction.targetTitle = chosen.title;
+      }
+    });
+  }
+
+  const confirmBtn = toast.querySelector('#mhubPasteConfirmBtn');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', () => {
+      executePendingPaste();
+    });
+  }
+
+  const cancelBtn = toast.querySelector('#mhubPasteCancelBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      cancelPendingPaste();
+      showHubToast('Capture cancelled');
+    });
+  }
+
+  let remaining = 8;
+  const countdownEl = toast.querySelector('#mhubPasteCountdown');
+
+  pasteCountdownInterval = setInterval(() => {
+    remaining -= 1;
+    if (countdownEl) {
+      countdownEl.textContent = `${remaining}s`;
+    }
+    if (remaining <= 0) {
+      clearInterval(pasteCountdownInterval);
+      pasteCountdownInterval = null;
+      executePendingPaste();
+    }
+  }, 1000);
+}
+
+function initPasteAnywhere() {
+  window.addEventListener('paste', async (e) => {
+    const activeEl = document.activeElement;
+    if (activeEl && (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName) || activeEl.isContentEditable)) {
+      return; // Normal paste into form element
+    }
+
+    const text = e.clipboardData ? e.clipboardData.getData('text') : '';
+    if (!text || !text.trim()) return;
+
+    showPasteAnywhereBanner(text);
+  });
+}
+
 async function refreshSidebarAndRail() {
   if (shell) {
     if (MeetingHub.store) {
@@ -8274,7 +10739,7 @@ function renderActiveView() {
   refreshSidebarAndRail();
 
   if (AppState.view === 'mission') {
-    const missionName = MeetingHub.store.getProjectName(AppState.missionId) || AppState.missionId;
+    const missionName = (typeof MeetingHub.store.getProjectName === 'function' ? MeetingHub.store.getProjectName(AppState.missionId) : AppState.missionId) || AppState.missionId;
     const tEl = document.querySelector('#title');
     const sEl = document.querySelector('#subtitle');
     if (tEl) tEl.textContent = missionName;
@@ -8282,7 +10747,10 @@ function renderActiveView() {
 
     if (projectsView) {
       projectsView.container = leftCol;
-      projectsView.render();
+      const mid = AppState.missionId || 'ge-enterprise';
+      projectsView.currentProjectId = mid;
+      projectsView.currentSubTab = AppState.tab || null;
+      projectsView.render(mid);
     }
     return;
   }
@@ -8291,40 +10759,11 @@ function renderActiveView() {
     const tEl = document.querySelector('#title');
     const sEl = document.querySelector('#subtitle');
     if (tEl) tEl.textContent = 'Cross-Mission Inbox';
-    if (sEl) sEl.textContent = 'Pending meeting minutes waiting to be folded';
-    leftCol.innerHTML = `
-      <div class="card" style="padding: 24px;">
-        <div class="label">Cross-Mission Inbox</div>
-        <h2 style="margin: 8px 0;">Incoming Meeting Minutes</h2>
-        <p class="sub" style="margin-bottom: 16px;">Past meeting minutes awaiting folding into durable mission notes.</p>
-        <div id="inboxList">Loading inbox status...</div>
-      </div>
-    `;
-    (async () => {
-      try {
-        const reg = await MeetingHub.store.getMissionsRegistry();
-        const missions = reg?.missions || [];
-        const container = leftCol.querySelector('#inboxList');
-        if (!container) return;
-        let html = '';
-        for (const m of missions) {
-          const status = await MeetingHub.store.getInboxStatus(m.id);
-          const pending = status?.pendingCount || 0;
-          html += `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--secondary);">
-              <div>
-                <strong>${m.name}</strong>
-                <div class="sub" style="font-size: 11px;">${m.directory}</div>
-              </div>
-              <div>
-                ${pending > 0 ? `<span class="badge warn" style="color: var(--warn); font-weight: 600;">${pending} pending</span>` : '<span class="badge ok">0 pending</span>'}
-              </div>
-            </div>
-          `;
-        }
-        container.innerHTML = html;
-      } catch (e) {}
-    })();
+    if (sEl) sEl.textContent = 'Incoming meeting minutes & capture stream';
+    if (inboxView) {
+      inboxView.container = leftCol;
+      inboxView.render();
+    }
     return;
   }
 
@@ -8681,7 +11120,10 @@ function handleHashRoute() {
       localStorage.setItem('mhub_last_mission', parsed.missionId);
     } catch (e) {}
 
-    MeetingHub.store.setActiveProjectId(parsed.missionId);
+    const activePid = MeetingHub.store.getActiveProjectId();
+    if (activePid !== parsed.missionId) {
+      MeetingHub.store.setActiveProjectId(parsed.missionId);
+    }
     if (shell && typeof shell.setActiveProjectId === 'function') {
       shell.setActiveProjectId(parsed.missionId);
     }
@@ -8697,12 +11139,8 @@ function handleHashRoute() {
     }
 
     if (projectsView) {
-      projectsView.setProject(parsed.missionId);
-      if (parsed.tab && typeof projectsView.setTab === 'function') {
-        projectsView.setTab(parsed.tab);
-      } else if (!parsed.tab && typeof projectsView.setTab === 'function') {
-        projectsView.setTab(null);
-      }
+      projectsView.currentProjectId = parsed.missionId;
+      projectsView.currentSubTab = parsed.tab || null;
     }
     renderActiveView();
     return;
@@ -8765,6 +11203,16 @@ window.addEventListener('keydown', (e) => {
     activeEl.isContentEditable
   );
 
+  // Cmd+Z or Ctrl+Z -> cancel pending paste action
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+    if (pendingPasteAction) {
+      e.preventDefault();
+      cancelPendingPaste();
+      showHubToast('Capture cancelled (Cmd+Z)');
+      return;
+    }
+  }
+
   // Esc order: blur input -> close drawer -> go back from tab to stream
   if (e.key === 'Escape') {
     if (isInputActive) {
@@ -8789,7 +11237,9 @@ window.addEventListener('keydown', (e) => {
       }
       return;
     }
-    if (AppState.view === 'mission' && AppState.tab) {
+    if (AppState.view === 'mission' && (AppState.tab || (projectsView && projectsView.currentSubTab))) {
+      AppState.tab = null;
+      if (projectsView) projectsView.currentSubTab = null;
       window.location.hash = '#/p/' + encodeURIComponent(AppState.missionId);
       return;
     }
@@ -8934,7 +11384,7 @@ async function bootstrap() {
     // Initialize projects in shell
     const allProjects = await MeetingHub.store.getAllProjects();
     const suggestedProjects = await MeetingHub.store.getSuggestedProjects();
-    const activeProjectId = MeetingHub.store.getActiveProjectId() || (allProjects[0] && allProjects[0].id) || 'clariane';
+    const activeProjectId = MeetingHub.store.getActiveProjectId() || (allProjects[0] && allProjects[0].id) || 'ge-enterprise';
     shell.setProjects(allProjects, activeProjectId, suggestedProjects);
 
     todayView = new MeetingHub.TodayView({
@@ -8979,6 +11429,23 @@ async function bootstrap() {
       onSelectMeeting: (eventId, tab = null) => selectMeeting(eventId, tab)
     });
 
+    inboxView = new MeetingHub.InboxView({
+      container: leftCol,
+      store: MeetingHub.store,
+      onSelectMeeting: (eventId, missionId = null) => {
+        if (missionId) {
+          AppState.missionId = missionId;
+          shell.activeProjectId = missionId;
+        }
+        selectMeeting(eventId);
+      },
+      onNavigateMission: (missionId) => {
+        window.location.hash = '#/p/' + encodeURIComponent(missionId);
+      }
+    });
+
+    initPasteAnywhere();
+
     meetingPanel = new MeetingHub.MeetingPanelUI({
       container: document.querySelector('#right'),
       store: MeetingHub.store,
@@ -9015,9 +11482,16 @@ async function bootstrap() {
         const all = await MeetingHub.store.getAllProjects();
         const sug = await MeetingHub.store.getSuggestedProjects();
         shell.setProjects(all, MeetingHub.store.getActiveProjectId(), sug);
-        if (projectsView) projectsView.setProject(MeetingHub.store.getActiveProjectId());
       }
-      if (payload.type === 'meeting_data_updated' || payload.type === 'sync_completed' || payload.type === 'project_updated') {
+      if (
+        payload.type === 'meeting_data_updated' ||
+        payload.type === 'sync_completed' ||
+        payload.type === 'project_updated' ||
+        payload.type === 'event_deleted' ||
+        payload.type === 'event_restored' ||
+        payload.type === 'action_toggled' ||
+        payload.type === 'inbox_updated'
+      ) {
         renderActiveView();
         if (meetingPanel && AppState.selectedEventId) {
           meetingPanel.render();
@@ -9034,7 +11508,6 @@ async function bootstrap() {
 
     // Handle initial route
     handleHashRoute();
-    renderActiveView();
 
     const activeEngine = MeetingHub.store.db.engineName || 'IndexedDB';
     const initialEventsList = await MeetingHub.store.getAllEvents();

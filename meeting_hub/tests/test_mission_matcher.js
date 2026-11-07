@@ -23,14 +23,19 @@ console.log('--- Running Mission Matcher Verification Tests ---');
 
 const mockRegistry = [
   {
+    id: 'leclerc-siplec',
+    name: 'Leclerc : Siplec Referential and AI Augmentation',
+    clientMatch: ['siplec', 'leclerc', 'entretien siplec', '[main mission]', 'main mission']
+  },
+  {
     id: 'ge-enterprise',
     name: 'GE Enterprise & UC Wizard',
-    clientMatch: ['ge enterprise', 'uc wizard', 'datastore ge', 'weekly sync - ge enterprise', '[mandat ge]', 'mandat ge']
+    clientMatch: ['ge enterprise', 'uc wizard', 'datastore ge', 'weekly sync - ge enterprise', '[mandat ge]', 'mandat ge', 'team work', '[team work]', '[ge]']
   },
   {
     id: 'healthcare-mandate',
     name: 'Healthcare Mandate & Care Dispensing',
-    clientMatch: ['care dispensing', '[care dispensing]', 'healthcare', 'healthoween']
+    clientMatch: ['care dispensing', '[care dispensing]', 'healthcare', '[healthcare]', 'healthoween']
   },
   {
     id: 'pridefact',
@@ -40,7 +45,7 @@ const mockRegistry = [
   {
     id: 'counseling',
     name: 'Counseling & People Governance',
-    clientMatch: ['counseling', 'peer reviews'],
+    clientMatch: ['counseling', 'peer reviews', '[counseling/hr]', 'counseling/hr', '[counseling]'],
     contacts: ['Roland Juilhard', 'Jamila NASRI']
   },
   {
@@ -79,33 +84,84 @@ test('Priority 1: Matches [MO] to clariane-hdj', () => {
   assert.strictEqual(res.confidence, 'high');
 });
 
-// 2. Keyword & clientMatch (Priority 2)
-test('Priority 2: Matches "Weekly sync - GE Enterprise" without brackets', () => {
+// 2. Visual Calendar Color Tag (Priority 2)
+test('Priority 2: Matches colorId "7" ([MAIN MISSION]) to leclerc-siplec', () => {
+  const event = { title: 'Siplec <> Artefact - Entretien Ayrton PDT-119', colorId: '7' };
+  const res = matchMission(event, mockRegistry);
+  assert.strictEqual(res.missionId, 'leclerc-siplec');
+  assert.strictEqual(res.confidence, 'high');
+});
+
+test('Priority 2: Matches colorTag "[MAIN MISSION]" to leclerc-siplec', () => {
+  const event = { title: 'Point d\'étape', colorTag: '[MAIN MISSION]' };
+  const res = matchMission(event, mockRegistry);
+  assert.strictEqual(res.missionId, 'leclerc-siplec');
+  assert.strictEqual(res.confidence, 'high');
+});
+
+test('Priority 2: Matches colorId "2" ([COUNSELING/HR]) to counseling', () => {
+  const event = { title: 'Office (half) hours - Badges DA', colorId: '2' };
+  const res = matchMission(event, mockRegistry);
+  assert.strictEqual(res.missionId, 'counseling');
+  assert.strictEqual(res.confidence, 'high');
+});
+
+test('Priority 2: Matches colorId "6" (Team Work) to ge-enterprise', () => {
+  const event = { title: 'DYOC - one pager generation', colorId: '6' };
+  const res = matchMission(event, mockRegistry);
+  assert.strictEqual(res.missionId, 'ge-enterprise');
+  assert.strictEqual(res.confidence, 'high');
+});
+
+test('Priority 2: Ignores colorId "8" (Me-time) for missions', () => {
+  const event = { title: 'ATHX Run 1', colorId: '8' };
+  const res = matchMission(event, mockRegistry);
+  assert.strictEqual(res, null);
+});
+
+// 3. Keyword & clientMatch (Priority 3)
+test('Priority 3: Matches "Weekly sync - GE Enterprise" without brackets', () => {
   const event = { title: 'Weekly sync - GE Enterprise', client: 'Artefact' };
   const res = matchMission(event, mockRegistry);
   assert.strictEqual(res.missionId, 'ge-enterprise');
   assert.ok(res.confidence === 'high' || res.confidence === 'medium');
 });
 
-test('Priority 2: Matches event tags or client field', () => {
+test('Priority 3: Matches event tags or client field', () => {
   const event = { title: 'Atelier de restitution', tags: ['care dispensing'] };
   const res = matchMission(event, mockRegistry);
   assert.strictEqual(res.missionId, 'healthcare-mandate');
 });
 
-// 3. Attendee Overlap (Priority 3)
-test('Priority 3: Matches attendee Jamila NASRI to counseling', () => {
+// 4. Attendee Overlap (Priority 4)
+test('Priority 4: Matches attendee Jamila NASRI to counseling', () => {
   const event = { title: 'Café - Mentoring', attendees: ['Ayrton André', 'Jamila NASRI'] };
   const res = matchMission(event, mockRegistry);
   assert.strictEqual(res.missionId, 'counseling');
   assert.strictEqual(res.confidence, 'medium');
 });
 
-test('Priority 3: Matches attendee Roland Juilhard to counseling', () => {
+test('Priority 4: Matches attendee Roland Juilhard to counseling', () => {
   const event = { title: 'Point carrière Q4', attendees: ['Ayrton André', 'Roland Juilhard'] };
   const res = matchMission(event, mockRegistry);
   assert.strictEqual(res.missionId, 'counseling');
   assert.strictEqual(res.confidence, 'medium');
+});
+
+// 0. Explicit Mission ID (Priority 0)
+test('Priority 0: Explicit projectId or missionId takes precedence', () => {
+  const event = { title: 'Random title', projectId: 'leclerc-siplec', colorId: '11' };
+  const res = matchMission(event, mockRegistry);
+  assert.strictEqual(res.missionId, 'leclerc-siplec');
+  assert.strictEqual(res.confidence, 'high');
+});
+
+// Title override for conflicting color tags
+test('Priority 2: Title keyword "Leclerc" overrides conflicting color tag "[PRIDEFACT]"', () => {
+  const event = { title: 'Échange mission Leclerc ', colorTag: '[PRIDEFACT]', colorId: '11' };
+  const res = matchMission(event, mockRegistry);
+  assert.strictEqual(res.missionId, 'leclerc-siplec');
+  assert.strictEqual(res.confidence, 'high');
 });
 
 // 4. Unmatched event

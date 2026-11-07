@@ -49,7 +49,14 @@ function runTests() {
   const declined = { id: 'm10', date: '2026-10-31', start: '10:00', end: '11:00', status: 'declined' };
   assert(classifyMeeting(declined, 'not_sent', refNow) === 'hidden', 'Declined meeting is hidden');
 
-  console.log('✔ All 10 lane_classifier tests passed successfully.');
+  // 9. Minutes pending in inbox keep an old meeting in 'fold'
+  assert(classifyMeeting(fifteenDaysAgo, 'pending', refNow) === 'fold', 'Meeting 15 days ago pending in inbox stays in fold');
+
+  // 10. A mission-level inbox object must not be mistaken for a per-meeting state
+  const missionInbox = { status: 'ok', files: [{ filename: 'x_m6.md', eventId: 'm6' }], foldedFiles: [] };
+  assert(classifyMeeting(recentPast, missionInbox, refNow) === 'fold', 'Mission-level inbox object does not mark a meeting folded');
+
+  console.log('✔ All 12 lane_classifier tests passed successfully.');
 }
 
 function assert(condition, message) {

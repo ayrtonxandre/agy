@@ -68,11 +68,12 @@ export class MeetingsView {
       });
     }
 
-    // Sort: earliest date first for upcoming, latest first for past/all
+    // Sort: earliest date first for upcoming, latest first for past
     events.sort((a, b) => {
-      const cmp = a.date.localeCompare(b.date);
-      if (cmp !== 0) return cmp;
-      return (a.start || '').localeCompare(b.start || '');
+      const cmp = this.timeFilter === 'past'
+        ? b.date.localeCompare(a.date) || (b.start || '').localeCompare(a.start || '')
+        : a.date.localeCompare(b.date) || (a.start || '').localeCompare(b.start || '');
+      return cmp;
     });
 
     // Unique clients for filter pills
@@ -148,6 +149,7 @@ export class MeetingsView {
               <div style="display: flex; align-items: center; gap: 8px;">
                 ${e.link ? `<span title="Video call">${Icons.video}</span>` : ''}
                 <button class="btn sm" data-open-id="${e.id}">Open</button>
+                <button class="btn-delete-meeting" data-delete-event="${this._escape(e.id)}" title="Remove meeting from dashboard" aria-label="Delete meeting">${Icons.trash}</button>
               </div>
             </div>
           `;
@@ -186,8 +188,23 @@ export class MeetingsView {
       });
     });
 
+    this.container.querySelectorAll('[data-delete-event]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const eventId = btn.dataset.deleteEvent;
+        if (!eventId) return;
+        if (typeof window !== 'undefined' && typeof window.__deleteMeetingWithUndo === 'function') {
+          await window.__deleteMeetingWithUndo(eventId);
+        } else {
+          await this.store.deleteEvent(eventId);
+          await this.render();
+        }
+      });
+    });
+
     this.container.querySelectorAll('[data-event-id]').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-delete-event]')) return;
         const id = el.dataset.eventId;
         if (id && this.onSelectMeeting) {
           this.onSelectMeeting(id);

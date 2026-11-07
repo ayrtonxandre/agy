@@ -1,5 +1,17 @@
 from __future__ import annotations
 import os
+import sys
+
+# Shield against deprecated oauth2client crashing googleapiclient when pyOpenSSL / cryptography mismatch
+class _ShieldBrokenOAuth2Client:
+    def find_spec(self, fullname, path, target=None):
+        if fullname.startswith("oauth2client"):
+            raise ImportError("oauth2client disabled due to pyOpenSSL/cryptography environment mismatch")
+        return None
+
+if not any(isinstance(finder, _ShieldBrokenOAuth2Client) for finder in sys.meta_path):
+    sys.meta_path.insert(0, _ShieldBrokenOAuth2Client())
+
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from google.auth.transport.requests import Request

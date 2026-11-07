@@ -1,6 +1,17 @@
 import json
 import os
 import sys
+
+# Shield against deprecated oauth2client crashing googleapiclient when pyOpenSSL / cryptography mismatch
+class _ShieldBrokenOAuth2Client:
+    def find_spec(self, fullname, path, target=None):
+        if fullname.startswith("oauth2client"):
+            raise ImportError("oauth2client disabled due to pyOpenSSL/cryptography environment mismatch")
+        return None
+
+if not any(isinstance(finder, _ShieldBrokenOAuth2Client) for finder in sys.meta_path):
+    sys.meta_path.insert(0, _ShieldBrokenOAuth2Client())
+
 import re
 from datetime import datetime, timedelta, date
 from pathlib import Path
@@ -39,7 +50,7 @@ def build_dashboard():
         if "Artefact" in src:
             source_counts["Artefact"] += 1
             src_key = "work"
-        elif "Clariane" in src:
+        elif "Clariane" in src or "Leclerc" in src or "Siplec" in src or "Client" in src:
             source_counts["Clariane"] += 1
             src_key = "client"
         elif "Personal" in src or "Ma vie" in src:
@@ -105,7 +116,9 @@ def build_dashboard():
             "organizer": ev.get("organizer", {}),
             "status": ev.get("status", "confirmed"),
             "isAllDay": ev.get("is_all_day", False),
-            "meetingType": m_type
+            "meetingType": m_type,
+            "colorId": ev.get("colorId", ""),
+            "colorTag": ev.get("colorTag", "")
         })
 
     # Compute free slots for the horizon

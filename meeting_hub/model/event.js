@@ -5,7 +5,43 @@
  * the clean, standardized Meeting Hub domain model.
  */
 
+import { CALENDAR_COLOR_TAGS } from './mission_matcher.js';
+export { CALENDAR_COLOR_TAGS };
+
 export class EventModel {
+  static isDeletedOrDeclined(raw, deletedIdsSet = null) {
+    if (!raw || typeof raw !== 'object') return true;
+    const id = String(raw.id || '');
+    if (deletedIdsSet && id && deletedIdsSet.has(id)) {
+      return true;
+    }
+    const status = String(raw.status || '').toLowerCase();
+    if (status === 'cancelled' || status === 'canceled' || status === 'declined') {
+      return true;
+    }
+    const summary = String(raw.summary || raw.title || '').trim().toLowerCase();
+    if (
+      summary.startsWith('canceled:') ||
+      summary.startsWith('cancelled:') ||
+      summary.startsWith('annulé:') ||
+      summary.startsWith('annulé :')
+    ) {
+      return true;
+    }
+    if (Array.isArray(raw.attendees)) {
+      for (const att of raw.attendees) {
+        if (att && typeof att === 'object') {
+          const isSelf = Boolean(att.self) || String(att.email || '').toLowerCase().includes('ayrton.andre');
+          const attStatus = String(att.status || att.responseStatus || '').toLowerCase();
+          if (isSelf && attStatus === 'declined') {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   static normalize(raw) {
     let id = raw.id || '';
     const recurrenceId = raw.recurrenceId || raw.recurrence_id || raw.recurrence || (raw.originalStartTime && (raw.originalStartTime.dateTime || raw.originalStartTime.date)) || '';
@@ -35,9 +71,19 @@ export class EventModel {
     }
 
     const durationMin = raw.durationMin !== undefined ? raw.durationMin : EventModel.calculateDuration(start, end);
-    const { stream, client, isTraining } = EventModel.detectStreamAndClient(summary, source, desc, location, raw.attendees, raw.organizer);
+    const colorId = raw.colorId !== undefined && raw.colorId !== null
+      ? String(raw.colorId)
+      : (raw.color_id !== undefined && raw.color_id !== null ? String(raw.color_id) : '');
+    const colorTag = raw.colorTag || (colorId && CALENDAR_COLOR_TAGS[colorId]) || '';
+
+    const { stream, client, isTraining } = EventModel.detectStreamAndClient(summary, source, desc, location, raw.attendees, raw.organizer, colorId, colorTag);
     const series = raw.series || EventModel.extractSeriesId(id, summary);
-    const tags = raw.tags || EventModel.extractTags(`${summary} ${desc}`);
+    const tags = Array.isArray(raw.tags) ? [...raw.tags] : EventModel.extractTags(`${summary} ${desc}`);
+    if (colorTag) {
+      if (!tags.includes(colorTag)) tags.push(colorTag);
+      const cleanTag = colorTag.replace(/[\[\]]/g, '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      if (cleanTag && !tags.includes(cleanTag)) tags.push(cleanTag);
+    }
     const attendees = Array.isArray(raw.attendees) ? EventModel.formatAttendees(raw.attendees) : [];
     const videoUrl = raw.videoUrl || raw.video_link || raw.videoLink || '';
     const link = raw.link || EventModel.detectVideoPlatform(videoUrl);
@@ -61,9 +107,13 @@ export class EventModel {
       googleDocUrl,
       isAllDay,
       isTraining,
+      isCustom: Boolean(raw.isCustom || String(id).startsWith('custom-') || String(id).startsWith('evt-')),
+      status: raw.status || 'confirmed',
       location,
       description: desc,
-      source
+      source,
+      colorId,
+      colorTag
     };
   }
 
@@ -79,13 +129,42 @@ export class EventModel {
     }
   }
 
-  static detectStreamAndClient(summary, source, desc, location, attendees = [], organizer = {}) {
+  static detectStreamAndClient(summary, source, desc, location, attendees = [], organizer = {}, colorId = '', colorTag = '') {
+    const cId = String(colorId || '');
+    const cTag = String(colorTag || (cId && CALENDAR_COLOR_TAGS[cId]) || '');
+
+    // Calendar Color Tag has explicit precedence when set
+    if (cId === '8' || cTag === 'Me-time') {
+      return { stream: 'life', client: 'ATHX', isTraining: true };
+    }
+    if (cId === '7' || cTag === '[MAIN MISSION]') {
+      return { stream: 'work', client: 'Leclerc / Siplec', isTraining: false };
+    }
+    if (cId === '2' || cId === '10' || cTag === '[COUNSELING/HR]') {
+      return { stream: 'work', client: 'Counseling', isTraining: false };
+    }
+    if (cId === '5' || cTag === '[HEALTHCARE]') {
+      return { stream: 'work', client: 'Healthcare', isTraining: false };
+    }
+    if (cId === '4' || cId === '11' || cTag === '[PRIDEFACT]') {
+      return { stream: 'work', client: 'PrideFact', isTraining: false };
+    }
+    if (cId === '6' || cTag === 'Team Work' || cTag === '[GE]') {
+      return { stream: 'work', client: 'GE Enterprise', isTraining: false };
+    }
+    if (cId === '3' || cId === '1' || cId === '9' || cTag === '[ARTEFACT INTERNAL]') {
+      return { stream: 'work', client: 'Artefact Internal', isTraining: false };
+    }
+
     const orgEmail = (organizer && organizer.email) || '';
     const attEmails = Array.isArray(attendees) ? attendees.map(a => (typeof a === 'string' ? a : a.email || '')).join(' ') : '';
     const corpus = `${summary} ${source} ${desc} ${location} ${orgEmail} ${attEmails}`.toLowerCase();
 
     if (corpus.includes('athx') || corpus.includes('training') || corpus.includes('wod') || corpus.includes('crossfit')) {
       return { stream: 'life', client: 'ATHX', isTraining: true };
+    }
+    if (corpus.includes('siplec') || corpus.includes('leclerc')) {
+      return { stream: 'work', client: 'Leclerc / Siplec', isTraining: false };
     }
     if (corpus.includes('clariane') || corpus.includes('inicea') || corpus.includes('estela') || corpus.includes('@clariane.fr') ||
         corpus.includes('hdj') || corpus.includes('netsoins') || corpus.includes('molécules onéreuses') || corpus.includes('molecules onereuses') ||

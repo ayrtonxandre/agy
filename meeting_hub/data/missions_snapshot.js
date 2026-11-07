@@ -2,6 +2,61 @@
 var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MISSIONS_SNAPSHOT = {
   "missions": [
     {
+      "id": "leclerc-siplec",
+      "name": "Leclerc : Siplec Referential and AI Augmentation",
+      "client": "E.Leclerc / Siplec",
+      "directory": "Leclerc Siplec",
+      "status": "active",
+      "archived": false,
+      "brief": "Leclerc Siplec/Agent brief.md",
+      "overview": "Leclerc Siplec/Mission Overview.md",
+      "actions": "Leclerc Siplec/Actions.md",
+      "inbox": "Leclerc Siplec/_inbox",
+      "clientMatch": [
+        "siplec",
+        "leclerc",
+        "entretien siplec",
+        "calypso",
+        "helios",
+        "ulysse",
+        "tata platform",
+        "[main mission]",
+        "main mission"
+      ],
+      "contacts": [
+        "jérôme harousseau",
+        "jerome harousseau",
+        "qing zhou",
+        "juliette lacroix",
+        "gaëtan",
+        "zineb",
+        "guilhem"
+      ],
+      "workstreams": [
+        {
+          "id": "ws-data-industrialization",
+          "name": "Data Architecture & Industrialization",
+          "phase": "Actif",
+          "summary": "Migration des cas d'usage sandbox vers la plateforme cible (Collect -> Data -> Expo, GitLab, DBT, GCP)",
+          "note": "Leclerc Siplec/Data Architecture & Industrialization.md"
+        },
+        {
+          "id": "ws-match-merge",
+          "name": "Referential Quality & Match-Merge",
+          "phase": "Actif",
+          "summary": "Qualité de données et déduplication des 4 000 doublons usines/fournisseurs dans Calypso / Helios",
+          "note": "Leclerc Siplec/Referential Quality & Match-Merge.md"
+        },
+        {
+          "id": "ws-ai-textile-composition",
+          "name": "AI Textile Product Composition",
+          "phase": "Actif",
+          "summary": "Extraction automatisée par IA des compositions textiles à partir de données non structurées",
+          "note": "Leclerc Siplec/AI Textile Product Composition.md"
+        }
+      ]
+    },
+    {
       "id": "ge-enterprise",
       "name": "GE Enterprise & UC Wizard",
       "client": "Artefact Internal",
@@ -22,7 +77,22 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "[mandat ge]",
         "mandat ge",
         "mo & ge",
-        "updates mo & ge"
+        "updates mo & ge",
+        "dyoc",
+        "one pager",
+        "one pager generation",
+        "edward",
+        "feedback edward",
+        "[ge]",
+        "ge",
+        "team work",
+        "[team work]"
+      ],
+      "contacts": [
+        "louis bechu",
+        "edward toulemonde",
+        "paul bouche",
+        "camille kugler"
       ],
       "workstreams": [
         {
@@ -56,6 +126,7 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "care dispensing",
         "[care dispensing]",
         "healthcare",
+        "[healthcare]",
         "healthoween",
         "healthcare practice"
       ],
@@ -128,11 +199,20 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "counselling",
         "counselor",
         "counselee",
+        "[counseling/hr]",
+        "counseling/hr",
+        "[counseling]",
         "roland juilhard",
         "jamila nasri",
         "eval h2",
         "eval h2 2026",
         "[itw] - slot"
+      ],
+      "contacts": [
+        "roland juilhard",
+        "jamila nasri",
+        "roland j.",
+        "jamila n."
       ],
       "workstreams": [
         {
@@ -172,8 +252,10 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
       "clientMatch": [
         "[planning hdj]",
         "[planning manager]",
+        "[clariane]",
         "planning hdj",
         "planning manager",
+        "planification des interventions",
         "hdj",
         "arbelles",
         "mariena",

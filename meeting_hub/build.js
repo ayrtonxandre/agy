@@ -7,6 +7,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import vm from 'vm';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
 
@@ -64,6 +65,7 @@ const sourceFiles = [
   'model/prep_score.js',
   'model/store.js',
   'ui/icons.js',
+  'ui/action_modal.js',
   'ui/shell.js',
   'ui/meeting_panel.js',
   'views/today.js',
@@ -71,7 +73,8 @@ const sourceFiles = [
   'views/meetings.js',
   'views/actions.js',
   'views/series.js',
-  'views/projects.js'
+  'views/projects.js',
+  'views/inbox.js'
 ];
 
 let bundleCode = `/**
@@ -151,6 +154,7 @@ let meetingsView;
 let actionsView;
 let seriesView;
 let projectsView;
+let inboxView;
 let meetingPanel;
 let openActionsCount = 0;
 
@@ -175,7 +179,7 @@ function setPanelCollapsed(collapsed) {
 async function resolveDefaultMissionId() {
   try {
     const registry = await MeetingHub.store.getMissionsRegistry();
-    const missions = registry?.missions || [];
+    const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
     const activeMissions = missions.filter(m => !m.archived && m.status !== 'archived');
     const last = localStorage.getItem('mhub_last_mission');
     if (last && missions.some(m => m.id === last && !m.archived && m.status !== 'archived')) {
@@ -235,6 +239,305 @@ function selectMeeting(eventId, tab = null) {
   if (meetingsView && AppState.view === 'calendar' && AppState.calendarTab === 'meetings') meetingsView.setSelectedEvent(eventId);
 }
 
+function showDeleteUndoToast(deletedEvent) {
+  if (!deletedEvent) return;
+  const existing = document.querySelector('#mhubDeleteToast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'mhubDeleteToast';
+  toast.className = 'delete-toast';
+  const safeTitle = String(deletedEvent.title || 'Meeting').replace(/[&<>"']/g, '');
+  toast.innerHTML =
+    '<span>Removed <b>' + safeTitle.slice(0, 38) + '</b></span>' +
+    '<button class="btn sm" id="mhubUndoDeleteBtn" style="padding: 2px 8px; font-size: 11.5px;">Undo</button>';
+  document.body.appendChild(toast);
+
+  const timer = setTimeout(() => {
+    toast.remove();
+  }, 6000);
+
+  const undoBtn = toast.querySelector('#mhubUndoDeleteBtn');
+  if (undoBtn) {
+    undoBtn.addEventListener('click', async () => {
+      clearTimeout(timer);
+      toast.remove();
+      await MeetingHub.store.restoreEvent(deletedEvent);
+    });
+  }
+}
+
+window.__deleteMeetingWithUndo = async function(eventId) {
+  if (!eventId || !MeetingHub.store) return;
+  const deletedEvent = await MeetingHub.store.deleteEvent(eventId);
+  if (AppState.selectedEventId === eventId) {
+    AppState.selectedEventId = null;
+    setPanelCollapsed(true);
+    if (AppState.view === 'mission' && AppState.missionId) {
+      window.location.hash = '#/p/' + encodeURIComponent(AppState.missionId);
+    } else if (AppState.view === 'calendar') {
+      const sub = AppState.calendarTab && AppState.calendarTab !== 'today' ? '/' + AppState.calendarTab : '';
+      window.location.hash = '#/calendar' + sub;
+    }
+  }
+  showDeleteUndoToast(deletedEvent);
+};
+
+function showHubToast(msg) {
+  const existing = document.querySelector('#mhubNoticeToast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'mhubNoticeToast';
+  toast.className = 'delete-toast';
+  toast.style.borderColor = 'var(--pink-600)';
+  toast.innerHTML = \`<span style="font-size: 12.5px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">\${MeetingHub.Icons?.sparkles || ''} \${String(msg).replace(/[&<>"']/g, '')}</span>\`;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    if (toast.parentNode) toast.remove();
+  }, 4000);
+}
+window.showHubToast = showHubToast;
+
+// Phase 5: Global Paste Anywhere
+let pasteToastTimer = null;
+let pasteCountdownInterval = null;
+let pendingPasteAction = null;
+
+function cancelPendingPaste() {
+  if (pasteToastTimer) {
+    clearTimeout(pasteToastTimer);
+    pasteToastTimer = null;
+  }
+  if (pasteCountdownInterval) {
+    clearInterval(pasteCountdownInterval);
+    pasteCountdownInterval = null;
+  }
+  const toast = document.querySelector('#mhubPasteToast');
+  if (toast) toast.remove();
+  pendingPasteAction = null;
+}
+
+async function executePendingPaste() {
+  if (!pendingPasteAction) return;
+  const action = pendingPasteAction;
+  cancelPendingPaste();
+
+  let finalText = action.text;
+  const isDocUrl = action.rawText.trim().startsWith('https://docs.google.com/document/d/');
+
+  if (isDocUrl) {
+    try {
+      showHubToast('Fetching Google Doc content...');
+      const docData = await MeetingHub.store.fetchGoogleDoc(action.rawText.trim());
+      if (docData && docData.text) {
+        finalText = docData.text;
+      }
+    } catch (e) {
+      console.warn('[PasteAnywhere] Could not fetch Google Doc, using raw text/URL:', e);
+    }
+  }
+
+  try {
+    if (action.targetType === 'meeting' && action.targetEventId) {
+      await MeetingHub.store.sendMinutesToInbox(action.targetEventId, action.targetMissionId, {
+        text: finalText,
+        title: action.targetTitle || 'Pasted minutes',
+        source: 'paste_anywhere',
+        googleDocUrl: isDocUrl ? action.rawText.trim() : ''
+      });
+      showHubToast(\`Captured minutes to inbox for \${action.targetTitle}\`);
+    } else {
+      await MeetingHub.store.writeUnassignedInboxFile({
+        title: action.targetTitle || 'Pasted capture',
+        text: finalText,
+        source: 'paste_anywhere',
+        docUrl: isDocUrl ? action.rawText.trim() : ''
+      });
+      showHubToast('Captured note to unassigned inbox');
+    }
+    renderActiveView();
+  } catch (err) {
+    showHubToast(\`Capture failed: \${err.message}\`);
+  }
+}
+
+async function showPasteAnywhereBanner(rawText) {
+  cancelPendingPaste();
+
+  const isDocUrl = rawText.trim().startsWith('https://docs.google.com/document/d/');
+  const registry = await MeetingHub.store.getMissionsRegistry();
+  const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
+
+  let candidateTargets = [];
+  let defaultTarget = null;
+
+  // 1. If drawer is open with a selected meeting
+  if (AppState.selectedEventId && !AppState.isPanelCollapsed) {
+    const evt = MeetingHub.store.getEvent(AppState.selectedEventId);
+    if (evt) {
+      defaultTarget = {
+        type: 'meeting',
+        eventId: evt.id,
+        missionId: AppState.missionId || 'ge-enterprise',
+        title: evt.title || 'Selected meeting'
+      };
+      candidateTargets.push(defaultTarget);
+    }
+  }
+
+  // 2. Current mission fold lane meetings
+  const activeMid = AppState.missionId || 'ge-enterprise';
+  try {
+    const currentData = await MeetingHub.store.getMissionHubData(activeMid);
+    (currentData?.lanes?.fold || []).forEach(m => {
+      const target = {
+        type: 'meeting',
+        eventId: m.id,
+        missionId: activeMid,
+        title: \`[\${activeMid}] \${m.title} (\${m.date})\`
+      };
+      if (!candidateTargets.some(c => c.eventId === m.id)) {
+        candidateTargets.push(target);
+      }
+      if (!defaultTarget) {
+        defaultTarget = target;
+      }
+    });
+  } catch (e) {}
+
+  // 3. Across all active missions fold lane
+  for (const m of missions) {
+    if (m.id === activeMid) continue;
+    try {
+      const data = await MeetingHub.store.getMissionHubData(m.id);
+      (data?.lanes?.fold || []).forEach(evt => {
+        const target = {
+          type: 'meeting',
+          eventId: evt.id,
+          missionId: m.id,
+          title: \`[\${m.id}] \${evt.title} (\${evt.date})\`
+        };
+        if (!candidateTargets.some(c => c.eventId === evt.id)) {
+          candidateTargets.push(target);
+        }
+        if (!defaultTarget) {
+          defaultTarget = target;
+        }
+      });
+    } catch (e) {}
+  }
+
+  if (!defaultTarget) {
+    defaultTarget = {
+      type: 'unassigned',
+      eventId: null,
+      missionId: null,
+      title: 'Unassigned (Needs a home)'
+    };
+  }
+
+  candidateTargets.push({
+    type: 'unassigned',
+    eventId: null,
+    missionId: null,
+    title: 'Unassigned (Needs a home)'
+  });
+
+  pendingPasteAction = {
+    rawText,
+    text: rawText,
+    targetType: defaultTarget.type,
+    targetEventId: defaultTarget.eventId,
+    targetMissionId: defaultTarget.missionId,
+    targetTitle: defaultTarget.title
+  };
+
+  const toast = document.createElement('div');
+  toast.id = 'mhubPasteToast';
+  toast.className = 'delete-toast';
+  toast.style.cssText = 'position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.6); border: 1.5px solid var(--pink-600); background: var(--card); border-radius: var(--r-md); padding: 12px 18px; display: flex; align-items: center; gap: 14px; max-width: 90vw; flex-wrap: wrap;';
+
+  toast.innerHTML = \`
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="badge pink" style="font-size: 11px; font-weight: 600;">Paste Anywhere</span>
+      <span style="font-size: 12.5px;">Capturing to:</span>
+      <select id="mhubPasteTargetSelect" class="in sm" style="font-size: 12px; font-weight: 500; min-width: 220px; max-width: 340px; background: var(--card); color: var(--foreground); border: 1px solid var(--border);">
+        \${candidateTargets.map((c, i) => \`
+          <option value="\${i}" style="background: var(--card); color: var(--foreground);" \${c.eventId === defaultTarget.eventId && c.type === defaultTarget.type ? 'selected' : ''}>
+            \${String(c.title).slice(0, 42)}
+          </option>
+        \`).join('')}
+      </select>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span id="mhubPasteCountdown" class="sub" style="font-size: 12px; font-weight: 600; font-family: var(--font-mono); color: var(--pink-400);">8s</span>
+      <button class="btn sm" id="mhubPasteConfirmBtn" style="font-weight: 600; padding: 3px 10px;">Confirm</button>
+      <button class="btn sm" id="mhubPasteCancelBtn" title="Press Cmd+Z or click to cancel" style="padding: 3px 10px;">Cancel (Cmd+Z)</button>
+    </div>
+  \`;
+  document.body.appendChild(toast);
+
+  const selectEl = toast.querySelector('#mhubPasteTargetSelect');
+  if (selectEl) {
+    selectEl.addEventListener('change', (e) => {
+      const idx = parseInt(e.target.value, 10);
+      const chosen = candidateTargets[idx];
+      if (chosen && pendingPasteAction) {
+        pendingPasteAction.targetType = chosen.type;
+        pendingPasteAction.targetEventId = chosen.eventId;
+        pendingPasteAction.targetMissionId = chosen.missionId;
+        pendingPasteAction.targetTitle = chosen.title;
+      }
+    });
+  }
+
+  const confirmBtn = toast.querySelector('#mhubPasteConfirmBtn');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', () => {
+      executePendingPaste();
+    });
+  }
+
+  const cancelBtn = toast.querySelector('#mhubPasteCancelBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      cancelPendingPaste();
+      showHubToast('Capture cancelled');
+    });
+  }
+
+  let remaining = 8;
+  const countdownEl = toast.querySelector('#mhubPasteCountdown');
+
+  pasteCountdownInterval = setInterval(() => {
+    remaining -= 1;
+    if (countdownEl) {
+      countdownEl.textContent = \`\${remaining}s\`;
+    }
+    if (remaining <= 0) {
+      clearInterval(pasteCountdownInterval);
+      pasteCountdownInterval = null;
+      executePendingPaste();
+    }
+  }, 1000);
+}
+
+function initPasteAnywhere() {
+  window.addEventListener('paste', async (e) => {
+    const activeEl = document.activeElement;
+    if (activeEl && (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName) || activeEl.isContentEditable)) {
+      return; // Normal paste into form element
+    }
+
+    const text = e.clipboardData ? e.clipboardData.getData('text') : '';
+    if (!text || !text.trim()) return;
+
+    showPasteAnywhereBanner(text);
+  });
+}
+
 async function refreshSidebarAndRail() {
   if (shell) {
     if (MeetingHub.store) {
@@ -265,7 +568,7 @@ function renderActiveView() {
   refreshSidebarAndRail();
 
   if (AppState.view === 'mission') {
-    const missionName = MeetingHub.store.getProjectName(AppState.missionId) || AppState.missionId;
+    const missionName = (typeof MeetingHub.store.getProjectName === 'function' ? MeetingHub.store.getProjectName(AppState.missionId) : AppState.missionId) || AppState.missionId;
     const tEl = document.querySelector('#title');
     const sEl = document.querySelector('#subtitle');
     if (tEl) tEl.textContent = missionName;
@@ -273,7 +576,10 @@ function renderActiveView() {
 
     if (projectsView) {
       projectsView.container = leftCol;
-      projectsView.render();
+      const mid = AppState.missionId || 'ge-enterprise';
+      projectsView.currentProjectId = mid;
+      projectsView.currentSubTab = AppState.tab || null;
+      projectsView.render(mid);
     }
     return;
   }
@@ -282,40 +588,11 @@ function renderActiveView() {
     const tEl = document.querySelector('#title');
     const sEl = document.querySelector('#subtitle');
     if (tEl) tEl.textContent = 'Cross-Mission Inbox';
-    if (sEl) sEl.textContent = 'Pending meeting minutes waiting to be folded';
-    leftCol.innerHTML = \`
-      <div class="card" style="padding: 24px;">
-        <div class="label">Cross-Mission Inbox</div>
-        <h2 style="margin: 8px 0;">Incoming Meeting Minutes</h2>
-        <p class="sub" style="margin-bottom: 16px;">Past meeting minutes awaiting folding into durable mission notes.</p>
-        <div id="inboxList">Loading inbox status...</div>
-      </div>
-    \`;
-    (async () => {
-      try {
-        const reg = await MeetingHub.store.getMissionsRegistry();
-        const missions = reg?.missions || [];
-        const container = leftCol.querySelector('#inboxList');
-        if (!container) return;
-        let html = '';
-        for (const m of missions) {
-          const status = await MeetingHub.store.getInboxStatus(m.id);
-          const pending = status?.pendingCount || 0;
-          html += \`
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--secondary);">
-              <div>
-                <strong>\${m.name}</strong>
-                <div class="sub" style="font-size: 11px;">\${m.directory}</div>
-              </div>
-              <div>
-                \${pending > 0 ? \`<span class="badge warn" style="color: var(--warn); font-weight: 600;">\${pending} pending</span>\` : '<span class="badge ok">0 pending</span>'}
-              </div>
-            </div>
-          \`;
-        }
-        container.innerHTML = html;
-      } catch (e) {}
-    })();
+    if (sEl) sEl.textContent = 'Incoming meeting minutes & capture stream';
+    if (inboxView) {
+      inboxView.container = leftCol;
+      inboxView.render();
+    }
     return;
   }
 
@@ -672,7 +949,10 @@ function handleHashRoute() {
       localStorage.setItem('mhub_last_mission', parsed.missionId);
     } catch (e) {}
 
-    MeetingHub.store.setActiveProjectId(parsed.missionId);
+    const activePid = MeetingHub.store.getActiveProjectId();
+    if (activePid !== parsed.missionId) {
+      MeetingHub.store.setActiveProjectId(parsed.missionId);
+    }
     if (shell && typeof shell.setActiveProjectId === 'function') {
       shell.setActiveProjectId(parsed.missionId);
     }
@@ -688,12 +968,8 @@ function handleHashRoute() {
     }
 
     if (projectsView) {
-      projectsView.setProject(parsed.missionId);
-      if (parsed.tab && typeof projectsView.setTab === 'function') {
-        projectsView.setTab(parsed.tab);
-      } else if (!parsed.tab && typeof projectsView.setTab === 'function') {
-        projectsView.setTab(null);
-      }
+      projectsView.currentProjectId = parsed.missionId;
+      projectsView.currentSubTab = parsed.tab || null;
     }
     renderActiveView();
     return;
@@ -756,6 +1032,16 @@ window.addEventListener('keydown', (e) => {
     activeEl.isContentEditable
   );
 
+  // Cmd+Z or Ctrl+Z -> cancel pending paste action
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+    if (pendingPasteAction) {
+      e.preventDefault();
+      cancelPendingPaste();
+      showHubToast('Capture cancelled (Cmd+Z)');
+      return;
+    }
+  }
+
   // Esc order: blur input -> close drawer -> go back from tab to stream
   if (e.key === 'Escape') {
     if (isInputActive) {
@@ -780,7 +1066,9 @@ window.addEventListener('keydown', (e) => {
       }
       return;
     }
-    if (AppState.view === 'mission' && AppState.tab) {
+    if (AppState.view === 'mission' && (AppState.tab || (projectsView && projectsView.currentSubTab))) {
+      AppState.tab = null;
+      if (projectsView) projectsView.currentSubTab = null;
       window.location.hash = '#/p/' + encodeURIComponent(AppState.missionId);
       return;
     }
@@ -925,7 +1213,7 @@ async function bootstrap() {
     // Initialize projects in shell
     const allProjects = await MeetingHub.store.getAllProjects();
     const suggestedProjects = await MeetingHub.store.getSuggestedProjects();
-    const activeProjectId = MeetingHub.store.getActiveProjectId() || (allProjects[0] && allProjects[0].id) || 'clariane';
+    const activeProjectId = MeetingHub.store.getActiveProjectId() || (allProjects[0] && allProjects[0].id) || 'ge-enterprise';
     shell.setProjects(allProjects, activeProjectId, suggestedProjects);
 
     todayView = new MeetingHub.TodayView({
@@ -970,6 +1258,23 @@ async function bootstrap() {
       onSelectMeeting: (eventId, tab = null) => selectMeeting(eventId, tab)
     });
 
+    inboxView = new MeetingHub.InboxView({
+      container: leftCol,
+      store: MeetingHub.store,
+      onSelectMeeting: (eventId, missionId = null) => {
+        if (missionId) {
+          AppState.missionId = missionId;
+          shell.activeProjectId = missionId;
+        }
+        selectMeeting(eventId);
+      },
+      onNavigateMission: (missionId) => {
+        window.location.hash = '#/p/' + encodeURIComponent(missionId);
+      }
+    });
+
+    initPasteAnywhere();
+
     meetingPanel = new MeetingHub.MeetingPanelUI({
       container: document.querySelector('#right'),
       store: MeetingHub.store,
@@ -1006,9 +1311,16 @@ async function bootstrap() {
         const all = await MeetingHub.store.getAllProjects();
         const sug = await MeetingHub.store.getSuggestedProjects();
         shell.setProjects(all, MeetingHub.store.getActiveProjectId(), sug);
-        if (projectsView) projectsView.setProject(MeetingHub.store.getActiveProjectId());
       }
-      if (payload.type === 'meeting_data_updated' || payload.type === 'sync_completed' || payload.type === 'project_updated') {
+      if (
+        payload.type === 'meeting_data_updated' ||
+        payload.type === 'sync_completed' ||
+        payload.type === 'project_updated' ||
+        payload.type === 'event_deleted' ||
+        payload.type === 'event_restored' ||
+        payload.type === 'action_toggled' ||
+        payload.type === 'inbox_updated'
+      ) {
         renderActiveView();
         if (meetingPanel && AppState.selectedEventId) {
           meetingPanel.render();
@@ -1025,7 +1337,6 @@ async function bootstrap() {
 
     // Handle initial route
     handleHashRoute();
-    renderActiveView();
 
     const activeEngine = MeetingHub.store.db.engineName || 'IndexedDB';
     const initialEventsList = await MeetingHub.store.getAllEvents();
@@ -1063,6 +1374,14 @@ if (document.readyState === 'loading') {
 
 })(window, document);
 `;
+
+// Validate bundle syntax before writing to disk
+try {
+  new vm.Script(bundleCode);
+} catch (syntaxErr) {
+  console.error('❌ Bundle Syntax Error:', syntaxErr);
+  process.exit(1);
+}
 
 const bundlePath = path.join(MHUB_DIR, 'meeting_hub.app.js');
 fs.writeFileSync(bundlePath, bundleCode, 'utf8');

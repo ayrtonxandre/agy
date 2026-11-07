@@ -66,6 +66,11 @@ export function classifyMeeting(event, inboxStatus, now = new Date(), prepWindow
 
   // Case 1: Event has ended
   if (endMs <= nowMs) {
+    // Minutes waiting in the inbox always need folding, however old the meeting is
+    const isPending = typeof inboxStatus === 'string'
+      ? inboxStatus === 'pending'
+      : Boolean(inboxStatus && inboxStatus.status === 'pending');
+    if (isPending) return 'fold';
     const timeSinceEnd = nowMs - endMs;
     if (timeSinceEnd <= foldWindowMs) {
       return 'fold';

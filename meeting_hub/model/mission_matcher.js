@@ -4,21 +4,52 @@
  * Pure function that resolves which mission an event belongs to.
  * Priority:
  * 1. Bracket title tags (e.g. [MANDAT GE], [CARE DISPENSING], [PrideFact], [HDJ], [MO])
- * 2. clientMatch entries from missions.yaml against title, tags, or client field
- * 3. Attendee overlap with the mission's contacts
+ * 2. Visual Calendar Color Tags (e.g. [MAIN MISSION], [COUNSELING/HR], Team Work / [GE], [HEALTHCARE], [PRIDEFACT])
+ * 3. clientMatch entries from missions.yaml against title, tags, or client field
+ * 4. Attendee overlap with the mission's contacts
  * Ambiguous matches return confidence: 'ambiguous'.
  */
+
+export const CALENDAR_COLOR_TAGS = {
+  '1': '[ARTEFACT INTERNAL]',
+  '2': '[COUNSELING/HR]',
+  '3': '[ARTEFACT INTERNAL]',
+  '4': '[PRIDEFACT]',
+  '5': '[HEALTHCARE]',
+  '6': 'Team Work',
+  '7': '[MAIN MISSION]',
+  '8': 'Me-time',
+  '9': '[ARTEFACT INTERNAL]',
+  '10': '[COUNSELING/HR]',
+  '11': '[PRIDEFACT]'
+};
 
 export function matchMission(event, registry) {
   if (!event) return null;
   const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
   if (!missions.length) return null;
 
-  const rawTitle = (event.title || '').trim();
+  const rawTitle = (event.title || event.summary || '').trim();
   const title = rawTitle.toLowerCase();
   const client = (event.client || '').toLowerCase().trim();
   const tags = (Array.isArray(event.tags) ? event.tags : []).map(t => String(t).toLowerCase().trim());
-  const attendees = (Array.isArray(event.attendees) ? event.attendees : []).map(a => String(a).toLowerCase().trim());
+  const attendees = (Array.isArray(event.attendees) ? event.attendees : []).map(a => {
+    if (typeof a === 'string') return a.toLowerCase().trim();
+    return (a.name || a.email || '').toLowerCase().trim();
+  });
+
+  // 0. Priority 0: Explicit mission/project ID on event
+  if (event.projectId || event.missionId) {
+    const explicitId = (event.projectId || event.missionId).toLowerCase().trim();
+    const explicitMission = missions.find(m => m.id.toLowerCase() === explicitId);
+    if (explicitMission) {
+      return {
+        missionId: explicitMission.id,
+        confidence: 'high',
+        reason: `Explicit mission assignment (${explicitMission.id})`
+      };
+    }
+  }
 
   // 1. First priority: Bracket title tags (e.g. [MANDAT GE], [CARE DISPENSING], [PrideFact], [HDJ], [MO])
   const bracketMatches = rawTitle.match(/\[(.*?)\]/g) || [];
@@ -62,7 +93,73 @@ export function matchMission(event, registry) {
     }
   }
 
-  // 2. Second priority: clientMatch entries, title match, event tags, client field
+  // 2. Second priority: Calendar Color Tag (visual color assigned in Google Calendar)
+  const colorId = event.colorId !== undefined && event.colorId !== null ? String(event.colorId) : '';
+  const colorTag = (event.colorTag || (colorId && CALENDAR_COLOR_TAGS[colorId]) || '').trim();
+  if (colorTag) {
+    const colorClean = colorTag.toLowerCase().trim();
+    const colorInner = colorClean.replace(/[\[\]]/g, '').trim();
+    const colorHits = [];
+
+    for (const m of missions) {
+      const patterns = (m.clientMatch || [m.name, m.id]).map(s => String(s).toLowerCase().trim());
+      if (patterns.some(pattern => {
+        const cleanPat = pattern.replace(/[\[\]]/g, '').trim();
+        return pattern === colorClean || pattern === colorInner || cleanPat === colorInner;
+      })) {
+        colorHits.push(m);
+      }
+    }
+
+    // Check if title explicitly specifies a different client/mission (e.g. "Échange mission Leclerc" miscolored)
+    const titleOverrides = [];
+    for (const m of missions) {
+      const patterns = (m.clientMatch || [m.name, m.id]).map(s => String(s).toLowerCase().trim());
+      for (const pat of patterns) {
+        const cleanPat = pat.replace(/[\[\]]/g, '').trim();
+        if (cleanPat && cleanPat.length >= 4 && !cleanPat.startsWith('main mission') && !cleanPat.startsWith('team work')) {
+          // Check whole word or clear substring in title
+          if (title.includes(cleanPat)) {
+            titleOverrides.push(m);
+            break;
+          }
+        }
+      }
+    }
+
+    if (colorHits.length === 1) {
+      if (titleOverrides.length === 1 && titleOverrides[0].id !== colorHits[0].id) {
+        return {
+          missionId: titleOverrides[0].id,
+          confidence: 'high',
+          reason: `Title keyword match "${titleOverrides[0].name}" overrides calendar color tag "${colorTag}"`
+        };
+      }
+      return {
+        missionId: colorHits[0].id,
+        confidence: 'high',
+        reason: `Calendar color tag "${colorTag}" (colorId ${colorId}) matched mission "${colorHits[0].name}"`
+      };
+    } else if (colorHits.length > 1) {
+      const uniqueIds = [...new Set(colorHits.map(m => m.id))];
+      if (uniqueIds.length === 1) {
+        if (titleOverrides.length === 1 && titleOverrides[0].id !== uniqueIds[0]) {
+          return {
+            missionId: titleOverrides[0].id,
+            confidence: 'high',
+            reason: `Title keyword match "${titleOverrides[0].name}" overrides calendar color tag "${colorTag}"`
+          };
+        }
+        return {
+          missionId: uniqueIds[0],
+          confidence: 'high',
+          reason: `Calendar color tag "${colorTag}" matched mission "${colorHits[0].name}"`
+        };
+      }
+    }
+  }
+
+  // 3. Third priority: clientMatch entries, title match, event tags, client field
   const scoredMissions = [];
   for (const m of missions) {
     let score = 0;
@@ -119,15 +216,9 @@ export function matchMission(event, registry) {
     };
   }
 
-  // 3. Third priority: Attendee overlap with mission contacts if available
+  // 4. Fourth priority: Attendee overlap with mission contacts if available
   for (const m of missions) {
     const contactNames = (m.contacts || []).map(c => (typeof c === 'string' ? c : c.name || '').toLowerCase().trim());
-    if (m.id === 'counseling') {
-      contactNames.push('roland juilhard', 'jamila nasri', 'roland j.', 'jamila n.');
-    }
-    if (m.id === 'ge-enterprise') {
-      contactNames.push('louis bechu', 'edward toulemonde', 'paul bouche', 'camille kugler');
-    }
     const matchedContacts = attendees.filter(att => 
       contactNames.some(c => c && (att.includes(c) || c.includes(att)))
     );

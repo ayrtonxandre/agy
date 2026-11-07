@@ -7,6 +7,8 @@
  */
 import { getDatabase } from '../data/db.js';
 import { EventsImporter } from '../data/importer.js';
+import { EventModel } from './event.js';
+import { SeriesModel } from './series.js';
 import { LinkEngine } from './links.js';
 import { MinutesEngine } from './minutes_engine.js';
 import { DEFAULT_PROJECTS, ProjectModel } from './project.js';
@@ -22,6 +24,7 @@ export class MeetingHubStore {
     this.missionsCache = [];
     this.missionSummariesCache = new Map();
     this.inboxStatusCache = new Map();
+    this.deletedEventIds = new Set();
     this.activeProjectId = 'ge-enterprise';
     this.subscribers = new Set();
     this.initialized = false;
@@ -148,9 +151,73 @@ export class MeetingHubStore {
     };
   }
 
+  async _loadDeletedIds() {
+    try {
+      const meta = await this.db.get('meta', 'deleted_event_ids');
+      if (meta && Array.isArray(meta.value)) {
+        for (const id of meta.value) if (id) this.deletedEventIds.add(String(id));
+      }
+    } catch (e) {}
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const raw = localStorage.getItem('mhub_deleted_events');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            for (const id of parsed) if (id) this.deletedEventIds.add(String(id));
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  async _persistDeletedIds() {
+    const arr = Array.from(this.deletedEventIds);
+    try {
+      if (this.db) {
+        await this.db.put('meta', { key: 'deleted_event_ids', value: arr });
+      }
+    } catch (e) {}
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('mhub_deleted_events', JSON.stringify(arr));
+      }
+    } catch (e) {}
+  }
+
+  getDeletedEventIds() {
+    return Array.from(this.deletedEventIds);
+  }
+
+  async mergeDeletedEventIds(ids = []) {
+    if (!Array.isArray(ids)) return;
+    let changed = false;
+    for (const id of ids) {
+      if (id && !this.deletedEventIds.has(String(id))) {
+        this.deletedEventIds.add(String(id));
+        changed = true;
+      }
+    }
+    if (changed) {
+      await this._persistDeletedIds();
+    }
+  }
+
   async refreshCache() {
-    this.eventsCache = await this.db.getAll('events');
-    this.seriesCache = await this.db.getAll('series');
+    await this._loadDeletedIds();
+    const allRawEvents = await this.db.getAll('events');
+    const activeEvents = [];
+    for (const ev of allRawEvents) {
+      if (EventModel.isDeletedOrDeclined(ev, this.deletedEventIds)) {
+        try {
+          await this.db.delete('events', ev.id);
+        } catch (e) {}
+      } else {
+        activeEvents.push(ev);
+      }
+    }
+    this.eventsCache = activeEvents;
+    this.seriesCache = SeriesModel.collapse(this.eventsCache);
 
     // 1. Load missions from registry
     const missions = await this.getMissionsRegistry();
@@ -247,8 +314,76 @@ export class MeetingHubStore {
     return this.seriesCache.find(s => s.id === seriesId) || null;
   }
 
+  getEventsForSeries(seriesId) {
+    if (!seriesId) return [];
+    return (this.eventsCache || []).filter(e => e.seriesId === seriesId);
+  }
+
   getAllSeries() {
     return this.seriesCache;
+  }
+
+  /**
+   * Deletes an event from the dashboard, persists its ID in deletedEventIds so future syncs/imports
+   * do not resurrect it, notifies backend /api/calendar/delete if reachable, and emits 'event_deleted'.
+   */
+  async deleteEvent(eventId) {
+    if (!eventId) return null;
+    if (!this.db) await this.init();
+    const idStr = String(eventId);
+    const deletedEvent = this.getEvent(idStr);
+
+    this.deletedEventIds.add(idStr);
+    await this._persistDeletedIds();
+
+    try {
+      await this.db.delete('events', idStr);
+    } catch (e) {}
+
+    this.eventsCache = this.eventsCache.filter(e => String(e.id) !== idStr);
+    this.seriesCache = SeriesModel.collapse(this.eventsCache);
+
+    if (typeof fetch !== 'undefined') {
+      fetch('/api/calendar/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: idStr })
+      }).catch(() => {});
+    }
+
+    this.notify({ type: 'event_deleted', eventId: idStr, deletedEvent });
+    return deletedEvent;
+  }
+
+  /**
+   * Restores a previously deleted event (Undo support).
+   */
+  async restoreEvent(eventObj) {
+    if (!eventObj || !eventObj.id) return null;
+    if (!this.db) await this.init();
+    const idStr = String(eventObj.id);
+
+    this.deletedEventIds.delete(idStr);
+    await this._persistDeletedIds();
+
+    const normalized = EventModel.normalize(eventObj);
+    await this.db.put('events', normalized);
+
+    if (!this.eventsCache.some(e => String(e.id) === idStr)) {
+      this.eventsCache.push(normalized);
+    }
+    this.seriesCache = SeriesModel.collapse(this.eventsCache);
+
+    if (typeof fetch !== 'undefined') {
+      fetch('/api/calendar/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: idStr })
+      }).catch(() => {});
+    }
+
+    this.notify({ type: 'event_restored', eventId: idStr, event: normalized });
+    return normalized;
   }
 
   /* ================= Project Management Methods ================= */
@@ -297,6 +432,18 @@ export class MeetingHubStore {
 
   getActiveProjectId() {
     return this.activeProjectId;
+  }
+
+  getProjectName(id) {
+    if (!id) return '';
+    const norm = (id === 'clariane' ? 'clariane-hdj' : id).toLowerCase();
+    let registry = (this.missionsCache && this.missionsCache.length > 0) ? this.missionsCache : null;
+    if (!registry && typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
+      registry = window.MISSIONS_SNAPSHOT.missions;
+    }
+    const list = [...(registry || []), ...(this.projectsCache || []), ...DEFAULT_PROJECTS];
+    const found = list.find(p => p && String(p.id || '').toLowerCase() === norm);
+    return found ? found.name : id;
   }
 
   setActiveProjectId(id) {
@@ -351,10 +498,10 @@ export class MeetingHubStore {
     return null;
   }
 
-  getEventsForProject(projectId) {
+  getEventsForProject(projectId, registryOverride = null) {
     if (!projectId) return [];
     const pId = projectId.toLowerCase();
-    let registry = (this.missionsCache && this.missionsCache.length > 0) ? this.missionsCache : null;
+    let registry = registryOverride || ((this.missionsCache && this.missionsCache.length > 0) ? this.missionsCache : null);
     if (!registry && typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
       registry = window.MISSIONS_SNAPSHOT.missions;
     }
@@ -494,6 +641,13 @@ export class MeetingHubStore {
     return updated;
   }
 
+  /**
+   * Alias for saveMeetingData (used by meeting_panel.js and tests).
+   */
+  async updateMeetingData(eventId, patch) {
+    return this.saveMeetingData(eventId, patch);
+  }
+
   /* ================= Google Docs & Minutes Intelligence ================= */
 
   /**
@@ -501,24 +655,41 @@ export class MeetingHubStore {
    * Client minutes are never bundled into the frontend application bundle.
    */
   async fetchGoogleDoc(docRef) {
-    if (!docRef) throw new Error('Missing document ID or URL');
+    const rawStr = (typeof docRef === 'object' && docRef !== null)
+      ? (docRef.url || docRef.docId || '')
+      : String(docRef || '').trim();
+    if (!rawStr) throw new Error('Missing document ID or URL');
 
-    const cleanRef = docRef.trim();
-    const docIdMatch = cleanRef.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    const docId = docIdMatch ? docIdMatch[1] : cleanRef.split('/')[0].split('?')[0].split('#')[0];
+    const docIdMatch = rawStr.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    const docId = docIdMatch ? docIdMatch[1] : rawStr.split('/')[0].split('?')[0].split('#')[0];
 
-    // Try orchestrator.py backend endpoint
+    // Try GET endpoint first
     try {
       const resp = await fetch(`/api/docs/fetch?docId=${encodeURIComponent(docId)}`);
       if (resp.ok) {
         const json = await resp.json();
         if (json.status === 'success') {
-          return json;
+          return { ...json, text: json.content || json.text || '' };
         }
       }
     } catch (e) {
       // Backend not running or offline
     }
+
+    // Fallback to POST endpoint
+    try {
+      const resp = await fetch('/api/docs/fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docId, url: rawStr })
+      });
+      if (resp.ok) {
+        const json = await resp.json();
+        if (json.status === 'success') {
+          return { ...json, text: json.content || json.text || '' };
+        }
+      }
+    } catch (e) {}
 
     throw new Error('Start the server (python3 orchestrator.py serve) to fetch Google Docs minutes.');
   }
@@ -664,6 +835,24 @@ export class MeetingHubStore {
       }
     } catch (e) {}
 
+    // Node test environment fallback (for automated test suite)
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.list_inbox_files('${id}')))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        return {
+          status: 'ok',
+          pendingCount: res.total_pending !== undefined ? res.total_pending : (res.pending || []).length,
+          files: res.pending || [],
+          foldedCount: res.total_folded !== undefined ? res.total_folded : (res.folded || []).length,
+          foldedFiles: res.folded || [],
+          isOffline: false
+        };
+      } catch (err) {}
+    }
+
     return {
       status: 'offline',
       pendingCount: 0,
@@ -678,6 +867,30 @@ export class MeetingHubStore {
    * Checks whether a specific meeting has its minutes folded, pending in inbox, or not sent.
    * Returns: 'folded' | 'pending' | 'not_sent'
    */
+  /**
+   * Synchronous per-meeting inbox state from an already-loaded mission inbox and summary.
+   * Inbox entries may be strings (filenames) or objects ({ filename, eventId, ... }).
+   * Returns: 'folded' | 'pending' | 'not_sent'
+   */
+  meetingInboxState(meetingId, inboxStatus, summary = null) {
+    if (!meetingId) return 'not_sent';
+    const mId = String(meetingId);
+    const has = (list) => Array.isArray(list) && list.some(item => {
+      if (typeof item === 'string') return item.includes(mId);
+      return Boolean(item) && ((item.eventId && item.eventId === mId) ||
+             (item.filename && item.filename.includes(mId)));
+    });
+    const inbox = inboxStatus || {};
+    if (has(inbox.foldedFiles) || has(inbox.folded)) return 'folded';
+    if (has(inbox.files) || has(inbox.pending)) return 'pending';
+    if (summary) {
+      const citesAction = (summary.actions || []).some(a => a.source && String(a.source).includes(mId));
+      const citesDecision = (summary.decisions || []).some(d => d.meetingId === mId || (d.source && String(d.source).includes(mId)));
+      if (citesAction || citesDecision) return 'folded';
+    }
+    return 'not_sent';
+  }
+
   async getMeetingInboxStatus(meetingId, missionId) {
     if (!meetingId || !missionId) return 'not_sent';
     const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId);
@@ -730,6 +943,7 @@ export class MeetingHubStore {
    */
   async sendMinutesToInbox(meetingId, missionId, payload = {}) {
     const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'clariane-hdj';
+    const textContent = payload.text || payload.content || '';
     const body = {
       eventId: meetingId,
       title: payload.title || '',
@@ -737,25 +951,314 @@ export class MeetingHubStore {
       attendees: payload.attendees || [],
       googleDocUrl: payload.googleDocUrl || '',
       source: payload.source || 'meeting_hub',
-      text: payload.text || ''
+      text: textContent,
+      content: textContent
     };
 
-    const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/inbox`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    try {
+      const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/inbox`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
 
-    if (!resp.ok) {
-      const errText = await resp.text();
-      throw new Error(`Failed to send to inbox: HTTP ${resp.status} - ${errText}`);
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`Failed to send to inbox: HTTP ${resp.status} - ${errText}`);
+      }
+
+      const result = await resp.json();
+      this.inboxStatusCache.delete(id);
+      this.missionSummariesCache.delete(id);
+      this.notify({ type: 'inbox_updated', missionId: id, meetingId });
+      return result;
+    } catch (e) {
+      if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+        try {
+          const { execSync } = await import('child_process');
+          const escapedBody = JSON.stringify(body).replace(/"/g, '\\"');
+          const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; res = mission_notes.write_inbox_file('${id}', json.loads('${escapedBody}')); print(json.dumps(res))"`;
+          const out = execSync(cmd, { encoding: 'utf8' });
+          const res = JSON.parse(out);
+          this.inboxStatusCache.delete(id);
+          this.missionSummariesCache.delete(id);
+          this.notify({ type: 'inbox_updated', missionId: id, meetingId });
+          return res;
+        } catch (err) {}
+      }
+      throw e;
     }
+  }
 
-    const result = await resp.json();
-    this.inboxStatusCache.delete(id);
-    this.missionSummariesCache.delete(id);
-    this.notify({ type: 'inbox_updated', missionId: id, meetingId });
-    return result;
+  /**
+   * Toggles or sets an action's completion state (Open <-> Done) in mission Actions.md.
+   * Invalidates mission summaries cache and notifies subscribers.
+   */
+  async toggleAction(actionId, missionId = null, done = null) {
+    if (!actionId) throw new Error("Missing actionId");
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || null;
+    const body = { actionId, missionId: id, done };
+
+    try {
+      const resp = await fetch('/api/actions/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`Failed to toggle action: HTTP ${resp.status} - ${errText}`);
+      }
+      const result = await resp.json();
+      const targetMission = result.missionId || id;
+      if (targetMission) {
+        this.missionSummariesCache.delete(targetMission);
+      } else {
+        this.missionSummariesCache.clear();
+      }
+      this.notify({ type: 'action_toggled', actionId, missionId: targetMission, done: result.done });
+      return result;
+    } catch (e) {
+      if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+        try {
+          const { execSync } = await import('child_process');
+          const mArg = id ? `'${id}'` : 'None';
+          const dArg = done === null ? 'None' : (done ? 'True' : 'False');
+          const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; res = mission_notes.toggle_action('${actionId}', done=${dArg}, mission_id=${mArg}); print(json.dumps(res))"`;
+          const out = execSync(cmd, { encoding: 'utf8' });
+          const res = JSON.parse(out);
+          const targetMission = res.missionId || id;
+          if (targetMission) {
+            this.missionSummariesCache.delete(targetMission);
+          } else {
+            this.missionSummariesCache.clear();
+          }
+          this.notify({ type: 'action_toggled', actionId, missionId: targetMission, done: res.done });
+          return res;
+        } catch (err) {}
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * Updates an action's attributes (title, owner, workstream, due date, status) in mission Actions.md.
+   * Invalidates mission summaries cache and notifies subscribers.
+   */
+  async updateAction(actionId, updates = {}, missionId = null) {
+    if (!actionId) throw new Error("Missing actionId");
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || null;
+    const body = { actionId, missionId: id, updates };
+
+    try {
+      const url = (typeof window === 'undefined') ? 'http://localhost:8080/api/actions/update' : '/api/actions/update';
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`Failed to update action: HTTP ${resp.status} - ${errText}`);
+      }
+      const result = await resp.json();
+      const targetMission = result.missionId || id;
+      if (targetMission) {
+        this.missionSummariesCache.delete(targetMission);
+      } else {
+        this.missionSummariesCache.clear();
+      }
+      this.notify({ type: 'action_updated', actionId, missionId: targetMission, action: result, updates });
+      return result;
+    } catch (e) {
+      if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+        try {
+          const { execSync } = await import('child_process');
+          const mArg = id ? `'${id}'` : 'None';
+          const b64 = Buffer.from(JSON.stringify(updates), 'utf8').toString('base64');
+          const cmd = `python3 -c "import sys, base64, json; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes; u = json.loads(base64.b64decode('${b64}').decode('utf-8')); res = mission_notes.update_action('${actionId}', u, mission_id=${mArg}); print(json.dumps(res))"`;
+          const out = execSync(cmd, { encoding: 'utf8' });
+          const res = JSON.parse(out);
+          const targetMission = res.missionId || id;
+          if (targetMission) {
+            this.missionSummariesCache.delete(targetMission);
+          } else {
+            this.missionSummariesCache.clear();
+          }
+          this.notify({ type: 'action_updated', actionId, missionId: targetMission, action: res, updates });
+          return res;
+        } catch (err) {}
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * Lists unassigned inbox files awaiting a mission home (Phase 5).
+   */
+  async getUnassignedInboxFiles() {
+    try {
+      const resp = await fetch('/api/inbox/unassigned');
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.list_unassigned_inbox_files()))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        return JSON.parse(out);
+      } catch (err) {}
+    }
+    return { count: 0, files: [] };
+  }
+
+  /**
+   * Writes an ambiguous capture to unassigned inbox (Phase 5).
+   */
+  async writeUnassignedInboxFile(payload = {}) {
+    const body = {
+      title: payload.title || 'Untitled note',
+      text: payload.text || '',
+      date: payload.date || new Date().toISOString().slice(0, 10),
+      time: payload.time || '',
+      attendees: payload.attendees || [],
+      source: payload.source || 'paste_anywhere',
+      docUrl: payload.docUrl || ''
+    };
+
+    try {
+      const resp = await fetch('/api/inbox/unassigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const result = await resp.json();
+        this.notify({ type: 'unassigned_inbox_updated' });
+        return result;
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const escapedBody = JSON.stringify(body).replace(/"/g, '\\"');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; res = mission_notes.write_unassigned_inbox_file(json.loads('${escapedBody}')); print(json.dumps(res))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        this.notify({ type: 'unassigned_inbox_updated' });
+        return res;
+      } catch (err) {}
+    }
+    throw new Error('Failed to write unassigned inbox file');
+  }
+
+  /**
+   * Assigns an unassigned capture to target mission and optional event (Phase 5).
+   */
+  async assignInboxFile(filename, targetMissionId, targetEventId = null) {
+    const body = { filename, missionId: targetMissionId, eventId: targetEventId };
+    try {
+      const resp = await fetch('/api/inbox/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const res = await resp.json();
+        this.inboxStatusCache.delete(targetMissionId);
+        this.missionSummariesCache.delete(targetMissionId);
+        this.notify({ type: 'inbox_assigned', filename, missionId: targetMissionId });
+        return res;
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.assign_inbox_file('${filename}', '${targetMissionId}', ${targetEventId ? `'${targetEventId}'` : 'None'})))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        this.inboxStatusCache.delete(targetMissionId);
+        this.missionSummariesCache.delete(targetMissionId);
+        this.notify({ type: 'inbox_assigned', filename, missionId: targetMissionId });
+        return res;
+      } catch (err) {}
+    }
+    throw new Error('Failed to assign inbox file');
+  }
+
+  /**
+   * Granola status check (Phase 5).
+   */
+  async getGranolaStatus() {
+    try {
+      const resp = await fetch('/api/granola/status');
+      if (resp.ok) {
+        return await resp.json();
+      }
+    } catch (e) {}
+    return { configured: false, active: false, folder: null, pendingFilesCount: 0 };
+  }
+
+  /**
+   * Triggers Granola watched folder processing (Phase 5).
+   */
+  async syncGranola(events = null) {
+    const body = { events: events || this.eventsCache || [] };
+    try {
+      const resp = await fetch('/api/granola/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const res = await resp.json();
+        this.inboxStatusCache.clear();
+        this.missionSummariesCache.clear();
+        this.notify({ type: 'granola_synced', result: res });
+        return res;
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.process_granola_folder()))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        this.inboxStatusCache.clear();
+        this.missionSummariesCache.clear();
+        this.notify({ type: 'granola_synced', result: res });
+        return res;
+      } catch (err) {}
+    }
+    return { status: 'skipped', error: 'Sync unavailable' };
+  }
+
+  /**
+   * Triggers Google Docs auto-pull for opted-in missions (Phase 5).
+   */
+  async autoPullGoogleDocs(events = null) {
+    const body = { events: events || this.eventsCache || [] };
+    try {
+      const resp = await fetch('/api/docs/auto-pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const res = await resp.json();
+        this.inboxStatusCache.clear();
+        this.missionSummariesCache.clear();
+        this.notify({ type: 'docs_auto_pulled', result: res });
+        return res;
+      }
+    } catch (e) {}
+    return { status: 'skipped', pulledCount: 0 };
   }
 
   /**
@@ -939,7 +1442,8 @@ export class MeetingHubStore {
    */
   async getMissionHubData(missionId, now = new Date()) {
     const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'ge-enterprise';
-    const missions = await this.getMissionsRegistry();
+    const registry = await this.getMissionsRegistry();
+    const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
     const mission = missions.find(m => m.id === id) || { id, name: id, client: 'Artefact Internal' };
     const summary = await this.getMissionSummary(id);
     let inboxStatus = this.inboxStatusCache.get(id);
@@ -951,7 +1455,7 @@ export class MeetingHubStore {
       }
     }
 
-    const events = this.getEventsForProject(id);
+    const events = this.getEventsForProject(id, missions);
     
     // Classify meetings into lanes
     const lanes = {
@@ -962,13 +1466,16 @@ export class MeetingHubStore {
     };
 
     events.forEach(e => {
+      // classifyMeeting expects the per-meeting state, not the mission-level inbox object
+      const inboxState = this.meetingInboxState(e.id, inboxStatus, summary);
       const lane = (typeof classifyMeeting === 'function')
-        ? classifyMeeting(e, inboxStatus, now)
-        : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxStatus, now) : 'hidden');
+        ? classifyMeeting(e, inboxState, now)
+        : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxState, now) : 'hidden');
+      const item = { ...e, inboxState };
       if (lanes[lane]) {
-        lanes[lane].push(e);
+        lanes[lane].push(item);
       } else {
-        lanes.hidden.push(e);
+        lanes.hidden.push(item);
       }
     });
 
@@ -1021,9 +1528,9 @@ export class MeetingHubStore {
     const todayStr = (typeof getTodayDateStr === 'function') ? getTodayDateStr(now) : now.toISOString().slice(0, 10);
     const nowTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-    // 1. Next meeting today across all missions
+    // 1. Next meeting today across all missions (work meetings only)
     const todayEvents = (this.eventsCache || [])
-      .filter(e => e.date === todayStr && !e.isAllDay && (e.start || '') >= nowTimeStr)
+      .filter(e => e.date === todayStr && !e.isAllDay && !e.isTraining && e.stream !== 'life' && (e.start || '') >= nowTimeStr)
       .sort((a, b) => (a.start || '').localeCompare(b.start || ''));
 
     let todayNextMeeting = null;
@@ -1060,11 +1567,13 @@ export class MeetingHubStore {
 
       totalPendingInbox += (inboxStatus.pendingCount || 0);
 
+      const mSummary = this.missionSummariesCache.get(m.id) || null;
       let foldCount = 0;
       mEvents.forEach(e => {
+        const inboxState = this.meetingInboxState(e.id, inboxStatus, mSummary);
         const lane = (typeof classifyMeeting === 'function')
-          ? classifyMeeting(e, inboxStatus, now)
-          : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxStatus, now) : 'hidden');
+          ? classifyMeeting(e, inboxState, now)
+          : (typeof MeetingHub !== 'undefined' && MeetingHub.classifyMeeting ? MeetingHub.classifyMeeting(e, inboxState, now) : 'hidden');
         if (lane === 'fold') {
           foldCount++;
           totalFoldMeetings++;

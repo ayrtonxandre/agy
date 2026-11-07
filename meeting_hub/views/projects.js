@@ -13,10 +13,11 @@
 import { Icons } from '../ui/icons.js';
 
 export class ProjectsView {
-  constructor({ container, store, onSelectMeeting } = {}) {
+  constructor({ container, store, onSelectMeeting, now } = {}) {
     this.container = container;
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
+    this.now = now || null;
     this.currentProjectId = 'ge-enterprise';
     this.currentSubTab = null; // 'workstreams' | 'decisions' | 'actions' | 'contacts' | 'brief'
     this.isFoldedOpen = false;
@@ -24,6 +25,8 @@ export class ProjectsView {
     this.actionStatusFilter = 'open';
     this.decisionWsFilter = 'all';
     this.searchQuery = '';
+    this._renderSeq = 0;
+    this._renderedProjectId = null;
   }
 
   setSearchQuery(q) {
@@ -31,15 +34,19 @@ export class ProjectsView {
     this.render();
   }
 
-  setProject(projectId) {
+  setProject(projectId, renderImmediately = true) {
     if (!projectId) return;
     this.currentProjectId = projectId;
-    this.render();
+    if (renderImmediately) {
+      this.render(projectId);
+    }
   }
 
-  setTab(tab) {
+  setTab(tab, renderImmediately = true) {
     this.currentSubTab = tab || null;
-    this.render();
+    if (renderImmediately) {
+      this.render();
+    }
   }
 
   // Alias for backward compatibility
@@ -83,19 +90,54 @@ export class ProjectsView {
     }
   }
 
-  async render() {
+  async render(targetProjectId = null) {
     if (!this.container) return;
+    if (targetProjectId) {
+      this.currentProjectId = targetProjectId;
+    } else if (typeof AppState !== 'undefined' && AppState.missionId) {
+      this.currentProjectId = AppState.missionId;
+    }
+    const seq = ++this._renderSeq;
+    const currentId = this.currentProjectId;
 
-    // Retrieve full cockpit data from system of record
-    const data = await this.store.getMissionHubData(this.currentProjectId);
-    const mission = data.mission || { id: this.currentProjectId, name: this.currentProjectId };
+    // Immediately clear stale HTML when switching to a different mission
+    if (this._renderedProjectId && this._renderedProjectId !== currentId) {
+      this.container.innerHTML = `
+        <div style="padding: 28px; display: flex; align-items: center; gap: 10px; color: var(--muted-foreground); font-size: 13px;">
+          <span style="display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--pink-600); border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
+          <span>Loading mission cockpit for <b>${this._escape(currentId)}</b>...</span>
+        </div>
+      `;
+    }
+
+    let data;
+    try {
+      // Retrieve full cockpit data from system of record
+      data = await this.store.getMissionHubData(currentId, this.now || new Date());
+      if (seq !== this._renderSeq) return;
+    } catch (err) {
+      console.warn(`[ProjectsView] Error loading mission data for ${currentId}:`, err);
+      if (seq !== this._renderSeq) return;
+      data = {
+        mission: { id: currentId, name: currentId },
+        summary: {},
+        lanes: { prep: [], fold: [], folded: [], hidden: [] },
+        inboxStatus: { pendingCount: 0, files: [] },
+        openActionsCount: 0,
+        toFoldCount: 0,
+        nextMeeting: null
+      };
+    }
+
+    const mission = data.mission || { id: currentId, name: currentId };
     const summary = data.summary || {};
     const lanes = data.lanes || { prep: [], fold: [], folded: [], hidden: [] };
     const inboxStatus = data.inboxStatus || { pendingCount: 0, files: [] };
 
     // Registry missions for dropdown
     const registry = await this.store.getMissionsRegistry();
-    const allMissions = registry?.missions || [];
+    if (seq !== this._renderSeq) return;
+    const allMissions = Array.isArray(registry) ? registry : (registry?.missions || []);
 
     // Filter lanes by search query if present
     let prepMeetings = lanes.prep;
@@ -127,7 +169,8 @@ export class ProjectsView {
       nextMeetingText = `${data.nextMeeting.date} ${data.nextMeeting.start} · ${data.nextMeeting.title}`;
     }
 
-    this.container.innerHTML = `
+    try {
+      this.container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 16px;">
         
         <!-- 3.2 Cockpit Header -->
@@ -143,7 +186,7 @@ export class ProjectsView {
               </span>
             </div>
             <h1 style="font: 600 24px/1.2 var(--font-sans); margin: 6px 0 2px 0;">
-              ${this._escape(mission.name)}
+              ${this._escape(mission.name || mission.id)}
             </h1>
             <div class="cockpit-meta-row">
               <span class="badge ${data.openActionsCount > 0 ? '' : 'ok'}">
@@ -159,8 +202,8 @@ export class ProjectsView {
               <span style="font-family: var(--font-mono); font-size: 11.5px;">
                 Next: <b>${this._escape(nextMeetingText)}</b>
               </span>
-              <span class="sub" style="font-size: 11px;" title="Mission notes folder in system of record">
-                📁 ${this._escape(mission.directory || mission.id)}
+              <span class="sub" style="font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Mission notes folder in system of record">
+                ${Icons.folder} ${this._escape(mission.directory || mission.id)}
               </span>
             </div>
           </div>
@@ -168,10 +211,10 @@ export class ProjectsView {
           <!-- Mission Switcher Dropdown (Updates URL directly) -->
           <div style="display: flex; gap: 8px; align-items: center;">
             <label for="projectSelectDropdown" class="sub" style="font-size: 12px; font-weight: 500;">Mission:</label>
-            <select id="projectSelectDropdown" class="input" style="font-size: 13px; font-weight: 600; height: 34px; padding: 4px 10px; border-radius: var(--r-sm); min-width: 250px; cursor: pointer;">
+            <select id="projectSelectDropdown" class="in" style="font-size: 13px; font-weight: 600; height: 34px; padding: 4px 10px; border-radius: var(--r-sm); min-width: 250px; cursor: pointer; background: var(--card, #161f30); color: var(--foreground, #f0f4fc); border: 1px solid var(--border);">
               ${allMissions.map(m => `
-                <option value="${this._escape(m.id)}" ${this.currentProjectId.toLowerCase() === m.id.toLowerCase() ? 'selected' : ''}>
-                  ${m.archived ? '[Archived] ' : ''}${this._escape(m.name)}
+                <option value="${this._escape(m.id)}" style="background: var(--card, #161f30); color: var(--foreground, #f0f4fc);" ${currentId.toLowerCase() === (m.id || '').toLowerCase() ? 'selected' : ''}>
+                  ${m.archived || m.status === 'archived' ? '[Archived] ' : ''}${this._escape(m.name || m.id)}
                 </option>
               `).join('')}
             </select>
@@ -214,9 +257,9 @@ export class ProjectsView {
           <!-- Lane 3: Folded (collapsed 1-line strip, expandable) -->
           ${foldedMeetings.length > 0 ? `
             <div class="folded-summary-strip" id="toggleFoldedStripBtn" title="Click to ${this.isFoldedOpen ? 'collapse' : 'expand'} folded meetings">
-              <span style="font-weight: 600;">✔ ${foldedMeetings.length} folded meeting${foldedMeetings.length !== 1 ? 's' : ''}</span>
-              <span style="font-size: 11.5px; opacity: 0.85;">
-                ${this.isFoldedOpen ? '▲ Click to collapse' : '▼ Click to show folded meetings'}
+              <span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">${Icons.check} ${foldedMeetings.length} folded meeting${foldedMeetings.length !== 1 ? 's' : ''}</span>
+              <span style="font-size: 11.5px; opacity: 0.85; display: inline-flex; align-items: center; gap: 4px;">
+                ${this.isFoldedOpen ? `${Icons.chevronUp} Click to collapse` : `${Icons.chevronDown} Click to show folded meetings`}
               </span>
             </div>
             ${this.isFoldedOpen ? `
@@ -228,7 +271,10 @@ export class ProjectsView {
                         <span class="meeting-card-time">${this._escape(m.date)} ${this._escape(m.start)}</span>
                         <span class="meeting-card-title">${this._escape(m.title)}</span>
                       </div>
-                      <span class="badge ok" style="font-size: 10px;">Folded in notes</span>
+                      <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="badge ok" style="font-size: 10px;">Folded in notes</span>
+                        <button class="btn-delete-meeting" data-delete-event="${this._escape(m.id)}" title="Remove meeting from dashboard" aria-label="Delete meeting">${Icons.trash}</button>
+                      </div>
                     </div>
                   </div>
                 `).join('')}
@@ -266,6 +312,16 @@ export class ProjectsView {
         <!-- Tab Body (Only rendered when a tab is selected) -->
         ${this.currentSubTab ? `
           <div id="cockpitTabContent" style="background: var(--card); border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+              <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span class="label" style="margin: 0; text-transform: uppercase;">Knowledge View</span>
+                <span style="font-weight: 600; font-size: 14px; text-transform: capitalize;">${this._escape(this.currentSubTab)}</span>
+              </div>
+              <button class="btn sm" data-close-cockpit-tab style="display: flex; align-items: center; gap: 4px; cursor: pointer;" title="Close knowledge tab and return to meeting stream">
+                ${Icons.x}
+                <span>Close tab</span>
+              </button>
+            </div>
             ${this._renderTabBody(summary, data)}
           </div>
         ` : ''}
@@ -273,7 +329,22 @@ export class ProjectsView {
       </div>
     `;
 
-    this._bindEvents(data);
+      this._bindEvents(data);
+      this._renderedProjectId = currentId;
+    } catch (renderErr) {
+      console.error(`[ProjectsView] Error rendering cockpit for ${currentId}:`, renderErr);
+      this.container.innerHTML = `
+        <div style="padding: 24px; background: color-mix(in oklab, var(--danger, #ef4444) 10%, var(--card)); border: 1px solid var(--danger, #ef4444); border-radius: var(--r-md); margin: 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--danger, #ef4444); margin-bottom: 8px;">
+            ${Icons.alertCircle || ''} Mission Cockpit Render Error
+          </div>
+          <div style="font-size: 13px; color: var(--foreground); margin-bottom: 12px;">
+            Failed to render mission cockpit for <b>${this._escape(currentId)}</b>: ${this._escape(renderErr.message || String(renderErr))}
+          </div>
+          <button class="btn sm" onclick="window.location.reload()" style="cursor: pointer;">Retry Reload</button>
+        </div>
+      `;
+    }
   }
 
   _renderPrepCard(meeting, summary, inboxStatus) {
@@ -313,10 +384,13 @@ export class ProjectsView {
             <span class="meeting-card-title">${this._escape(meeting.title)}</span>
             ${ws ? `<span class="badge info" style="font-size: 10px;">${this._escape(ws.badge || ws.title)}</span>` : ''}
           </div>
-          <div class="prep-dots" title="Prep Checklist: (1) Agenda drafted, (2) Previous folded, (3) Actions clear">
-            <span class="prep-dot ${dot1 ? 'ok' : ''}"></span>
-            <span class="prep-dot ${dot2 ? 'ok' : ''}"></span>
-            <span class="prep-dot ${dot3 ? 'ok' : ''}"></span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="prep-dots" title="Prep Checklist: (1) Agenda drafted, (2) Previous folded, (3) Actions clear">
+              <span class="prep-dot ${dot1 ? 'ok' : ''}"></span>
+              <span class="prep-dot ${dot2 ? 'ok' : ''}"></span>
+              <span class="prep-dot ${dot3 ? 'ok' : ''}"></span>
+            </div>
+            <button class="btn-delete-meeting" data-delete-event="${this._escape(meeting.id)}" title="Remove meeting from dashboard" aria-label="Delete meeting">${Icons.trash}</button>
           </div>
         </div>
 
@@ -338,11 +412,10 @@ export class ProjectsView {
   }
 
   _renderFoldCard(meeting, inboxStatus) {
-    // Check if a file is already in inbox for this meeting
-    const hasInboxFile = (inboxStatus.files || []).some(f => 
-      f.includes(meeting.id) ||
-      f.toLowerCase().includes((meeting.title || '').slice(0, 15).toLowerCase().replace(/[^a-z0-9]+/g, '_'))
-    );
+    // Per-meeting state is computed in store.getMissionHubData (inbox files are objects, not strings)
+    const hasInboxFile = meeting.inboxState
+      ? meeting.inboxState === 'pending'
+      : this.store.meetingInboxState(meeting.id, inboxStatus) === 'pending';
 
     return `
       <div class="meeting-card fold-card" data-event-id="${this._escape(meeting.id)}">
@@ -351,11 +424,14 @@ export class ProjectsView {
             <span class="meeting-card-time">${this._escape(meeting.date)} · ${this._escape(meeting.start)} - ${this._escape(meeting.end)}</span>
             <span class="meeting-card-title">${this._escape(meeting.title)}</span>
           </div>
-          ${hasInboxFile ? `
-            <div class="fold-state-pill inbox">⏳ In inbox, waiting to fold</div>
-          ` : `
-            <div class="fold-state-pill empty">⚠️ No minutes yet · Drop or paste</div>
-          `}
+          <div style="display: flex; align-items: center; gap: 6px;">
+            ${hasInboxFile ? `
+              <div class="fold-state-pill inbox" style="display: inline-flex; align-items: center; gap: 4px;">${Icons.clock} In inbox, waiting to fold</div>
+            ` : `
+              <div class="fold-state-pill empty" style="display: inline-flex; align-items: center; gap: 4px;">${Icons.alertCircle} No minutes yet · Drop or paste</div>
+            `}
+            <button class="btn-delete-meeting" data-delete-event="${this._escape(meeting.id)}" title="Remove meeting from dashboard" aria-label="Delete meeting">${Icons.trash}</button>
+          </div>
         </div>
       </div>
     `;
@@ -525,12 +601,74 @@ Iron Rules:
       });
     }
 
-    // 2. Meeting card clicks -> selects meeting & opens drawer
+    // 2. Delete meeting button on cards
+    this.container.querySelectorAll('[data-delete-event]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const eventId = btn.dataset.deleteEvent;
+        if (!eventId) return;
+        if (typeof window !== 'undefined' && typeof window.__deleteMeetingWithUndo === 'function') {
+          await window.__deleteMeetingWithUndo(eventId);
+        } else {
+          await this.store.deleteEvent(eventId);
+          await this.render();
+        }
+      });
+    });
+
+    // 3. Meeting card clicks -> selects meeting & opens drawer
     this.container.querySelectorAll('[data-event-id]').forEach(card => {
-      card.addEventListener('click', () => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('[data-delete-event]')) return;
         const eventId = card.dataset.eventId;
         if (eventId && this.onSelectMeeting) {
           this.onSelectMeeting(eventId);
+        }
+      });
+    });
+
+    // 3b. Drag & Drop on Fold Cards (Phase 5)
+    this.container.querySelectorAll('.fold-card[data-event-id]').forEach(card => {
+      const eventId = card.dataset.eventId;
+      const currentPid = this.currentProjectId;
+
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        card.style.borderColor = 'var(--pink-600)';
+        card.style.background = 'oklch(0.25 0.05 300 / 30%)';
+      });
+
+      card.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        card.style.borderColor = '';
+        card.style.background = '';
+      });
+
+      card.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        card.style.borderColor = '';
+        card.style.background = '';
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          const file = e.dataTransfer.files[0];
+          try {
+            const text = await file.text();
+            await this.store.sendMinutesToInbox(eventId, currentPid, {
+              text,
+              title: file.name,
+              source: 'drag_and_drop'
+            });
+            if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
+              window.showHubToast(`Captured ${file.name} to inbox`);
+            }
+            await this.render();
+          } catch (err) {
+            console.error('[ProjectsView] Drop error:', err);
+            if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
+              window.showHubToast(`Capture failed: ${err.message}`);
+            }
+          }
         }
       });
     });
@@ -556,6 +694,14 @@ Iron Rules:
       });
     });
 
+    // 4b. Close tab button inside tab content
+    this.container.querySelectorAll('[data-close-cockpit-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.currentSubTab = null;
+        window.location.hash = '#/p/' + encodeURIComponent(this.currentProjectId);
+      });
+    });
+
     // 5. Actions filters
     this.container.querySelectorAll('[data-act-filter]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -573,7 +719,7 @@ Iron Rules:
           await navigator.clipboard.writeText(actId);
         }
         const orig = btn.innerHTML;
-        btn.innerHTML = '✓ Copied';
+        btn.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 4px;">${Icons.check} Copied</span>`;
         alert(`Copied action ID "${actId}" to clipboard.\nEdit Actions.md directly in your editor to modify (notes are the single source of truth).`);
         setTimeout(() => { btn.innerHTML = orig; }, 1200);
       });

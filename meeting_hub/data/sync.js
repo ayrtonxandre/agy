@@ -198,6 +198,9 @@ export class CalendarSyncService {
           if (data.sources) {
             backendSources = data.sources;
           }
+          if (Array.isArray(data.deletedIds) && store && typeof store.mergeDeletedEventIds === 'function') {
+            await store.mergeDeletedEventIds(data.deletedIds);
+          }
           console.log(`[SyncService] Live orchestrator sync returned ${syncedEvents.length} events.`);
         }
       }
@@ -215,8 +218,36 @@ export class CalendarSyncService {
       }
     }
 
-    // 3. Normalize incoming events
-    const normalizedList = syncedEvents.map(e => EventModel.normalize(e));
+    const deletedIdsSet = new Set();
+    if (store && typeof store.getDeletedEventIds === 'function') {
+      for (const id of store.getDeletedEventIds()) deletedIdsSet.add(String(id));
+    }
+    try {
+      const metaDel = await db.get('meta', 'deleted_event_ids');
+      if (metaDel && Array.isArray(metaDel.value)) {
+        for (const id of metaDel.value) if (id) deletedIdsSet.add(String(id));
+      }
+    } catch (e) {}
+
+    // 3. Filter and normalize incoming events
+    const activeRaw = syncedEvents.filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet));
+    const normalizedList = activeRaw
+      .map(e => EventModel.normalize(e))
+      .filter(e => !EventModel.isDeletedOrDeclined(e, deletedIdsSet));
+    const syncedIds = new Set(normalizedList.map(e => e.id));
+
+    // Prune stale non-custom events when backend sync succeeds, and always prune deleted/declined events
+    const currentEvents = await db.getAll('events');
+    for (const oldEv of currentEvents) {
+      const isCustom = Boolean(oldEv.isCustom || String(oldEv.id || '').startsWith('custom-') || String(oldEv.id || '').startsWith('evt-'));
+      if (
+        deletedIdsSet.has(oldEv.id) ||
+        EventModel.isDeletedOrDeclined(oldEv, deletedIdsSet) ||
+        (backendSuccess && !isCustom && syncedIds.size > 0 && !syncedIds.has(oldEv.id))
+      ) {
+        await db.delete('events', oldEv.id);
+      }
+    }
 
     // 4. Idempotently write to 'events' store
     // Important: 'meeting_data' (agenda, minutes, actions, links) is keyed strictly

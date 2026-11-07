@@ -586,9 +586,15 @@ def save_results(records: list[dict], csv_path: Path, json_path: Path):
         json.dump(records, f, indent=2, ensure_ascii=False)
     print(f"💾 Saved JSON export to: {json_path}")
 
-    with open(OUTPUT_VOL_JSON, "w", encoding="utf-8") as f:
-        json.dump(records, f, indent=2, ensure_ascii=False)
-    print(f"💾 Saved Volume JSON export to: {OUTPUT_VOL_JSON}")
+    try:
+        if OUTPUT_VOL_JSON.is_symlink() or OUTPUT_VOL_JSON.exists():
+            OUTPUT_VOL_JSON.unlink()
+        OUTPUT_VOL_JSON.symlink_to(json_path.name)
+        print(f"💾 Volume JSON export linked to: {OUTPUT_VOL_JSON.name}")
+    except Exception:
+        with open(OUTPUT_VOL_JSON, "w", encoding="utf-8") as f:
+            json.dump(records, f, indent=2, ensure_ascii=False)
+        print(f"💾 Saved Volume JSON export to: {OUTPUT_VOL_JSON}")
 
 
 def save_all_results(data: dict[str, list[dict]]):

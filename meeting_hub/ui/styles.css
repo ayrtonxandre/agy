@@ -1843,6 +1843,46 @@ input.in, select.in {
   border-color: var(--pink-600);
 }
 
+.btn-delete-meeting {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted-foreground);
+  opacity: 0.65;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-delete-meeting:hover {
+  opacity: 1;
+  color: var(--destructive);
+  background: color-mix(in oklab, var(--destructive) 12%, transparent);
+  border-color: color-mix(in oklab, var(--destructive) 35%, transparent);
+}
+
+.delete-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  color: var(--foreground);
+}
+
 @media(max-width: 1100px) {
   .body {
     grid-template-columns: 1fr;
@@ -1857,4 +1897,19 @@ input.in, select.in {
   aside {
     display: none;
   }
+}
+
+/* Action Edit Modal Styles */
+@keyframes actionModalFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.action-modal-card {
+  animation: actionModalFadeIn 0.15s ease-out;
+}
+
+.item-body-clickable:hover .tx {
+  color: var(--pink-600);
+  transition: color 0.12s ease-in-out;
 }

@@ -618,6 +618,8 @@ def build_html(payload_json: str, d: dict) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ATHX 2027 • Master Athlete Headquarters</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23FF3377'/%3E%3Cstop offset='100%25' stop-color='%23E6005C'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%2311121c' stroke='%23FF3377' stroke-opacity='0.4' stroke-width='2'/%3E%3Cg fill='url(%23g)'%3E%3Cpolygon points='14,14 24,14 50,50 40,50'/%3E%3Cpolygon points='40,14 50,14 38,30 31,23'/%3E%3Cpolygon points='14,50 24,50 33,37 26,30'/%3E%3C/g%3E%3Ccircle cx='50' cy='14' r='3.5' fill='%2300FFA3'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3719,14 +3721,14 @@ def main():
     audit = athx_analytics.DataAuditTracker()
 
     garmin_raw = []
-    garmin_vol_path = BASE_DIR / "garmin_workout_volume.json"
     garmin_ext_path = BASE_DIR / "garmin_extracted_workouts.json"
+    garmin_vol_path = BASE_DIR / "garmin_workout_volume.json"
 
-    if garmin_vol_path.exists():
-        with open(garmin_vol_path, "r", encoding="utf-8") as f:
-            garmin_raw = json.load(f)
-    elif garmin_ext_path.exists():
+    if garmin_ext_path.exists():
         with open(garmin_ext_path, "r", encoding="utf-8") as f:
+            garmin_raw = json.load(f)
+    elif garmin_vol_path.exists():
+        with open(garmin_vol_path, "r", encoding="utf-8") as f:
             garmin_raw = json.load(f)
     else:
         garmin_csv = BASE_DIR / "garmin_extracted_workouts.csv"
@@ -3786,8 +3788,9 @@ def main():
     telemetry_digest = athx_analytics.generate_telemetry_digest(
         strength_data, apple_data, running_data, workout_data, comp_data, audit
     )
-    coach_briefing = athx_ai_coach.get_or_generate_coach_briefing(telemetry_digest, base_dir=BASE_DIR)
-    print(f"✅ ATHX AI Performance Coach: Verdict [{coach_briefing['executive_verdict']['rating']}] via {coach_briefing['provider_used']}")
+    force_coach = "--force" in sys.argv or "--force-coach" in sys.argv or os.environ.get("ATHX_FORCE_COACH", "0") == "1"
+    coach_briefing = athx_ai_coach.get_or_generate_coach_briefing(telemetry_digest, force=force_coach, base_dir=BASE_DIR)
+    print(f"✅ ATHX AI Performance Coach: Verdict [{coach_briefing['executive_verdict']['rating']}] via {coach_briefing['provider_used']}{' (forced refresh)' if force_coach else ''}")
 
     today_dt = date.today()
     microcycle_days = build_microcycle(all_activities, coach_briefing, today_dt.isoformat())
@@ -3845,7 +3848,12 @@ def main():
         strength_data=strength_data,
         comp_data=comp_data,
         garmin_hrv=garmin_hrv_data,
-        durability=crossfit_durability_data
+        durability=crossfit_durability_data,
+        running_data=running_activities,
+        critical_speed=critical_speed_data,
+        plews_hrv=plews_hrv_data,
+        coach_briefing=coach_briefing,
+        base_dir=BASE_DIR,
     )
     print(f"✅ Critical Speed Model: {critical_speed_data['cs_pace_formatted']} ({critical_speed_data['cs_ms']} m/s), D' = {critical_speed_data['d_prime_m']}m, R² = {critical_speed_data['r2']}")
     print(f"✅ CrossFit Durability Engine: Index {crossfit_durability_data['durability_index']}% across {crossfit_durability_data['total_evaluated_sessions']} audited sessions.")
@@ -3894,17 +3902,26 @@ def main():
     payload_json = json.dumps(dashboard_payload, ensure_ascii=False)
     html_content = build_html(payload_json, dashboard_payload)
 
-    out_file = DATA_DIR / "garmin_workout.html"
-    out_file.write_text(html_content, encoding="utf-8")
     index_file = DATA_DIR / "index.html"
     index_file.write_text(html_content, encoding="utf-8")
+
+    def ensure_workout_symlink(target_dir: Path):
+        link_path = target_dir / "garmin_workout.html"
+        try:
+            if link_path.is_symlink() or link_path.exists():
+                link_path.unlink()
+            link_path.symlink_to("index.html")
+        except Exception:
+            link_path.write_text(html_content, encoding="utf-8")
+
+    ensure_workout_symlink(DATA_DIR)
     if DATA_DIR != BASE_DIR:
         try:
-            (BASE_DIR / "garmin_workout.html").write_text(html_content, encoding="utf-8")
             (BASE_DIR / "index.html").write_text(html_content, encoding="utf-8")
+            ensure_workout_symlink(BASE_DIR)
         except Exception:
             pass
-    print(f"\n🎉 Successfully rebuilt upgraded ATHX Athlete Dashboard: {out_file} & index.html ({out_file.stat().st_size:,} bytes)")
+    print(f"\n🎉 Successfully rebuilt upgraded ATHX Athlete Dashboard: {index_file} ({index_file.stat().st_size:,} bytes, garmin_workout.html symlinked)")
 
 
 if __name__ == "__main__":

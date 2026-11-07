@@ -1,18 +1,55 @@
 from __future__ import annotations
 import os
 import sys
+
+# Shield against deprecated oauth2client crashing googleapiclient when pyOpenSSL / cryptography mismatch
+class _ShieldBrokenOAuth2Client:
+    def find_spec(self, fullname, path, target=None):
+        if fullname.startswith("oauth2client"):
+            raise ImportError("oauth2client disabled due to pyOpenSSL/cryptography environment mismatch")
+        return None
+
+if not any(isinstance(finder, _ShieldBrokenOAuth2Client) for finder in sys.meta_path):
+    sys.meta_path.insert(0, _ShieldBrokenOAuth2Client())
+
 import re
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from google_calendar_api import list_upcoming_events, get_calendar_service
-from icloud_calendar import list_icloud_events
-from client_calendar import fetch_client_events
+try:
+    from google_calendar_api import list_upcoming_events, get_calendar_service
+except Exception:
+    list_upcoming_events = None
+    get_calendar_service = None
+
+try:
+    from icloud_calendar import list_icloud_events
+except Exception:
+    list_icloud_events = None
+
+try:
+    from client_calendar import fetch_client_events
+except Exception:
+    fetch_client_events = None
 
 LOCAL_TZ = ZoneInfo("Europe/Paris")
 BASE_DIR = Path(__file__).resolve().parent
 CAL_DATA_DIR = BASE_DIR / "calendar_data"
+
+CALENDAR_COLOR_TAGS = {
+    "1": "[ARTEFACT INTERNAL]",
+    "2": "[COUNSELING/HR]",
+    "3": "[ARTEFACT INTERNAL]",
+    "4": "[PRIDEFACT]",
+    "5": "[HEALTHCARE]",
+    "6": "Team Work",
+    "7": "[MAIN MISSION]",
+    "8": "Me-time",
+    "9": "[ARTEFACT INTERNAL]",
+    "10": "[COUNSELING/HR]",
+    "11": "[PRIDEFACT]",
+}
 
 def extract_meeting_video_link(ev: dict) -> str:
     """Extracts video conference links (Google Meet, Microsoft Teams, Zoom, Webex) from event metadata."""
@@ -164,14 +201,54 @@ def parse_cached_ics_events(ics_file_path: Path, start_dt: datetime, end_dt: dat
 
     return events
 
+def load_deleted_event_ids() -> set[str]:
+    """Loads persistent user-deleted event IDs from calendar_data/deleted_event_ids.json."""
+    deleted_file = CAL_DATA_DIR / "deleted_event_ids.json"
+    if not deleted_file.exists():
+        return set()
+    try:
+        import json
+        data = json.loads(deleted_file.read_text(encoding="utf-8"))
+        if isinstance(data, list):
+            return {str(x) for x in data if x}
+    except Exception:
+        pass
+    return set()
+
+def is_event_deleted_or_declined(ev: dict, deleted_ids: set[str] | None = None) -> bool:
+    """Returns True if an event was deleted by the user, cancelled, or declined by self."""
+    if not isinstance(ev, dict):
+        return True
+    ev_id = str(ev.get("id", ""))
+    if deleted_ids and ev_id and ev_id in deleted_ids:
+        return True
+    status = str(ev.get("status", "")).lower()
+    if status in ("cancelled", "canceled", "declined"):
+        return True
+    summary = str(ev.get("summary", "")).strip().lower()
+    if summary.startswith(("canceled:", "cancelled:", "annulé:", "annulé :")):
+        return True
+    for att in ev.get("attendees", []):
+        if isinstance(att, dict):
+            is_self = bool(att.get("self")) or "ayrton.andre" in str(att.get("email", "")).lower()
+            att_status = str(att.get("status") or att.get("responseStatus") or "").lower()
+            if is_self and att_status == "declined":
+                return True
+    return False
+
 def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
     """Aggregates and deduplicates events across Artefact (Google), Personal (iCloud / Ma vie), Client (Clariane), and ATHX Training."""
     unified = []
+    deleted_ids = load_deleted_event_ids()
 
     # 1. Google Calendar API (Multi-calendar: Primary Artefact, Ma vie Personal, Calendrier Client)
     google_fetched = False
     try:
+        if not callable(get_calendar_service):
+            raise RuntimeError("get_calendar_service is not callable (import error)")
         service = get_calendar_service()
+        if not service:
+            raise RuntimeError("get_calendar_service returned None")
         
         # Calendar ID mapping
         cal_sources = [
@@ -205,15 +282,35 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                     summary = ev.get("summary", "Work Event")
                     # If Tuesday gym has empty summary but emoji
                     if summary.strip() == "🏋️":
-                        summary = "🏋️ ATHX 2027: Gym Session A (Squat, S2O & Power)"
+                        summary = "ATHX 2027: Gym Session A (Squat, S2O & Power)"
 
-                    # Classify ATHX training events
+                    color_id = str(ev.get("colorId", "") or ev.get("color_id", "") or "")
+                    color_tag = CALENDAR_COLOR_TAGS.get(color_id, "")
+
+                    # Classify events by color tag first, then keyword fallback
                     src = default_source
-                    if any(prefix in summary for prefix in ["⚡ ATHX", "🏋️ ATHX", "🏃 ATHX"]) or summary.strip().startswith("🏋️"):
-                        src = "⚡ ATHX (Training)"
-                    elif (ev.get("colorId") == "7" or 
-                          any(kw in summary.lower() for kw in ["clariane", "inicea", "estela", "hdj", "netsoins", "molécules onéreuses", "molecules onereuses", "care dispensing", "updates mo", "questions mo", "[invoicing]"])):
-                        src = "🏥 Clariane (Client)"
+                    if (
+                        any(prefix in summary for prefix in ["ATHX", "CrossFit", "WOD"])
+                        or color_id == "8"
+                        or color_tag == "Me-time"
+                    ):
+                        src = "ATHX (Training)"
+                    elif color_id == "7" or color_tag == "[MAIN MISSION]":
+                        src = "Leclerc Siplec (Client)"
+                    elif color_id in ("2", "10") or color_tag == "[COUNSELING/HR]":
+                        src = "Counseling & HR (Artefact)"
+                    elif color_id in ("4", "11") or color_tag == "[PRIDEFACT]":
+                        src = "PrideFact (Artefact)"
+                    elif color_id == "5" or color_tag == "[HEALTHCARE]":
+                        src = "Healthcare (Artefact)"
+                    elif color_id == "6" or color_tag in ("Team Work", "[GE]"):
+                        src = "GE Enterprise (Artefact)"
+                    elif color_id in ("1", "3", "9") or color_tag == "[ARTEFACT INTERNAL]":
+                        src = "Artefact (Work)"
+                    elif any(kw in summary.lower() for kw in ["siplec", "leclerc"]):
+                        src = "Leclerc Siplec (Client)"
+                    elif any(kw in summary.lower() for kw in ["clariane", "inicea", "estela", "hdj", "netsoins", "molécules onéreuses", "molecules onereuses", "care dispensing", "updates mo", "questions mo", "[invoicing]"]):
+                        src = "Clariane (Client)"
 
                     video_link = extract_meeting_video_link(ev)
                     attendees = extract_attendees_info(ev)
@@ -232,7 +329,9 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                         "attendees": attendees,
                         "organizer": organizer,
                         "status": ev.get("status", "confirmed"),
-                        "is_all_day": "T" not in start_raw
+                        "is_all_day": "T" not in start_raw,
+                        "colorId": color_id,
+                        "colorTag": color_tag
                     })
                 if g_events:
                     google_fetched = True
@@ -255,6 +354,8 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                     s_dt = datetime.fromisoformat(item["start"])
                     e_dt = datetime.fromisoformat(item["end"])
                     if s_dt < end_dt and e_dt > start_dt:
+                        c_id = str(item.get("colorId", "") or item.get("color_id", "") or "")
+                        c_tag = item.get("colorTag", "") or CALENDAR_COLOR_TAGS.get(c_id, "")
                         unified.append({
                             "id": item.get("id", ""),
                             "source": item["source"],
@@ -268,7 +369,9 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                             "attendees": item.get("attendees", []),
                             "organizer": item.get("organizer", {}),
                             "status": item.get("status", "confirmed"),
-                            "is_all_day": item.get("is_all_day", False)
+                            "is_all_day": item.get("is_all_day", False),
+                            "colorId": c_id,
+                            "colorTag": c_tag
                         })
             except Exception as e_cache:
                 print(f"Warning: Could not read json cache: {e_cache}", file=sys.stderr)
@@ -381,6 +484,9 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
         except Exception as e:
             print(f"Warning: Could not project ATHX training schedule: {e}", file=sys.stderr)
 
+    # Filter out user-deleted, cancelled, or declined events
+    unified = [ev for ev in unified if not is_event_deleted_or_declined(ev, deleted_ids)]
+
     # Sort chronologically
     unified.sort(key=lambda x: x["start"])
 
@@ -414,13 +520,24 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                     "attendees": ev.get("attendees", []),
                     "organizer": ev.get("organizer", {}),
                     "status": ev.get("status", "confirmed"),
-                    "is_all_day": ev.get("is_all_day", False)
+                    "is_all_day": ev.get("is_all_day", False),
+                    "colorId": ev.get("colorId", ""),
+                    "colorTag": ev.get("colorTag", "")
                 }
                 for ev in deduped
             ]
             json_cache = CAL_DATA_DIR / "cached_unified_events.json"
             with open(json_cache, "w", encoding="utf-8") as f:
                 json.dump(cache_payload, f, ensure_ascii=False, indent=2)
+
+            # Also synchronize to Meeting Hub data directory for file:// and offline resilience
+            mhub_json = BASE_DIR.parent / "meeting_hub" / "data" / "initial_events.json"
+            if mhub_json.parent.exists():
+                with open(mhub_json, "w", encoding="utf-8") as f:
+                    json.dump(cache_payload, f, ensure_ascii=False, indent=2)
+                mhub_js = BASE_DIR.parent / "meeting_hub" / "data" / "initial_events.js"
+                with open(mhub_js, "w", encoding="utf-8") as f:
+                    f.write(f"// Global Seed Events (immune to file:// CORS)\nwindow.INITIAL_EVENTS = {json.dumps(cache_payload, ensure_ascii=False, indent=2)};\n")
         except Exception as e_save:
             print(f"Notice: Could not write json cache: {e_save}", file=sys.stderr)
 

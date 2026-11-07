@@ -600,9 +600,9 @@ def load_telemetry_digest(base_dir: Path | None = None) -> dict[str, Any]:
 
     audit = athx_analytics.DataAuditTracker()
     garmin_raw = []
-    g_path = base_dir / "garmin_workout_volume.json"
+    g_path = base_dir / "garmin_extracted_workouts.json"
     if not g_path.exists():
-        g_path = base_dir / "garmin_extracted_workouts.json"
+        g_path = base_dir / "garmin_workout_volume.json"
     if g_path.exists():
         try:
             with open(g_path, "r", encoding="utf-8") as f:

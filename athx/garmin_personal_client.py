@@ -53,15 +53,25 @@ class GarminPersonalClient:
 
         self.api_key = api_key or os.getenv("GARMIN_PERSONAL_API_KEY")
         if not self.api_key:
-            # Attempt to read from .env file if in root
-            env_path = Path(__file__).resolve().parent / ".env"
-            if env_path.exists():
-                with open(env_path, "r", encoding="utf-8") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line and not line.startswith("#") and "GARMIN_PERSONAL_API_KEY=" in line:
-                            self.api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
-                            break
+            # Attempt to read from .env file (current directory or parent project root)
+            candidate_env_paths = [
+                Path(__file__).resolve().parent / ".env",
+                Path(__file__).resolve().parent.parent / ".env",
+                Path.cwd() / ".env",
+            ]
+            for env_path in candidate_env_paths:
+                if env_path.exists():
+                    try:
+                        with open(env_path, "r", encoding="utf-8") as f:
+                            for line in f:
+                                line = line.strip()
+                                if line and not line.startswith("#") and "GARMIN_PERSONAL_API_KEY=" in line:
+                                    self.api_key = line.split("=", 1)[1].strip().strip('"').strip("'")
+                                    break
+                    except Exception:
+                        pass
+                    if self.api_key:
+                        break
 
         self._cached_token: Optional[str] = None
         self._expires_at: float = 0.0
