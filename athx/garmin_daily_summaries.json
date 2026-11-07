@@ -10226,15 +10226,15 @@
     "wellnessChronology": {
       "startTimestampGmt": "2026-11-06T23:00:00.0",
       "startTimestampLocal": "2026-11-07T00:00:00.0",
-      "endTimestampGmt": "2026-11-07T18:45:00.0",
-      "endTimestampLocal": "2026-11-07T19:45:00.0",
-      "totalDurationInMillis": 71100000
+      "endTimestampGmt": "2026-11-07T20:01:00.0",
+      "endTimestampLocal": "2026-11-07T21:01:00.0",
+      "totalDurationInMillis": 75660000
     },
     "movement": {
       "steps": {
         "goal": 12840,
-        "value": 11188,
-        "distanceInMeters": 9366.0
+        "value": 11241,
+        "distanceInMeters": 9428.0
       },
       "pushes": {},
       "floorsAscended": {
@@ -10248,9 +10248,9 @@
       }
     },
     "calories": {
-      "burnedResting": 1830,
-      "burnedActive": 1328,
-      "burnedTotal": 3158
+      "burnedResting": 1947,
+      "burnedActive": 1329,
+      "burnedTotal": 3276
     },
     "heartRate": {
       "minValue": 53,
@@ -10266,32 +10266,32 @@
       "avgLevel": 31,
       "maxLevel": 97,
       "restProportion": 0.41,
-      "activityProportion": 0.24,
-      "uncategorizedProportion": 0.09,
-      "lowStressProportion": 0.09,
+      "activityProportion": 0.22,
+      "uncategorizedProportion": 0.08,
+      "lowStressProportion": 0.11,
       "mediumStressProportion": 0.12,
       "highStressProportion": 0.06,
       "qualifier": "balanced",
-      "totalDurationInMillis": 71100000,
-      "restDurationInMillis": 29040000,
-      "activityDurationInMillis": 16740000,
-      "uncategorizedDurationInMillis": 6240000,
-      "lowStressDurationInMillis": 6420000,
-      "mediumStressDurationInMillis": 8400000,
-      "highStressDurationInMillis": 4260000
+      "totalDurationInMillis": 75660000,
+      "restDurationInMillis": 31140000,
+      "activityDurationInMillis": 16860000,
+      "uncategorizedDurationInMillis": 6420000,
+      "lowStressDurationInMillis": 8040000,
+      "mediumStressDurationInMillis": 8820000,
+      "highStressDurationInMillis": 4380000
     },
     "bodyBattery": {
-      "minValue": 19,
+      "minValue": 18,
       "maxValue": 90,
       "chargedValue": 71,
-      "drainedValue": 70,
-      "latestValue": 20,
+      "drainedValue": 72,
+      "latestValue": 18,
       "featureVersion": "3.0",
       "dynamicFeedbackEvent": {
-        "eventTimestampGmt": "2026-11-07T18:41:10.0",
+        "eventTimestampGmt": "2026-11-07T19:05:00.0",
         "bodyBatteryLevel": "LOW",
-        "feedbackShortType": "DAY_STRESSFUL_AND_INTENSIVE_EXERCISE",
-        "feedbackLongType": "DAY_STRESSFUL_AND_INTENSIVE_EXERCISE_AND_BB_LOW"
+        "feedbackShortType": "SLEEP_PREPARATION_STRESSFUL_AND_INTENSIVE_EXERCISE",
+        "feedbackLongType": "SLEEP_PREPARATION_STRESSFUL_AND_INTENSIVE_EXERCISE_AND_BB_LOW"
       },
       "endOfDayDynamicFeedbackEvent": {
         "eventTimestampGmt": "2026-11-06T23:44:34.0",
@@ -10332,16 +10332,16 @@
       "avgValue": 15,
       "maxValue": 24,
       "minValue": 8,
-      "latestValue": 12,
-      "latestTimestampGmt": "2026-11-07T18:45:00.0",
+      "latestValue": 13,
+      "latestTimestampGmt": "2026-11-07T20:01:00.0",
       "algorithmVersion": 200
     },
     "pulseOx": {
       "avgValue": 98,
       "minValue": 92,
-      "latestValue": 96,
-      "latestTimestampGmt": "2026-11-07T18:44:00.0",
-      "latestTimestampLocal": "2026-11-07T19:44:00.0"
+      "latestValue": 98,
+      "latestTimestampGmt": "2026-11-07T20:01:00.0",
+      "latestTimestampLocal": "2026-11-07T21:01:00.0"
     },
     "jetLag": {}
   }

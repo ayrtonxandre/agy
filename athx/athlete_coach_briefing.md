@@ -22,13 +22,13 @@
 - **Volume Starvation**: Hamstrings/Glutes: 5.0 sets/wk (Deficit vs MEV 6.0)
 - **Volume Starvation**: Forearms: 1.1 sets/wk (Deficit vs MEV 4.0)
 - **Acute:Chronic Workload Ratio (ACWR)**: `1.00` (Sweet Spot (Optimal)). Acute load is 3,570.3 kg vs chronic baseline 3,580.6 kg. Foster training monotony is `1.00`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
-- **Sleep & Recovery**: 7-day average sleep duration is `7.0 hrs` with a composite readiness score of `94.2%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
+- **Sleep & Recovery**: 7-day average sleep duration is `7.0 hrs` with a composite readiness score of `89.3%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
 ---
 
 ## 4. 🧬 Hypertrophy & Workload Engineering
 - **Volume Distribution**: Upper body pressing and pulling maintain consistent sets within or near Maximum Adaptive Volume (MAV). Conversely, quad and hamstring sets require an immediate 4–6 set weekly infusion to cross the MEV threshold and trigger structural hypertrophy.
-- **Recomposition & Mass Velocity**: Current mass is `78.5 kg` against the competition standard of `85.0 kg` (+6.5 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
+- **Recomposition & Mass Velocity**: Current mass is `78.6 kg` against the competition standard of `85.0 kg` (+6.4 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
 
 ---
 
