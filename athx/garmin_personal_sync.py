@@ -29,6 +29,12 @@ import athx_config
 import garmin_note_parser
 from garmin_personal_client import GarminPersonalClient
 
+try:
+    from garminconnect import Garmin
+    HAVE_GARMINCONNECT = True
+except ImportError:
+    HAVE_GARMINCONNECT = False
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 TOKEN_DIR = SCRIPT_DIR / "garmin_tokens"
@@ -107,6 +113,18 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
     client = GarminPersonalClient(tokens_dir=TOKEN_DIR)
     tok = client.get_token()
     print(f"🔑 Official Garmin Personal Bearer Token Active (TTL: {round((client._expires_at - datetime.now().timestamp())/3600, 1)}h)")
+
+    garmin_unofficial = None
+    if HAVE_GARMINCONNECT:
+        tokens_file = TOKEN_DIR / "garmin_tokens.json"
+        if tokens_file.exists():
+            try:
+                garmin_unofficial = Garmin()
+                garmin_unofficial.login(tokenstore=str(TOKEN_DIR))
+                print(f"🔗 Garmin Connect session attached for detailed exercise sets ({garmin_unofficial.display_name}).")
+            except Exception as e:
+                garmin_unofficial = None
+                print(f"ℹ️ Garmin Connect session note: {e}")
 
     # 1. Load local cache to preserve notes/history
     cached_sets_by_id: dict[int, list[dict]] = {}
@@ -234,52 +252,120 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
             continue
 
         # ----------------------------------------------------------------------
-        # Case B: STRENGTH TRAINING (Native SummarizedExerciseSets + WOD Notes)
+        # Case B: STRENGTH TRAINING (Detailed Exercise Sets + Summaries + Notes)
         # ----------------------------------------------------------------------
         is_strength = ("strength" in type_key or "strength" in act_name.lower())
         if is_strength:
-            summarized_sets = act.get("summarizedExerciseSets", [])
-
             session_extracted_sets: list[dict] = []
             all_exercises_in_session: list[str] = []
 
-            if summarized_sets:
-                for s in summarized_sets:
-                    cat = s.get("subCategory") or s.get("category") or "Strength Exercise"
-                    ex_name = format_exercise_name(cat)
-                    sets_count = int(s.get("sets", 1) or 1)
-                    tot_reps = int(s.get("reps", 0) or 0)
-                    reps_per_set = max(1, tot_reps // sets_count) if sets_count > 0 else tot_reps
-                    raw_max_weight = float(s.get("maxWeight", 0.0) or 0.0)
-                    weight_kg = round(raw_max_weight / 1000.0, 1) if raw_max_weight > 500 else round(raw_max_weight, 1)
+            # 1. Primary: Detailed individual exercise sets from Garmin Connect (exact weights, reps & exercises)
+            if garmin_unofficial:
+                try:
+                    exercise_data = garmin_unofficial.get_activity_exercise_sets(act_id)
+                    exercise_sets = (exercise_data or {}).get("exerciseSets", [])
+                    active_sets = [
+                        s for s in exercise_sets
+                        if s.get("setType") == "ACTIVE" or (s.get("repetitionCount") and s.get("repetitionCount") > 0)
+                    ]
+                    if active_sets:
+                        exercise_counter: dict[str, int] = {}
+                        for s in active_sets:
+                            ex_list = s.get("exercises", [])
+                            raw_ex = None
+                            if ex_list:
+                                for ex_item in ex_list:
+                                    raw_ex = ex_item.get("name") or ex_item.get("category")
+                                    if raw_ex:
+                                        break
+                            if not raw_ex:
+                                raw_ex = "Strength Exercise"
 
-                    raw_vol = float(s.get("volume", 0.0) or 0.0)
-                    total_vol_kg = round(raw_vol / 1000.0, 1) if raw_vol > 500 else round(reps_per_set * sets_count * weight_kg, 1)
+                            ex_name = format_exercise_name(raw_ex)
+                            all_exercises_in_session.append(ex_name)
+                            exercise_counter[ex_name] = exercise_counter.get(ex_name, 0) + 1
+                            set_num = exercise_counter[ex_name]
 
-                    mean_vel = s.get("concentricMeanVelocity")
-                    peak_power = s.get("peakPower")
+                            reps = s.get("repetitionCount", 0) or 0
+                            raw_weight = s.get("weight") or 0.0
+                            if raw_weight > 500:
+                                weight_kg = round(raw_weight / 1000.0, 1)
+                            elif raw_weight > 0:
+                                weight_kg = round(float(raw_weight), 1)
+                            else:
+                                weight_kg = 0.0
 
-                    # Generate individual set entries
-                    for s_idx in range(1, sets_count + 1):
-                        all_exercises_in_session.append(ex_name)
-                        e1rm = round(weight_kg * (1.0 + reps_per_set / 30.0), 1) if (weight_kg > 0 and 0 < reps_per_set <= 30) else None
-                        set_record = {
-                            "Activity_ID": act_id,
-                            "Date": date_str,
-                            "Activity_Name": act_name,
-                            "Exercise": ex_name,
-                            "Set": s_idx,
-                            "Reps": reps_per_set,
-                            "Weight_kg": weight_kg,
-                            "Total_Volume_kg": round(total_vol_kg / sets_count, 1) if sets_count > 0 else total_vol_kg,
-                            "e1RM_kg": e1rm,
-                            "Duration_s": round(float(s.get("duration", 0.0) or 0.0) / 1000.0, 1) if s.get("duration") else None,
-                            "Concentric_Velocity_cm_ms": round(float(mean_vel), 3) if mean_vel is not None else None,
-                            "Peak_Power_W": round(float(peak_power), 1) if peak_power is not None else None,
-                        }
-                        session_extracted_sets.append(set_record)
+                            duration_set_s = s.get("duration", 0.0) or 0.0
 
-            # If no sets recorded on watch, check if user wrote exercises in note/description
+                            plausible = True
+                            if ex_name in athx_config.PLAUSIBLE_LOAD_RANGES:
+                                min_p, max_p = athx_config.PLAUSIBLE_LOAD_RANGES[ex_name]
+                                if weight_kg < min_p or weight_kg > max_p:
+                                    plausible = False
+
+                            if plausible and 0 < reps <= athx_config.E1RM_MAX_REPS and weight_kg > 0:
+                                e1rm = round(weight_kg * (1.0 + reps / 30.0), 1)
+                            else:
+                                e1rm = None
+
+                            set_record = {
+                                "Activity_ID": act_id,
+                                "Date": date_str,
+                                "Activity_Name": act_name,
+                                "Exercise": ex_name,
+                                "Set": set_num,
+                                "Reps": reps,
+                                "Weight_kg": weight_kg,
+                                "Total_Volume_kg": round(reps * weight_kg, 1),
+                                "e1RM_kg": e1rm,
+                                "Duration_s": round(duration_set_s, 1),
+                                "Concentric_Velocity_cm_ms": None,
+                                "Peak_Power_W": None,
+                            }
+                            session_extracted_sets.append(set_record)
+                except Exception as e:
+                    print(f"   ⚠️ Could not fetch detailed sets for {act_id} via GarminConnect: {e}")
+
+            # 2. Secondary: Native summarizedExerciseSets if detailed sets unavailable
+            if not session_extracted_sets:
+                summarized_sets = act.get("summarizedExerciseSets", [])
+                if summarized_sets:
+                    for s in summarized_sets:
+                        cat = s.get("subCategory") or s.get("category") or "Strength Exercise"
+                        ex_name = format_exercise_name(cat)
+                        sets_count = int(s.get("sets", 1) or 1)
+                        tot_reps = int(s.get("reps", 0) or 0)
+                        reps_per_set = max(1, tot_reps // sets_count) if sets_count > 0 else tot_reps
+                        raw_max_weight = float(s.get("maxWeight", 0.0) or 0.0)
+                        weight_kg = round(raw_max_weight / 1000.0, 1) if raw_max_weight > 500 else round(raw_max_weight, 1)
+
+                        raw_vol = float(s.get("volume", 0.0) or 0.0)
+                        total_vol_kg = round(raw_vol / 1000.0, 1) if raw_vol > 500 else round(reps_per_set * sets_count * weight_kg, 1)
+
+                        mean_vel = s.get("concentricMeanVelocity")
+                        peak_power = s.get("peakPower")
+
+                        # Generate individual set entries
+                        for s_idx in range(1, sets_count + 1):
+                            all_exercises_in_session.append(ex_name)
+                            e1rm = round(weight_kg * (1.0 + reps_per_set / 30.0), 1) if (weight_kg > 0 and 0 < reps_per_set <= 30) else None
+                            set_record = {
+                                "Activity_ID": act_id,
+                                "Date": date_str,
+                                "Activity_Name": act_name,
+                                "Exercise": ex_name,
+                                "Set": s_idx,
+                                "Reps": reps_per_set,
+                                "Weight_kg": weight_kg,
+                                "Total_Volume_kg": round(total_vol_kg / sets_count, 1) if sets_count > 0 else total_vol_kg,
+                                "e1RM_kg": e1rm,
+                                "Duration_s": round(float(s.get("duration", 0.0) or 0.0) / 1000.0, 1) if s.get("duration") else None,
+                                "Concentric_Velocity_cm_ms": round(float(mean_vel), 3) if mean_vel is not None else None,
+                                "Peak_Power_W": round(float(peak_power), 1) if peak_power is not None else None,
+                            }
+                            session_extracted_sets.append(set_record)
+
+            # 3. Tertiary: If no sets recorded on watch, check if user wrote exercises in note/description
             if not session_extracted_sets and desc:
                 note_sets, parsed_info = garmin_note_parser.convert_note_to_strength_records(
                     act_id, date_str, act_name, desc

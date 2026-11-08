@@ -1,6 +1,6 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect
 25011843991,2026-11-08,2026-11-08 17:32:37,Treadmill Running,treadmill_running,Running,27.3,5.0,470,168.0,179.0,LACTATE_THRESHOLD
-25005169971,2026-11-08,2026-11-08 08:43:49,Strength,strength_training,Strength,55.4,0.0,409,111.0,149.0,AEROBIC_BASE
+25005169971,2026-11-08,2026-11-08 08:43:00,Strength,strength_training,Strength,55.4,0.0,409,111.0,149.0,AEROBIC_BASE
 25000084501,2026-11-07,2026-11-07 16:20:31,CrossFit,indoor_cardio,Cardio / Cross-Training,70.7,0.0,995,154.0,192.0,SPEED
 24987533323,2026-11-06,2026-11-06 15:35:28,Paris Running,running,Running,24.5,4.71,399,166.0,192.0,VO2MAX
 24983050320,2026-11-06,2026-11-06 06:36:00,CrossFit,indoor_cardio,Cardio / Cross-Training,41.2,0.0,509,136.0,177.0,SPEED
