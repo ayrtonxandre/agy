@@ -1,47 +1,5 @@
 [
   {
-    "id": "_64rm6e1ickr66bb26sq38b9h65j32bb1c5im8b9m68sj0cr461hmcpj56g_20261024T093000Z",
-    "source": "🍏 Personal (Ma vie)",
-    "summary": "Sport : Cross-training",
-    "start": "2026-10-24T11:30:00+02:00",
-    "end": "2026-10-24T12:30:00+02:00",
-    "location": "CrossFit Box",
-    "description": "ATHX 2027 Cross-Training & Conditioning (60 min CrossFit WOD)",
-    "video_link": "",
-    "html_link": "https://www.google.com/calendar/event?eid=XzY0cm02ZTFpY2tyNjZiYjI2c3EzOGI5aDY1ajMyYmIxYzVpbThiOW02OHNqMGNyNDYxaG1jcGo1NmdfMjAyNjEwMjRUMDkzMDAwWiAxcDY0dnRrcm5idmNjOGI2MTdobHRqZTloNzQ4ZDZzZUBp",
-    "attendees": [],
-    "organizer": {
-      "name": "Ma vie",
-      "email": "1p64vtkrnbvcc8b617hltje9h748d6se@import.calendar.google.com",
-      "self": true
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "",
-    "colorTag": ""
-  },
-  {
-    "id": "r5eh4321u0cliesjctmk4q80hk_20261024T141500Z",
-    "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: CrossFit Big WOD",
-    "start": "2026-10-24T16:15:00+02:00",
-    "end": "2026-10-24T17:45:00+02:00",
-    "location": "CrossFit Box",
-    "description": "",
-    "video_link": "",
-    "html_link": "https://www.google.com/calendar/event?eid=cjVlaDQzMjF1MGNsaWVzamN0bWs0cTgwaGtfMjAyNjEwMjRUMTQxNTAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
-    "attendees": [],
-    "organizer": {
-      "name": "Ayrton Andre",
-      "email": "ayrton.andre@artefact.com",
-      "self": true
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "8",
-    "colorTag": "Me-time"
-  },
-  {
     "id": "c65jvfilisr5pk41ug4j8td30k_20261026",
     "source": "Clariane (Client)",
     "summary": "Clariane (Office)",
@@ -3031,6 +2989,27 @@
     "colorTag": "Me-time"
   },
   {
+    "id": "_cts52cbje0pngm1da1il8gqfah650pi86o",
+    "source": "🍏 Personal (Ma vie)",
+    "summary": "Les diables",
+    "start": "2026-11-08T12:35:00+01:00",
+    "end": "2026-11-08T14:30:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=X2N0czUyY2JqZTBwbmdtMWRhMWlsOGdxZmFoNjUwcGk4Nm8gMXA2NHZ0a3JuYnZjYzhiNjE3aGx0amU5aDc0OGQ2c2VAaQ",
+    "attendees": [],
+    "organizer": {
+      "name": "Ma vie",
+      "email": "1p64vtkrnbvcc8b617hltje9h748d6se@import.calendar.google.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "",
+    "colorTag": ""
+  },
+  {
     "id": "4uhk513656ms3l9aodr7ok8f20",
     "source": "💼 Artefact (Work)",
     "summary": "Peer selection & Self review ",
@@ -3171,6 +3150,27 @@
     "is_all_day": false,
     "colorId": "7",
     "colorTag": "[MAIN MISSION]"
+  },
+  {
+    "id": "_64s3ahhm68oj6b9h64s36b9k6513iba28os48b9n60s34ghj74p30d1n70",
+    "source": "🍏 Personal (Ma vie)",
+    "summary": "Cinema : Godzilla Minus 0",
+    "start": "2026-11-09T20:30:00+01:00",
+    "end": "2026-11-09T21:30:00+01:00",
+    "location": "86 rue Mstislav Rostropovitch, 75017 Paris",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=XzY0czNhaGhtNjhvajZiOWg2NHMzNmI5azY1MTNpYmEyOG9zNDhiOW42MHMzNGdoajc0cDMwZDFuNzAgMXA2NHZ0a3JuYnZjYzhiNjE3aGx0amU5aDc0OGQ2c2VAaQ",
+    "attendees": [],
+    "organizer": {
+      "name": "Ma vie",
+      "email": "1p64vtkrnbvcc8b617hltje9h748d6se@import.calendar.google.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "",
+    "colorTag": ""
   },
   {
     "id": "dcmudnn8h1uok6eohpq8e5916g_20261110",
@@ -7683,5 +7683,47 @@
     "is_all_day": false,
     "colorId": "8",
     "colorTag": "Me-time"
+  },
+  {
+    "id": "tqd3a0td1dv5vi13vck5rsepkk_20261206T083000Z",
+    "source": "ATHX (Training)",
+    "summary": "🏃 ATHX Run 3: Lighter Zone 2 5K (Active Recovery)",
+    "start": "2026-12-06T09:30:00+01:00",
+    "end": "2026-12-06T10:15:00+01:00",
+    "location": "Park / Easy Trail",
+    "description": "Distance: Exactly 5.0 km easy continuous run @ 5:50–6:20/km\n• Heart Rate: Strictly Zone 2 (<140 bpm, conversational)\n• Purpose: Active recovery flush, bringing weekly mileage to ~17 km\n• Follow with 20 min hip/ankle mobility.",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=dHFkM2EwdGQxZHY1dmkxM3ZjazVyc2Vwa2tfMjAyNjEyMDZUMDgzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "8",
+    "colorTag": "Me-time"
+  },
+  {
+    "id": "_8gsjcc1k6ssj4ba68d2j6b9k8933eba165338b9o8cpj8ea28l2k2d238c",
+    "source": "🍏 Personal (Ma vie)",
+    "summary": "Opera : Marraine",
+    "start": "2026-12-06T14:30:00+01:00",
+    "end": "2026-12-06T16:30:00+01:00",
+    "location": "Opéra Garnier\nPlace de l’Opéra, 75009 Paris, France",
+    "description": "Turandot (De Puccini)",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=Xzhnc2pjYzFrNnNzajRiYTY4ZDJqNmI5azg5MzNlYmExNjUzMzhiOW84Y3BqOGVhMjhsMmsyZDIzOGMgMXA2NHZ0a3JuYnZjYzhiNjE3aGx0amU5aDc0OGQ2c2VAaQ",
+    "attendees": [],
+    "organizer": {
+      "name": "Ma vie",
+      "email": "1p64vtkrnbvcc8b617hltje9h748d6se@import.calendar.google.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "",
+    "colorTag": ""
   }
 ]

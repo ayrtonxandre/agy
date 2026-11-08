@@ -1,6 +1,6 @@
 ## 1. 🎖️ Executive Readiness Verdict
 - **Overall Readiness Rating**: `76% • Moderate Risk (Volume Asymmetry & Lower Body Deficits)`
-- **Macro Assessment**: Athlete demonstrates strong upper-body pushing and pulling hypertrophy volume, but total lower body stimulus (quads and posterior chain) is operating below Minimum Effective Volume (MEV). With 29 weeks until the ATHX Games 2027, the primary qualification risk lies in barbell squat and deadlift capacity alongside the 5km running pace gap. Rebalancing weekly volume toward lower-body compounds while protecting current systemic ACWR (1.00) is the mandatory training priority.
+- **Macro Assessment**: Athlete demonstrates strong upper-body pushing and pulling hypertrophy volume, but total lower body stimulus (quads and posterior chain) is operating below Minimum Effective Volume (MEV). With 29 weeks until the ATHX Games 2027, the primary qualification risk lies in barbell squat and deadlift capacity alongside the 5km running pace gap. Rebalancing weekly volume toward lower-body compounds while protecting current systemic ACWR (1.51) is the mandatory training priority.
 
 ---
 
@@ -8,32 +8,33 @@
 | Event | 2027 Target | Current Level | Gap | Trend & Projected Date |
 | :--- | :--- | :--- | :--- | :--- |
 | Shoulder-to-Overhead (S2O) | 65.0 kg | 52.5 kg | -12.5 kg | 🟡 +0.44 kg/wk (In Progress) |
-| Barbell Back Squat | 125.0 kg | 90.0 kg | -35.0 kg | 🟡 +1.22 kg/wk (In Progress) |
+| Barbell Back Squat | 125.0 kg | 96.0 kg | -29.0 kg | 🟡 +1.01 kg/wk (In Progress) |
 | Deadlift Floor Pull | 160.0 kg | 140.0 kg | -20.0 kg | 🟡 +0.7 kg/wk (In Progress) |
-| 5km Running Pace | 4:30/km | 5:07/km | +37s/km | 🟡 -1.3s/wk (In Progress) |
+| 5km Running Pace | 4:30/km | 5:12/km | +42s/km | 🟡 -1.49s/wk (In Progress) |
 | Sandbag Carry / Grip | 60.0 kg | 56.0 kg | -4.0 kg | 🟡 +0.14 kg/wk (In Progress) |
 
 ---
 
 ## 3. ⚠️ Critical Deficit & Fatigue Alerts
 - **Volume Starvation**: Chest: 7.1 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Lats/Back: 8.3 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Quads: 5.0 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Hamstrings/Glutes: 5.0 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Lats/Back: 8.2 sets/wk (Deficit vs MEV 10.0)
+- **Volume Starvation**: Quads: 5.2 sets/wk (Deficit vs MEV 8.0)
+- **Volume Starvation**: Hamstrings/Glutes: 5.2 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Biceps: 5.9 sets/wk (Deficit vs MEV 6.0)
 - **Volume Starvation**: Forearms: 1.1 sets/wk (Deficit vs MEV 4.0)
-- **Acute:Chronic Workload Ratio (ACWR)**: `1.00` (Sweet Spot (Optimal)). Acute load is 3,570.3 kg vs chronic baseline 3,580.6 kg. Foster training monotony is `1.00`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
-- **Sleep & Recovery**: 7-day average sleep duration is `7.0 hrs` with a composite readiness score of `89.3%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
+- **Acute:Chronic Workload Ratio (ACWR)**: `1.51` (High Injury Risk (>1.5)). Acute load is 6,486.8 kg vs chronic baseline 4,309.8 kg. Foster training monotony is `0.99`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
+- **Sleep & Recovery**: 7-day average sleep duration is `7.0 hrs` with a composite readiness score of `98.3%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
 ---
 
 ## 4. 🧬 Hypertrophy & Workload Engineering
 - **Volume Distribution**: Upper body pressing and pulling maintain consistent sets within or near Maximum Adaptive Volume (MAV). Conversely, quad and hamstring sets require an immediate 4–6 set weekly infusion to cross the MEV threshold and trigger structural hypertrophy.
-- **Recomposition & Mass Velocity**: Current mass is `78.6 kg` against the competition standard of `85.0 kg` (+6.4 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
+- **Recomposition & Mass Velocity**: Current mass is `79.1 kg` against the competition standard of `85.0 kg` (+5.9 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
 
 ---
 
 ## 5. 🏃 Aerobic & Conditioning Engine
-- **Running Trajectory**: The 5km qualifying target of 4:30/km requires dedicated aerobic threshold maintenance. Current best pace sits at `5:07/km` across 9 recorded runs (44.83 km total volume). Conditioning must avoid conflicting with lower-body strength adaptations by emphasizing low-impact Zone 2 rowing or polarized track intervals.
+- **Running Trajectory**: The 5km qualifying target of 4:30/km requires dedicated aerobic threshold maintenance. Current best pace sits at `5:07/km` across 10 recorded runs (49.83 km total volume). Conditioning must avoid conflicting with lower-body strength adaptations by emphasizing low-impact Zone 2 rowing or polarized track intervals.
 
 ---
 

@@ -716,22 +716,5 @@
     "Vigorous_Intensity_Min": 30,
     "Steps": 1038,
     "Distance_km": 0.0
-  },
-  {
-    "Activity_ID": 23354764345,
-    "Date": "2026-06-23",
-    "Start_Time": "2026-06-23 19:13:55",
-    "Activity_Name": "Cardio",
-    "Activity_Type": "indoor_cardio",
-    "Category": "CrossFit",
-    "Duration_min": 45.0,
-    "Calories_kcal": 492,
-    "Average_HR": 133.0,
-    "Max_HR": 178.0,
-    "Training_Effect_Label": "SPEED",
-    "Moderate_Intensity_Min": 12,
-    "Vigorous_Intensity_Min": 31,
-    "Steps": 1740,
-    "Distance_km": 0.0
   }
 ]
