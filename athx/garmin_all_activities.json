@@ -1,5 +1,19 @@
 [
   {
+    "Activity_ID": 25016002350,
+    "Date": "2026-11-09",
+    "Start_Time": "2026-11-09 06:37:53",
+    "Activity_Name": "Cardio",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 39.4,
+    "Distance_km": 0.0,
+    "Calories_kcal": 491,
+    "Average_HR": 137.0,
+    "Max_HR": 191.0,
+    "Training_Effect": "SPEED"
+  },
+  {
     "Activity_ID": 25011843991,
     "Date": "2026-11-08",
     "Start_Time": "2026-11-08 17:32:37",
@@ -1391,20 +1405,6 @@
     "Calories_kcal": 391,
     "Average_HR": 113.0,
     "Max_HR": 158.0,
-    "Training_Effect": "ANAEROBIC_CAPACITY"
-  },
-  {
-    "Activity_ID": 23449037829,
-    "Date": "2026-06-26",
-    "Start_Time": "2026-06-26 17:54:10",
-    "Activity_Name": "Strength",
-    "Activity_Type": "strength_training",
-    "Primary_Category": "Strength",
-    "Duration_min": 67.0,
-    "Distance_km": 0.0,
-    "Calories_kcal": 497,
-    "Average_HR": 116.0,
-    "Max_HR": 157.0,
     "Training_Effect": "ANAEROBIC_CAPACITY"
   }
 ]
