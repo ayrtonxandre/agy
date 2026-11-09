@@ -986,12 +986,22 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     "google": {"name": "Artefact", "protocol": "Google API", "status": "active", "last_sync": now_iso},
                     "outlook": {"name": "Clariane", "protocol": "Office 365 ICS", "status": "active", "last_sync": now_iso},
                     "icloud": {"name": "Personal", "protocol": "iCloud CalDAV", "status": "active", "last_sync": now_iso},
-                    "athx": {"name": "ATHX", "protocol": "Garmin Training", "status": "active", "last_sync": now_iso}
+                    "athx": {"name": "ATHX", "protocol": "Garmin Training", "status": "active", "last_sync": now_iso},
+                    "granola": {"name": "Granola", "protocol": "Granola REST API", "status": "active", "last_sync": now_iso}
                 }
             }
             if sync_file.exists():
                 try:
-                    status_data = json.loads(sync_file.read_text(encoding="utf-8"))
+                    loaded = json.loads(sync_file.read_text(encoding="utf-8"))
+                    if isinstance(loaded, dict):
+                        status_data = loaded
+                        if "sources" in status_data and isinstance(status_data["sources"], dict):
+                            status_data["sources"].setdefault("granola", {
+                                "name": "Granola",
+                                "protocol": "Granola REST API",
+                                "status": "active",
+                                "last_sync": status_data.get("last_sync", now_iso)
+                            })
                 except Exception:
                     pass
             content = json.dumps(status_data, indent=2).encode("utf-8")
@@ -1319,8 +1329,23 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     }
                 }
 
-                # Update sync status metadata
+                # Preserve Granola source metadata if present
                 sync_file = CAL_DATA_DIR / "calendar_sync_status.json"
+                existing_granola = None
+                if sync_file.exists():
+                    try:
+                        old_meta = json.loads(sync_file.read_text(encoding="utf-8"))
+                        existing_granola = old_meta.get("sources", {}).get("granola")
+                    except Exception:
+                        pass
+                sources_meta["granola"] = existing_granola or {
+                    "name": "Granola",
+                    "protocol": "Granola REST API",
+                    "last_sync": now_str,
+                    "status": "active"
+                }
+
+                # Update sync status metadata
                 sync_meta = {
                     "last_sync": now_str,
                     "event_count": len(events),
@@ -1607,6 +1632,26 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     if res and res.get("status") == "error":
                         folder_res["api_error"] = res.get("message")
                     res = folder_res
+
+                if res:
+                    sync_file = CAL_DATA_DIR / "calendar_sync_status.json"
+                    if sync_file.exists():
+                        try:
+                            cur_meta = json.loads(sync_file.read_text(encoding="utf-8"))
+                            if not isinstance(cur_meta, dict):
+                                cur_meta = {}
+                            if "sources" not in cur_meta or not isinstance(cur_meta["sources"], dict):
+                                cur_meta["sources"] = {}
+                            cur_meta["sources"]["granola"] = {
+                                "name": "Granola",
+                                "protocol": "Granola REST API",
+                                "last_sync": datetime.now(LOCAL_TZ).isoformat(),
+                                "status": "active" if res.get("status") != "error" else "error",
+                                "error": res.get("message") if res.get("status") == "error" else None
+                            }
+                            sync_file.write_text(json.dumps(cur_meta, indent=2), encoding="utf-8")
+                        except Exception:
+                            pass
 
                 content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
                 self.send_response(200 if res.get("status") != "error" else 500)

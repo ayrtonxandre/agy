@@ -1200,7 +1200,14 @@ def match_note_to_mission(title: str, content: str, filename: str) -> tuple[dict
     """Matches text against missions registry. Returns (matched_mission, score)."""
     registry = get_missions_registry()
     missions = registry.get("missions", [])
-    text_to_search = f"{filename} {title} {content[:1000]}".lower()
+    head_text = f"{filename} {title}".lower()
+    body_text = content[:1500].lower()
+    text_to_search = f"{head_text} {body_text}"
+
+    def pattern_in_text(pat: str, text: str) -> bool:
+        if len(pat) <= 4:
+            return bool(re.search(r'(?i)\b' + re.escape(pat) + r'\b', text))
+        return pat.lower() in text.lower()
 
     best_mission = None
     best_score = 0
@@ -1209,6 +1216,7 @@ def match_note_to_mission(title: str, content: str, filename: str) -> tuple[dict
     for m in missions:
         score = 0
         patterns = [str(p).lower().strip() for p in m.get("clientMatch", []) if p]
+        contacts = [str(c).lower().strip() for c in m.get("contacts", []) if c]
         m_id = str(m.get("id", "")).lower()
         m_name = str(m.get("name", "")).lower()
 
@@ -1216,12 +1224,21 @@ def match_note_to_mission(title: str, content: str, filename: str) -> tuple[dict
         for pat in patterns:
             if f"[{pat}]" in text_to_search:
                 score += 50
-            elif pat in text_to_search:
+            elif pattern_in_text(pat, head_text):
+                score += 35
+            elif pattern_in_text(pat, body_text):
                 score += 15
 
-        if m_id in text_to_search:
+        # Check contacts (e.g. Gaëtan, Zineb, Jérôme, Roland)
+        for c in contacts:
+            if pattern_in_text(c, head_text):
+                score += 40
+            elif pattern_in_text(c, body_text):
+                score += 20
+
+        if pattern_in_text(m_id, text_to_search):
             score += 20
-        if m_name in text_to_search:
+        if pattern_in_text(m_name, text_to_search):
             score += 25
 
         if score > best_score:
@@ -1232,7 +1249,7 @@ def match_note_to_mission(title: str, content: str, filename: str) -> tuple[dict
             second_best_score = score
 
     # If top score is tied or weak, return ambiguous
-    if best_score == 0 or best_score == second_best_score:
+    if best_score < 15 or best_score == second_best_score:
         return None, 0
 
     return best_mission, best_score

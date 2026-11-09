@@ -46,6 +46,14 @@ export const SYNC_SOURCES = {
     protocol: 'Garmin Training',
     dotClass: 'amber',
     label: 'Training'
+  },
+  granola: {
+    id: 'granola',
+    name: 'Granola',
+    stream: 'work',
+    protocol: 'Granola REST API',
+    dotClass: 'purple',
+    label: 'Transcripts'
   }
 };
 
@@ -274,6 +282,18 @@ export class CalendarSyncService {
     await db.put('meta', { key: 'event_count', value: allEvents.length });
     await db.put('meta', { key: 'series_count', value: collapsedSeries.length });
 
+    // Auto-sync Granola meeting transcripts and notes for missions
+    let granolaResult = null;
+    if (store && typeof store.syncGranola === 'function') {
+      try {
+        granolaResult = await store.syncGranola();
+        await db.put('meta', { key: 'last_sync_granola', value: nowIso });
+        await db.put('meta', { key: 'sync_status_granola', value: granolaResult?.status === 'error' ? 'error' : 'active' });
+      } catch (ge) {
+        console.warn('[SyncService] Granola auto-sync notice:', ge);
+      }
+    }
+
     // 7. Refresh store memory cache & notify subscribers
     if (store) {
       await store.refreshCache();
@@ -282,7 +302,8 @@ export class CalendarSyncService {
         timestamp: nowIso,
         eventCount: allEvents.length,
         seriesCount: collapsedSeries.length,
-        backendLive: backendSuccess
+        backendLive: backendSuccess,
+        granola: granolaResult
       });
     }
 
@@ -293,7 +314,22 @@ export class CalendarSyncService {
       timestamp: nowIso,
       backendLive: backendSuccess,
       eventCount: allEvents.length,
-      seriesCount: collapsedSeries.length
+      seriesCount: collapsedSeries.length,
+      granola: granolaResult
     };
+  }
+
+  /**
+   * Syncs latest transcripts from Granola API across all missions.
+   */
+  static async syncGranolaTranscripts(db, store) {
+    if (store && typeof store.syncGranola === 'function') {
+      const res = await store.syncGranola();
+      const nowIso = new Date().toISOString();
+      await db.put('meta', { key: 'last_sync_granola', value: nowIso });
+      await db.put('meta', { key: 'sync_status_granola', value: res?.status === 'error' ? 'error' : 'active' });
+      return res;
+    }
+    return { status: 'skipped', error: 'Store unavailable' };
   }
 }
