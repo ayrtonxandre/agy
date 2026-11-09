@@ -111,6 +111,17 @@ EXERCISE_ALIASES: dict[str, str] = {
     "dumbbells sumo deadlift high rise": "Sumo Deadlift High Pull",
     "dumbbell sumo deadlifts high rise": "Sumo Deadlift High Pull",
     "dumbbells sumo deadlifts high rise": "Sumo Deadlift High Pull",
+    "dumbbell burpee deadlift": "Dumbbell Burpee Deadlift",
+    "dumbbell burpees deadlift": "Dumbbell Burpee Deadlift",
+    "dumbbell burpee deadlifts": "Dumbbell Burpee Deadlift",
+    "dumbbell burpees deadlifts": "Dumbbell Burpee Deadlift",
+    "dumbbells burpee deadlift": "Dumbbell Burpee Deadlift",
+    "dumbbells burpee deadlifts": "Dumbbell Burpee Deadlift",
+    "dumbbells burpees deadlifts": "Dumbbell Burpee Deadlift",
+    "burpee deadlift": "Burpee Deadlift",
+    "burpees deadlift": "Burpee Deadlift",
+    "burpee deadlifts": "Burpee Deadlift",
+    "burpees deadlifts": "Burpee Deadlift",
 
     # Upper Push
     "bench press": "Bench Press",
@@ -291,8 +302,9 @@ def normalize_exercise_name(raw_name: str) -> str:
     cleaned = re.sub(r"\s+(barbell|dumbbells?|db|bb|kettlebells?|kb|sandbags?)$", "", cleaned)
     
     # Strip apparatus / descriptor modifiers (e.g. "muscle-ups low bar", "pull ups on bar", "muscle-ups (low bar)")
-    cleaned = re.sub(r"\s*\((?:low\s*bar|high\s*bar|rings?|bar)\)", "", cleaned)
+    cleaned = re.sub(r"\s*\([^)]*\)", "", cleaned)
     cleaned = re.sub(r"\s+(?:low\s*bar|high\s*bar|on\s+rings?|on\s+bar|rings?)\b", "", cleaned)
+    cleaned = re.sub(r"\bso\s+\d+.*$", "", cleaned)
     cleaned = re.sub(r"\blegs\b", "leg", cleaned)
     cleaned = cleaned.strip()
     
@@ -491,6 +503,21 @@ def parse_single_movement(sm: str, default_sets: int = 1) -> dict[str, Any] | No
 
     rem = rem.strip(" ,-:@_")
 
+    clusters: list[int] | None = None
+    # Check parenthetical cluster: e.g. (8-8-7), (8, 8, 7), (8/8/7), (so 8 8 7)
+    m_cp = re.search(r"\((?:(?:so|cluster|split)\s+)?(\d+(?:[\s,\-/]+\d+)+)\)", rem, re.IGNORECASE)
+    if m_cp:
+        clusters = [int(x) for x in re.findall(r"\d+", m_cp.group(1))]
+        rem = rem[:m_cp.start()] + " " + rem[m_cp.end():]
+        rem = rem.strip(" ,-:@_")
+
+    # Check inline 'so 8 8 7' or 'so 8-8-7'
+    m_so = re.search(r"\bso\s+(\d+(?:[\s,\-/]+\d+)+)", rem, re.IGNORECASE)
+    if m_so and not clusters:
+        clusters = [int(x) for x in re.findall(r"\d+", m_so.group(1))]
+        rem = rem[:m_so.start()] + " " + rem[m_so.end():]
+        rem = rem.strip(" ,-:@_")
+
     duration_s = 0.0
     m_timed = re.match(r"^(\d+(?:[.,]\d+)?)\s*(?:s|sec|secs|seconds?|min|mins)\s+(.*)$", rem, re.IGNORECASE)
     if m_timed:
@@ -500,18 +527,28 @@ def parse_single_movement(sm: str, default_sets: int = 1) -> dict[str, Any] | No
         reps = 1
         raw_name = m_timed.group(2).strip()
     else:
-        m_rep = re.match(r"^(\d+)\s*(?:reps?|x)?\s+(.*)$", rem, re.IGNORECASE)
-        if m_rep:
-            reps = int(m_rep.group(1))
-            raw_name = m_rep.group(2).strip()
+        # Check leading cluster: e.g. 8-8-7 or 8/8/7
+        m_lead = re.match(r"^(\d+(?:[\s,\-/]+\d+)+)\s+(.*)$", rem, re.IGNORECASE)
+        if m_lead and not clusters and any(sep in m_lead.group(1) for sep in ["-", "/", ","]):
+            clusters = [int(x) for x in re.findall(r"\d+", m_lead.group(1))]
+            reps = sum(clusters)
+            raw_name = m_lead.group(2).strip()
         else:
-            m_rev = re.match(r"^(.*?)\s+(\d+)\s*(?:reps?|x)?$", rem, re.IGNORECASE)
-            if m_rev:
-                reps = int(m_rev.group(2))
-                raw_name = m_rev.group(1).strip()
+            m_rep = re.match(r"^(\d+)\s*(?:reps?|x)?\s+(.*)$", rem, re.IGNORECASE)
+            if m_rep:
+                reps = int(m_rep.group(1))
+                raw_name = m_rep.group(2).strip()
             else:
-                reps = 10
-                raw_name = rem
+                m_rev = re.match(r"^(.*?)\s+(\d+)\s*(?:reps?|x)?$", rem, re.IGNORECASE)
+                if m_rev:
+                    reps = int(m_rev.group(2))
+                    raw_name = m_rev.group(1).strip()
+                else:
+                    reps = sum(clusters) if clusters else 10
+                    raw_name = rem
+
+    if clusters and not reps:
+        reps = sum(clusters)
 
     if not raw_name:
         return None
@@ -536,17 +573,19 @@ def parse_single_movement(sm: str, default_sets: int = 1) -> dict[str, Any] | No
     if not (is_known or (weight_kg > 0 and not is_stopword and len(raw_name.strip()) >= 3)):
         return None
 
+    cluster_note = f" (clusters: {'-'.join(str(c) for c in clusters)})" if clusters else ""
     return {
         "type": "exercise",
         "exercise": ex_name,
         "sets": default_sets,
         "reps": reps,
+        "clusters": clusters,
         "weight_kg": weight_kg,
         "duration_s": duration_s,
         "notes": (
-            f"{default_sets}x{reps} {ex_name} @ {weight_kg}kg" if weight_kg > 0
+            f"{default_sets}x{reps} {ex_name} @ {weight_kg}kg{cluster_note}" if weight_kg > 0
             else (f"{default_sets}x {int(duration_s)}s {ex_name}" if duration_s > 0
-                  else f"{default_sets}x{reps} {ex_name} (Bodyweight)")
+                  else f"{default_sets}x{reps} {ex_name} (Bodyweight){cluster_note}")
         )
     }
 
@@ -974,22 +1013,46 @@ def convert_note_to_strength_records(
         else:
             e1rm = 0.0
 
-        for _ in range(sets_count):
-            exercise_set_counter[ex_name] = exercise_set_counter.get(ex_name, 0) + 1
-            set_num = exercise_set_counter[ex_name]
-            records.append({
-                "Activity_ID": act_id,
-                "Date": date_str,
-                "Activity_Name": act_name,
-                "Exercise": ex_name,
-                "Set": set_num,
-                "Reps": reps,
-                "Weight_kg": weight_kg,
-                "Total_Volume_kg": round(reps * weight_kg, 1),
-                "e1RM_kg": e1rm,
-                "Duration_s": float(item.get("duration_s", 0.0) or 0.0),
-                "Session_Type": dominant_split,
-            })
+        clusters = item.get("clusters")
+        if clusters:
+            for _ in range(sets_count):
+                for c_rep in clusters:
+                    exercise_set_counter[ex_name] = exercise_set_counter.get(ex_name, 0) + 1
+                    set_num = exercise_set_counter[ex_name]
+                    if plausible and 0 < c_rep <= athx_config.E1RM_MAX_REPS and weight_kg > 0:
+                        c_e1rm = round(weight_kg * (1.0 + c_rep / 30.0), 1)
+                    else:
+                        c_e1rm = 0.0
+                    records.append({
+                        "Activity_ID": act_id,
+                        "Date": date_str,
+                        "Activity_Name": act_name,
+                        "Exercise": ex_name,
+                        "Set": set_num,
+                        "Reps": c_rep,
+                        "Weight_kg": weight_kg,
+                        "Total_Volume_kg": round(c_rep * weight_kg, 1),
+                        "e1RM_kg": c_e1rm,
+                        "Duration_s": float(item.get("duration_s", 0.0) or 0.0),
+                        "Session_Type": dominant_split,
+                    })
+        else:
+            for _ in range(sets_count):
+                exercise_set_counter[ex_name] = exercise_set_counter.get(ex_name, 0) + 1
+                set_num = exercise_set_counter[ex_name]
+                records.append({
+                    "Activity_ID": act_id,
+                    "Date": date_str,
+                    "Activity_Name": act_name,
+                    "Exercise": ex_name,
+                    "Set": set_num,
+                    "Reps": reps,
+                    "Weight_kg": weight_kg,
+                    "Total_Volume_kg": round(reps * weight_kg, 1),
+                    "e1RM_kg": e1rm,
+                    "Duration_s": float(item.get("duration_s", 0.0) or 0.0),
+                    "Session_Type": dominant_split,
+                })
 
     return records, parsed
 

@@ -171,8 +171,8 @@ def generate_ics():
             "date": date(2026, 11, 10),
             "start_time": (6, 30),
             "end_time": (7, 15),
-            "summary": "🧘 ATHX Priming & Core (Zero Barbell Load)",
-            "description": "Pre-CHAD Autonomic Priming & Trunk Stability\\n• Movement prep: Ankle dorsiflexion, hip flexor openers, glute activation\\n• Core: Hollow rocks, Pallof presses, side planks (3 rounds)\\n• DIRECTIVE: ZERO barbell or leg loading. Protecting knees for Wednesday's 1,000 box step-ups and keeping ACWR <1.50.",
+            "summary": "🧘 ATHX Priming, Core & Push-Up Activation (Zero Barbell Load)",
+            "description": "Pre-CHAD Autonomic Priming, Trunk Stability & Scapular Push Activation\\n• Movement prep: Ankle dorsiflexion, hip flexor openers, glute activation\\n• Core & Push: Pallof press, Deadbug, Side plank, Hollow hold + Scapular Push-Up Plus (3 rounds: 3×10–12 reps)\\n• DIRECTIVE: ZERO barbell or leg loading. Protecting knees for Wednesday's 1,000 box step-ups and keeping ACWR ≤1.48.",
             "location": "Gym / Home",
             "uid": "athx-20261110-tue-core"
         },
