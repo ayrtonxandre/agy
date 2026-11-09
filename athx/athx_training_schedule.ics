@@ -5,12 +5,230 @@ CALSCALE:GREGORIAN
 METHOD:PUBLISH
 X-WR-CALNAME:ATHX 2027 Training Schedule
 X-WR-TIMEZONE:Europe/Paris
-X-WR-CALDESC:ATHX 2027 Microcycle (4x CrossFit • 2x Gym • 3x Run)
+X-WR-CALDESC:ATHX 2027 Microcycle (CHAD 1000X Week: Nov 9-15 • Standard Series Rest)
 BEGIN:VEVENT
-UID:athx-mon-crossfit-2026@athx2027.internal
-DTSTAMP:20261024T064125Z
+UID:athx-mon-crossfit-past@athx2027.internal
+DTSTAMP:20261108T182437Z
 DTSTART;TZID=Europe/Paris:20261019T063000
 DTEND;TZID=Europe/Paris:20261019T073000
+RRULE:FREQ=WEEKLY;UNTIL=20261108T235959Z;BYDAY=MO
+SUMMARY:🏋️‍♂️ CrossFit (Session 1)
+DESCRIPTION:CrossFit Box WOD\n• Focus: Metabolic conditioning, gymnastics & work capacity\n• Directive: Protect systemic fatigue for Tuesday heavy squats.
+LOCATION:CrossFit Box
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-tue-squat-s2o-past@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261020T063000
+DTEND;TZID=Europe/Paris:20261020T072500
+RRULE:FREQ=WEEKLY;UNTIL=20261108T235959Z;BYDAY=TU
+SUMMARY:🦵 ATHX Gym A: Squats & S2O Overhead Power
+DESCRIPTION:1. Barbell Back Squat: 4×6 @ 75–80% e1RM (77.5–82.5 kg)\n2. Bulgarian Split Squat: 3×8–10 / leg (2×18–22 kg DBs)\n3. Shoulder-to-Overhead (Push Press): 4×5 @ 45–50 kg\n4. Leg Extensions: 3×12–15 (strict quad hypertrophy)\n5. Hanging Leg Raises / Ab Wheel: 3×12–15
+LOCATION:Gym / Strength Facility
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-wed-crossfit-past@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261021T063000
+DTEND;TZID=Europe/Paris:20261021T073000
+RRULE:FREQ=WEEKLY;UNTIL=20261108T235959Z;BYDAY=WE
+SUMMARY:🏋️‍♂️ CrossFit (Session 2)
+DESCRIPTION:CrossFit Box WOD\n• Focus: Work capacity and functional fitness.
+LOCATION:CrossFit Box
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-wed-run1-z2-past@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261021T183000
+DTEND;TZID=Europe/Paris:20261021T191500
+RRULE:FREQ=WEEKLY;UNTIL=20261108T235959Z;BYDAY=WE
+SUMMARY:🏃 ATHX Run 1: Zone 2 Aerobic Base & Cadence Drill
+DESCRIPTION:Distance: 5.0–6.0 km @ 5:40–6:10/km\n• Heart Rate: Strictly Zone 2 (<145 bpm)\n• Cadence Focus: 172–174 spm (metronome cue)\n• Purpose: Flush Tuesday quad stiffness & lower GCT <265 ms.
+LOCATION:Road / Track
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-thu-deadlift-upper-past@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261022T063000
+DTEND;TZID=Europe/Paris:20261022T072500
+RRULE:FREQ=WEEKLY;UNTIL=20261108T235959Z;BYDAY=TH
+SUMMARY:🏋️ ATHX Gym B: Deadlift Floor Pull & Upper Maintenance
+DESCRIPTION:1. Conventional / Trap Bar Deadlift: 4×5 @ 75–80% e1RM (115–125 kg)\n2. Barbell Bench Press: 3×6–8 @ 75–80 kg (preserve 104 kg e1RM)\n3. Romanian Deadlifts (RDLs): 3×8–10 @ 80–90 kg\n4. Weighted Pull-ups: 3×6–8 (+10 to +15 kg)\n5. Heavy Sandbag / Farmer Carries: 3×40 m
+LOCATION:Gym / Strength Facility
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-fri-crossfit-past@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261023T063000
+DTEND;TZID=Europe/Paris:20261023T073000
+RRULE:FREQ=WEEKLY;UNTIL=20261108T235959Z;BYDAY=FR
+SUMMARY:🏋️‍♂️ CrossFit (Session 3)
+DESCRIPTION:CrossFit Box WOD\n• Focus: High-intensity conditioning and gymnastics.
+LOCATION:CrossFit Box
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-fri-run2-intervals-past@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261023T183000
+DTEND;TZID=Europe/Paris:20261023T192000
+RRULE:FREQ=WEEKLY;UNTIL=20261108T235959Z;BYDAY=FR
+SUMMARY:🏃 ATHX Run 2: 5km Qualifying Threshold Intervals
+DESCRIPTION:Warm-up: 1.0 km easy jog\nMain Work: 4–5 × 1,000m @ 4:25–4:35/km (90s rest)\nCool-down: 1.0 km jog (~6.5 km total)\nPurpose: Bridge 37s/km gap to 4:30/km standard.
+LOCATION:Track / Flat Course
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-sat-crossfit-past@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261024T100000
+DTEND;TZID=Europe/Paris:20261024T111500
+RRULE:FREQ=WEEKLY;UNTIL=20261108T235959Z;BYDAY=SA
+SUMMARY:🏋️‍♂️ CrossFit (Session 4 - Team / Engine WOD)
+DESCRIPTION:Saturday Box WOD\n• Partner / Team / Long Aerobic Metcon\n• Lactate threshold and mental durability.
+LOCATION:CrossFit Box
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-sun-run3-z2-recovery-past@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261025T093000
+DTEND;TZID=Europe/Paris:20261025T101500
+RRULE:FREQ=WEEKLY;UNTIL=20261108T235959Z;BYDAY=SU
+SUMMARY:🏃 ATHX Run 3: Lighter Zone 2 5K (Active Recovery)
+DESCRIPTION:Distance: Exactly 5.0 km easy continuous run @ 5:50–6:20/km\n• Heart Rate: Strictly Zone 2 (<140 bpm, conversational)\n• Purpose: Active recovery flush, bringing weekly mileage to ~17 km\n• Follow with 20 min hip/ankle mobility.
+LOCATION:Park / Easy Trail
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-20261109-mon-cf@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261109T063000
+DTEND;TZID=Europe/Paris:20261109T073000
+SUMMARY:🏋️‍♂️ CrossFit (Session 1) - Upper & Pull Focus
+DESCRIPTION:CrossFit Box WOD\n• Focus: Metabolic conditioning, gymnastics & upper-body pulling.\n• DIRECTIVE: Save quads and Achilles for Wednesday's HERO WOD 'CHAD 1000X'. Avoid heavy box jumps, heavy wall balls, or sprint lunges.
+LOCATION:CrossFit Box
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-20261110-tue-core@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261110T063000
+DTEND;TZID=Europe/Paris:20261110T071500
+SUMMARY:🧘 ATHX Priming & Core (Zero Barbell Load)
+DESCRIPTION:Pre-CHAD Autonomic Priming & Trunk Stability\n• Movement prep: Ankle dorsiflexion, hip flexor openers, glute activation\n• Core: Hollow rocks, Pallof presses, side planks (3 rounds)\n• DIRECTIVE: ZERO barbell or leg loading. Protecting knees for Wednesday's 1,000 box step-ups and keeping ACWR <1.50.
+LOCATION:Gym / Home
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-20261110-tue-run1@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261110T183000
+DTEND;TZID=Europe/Paris:20261110T191500
+SUMMARY:🏃 ATHX Run 1: Light Zone 2 Aerobic Flush
+DESCRIPTION:Distance: 4.0–5.0 km @ 5:50–6:15/km\n• Heart Rate: Strictly Zone 2 (<130 bpm)\n• Purpose: Low-impact aerobic circulation to flush legs before CHAD.\n• DIRECTIVE: If heart rate exceeds 130 bpm, drop pace. Do not race.
+LOCATION:Road / Flat Track
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-20261111-wed-chad@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261111T063000
+DTEND;TZID=Europe/Paris:20261111T074500
+SUMMARY:🎖️ HERO WOD: CHAD 1000X
+DESCRIPTION:HERO WOD 'CHAD 1000X'\n• Work: 1,000 Box Step-ups onto 20" Box (weighted vest/ruck if scaled/prescribed)\n• Target Time: 48–60 minutes steady pace\n• Strategy: Lock in 20 reps/min (3s per step). Alternate lead leg every 10–20 reps to prevent calf cramping. Full hip lockout at top of box.
+LOCATION:CrossFit Box
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-20261111-wed-recovery@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261111T183000
+DTEND;TZID=Europe/Paris:20261111T190000
+SUMMARY:🚫 PM RUN CANCELLED: Active Recovery & Elevation
+DESCRIPTION:EVENING RUN CANCELLED\n• Purpose: Mitigate eccentric muscle damage from 1,000 box step-ups.\n• Protocol: Legs elevated 15–20 min, hydrate with electrolytes, targeted quad/glute foam rolling. Target 8.5h sleep opportunity.
+LOCATION:Home / Recovery Suite
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-20261112-thu-upper@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261112T063000
+DTEND;TZID=Europe/Paris:20261112T072500
+SUMMARY:🏋️ ATHX Gym B: Upper Power & S2O Overhead
+DESCRIPTION:1. Shoulder-to-Overhead (S2O Push Press): 4×5 @ 45–50 kg\n2. Barbell Bench Press: 3×6–8 @ 75–80 kg\n3. Weighted Pull-ups: 3×6–8 (+10 to +15 kg)\n4. Dumbbell Scapular & Face Pulls: 3×12–15\n• Optional: 20 min Zone 1 spin on BikeErg (<115 bpm) for quad drainage.\n• DIRECTIVE: Quads in peak DOMS post-CHAD. Zero lower-body axial loading. Hits upper ATHX power benchmarks cleanly.
+LOCATION:Gym / Strength Facility
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-20261113-fri-cf@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261113T063000
+DTEND;TZID=Europe/Paris:20261113T073000
+SUMMARY:🏋️‍♂️ CrossFit (Session 3) - Paced Engine
+DESCRIPTION:CrossFit Box WOD\n• Focus: Aerobic engine & gymnastics.\n• DIRECTIVE: Cap intensity at 80% effort (RPE 7.5). Avoid redlining.
+LOCATION:CrossFit Box
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-20261113-fri-run2@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261113T183000
+DTEND;TZID=Europe/Paris:20261113T191500
+SUMMARY:🏃 ATHX Run 2: Zone 2 Tendon Elasticity Check
+DESCRIPTION:Distance: 5.0 km continuous @ 5:45–6:00/km\n• Heart Rate: Strictly Zone 2 (<138 bpm)\n• DIRECTIVE: Skip high-impact threshold intervals this week. Use steady Z2 to verify calf and Achilles elasticity 48h after CHAD.
+LOCATION:Road / Flat Course
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-20261114-sat-squat-dl@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261114T093000
+DTEND;TZID=Europe/Paris:20261114T104500
+SUMMARY:🦵 ATHX Gym A: Heavy Squats & Deadlifts (72h Post-CHAD)
+DESCRIPTION:1. Barbell Back Squat: 4×5 @ 75–80 kg\n2. Conventional / Trap Bar Deadlift: 3×5 @ 115–125 kg\n3. Lying / Seated Hamstring Curls: 3×12–15\n4. Hanging Knee Raises / Anti-Rotation: 3×12\n• DIRECTIVE: 72 hours post-CHAD, quads and connective tissue are fully remodeled. Reclaims weekly heavy compound MEV safely inside ACWR sweet spot (1.05).
+LOCATION:Gym / Strength Facility
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-20261115-sun-run3@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261115T093000
+DTEND;TZID=Europe/Paris:20261115T103000
+SUMMARY:🏃 ATHX Run 3: Long Aerobic Engine
+DESCRIPTION:Distance: 6.0–7.0 km continuous steady run @ 5:40–6:00/km\n• Heart Rate: Strictly Zone 2 (<142 bpm)\n• Purpose: Solidify aerobic foundation and cap weekly running at ~16–17 km with zero structural overload.
+LOCATION:Park / Easy Trail
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+BEGIN:VEVENT
+UID:athx-mon-crossfit-future@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261116T063000
+DTEND;TZID=Europe/Paris:20261116T073000
 RRULE:FREQ=WEEKLY;UNTIL=20270527T235959Z;BYDAY=MO
 SUMMARY:🏋️‍♂️ CrossFit (Session 1)
 DESCRIPTION:CrossFit Box WOD\n• Focus: Metabolic conditioning, gymnastics & work capacity\n• Directive: Protect systemic fatigue for Tuesday heavy squats.
@@ -19,10 +237,10 @@ STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
 BEGIN:VEVENT
-UID:athx-tue-squat-s2o-2026@athx2027.internal
-DTSTAMP:20261024T064125Z
-DTSTART;TZID=Europe/Paris:20261020T063000
-DTEND;TZID=Europe/Paris:20261020T072500
+UID:athx-tue-squat-s2o-future@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261117T063000
+DTEND;TZID=Europe/Paris:20261117T072500
 RRULE:FREQ=WEEKLY;UNTIL=20270527T235959Z;BYDAY=TU
 SUMMARY:🦵 ATHX Gym A: Squats & S2O Overhead Power
 DESCRIPTION:1. Barbell Back Squat: 4×6 @ 75–80% e1RM (77.5–82.5 kg)\n2. Bulgarian Split Squat: 3×8–10 / leg (2×18–22 kg DBs)\n3. Shoulder-to-Overhead (Push Press): 4×5 @ 45–50 kg\n4. Leg Extensions: 3×12–15 (strict quad hypertrophy)\n5. Hanging Leg Raises / Ab Wheel: 3×12–15
@@ -31,10 +249,10 @@ STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
 BEGIN:VEVENT
-UID:athx-wed-crossfit-2026@athx2027.internal
-DTSTAMP:20261024T064125Z
-DTSTART;TZID=Europe/Paris:20261021T063000
-DTEND;TZID=Europe/Paris:20261021T073000
+UID:athx-wed-crossfit-future@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261118T063000
+DTEND;TZID=Europe/Paris:20261118T073000
 RRULE:FREQ=WEEKLY;UNTIL=20270527T235959Z;BYDAY=WE
 SUMMARY:🏋️‍♂️ CrossFit (Session 2)
 DESCRIPTION:CrossFit Box WOD\n• Focus: Work capacity and functional fitness.
@@ -43,10 +261,10 @@ STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
 BEGIN:VEVENT
-UID:athx-wed-run1-z2-2026@athx2027.internal
-DTSTAMP:20261024T064125Z
-DTSTART;TZID=Europe/Paris:20261021T183000
-DTEND;TZID=Europe/Paris:20261021T191500
+UID:athx-wed-run1-z2-future@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261118T183000
+DTEND;TZID=Europe/Paris:20261118T191500
 RRULE:FREQ=WEEKLY;UNTIL=20270527T235959Z;BYDAY=WE
 SUMMARY:🏃 ATHX Run 1: Zone 2 Aerobic Base & Cadence Drill
 DESCRIPTION:Distance: 5.0–6.0 km @ 5:40–6:10/km\n• Heart Rate: Strictly Zone 2 (<145 bpm)\n• Cadence Focus: 172–174 spm (metronome cue)\n• Purpose: Flush Tuesday quad stiffness & lower GCT <265 ms.
@@ -55,10 +273,10 @@ STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
 BEGIN:VEVENT
-UID:athx-thu-deadlift-upper-2026@athx2027.internal
-DTSTAMP:20261024T064125Z
-DTSTART;TZID=Europe/Paris:20261022T063000
-DTEND;TZID=Europe/Paris:20261022T072500
+UID:athx-thu-deadlift-upper-future@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261119T063000
+DTEND;TZID=Europe/Paris:20261119T072500
 RRULE:FREQ=WEEKLY;UNTIL=20270527T235959Z;BYDAY=TH
 SUMMARY:🏋️ ATHX Gym B: Deadlift Floor Pull & Upper Maintenance
 DESCRIPTION:1. Conventional / Trap Bar Deadlift: 4×5 @ 75–80% e1RM (115–125 kg)\n2. Barbell Bench Press: 3×6–8 @ 75–80 kg (preserve 104 kg e1RM)\n3. Romanian Deadlifts (RDLs): 3×8–10 @ 80–90 kg\n4. Weighted Pull-ups: 3×6–8 (+10 to +15 kg)\n5. Heavy Sandbag / Farmer Carries: 3×40 m
@@ -67,10 +285,10 @@ STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
 BEGIN:VEVENT
-UID:athx-fri-crossfit-2026@athx2027.internal
-DTSTAMP:20261024T064125Z
-DTSTART;TZID=Europe/Paris:20261023T063000
-DTEND;TZID=Europe/Paris:20261023T073000
+UID:athx-fri-crossfit-future@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261120T063000
+DTEND;TZID=Europe/Paris:20261120T073000
 RRULE:FREQ=WEEKLY;UNTIL=20270527T235959Z;BYDAY=FR
 SUMMARY:🏋️‍♂️ CrossFit (Session 3)
 DESCRIPTION:CrossFit Box WOD\n• Focus: High-intensity conditioning and gymnastics.
@@ -79,10 +297,10 @@ STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
 BEGIN:VEVENT
-UID:athx-fri-run2-intervals-2026@athx2027.internal
-DTSTAMP:20261024T064125Z
-DTSTART;TZID=Europe/Paris:20261023T183000
-DTEND;TZID=Europe/Paris:20261023T192000
+UID:athx-fri-run2-intervals-future@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261120T183000
+DTEND;TZID=Europe/Paris:20261120T192000
 RRULE:FREQ=WEEKLY;UNTIL=20270527T235959Z;BYDAY=FR
 SUMMARY:🏃 ATHX Run 2: 5km Qualifying Threshold Intervals
 DESCRIPTION:Warm-up: 1.0 km easy jog\nMain Work: 4–5 × 1,000m @ 4:25–4:35/km (90s rest)\nCool-down: 1.0 km jog (~6.5 km total)\nPurpose: Bridge 37s/km gap to 4:30/km standard.
@@ -91,10 +309,10 @@ STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
 BEGIN:VEVENT
-UID:athx-sat-crossfit-2026@athx2027.internal
-DTSTAMP:20261024T064125Z
-DTSTART;TZID=Europe/Paris:20261024T100000
-DTEND;TZID=Europe/Paris:20261024T111500
+UID:athx-sat-crossfit-future@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261121T100000
+DTEND;TZID=Europe/Paris:20261121T111500
 RRULE:FREQ=WEEKLY;UNTIL=20270527T235959Z;BYDAY=SA
 SUMMARY:🏋️‍♂️ CrossFit (Session 4 - Team / Engine WOD)
 DESCRIPTION:Saturday Box WOD\n• Partner / Team / Long Aerobic Metcon\n• Lactate threshold and mental durability.
@@ -103,10 +321,10 @@ STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
 BEGIN:VEVENT
-UID:athx-sun-run3-z2-recovery-2026@athx2027.internal
-DTSTAMP:20261024T064125Z
-DTSTART;TZID=Europe/Paris:20261025T093000
-DTEND;TZID=Europe/Paris:20261025T101500
+UID:athx-sun-run3-z2-recovery-future@athx2027.internal
+DTSTAMP:20261108T182437Z
+DTSTART;TZID=Europe/Paris:20261122T093000
+DTEND;TZID=Europe/Paris:20261122T101500
 RRULE:FREQ=WEEKLY;UNTIL=20270527T235959Z;BYDAY=SU
 SUMMARY:🏃 ATHX Run 3: Lighter Zone 2 5K (Active Recovery)
 DESCRIPTION:Distance: Exactly 5.0 km easy continuous run @ 5:50–6:20/km\n• Heart Rate: Strictly Zone 2 (<140 bpm, conversational)\n• Purpose: Active recovery flush, bringing weekly mileage to ~17 km\n• Follow with 20 min hip/ankle mobility.
