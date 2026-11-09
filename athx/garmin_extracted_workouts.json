@@ -1,5 +1,57 @@
 [
   {
+    "Activity_ID": 25016002350,
+    "Date": "2026-11-09",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Dumbbell Burpees Deadlifts",
+    "Set": 4,
+    "Reps": 10,
+    "Weight_kg": 36.3,
+    "Total_Volume_kg": 363.0,
+    "e1RM_kg": 48.4,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
+  },
+  {
+    "Activity_ID": 25016002350,
+    "Date": "2026-11-09",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Dumbbell Burpees Deadlifts",
+    "Set": 3,
+    "Reps": 10,
+    "Weight_kg": 36.3,
+    "Total_Volume_kg": 363.0,
+    "e1RM_kg": 48.4,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
+  },
+  {
+    "Activity_ID": 25016002350,
+    "Date": "2026-11-09",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Dumbbell Burpees Deadlifts",
+    "Set": 2,
+    "Reps": 10,
+    "Weight_kg": 36.3,
+    "Total_Volume_kg": 363.0,
+    "e1RM_kg": 48.4,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
+  },
+  {
+    "Activity_ID": 25016002350,
+    "Date": "2026-11-09",
+    "Activity_Name": "CrossFit",
+    "Exercise": "Dumbbell Burpees Deadlifts",
+    "Set": 1,
+    "Reps": 10,
+    "Weight_kg": 36.3,
+    "Total_Volume_kg": 363.0,
+    "e1RM_kg": 48.4,
+    "Duration_s": 0.0,
+    "Session_Type": "Full Body"
+  },
+  {
     "Activity_ID": 25005169971,
     "Date": "2026-11-08",
     "Activity_Name": "Strength",

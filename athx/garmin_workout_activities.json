@@ -3,7 +3,7 @@
     "Activity_ID": 25016002350,
     "Date": "2026-11-09",
     "Start_Time": "2026-11-09 06:37:53",
-    "Activity_Name": "Cardio",
+    "Activity_Name": "CrossFit",
     "Activity_Type": "indoor_cardio",
     "Category": "CrossFit",
     "Duration_min": 39.4,
@@ -14,7 +14,8 @@
     "Moderate_Intensity_Min": 7,
     "Vigorous_Intensity_Min": 30,
     "Steps": 764,
-    "Distance_km": 0.0
+    "Distance_km": 0.0,
+    "Notes": "4 rounds\nRowing - 20Cal\nDumbbell burpees deadlifts - 80Lbs"
   },
   {
     "Activity_ID": 25000084501,
