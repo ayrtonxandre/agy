@@ -24,7 +24,7 @@
 - **Volume Starvation**: Biceps: 5.9 sets/wk (Deficit vs MEV 6.0)
 - **Volume Starvation**: Forearms: 1.1 sets/wk (Deficit vs MEV 4.0)
 - **Acute:Chronic Workload Ratio (ACWR)**: `1.48` (Elevated Fatigue Risk). Acute load is 5,668.4 kg vs chronic baseline 3,836.9 kg. Foster training monotony is `1.50`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
-- **Sleep & Recovery**: 7-day average sleep duration is `7.1 hrs` with a composite readiness score of `95.7%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
+- **Sleep & Recovery**: 7-day average sleep duration is `7.1 hrs` with a composite readiness score of `98.7%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
 ---
 

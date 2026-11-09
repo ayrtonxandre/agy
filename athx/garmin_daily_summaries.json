@@ -10241,31 +10241,31 @@
     "wellnessChronology": {
       "startTimestampGmt": "2026-11-08T23:00:00.0",
       "startTimestampLocal": "2026-11-09T00:00:00.0",
-      "endTimestampGmt": "2026-11-09T08:35:00.0",
-      "endTimestampLocal": "2026-11-09T09:35:00.0",
-      "totalDurationInMillis": 34500000
+      "endTimestampGmt": "2026-11-09T17:47:00.0",
+      "endTimestampLocal": "2026-11-09T18:47:00.0",
+      "totalDurationInMillis": 67620000
     },
     "movement": {
       "steps": {
         "goal": 13010,
-        "value": 6025,
-        "distanceInMeters": 5053.0
+        "value": 10204,
+        "distanceInMeters": 8532.0
       },
       "pushes": {},
       "floorsAscended": {
         "goal": 10,
-        "value": 2,
-        "distanceInMeters": 7.09
+        "value": 16,
+        "distanceInMeters": 50.44
       },
       "floorsDescended": {
-        "value": 10,
-        "distanceInMeters": 31.82
+        "value": 24,
+        "distanceInMeters": 75.31
       }
     },
     "calories": {
-      "burnedResting": 888,
-      "burnedActive": 680,
-      "burnedTotal": 1568
+      "burnedResting": 1740,
+      "burnedActive": 870,
+      "burnedTotal": 2610
     },
     "heartRate": {
       "minValue": 50,
@@ -10278,35 +10278,35 @@
       "vigorous": 34
     },
     "stress": {
-      "avgLevel": 12,
-      "maxLevel": 84,
-      "restProportion": 0.7,
-      "activityProportion": 0.23,
-      "uncategorizedProportion": 0.03,
-      "lowStressProportion": 0.03,
-      "mediumStressProportion": 0.01,
-      "highStressProportion": 0.0,
-      "qualifier": "unknown",
-      "totalDurationInMillis": 34500000,
-      "restDurationInMillis": 24180000,
-      "activityDurationInMillis": 7920000,
-      "uncategorizedDurationInMillis": 1080000,
-      "lowStressDurationInMillis": 960000,
-      "mediumStressDurationInMillis": 240000,
-      "highStressDurationInMillis": 120000
+      "avgLevel": 28,
+      "maxLevel": 98,
+      "restProportion": 0.43,
+      "activityProportion": 0.2,
+      "uncategorizedProportion": 0.04,
+      "lowStressProportion": 0.21,
+      "mediumStressProportion": 0.08,
+      "highStressProportion": 0.03,
+      "qualifier": "balanced",
+      "totalDurationInMillis": 67620000,
+      "restDurationInMillis": 28980000,
+      "activityDurationInMillis": 13500000,
+      "uncategorizedDurationInMillis": 2700000,
+      "lowStressDurationInMillis": 14460000,
+      "mediumStressDurationInMillis": 5640000,
+      "highStressDurationInMillis": 2340000
     },
     "bodyBattery": {
-      "minValue": 40,
+      "minValue": 33,
       "maxValue": 97,
       "chargedValue": 57,
-      "drainedValue": 25,
-      "latestValue": 72,
+      "drainedValue": 64,
+      "latestValue": 33,
       "featureVersion": "3.0",
       "dynamicFeedbackEvent": {
-        "eventTimestampGmt": "2026-11-09T06:54:25.0",
+        "eventTimestampGmt": "2026-11-09T16:49:20.0",
         "bodyBatteryLevel": "HIGH",
-        "feedbackShortType": "MORNING_NOT_STRESS_DATA_AND_INTENSIVE_EXERCISE",
-        "feedbackLongType": "MORNING_NOT_STRESS_DATA_AND_INTENSIVE_EXERCISE"
+        "feedbackShortType": "DAY_BALANCED_AND_INTENSIVE_EXERCISE",
+        "feedbackLongType": "DAY_BALANCED_AND_INTENSIVE_EXERCISE"
       },
       "endOfDayDynamicFeedbackEvent": {
         "eventTimestampGmt": "2026-11-08T23:55:38.0",
@@ -10355,18 +10355,18 @@
     },
     "respiration": {
       "avgValue": 14,
-      "maxValue": 20,
+      "maxValue": 21,
       "minValue": 8,
-      "latestValue": 10,
-      "latestTimestampGmt": "2026-11-09T08:35:00.0",
+      "latestValue": 18,
+      "latestTimestampGmt": "2026-11-09T17:47:00.0",
       "algorithmVersion": 200
     },
     "pulseOx": {
       "avgValue": 98,
       "minValue": 92,
-      "latestValue": 100,
-      "latestTimestampGmt": "2026-11-09T08:35:00.0",
-      "latestTimestampLocal": "2026-11-09T09:35:00.0"
+      "latestValue": 99,
+      "latestTimestampGmt": "2026-11-09T17:46:00.0",
+      "latestTimestampLocal": "2026-11-09T18:46:00.0"
     },
     "jetLag": {}
   }

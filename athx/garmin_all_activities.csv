@@ -1,7 +1,7 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect,Notes
 25016002350,2026-11-09,2026-11-09 06:37:53,CrossFit,indoor_cardio,Cardio / Cross-Training,39.4,0.0,491,137.0,191.0,SPEED,"4 rounds
 Rowing - 20Cal
-Dumbbell burpees deadlifts - 80Lbs"
+23 Dumbbell burpees deadlifts - 80Lbs"
 25011843991,2026-11-08,2026-11-08 17:32:37,Treadmill Running,treadmill_running,Running,27.3,5.0,470,168.0,179.0,LACTATE_THRESHOLD,
 25005169971,2026-11-08,2026-11-08 08:43:00,Strength,strength_training,Strength,55.4,0.0,409,111.0,149.0,AEROBIC_BASE,
 25000084501,2026-11-07,2026-11-07 16:20:31,CrossFit,indoor_cardio,Cardio / Cross-Training,70.7,0.0,995,154.0,192.0,SPEED,"AMRAP
