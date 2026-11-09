@@ -891,16 +891,30 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404, "Meeting Hub not found")
 
-        # Meeting Hub modular assets (.js, .css, .json, .html)
-        elif clean_path.startswith("/meeting_hub/") or clean_path.startswith("/meeting/") or clean_path.startswith("/ui/") or clean_path.startswith("/data/") or clean_path in ("/meeting_hub.app.js",):
+        # Meeting Hub & Static UI modular assets (.js, .css, .json, .html, .svg)
+        elif clean_path.startswith("/meeting_hub/") or clean_path.startswith("/meeting/") or clean_path.startswith("/athx/") or clean_path.startswith("/ui/") or clean_path.startswith("/data/") or clean_path in ("/meeting_hub.app.js", "/favicon.svg", "/favicon.ico"):
             if clean_path.startswith("/meeting_hub/"):
                 rel_path = clean_path.removeprefix("/meeting_hub/")
+                target_file = (BASE_DIR / "meeting_hub" / rel_path).resolve()
             elif clean_path.startswith("/meeting/"):
                 rel_path = clean_path.removeprefix("/meeting/")
+                target_file = (BASE_DIR / "meeting_hub" / rel_path).resolve()
+            elif clean_path.startswith("/athx/"):
+                rel_path = clean_path.removeprefix("/athx/")
+                target_file = (BASE_DIR / "athx" / rel_path).resolve()
+            elif clean_path in ("/favicon.svg", "/favicon.ico"):
+                referer = self.headers.get("Referer", "")
+                if "/meeting" in referer:
+                    target_file = (BASE_DIR / "meeting_hub" / "favicon.svg").resolve()
+                else:
+                    athx_fav = BASE_DIR / "athx" / "favicon.svg"
+                    target_file = athx_fav.resolve() if athx_fav.exists() else (BASE_DIR / "meeting_hub" / "favicon.svg").resolve()
             else:
                 rel_path = clean_path.lstrip("/")
-            target_file = (BASE_DIR / "meeting_hub" / rel_path).resolve()
-            if target_file.exists() and str(target_file).startswith(str(BASE_DIR / "meeting_hub")):
+                target_file = (BASE_DIR / "meeting_hub" / rel_path).resolve()
+
+            allowed_dirs = (str(BASE_DIR / "meeting_hub"), str(BASE_DIR / "athx"))
+            if target_file.exists() and any(str(target_file).startswith(d) for d in allowed_dirs):
                 content = target_file.read_bytes()
                 content_type = "text/plain"
                 if target_file.suffix == ".js":
@@ -911,6 +925,12 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     content_type = "application/json; charset=utf-8"
                 elif target_file.suffix == ".html":
                     content_type = "text/html; charset=utf-8"
+                elif target_file.suffix == ".svg":
+                    content_type = "image/svg+xml; charset=utf-8"
+                elif target_file.suffix in (".ico", ".icon"):
+                    content_type = "image/x-icon"
+                elif target_file.suffix == ".png":
+                    content_type = "image/png"
                 self.send_response(200)
                 self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(len(content)))

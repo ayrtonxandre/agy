@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="mGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF3377" />
+      <stop offset="100%" stop-color="#E6005C" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181926" />
+      <stop offset="100%" stop-color="#0E0F17" />
+    </linearGradient>
+  </defs>
+  
+  <!-- App Icon Background matching Arty Design System Dark Theme -->
+  <rect width="64" height="64" rx="16" fill="url(#bgGrad)" stroke="#FF3377" stroke-opacity="0.35" stroke-width="2" />
+
+  <!-- Bold Geometric Meeting Hub "M" Glyph -->
+  <polygon points="14,48 14,16 23,16 32,29.5 41,16 50,16 50,48 42,48 42,27.5 32,41 22,27.5 22,48" fill="url(#mGrad)" />
+
+  <!-- Accent Intelligence / Live Sync Node (Cyan Beacon) -->
+  <circle cx="50" cy="14" r="3.5" fill="#00E5FF" />
+</svg>
