@@ -16,6 +16,7 @@ export class ShellUI {
     onNewMeeting,
     onTodayClick,
     onSyncTrigger,
+    onGranolaSyncTrigger,
     onSearch,
     onExportData,
     onImportData,
@@ -34,6 +35,8 @@ export class ShellUI {
     this.onNewMeeting = onNewMeeting;
     this.onTodayClick = onTodayClick;
     this.onSyncTrigger = onSyncTrigger;
+    this.onGranolaSyncTrigger = onGranolaSyncTrigger;
+    this.isSyncingGranola = false;
     this.onSearch = onSearch;
     this.onExportData = onExportData;
     this.onImportData = onImportData;
@@ -346,15 +349,24 @@ export class ShellUI {
       google: { name: 'Artefact', label: 'Google', dotClass: 'pink', status: 'active', relativeTime: 'Just now' },
       outlook: { name: 'Clariane', label: 'Outlook', dotClass: 'blue', status: 'active', relativeTime: 'Just now' },
       icloud: { name: 'Personal', label: 'iCloud', dotClass: 'green', status: 'active', relativeTime: 'Just now' },
-      athx: { name: 'ATHX', label: 'Training', dotClass: 'amber', status: 'active', relativeTime: 'Just now' }
+      athx: { name: 'ATHX', label: 'Training', dotClass: 'amber', status: 'active', relativeTime: 'Just now' },
+      granola: { name: 'Granola', label: 'Transcripts', dotClass: 'purple', status: 'active', relativeTime: 'Just now' }
     };
 
     const renderSourceRow = (key, defaultTitle) => {
       const src = sources[key] || { name: key, dotClass: 'blue', status: 'active', relativeTime: 'Never' };
       const isErr = src.status === 'error';
       const tooltip = isErr ? `${src.name}: ${src.error || 'Connection failed'}` : defaultTitle;
-      const dotCls = isErr ? 'sync-source-dot error' : `sync-source-dot ${src.dotClass}`;
+      const dotCls = isErr ? 'sync-source-dot error' : `sync-source-dot ${src.dotClass || 'blue'}`;
       const timeDisplay = isErr ? 'Error' : src.relativeTime;
+
+      const isGranola = key === 'granola';
+      const actionBtn = isGranola ? `
+        <button class="sync-source-action-btn ${this.isSyncingGranola ? 'syncing' : ''}" id="granolaSyncRowBtn" title="Sync last Granola transcripts for each mission">
+          ${Icons.refreshCw}
+          <span>${this.isSyncingGranola ? 'Syncing...' : 'Sync'}</span>
+        </button>
+      ` : '';
 
       return `
         <div class="sync-source-item ${isErr ? 'has-error' : ''}" title="${this._escape(tooltip)}">
@@ -362,7 +374,10 @@ export class ShellUI {
             <span class="${dotCls}"></span>
             <span>${this._escape(src.name)}</span>
           </div>
-          <span class="sync-source-time ${isErr ? 'err-text' : ''}">${this._escape(timeDisplay)}</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            ${actionBtn}
+            <span class="sync-source-time ${isErr ? 'err-text' : ''}">${this._escape(timeDisplay)}</span>
+          </div>
         </div>
       `;
     };
@@ -370,7 +385,7 @@ export class ShellUI {
     container.innerHTML = `
       <div class="sidebar-sync-header">
         <span class="sidebar-sync-title">Calendar Streams</span>
-        <button class="sidebar-sync-btn ${this.isSyncing ? 'syncing' : ''}" id="sidebarSyncBtn" title="Sync all calendar streams">
+        <button class="sidebar-sync-btn ${this.isSyncing ? 'syncing' : ''}" id="sidebarSyncBtn" title="Sync all calendar streams and transcripts">
           ${Icons.refreshCw} ${this.isSyncing ? 'Syncing...' : 'Sync now'}
         </button>
       </div>
@@ -379,11 +394,43 @@ export class ShellUI {
       ${renderSourceRow('outlook', 'Office 365 Outlook ICS (Client)')}
       ${renderSourceRow('icloud', 'iCloud CalDAV / ICS (Personal)')}
       ${renderSourceRow('athx', 'ATHX Garmin Training Microcycle')}
+      ${renderSourceRow('granola', 'Granola Transcripts & Meeting Notes API')}
     `;
 
     container.querySelector('#sidebarSyncBtn')?.addEventListener('click', () => {
       if (this.onSyncTrigger && !this.isSyncing) {
         this.onSyncTrigger();
+      }
+    });
+
+    container.querySelector('#granolaSyncRowBtn')?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (this.isSyncingGranola) return;
+      this.isSyncingGranola = true;
+      this.renderSyncSection();
+      try {
+        let res = null;
+        if (this.onGranolaSyncTrigger) {
+          res = await this.onGranolaSyncTrigger();
+        } else if (this.store && typeof this.store.syncGranola === 'function') {
+          res = await this.store.syncGranola();
+        }
+        const foldedCount = res?.folded?.length || 0;
+        const syncedCount = res?.synced?.length || 0;
+        const msg = (foldedCount > 0 || syncedCount > 0)
+          ? `Granola synced: ${foldedCount} folded, ${syncedCount} queued for missions`
+          : `Granola sync complete: all mission transcripts up to date`;
+        if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
+          window.showHubToast(msg);
+        }
+      } catch (err) {
+        console.error('[Shell] Granola sync error:', err);
+        if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
+          window.showHubToast(`Granola sync error: ${err.message}`);
+        }
+      } finally {
+        this.isSyncingGranola = false;
+        this.renderSyncSection();
       }
     });
   }

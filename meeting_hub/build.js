@@ -867,6 +867,17 @@ const shell = new MeetingHub.ShellUI({
       shell.setSyncing(false);
     }
   },
+  onGranolaSyncTrigger: async () => {
+    try {
+      const res = await MeetingHub.CalendarSyncService.syncGranolaTranscripts(MeetingHub.store.db, MeetingHub.store);
+      const status = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
+      shell.setSyncStatus(status);
+      return res;
+    } catch (err) {
+      console.error('[MeetingHub] Granola sync error:', err);
+      throw err;
+    }
+  },
   getStorageEngine: () => MeetingHub.store ? MeetingHub.store.getStorageEngineName() : 'IndexedDB',
   onExportData: async () => {
     try {
