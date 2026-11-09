@@ -266,6 +266,8 @@ def generate_ics():
             "BEGIN:VEVENT",
             f"UID:{sev['uid']}@athx2027.internal",
             f"DTSTAMP:{now_utc}",
+            f"LAST-MODIFIED:{now_utc}",
+            "SEQUENCE:2",
             f"DTSTART;TZID=Europe/Paris:{dtstart}",
             f"DTEND;TZID=Europe/Paris:{dtend}",
             f"SUMMARY:{sev['summary']}",
@@ -305,6 +307,12 @@ def generate_ics():
     p2 = BASE_DIR / "athx_training_schedule.ics"
     p1.write_text(ics_str, encoding="utf-8")
     p2.write_text(ics_str, encoding="utf-8")
+    
+    # Also sync legacy calendar cache if present
+    p3 = BASE_DIR.parent / "legacy_calendar" / "calendar_data" / "athx_training_schedule.ics"
+    if p3.parent.exists():
+        p3.write_text(ics_str, encoding="utf-8")
+        
     print(f"✅ Generated ATHX Training Schedule iCal at:\n   • {p1}\n   • {p2}")
 
 if __name__ == "__main__":
