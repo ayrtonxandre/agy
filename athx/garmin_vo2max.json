@@ -1,0 +1,44 @@
+[
+  {
+    "Date": "2026-08-03",
+    "VO2Max": 54.0,
+    "VO2Max_Precise": 54.0,
+    "Category": 0
+  },
+  {
+    "Date": "2026-08-04",
+    "VO2Max": 53.0,
+    "VO2Max_Precise": 52.6,
+    "Category": 0
+  },
+  {
+    "Date": "2026-09-08",
+    "VO2Max": 52.0,
+    "VO2Max_Precise": 51.6,
+    "Category": 0
+  },
+  {
+    "Date": "2026-10-03",
+    "VO2Max": 54.0,
+    "VO2Max_Precise": 54.4,
+    "Category": 0
+  },
+  {
+    "Date": "2026-10-10",
+    "VO2Max": 56.0,
+    "VO2Max_Precise": 55.5,
+    "Category": 0
+  },
+  {
+    "Date": "2026-10-30",
+    "VO2Max": 57.0,
+    "VO2Max_Precise": 57.4,
+    "Category": 0
+  },
+  {
+    "Date": "2026-11-06",
+    "VO2Max": 57.0,
+    "VO2Max_Precise": 57.3,
+    "Category": 0
+  }
+]

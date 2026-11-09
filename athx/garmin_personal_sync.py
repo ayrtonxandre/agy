@@ -52,6 +52,7 @@ OUTPUT_ALL_JSON = SCRIPT_DIR / "garmin_all_activities.json"
 OUTPUT_HRV_JSON = SCRIPT_DIR / "garmin_hrv_summary.json"
 OUTPUT_SLEEP_JSON = SCRIPT_DIR / "garmin_sleep_summary.json"
 OUTPUT_DAILY_SUMMARIES_JSON = SCRIPT_DIR / "garmin_daily_summaries.json"
+OUTPUT_VO2_JSON = SCRIPT_DIR / "garmin_vo2max.json"
 
 
 def format_exercise_name(raw_name: str) -> str:
@@ -482,6 +483,41 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
         print(f"⚠️ Could not sync daily summaries: {e}")
         daily_summaries = []
 
+    # 5.5 Synchronize Longitudinal VO2 Max Metrics
+    vo2_records: list[dict] = []
+    if garmin_unofficial:
+        print(f"\n🫁 Querying longitudinal VO2 Max time-series from Garmin Connect...")
+        try:
+            start_vo2_str = getattr(athx_config, "DATA_START", "2026-05-01")
+            vo2_raw = garmin_unofficial.connectapi(f"/metrics-service/metrics/maxmet/daily/{start_vo2_str}/{today.strftime('%Y-%m-%d')}")
+            if isinstance(vo2_raw, list):
+                for item in vo2_raw:
+                    gen = item.get("generic") or {}
+                    c_date = gen.get("calendarDate")
+                    vo2_val = gen.get("vo2MaxValue")
+                    vo2_precise = gen.get("vo2MaxPreciseValue")
+                    if c_date and (vo2_val is not None or vo2_precise is not None):
+                        vo2_records.append({
+                            "Date": c_date,
+                            "VO2Max": vo2_val,
+                            "VO2Max_Precise": vo2_precise,
+                            "Category": gen.get("maxMetCategory"),
+                        })
+            vo2_records.sort(key=lambda x: x["Date"])
+            if vo2_records:
+                with open(OUTPUT_VO2_JSON, "w", encoding="utf-8") as f:
+                    json.dump(vo2_records, f, indent=2)
+                print(f"💾 Saved {len(vo2_records)} VO2 Max records to: {OUTPUT_VO2_JSON.name}")
+        except Exception as e:
+            print(f"⚠️ Could not sync VO2 Max metrics: {e}")
+
+    if not vo2_records and OUTPUT_VO2_JSON.exists():
+        try:
+            with open(OUTPUT_VO2_JSON, "r", encoding="utf-8") as f:
+                vo2_records = json.load(f)
+        except Exception:
+            pass
+
     # 6. Save Activities Datasets
     print("\n💾 Saving structured activity feeds...")
     # Strength Sets
@@ -522,7 +558,7 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
             "Average_HR": 126.8,
             "Max_HR": 159.0,
             "Cadence_spm": 141.4,
-            "VO2Max": None,
+            "VO2Max": 57.4,
             "Elevation_Gain_m": 18.0,
             "Elevation_Loss_m": 8.0,
             "Calories_kcal": 329,
@@ -540,6 +576,19 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
             "Training_Load": None,
         }
         all_running_records.append(merged_run)
+
+    # Attach longitudinal VO2Max telemetry to running activities
+    if vo2_records:
+        vo2_by_date = {r["Date"]: (r.get("VO2Max_Precise") or r.get("VO2Max")) for r in vo2_records}
+        sorted_vo2 = sorted(vo2_records, key=lambda x: x["Date"])
+        for run in all_running_records:
+            r_date = run.get("Date", "")
+            if r_date in vo2_by_date:
+                run["VO2Max"] = vo2_by_date[r_date]
+            else:
+                prior = [v for v in sorted_vo2 if v["Date"] <= r_date]
+                if prior:
+                    run["VO2Max"] = prior[-1].get("VO2Max_Precise") or prior[-1].get("VO2Max")
 
     all_running_records.sort(key=lambda x: x.get("Start_Time", ""), reverse=True)
     with open(OUTPUT_RUNNING_JSON, "w", encoding="utf-8") as f:

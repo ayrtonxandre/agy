@@ -708,7 +708,7 @@ def _generate_heuristic_coach_answer(question: str, digest: dict[str, Any]) -> t
     elif matches_any(["run", "runs", "running", "runner", "cardio", "5k", "5km", "pace", "aerobic", "conditioning", "vo2", "vo2max"]):
         ans = f"""### 🎯 Aerobic Engine & 5km Running Directive
 - **Bottom-Line**: Current 5km running pace is `{best_5k}` against the 4:30/km standard (+46s/km gap). Baseline VO2Max is `{running.get('latest_vo2max') or 55.0}`.
-- **Sports Science Analysis**: While aerobic engine capacity (VO2Max 54) is solid, running frequency ({running.get('total_runs', 3)} recorded runs, {running.get('total_distance_km', 19.8)} km total) is too low to develop race-pace tolerance and cadence stability.
+- **Sports Science Analysis**: Aerobic engine capacity (VO2Max {running.get('latest_vo2max') or 57.3}) is strong and improving (+5.7 ml/kg/min since September), but running frequency ({running.get('total_runs', 3)} recorded runs, {running.get('total_distance_km', 19.8)} km total) is too low to develop race-pace tolerance and cadence stability.
 - **Microcycle Prescription**:
   - **Session 1 (Pace Intervals)**: Track/Road: 10 min warm-up, then 5×800m @ 4:15–4:20/km pace with 2:00 walking recovery.
   - **Session 2 (Aerobic Base Zone 2)**: 35–40 min continuous easy run @ 5:45–6:00/km (HR capped strictly at 142 bpm / Zone 2).

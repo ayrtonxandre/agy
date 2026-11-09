@@ -902,7 +902,35 @@ def process_running_data(running_input: Path | list[dict] | None = None, audit: 
         curr_28d_pace_formatted = best_5k_pace_formatted
 
     latest_run = valid_runs[-1]
-    latest_vo2 = next((r.get("VO2Max") for r in reversed(valid_runs) if r.get("VO2Max")), None)
+
+    # Ingest precise longitudinal VO2Max telemetry
+    vo2_file = Path(__file__).resolve().parent / "garmin_vo2max.json"
+    vo2_history = []
+    latest_vo2 = None
+    if vo2_file.exists():
+        try:
+            with open(vo2_file, "r", encoding="utf-8") as f:
+                vo2_history = json.load(f)
+            if vo2_history:
+                latest_vo2 = vo2_history[-1].get("VO2Max_Precise") or vo2_history[-1].get("VO2Max")
+        except Exception:
+            pass
+
+    if vo2_history:
+        vo2_map = {v["Date"]: (v.get("VO2Max_Precise") or v.get("VO2Max")) for v in vo2_history}
+        sorted_vo2 = sorted(vo2_history, key=lambda x: x["Date"])
+        for r in valid_runs:
+            if not r.get("VO2Max"):
+                rd = r.get("Date", "")
+                if rd in vo2_map:
+                    r["VO2Max"] = vo2_map[rd]
+                else:
+                    prior = [v for v in sorted_vo2 if v["Date"] <= rd]
+                    if prior:
+                        r["VO2Max"] = prior[-1].get("VO2Max_Precise") or prior[-1].get("VO2Max")
+
+    if latest_vo2 is None:
+        latest_vo2 = next((r.get("VO2Max") for r in reversed(valid_runs) if r.get("VO2Max")), None)
     if latest_vo2 is None:
         latest_vo2 = getattr(athx_config, "DEFAULT_VO2MAX", 55.0)
     else:
@@ -946,6 +974,7 @@ def process_running_data(running_input: Path | list[dict] | None = None, audit: 
         "avg_vertical_ratio_pct": avg_vr,
         "avg_vertical_oscillation_cm": avg_vo,
         "avg_grade_adjusted_speed_ms": avg_gas,
+        "vo2_history": vo2_history,
         "history": valid_runs
     }
 
