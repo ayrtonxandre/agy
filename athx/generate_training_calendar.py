@@ -166,24 +166,24 @@ def generate_ics():
             "location": "CrossFit Box",
             "uid": "athx-20261109-mon-cf"
         },
-        # Tuesday Nov 10 Morning
+        # Tuesday Nov 10 (Rest Day)
         {
             "date": date(2026, 11, 10),
-            "start_time": (6, 30),
-            "end_time": (7, 15),
-            "summary": "🧘 ATHX Priming, Core & Push-Up Activation (Zero Barbell Load)",
-            "description": "Pre-CHAD Autonomic Priming, Trunk Stability & Scapular Push Activation\\n• Movement prep: Ankle dorsiflexion, hip flexor openers, glute activation\\n• Core & Push: Pallof press, Deadbug, Side plank, Hollow hold + Scapular Push-Up Plus (3 rounds: 3×10–12 reps)\\n• DIRECTIVE: ZERO barbell or leg loading. Protecting knees for Wednesday's 1,000 box step-ups and keeping ACWR ≤1.48.",
-            "location": "Gym / Home",
+            "start_time": (8, 0),
+            "end_time": (9, 0),
+            "summary": "🛌 REST DAY: Full Passive Recovery & CHAD Eve Prep",
+            "description": "COMPLETE BREAK DAY (Core & Run Replaced)\\n• Focus: 100% biological, tendon, and glycogen recovery.\\n• Strategy: Zero training strain. Hydrate with electrolytes (sodium + magnesium) and top off liver/muscle glycogen with complex carbohydrates at dinner.\\n• Purpose: Caps ACWR strictly at 1.48 and guarantees 100% knee/hip extensor freshness for Wednesday's HERO WOD CHAD 1000X.",
+            "location": "Home / Rest",
             "uid": "athx-20261110-tue-core"
         },
-        # Tuesday Nov 10 Evening
+        # Tuesday Nov 10 Evening (Run Cancelled)
         {
             "date": date(2026, 11, 10),
             "start_time": (18, 30),
-            "end_time": (19, 15),
-            "summary": "🏃 ATHX Run 1: Light Zone 2 Aerobic Flush",
-            "description": "Distance: 4.0–5.0 km @ 5:50–6:15/km\\n• Heart Rate: Strictly Zone 2 (<130 bpm)\\n• Purpose: Low-impact aerobic circulation to flush legs before CHAD.\\n• DIRECTIVE: If heart rate exceeds 130 bpm, drop pace. Do not race.",
-            "location": "Road / Flat Track",
+            "end_time": (19, 0),
+            "summary": "🚫 PM RUN CANCELLED: Rest Day",
+            "description": "EVENING RUN CANCELLED\\n• Replaced by full rest day to protect knees and Achilles tendon before 1,000 box step-ups.",
+            "location": "Home / Rest",
             "uid": "athx-20261110-tue-run1"
         },
         # Wednesday Nov 11 Morning
@@ -267,7 +267,7 @@ def generate_ics():
             f"UID:{sev['uid']}@athx2027.internal",
             f"DTSTAMP:{now_utc}",
             f"LAST-MODIFIED:{now_utc}",
-            "SEQUENCE:2",
+            "SEQUENCE:3",
             f"DTSTART;TZID=Europe/Paris:{dtstart}",
             f"DTEND;TZID=Europe/Paris:{dtend}",
             f"SUMMARY:{sev['summary']}",
