@@ -1,6 +1,6 @@
 ## 1. 🎖️ Executive Readiness Verdict
 - **Overall Readiness Rating**: `76% • Moderate Risk (Volume Asymmetry & Lower Body Deficits)`
-- **Macro Assessment**: Athlete demonstrates strong upper-body pushing and pulling hypertrophy volume, but total lower body stimulus (quads and posterior chain) is operating below Minimum Effective Volume (MEV). With 28 weeks until the ATHX Games 2027, the primary qualification risk lies in barbell squat and deadlift capacity alongside the 5km running pace gap. Rebalancing weekly volume toward lower-body compounds while protecting current systemic ACWR (1.48) is the mandatory training priority.
+- **Macro Assessment**: Athlete demonstrates strong upper-body pushing and pulling hypertrophy volume, but total lower body stimulus (quads and posterior chain) is operating below Minimum Effective Volume (MEV). With 28 weeks until the ATHX Games 2027, the primary qualification risk lies in barbell squat and deadlift capacity alongside the 5km running pace gap. Rebalancing weekly volume toward lower-body compounds while protecting current systemic ACWR (1.47) is the mandatory training priority.
 
 ---
 
@@ -16,14 +16,14 @@
 ---
 
 ## 3. ⚠️ Critical Deficit & Fatigue Alerts
-- **Volume Starvation**: Chest: 6.4 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Lats/Back: 8.0 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Quads: 5.9 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Hamstrings/Glutes: 5.7 sets/wk (Deficit vs MEV 6.0)
-- **Volume Starvation**: Shoulders: 7.9 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Biceps: 5.9 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Chest: 6.3 sets/wk (Deficit vs MEV 10.0)
+- **Volume Starvation**: Lats/Back: 7.7 sets/wk (Deficit vs MEV 10.0)
+- **Volume Starvation**: Quads: 5.8 sets/wk (Deficit vs MEV 8.0)
+- **Volume Starvation**: Hamstrings/Glutes: 5.6 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Shoulders: 7.8 sets/wk (Deficit vs MEV 8.0)
+- **Volume Starvation**: Biceps: 5.5 sets/wk (Deficit vs MEV 6.0)
 - **Volume Starvation**: Forearms: 1.1 sets/wk (Deficit vs MEV 4.0)
-- **Acute:Chronic Workload Ratio (ACWR)**: `1.48` (Elevated Fatigue Risk). Acute load is 5,668.4 kg vs chronic baseline 3,836.9 kg. Foster training monotony is `1.50`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
+- **Acute:Chronic Workload Ratio (ACWR)**: `1.47` (Elevated Fatigue Risk). Acute load is 5,233.2 kg vs chronic baseline 3,553.5 kg. Foster training monotony is `1.25`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
 - **Sleep & Recovery**: 7-day average sleep duration is `7.1 hrs` with a composite readiness score of `98.7%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
 ---

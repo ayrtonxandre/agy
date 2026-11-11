@@ -233,8 +233,8 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
         else:
             s["e1RM_kg"] = None
 
-        # Junk volume check: reps >= 35 or very low stimulus
-        s["Is_Junk_Volume"] = (reps >= 35 and effective_w <= 15.0)
+        # Junk volume check: reps >= 35 with very low external stimulus (0 < w <= 15kg)
+        s["Is_Junk_Volume"] = (reps >= 35 and 0 < effective_w <= 15.0)
 
     # 1e. Session-Level Split Classification
     # Re-group by Activity_ID to determine dominant split

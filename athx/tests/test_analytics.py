@@ -102,6 +102,17 @@ class TestATHXSportsScience(unittest.TestCase):
         self.assertTrue(workout_html.is_symlink(), "garmin_workout.html must be a symlink to index.html")
         self.assertTrue(workout_vol.is_symlink(), "garmin_workout_volume.json must be a symlink")
 
+    def test_chad_step_ups_parsing(self):
+        """Confirms 1000 box step-ups note is correctly parsed into Box Step-Up strength record."""
+        import garmin_note_parser
+        sets, parsed = garmin_note_parser.convert_note_to_strength_records(
+            25042646802, "2026-11-11", "CrossFit ", "1000 box Step-ups"
+        )
+        self.assertEqual(len(sets), 1)
+        self.assertEqual(sets[0]["Exercise"], "Box Step-Up")
+        self.assertEqual(sets[0]["Reps"], 1000)
+        self.assertEqual(sets[0]["Session_Type"], "Legs")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
