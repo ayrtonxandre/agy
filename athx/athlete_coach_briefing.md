@@ -8,9 +8,9 @@
 | Event | 2027 Target | Current Level | Gap | Trend & Projected Date |
 | :--- | :--- | :--- | :--- | :--- |
 | Shoulder-to-Overhead (S2O) | 65.0 kg | 52.5 kg | -12.5 kg | 🟡 +0.44 kg/wk (In Progress) |
-| Barbell Back Squat | 125.0 kg | 93.3 kg | -31.7 kg | 🟡 +1.12 kg/wk (In Progress) |
-| Deadlift Floor Pull | 160.0 kg | 140.0 kg | -20.0 kg | 🟡 +0.7 kg/wk (In Progress) |
-| 5km Running Pace | 4:30/km | 5:12/km | +42s/km | 🟡 -1.49s/wk (In Progress) |
+| Barbell Back Squat | 125.0 kg | 93.3 kg | -31.7 kg | 🟡 +1.13 kg/wk (In Progress) |
+| Deadlift Floor Pull | 160.0 kg | 140.0 kg | -20.0 kg | 🟡 +0.71 kg/wk (In Progress) |
+| 5km Running Pace | 4:30/km | 5:12/km | +42s/km | 🟡 -1.51s/wk (In Progress) |
 | Sandbag Carry / Grip | 60.0 kg | 56.0 kg | -4.0 kg | 🟡 +0.14 kg/wk (In Progress) |
 
 ---
@@ -30,7 +30,7 @@
 
 ## 4. 🧬 Hypertrophy & Workload Engineering
 - **Volume Distribution**: Upper body pressing and pulling maintain consistent sets within or near Maximum Adaptive Volume (MAV). Conversely, quad and hamstring sets require an immediate 4–6 set weekly infusion to cross the MEV threshold and trigger structural hypertrophy.
-- **Recomposition & Mass Velocity**: Current mass is `79.3 kg` against the competition standard of `85.0 kg` (+5.7 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
+- **Recomposition & Mass Velocity**: Current mass is `79.7 kg` against the competition standard of `85.0 kg` (+5.3 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
 
 ---
 
