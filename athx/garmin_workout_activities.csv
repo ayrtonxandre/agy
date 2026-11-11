@@ -1,4 +1,5 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Category,Duration_min,Calories_kcal,Average_HR,Max_HR,Training_Effect_Label,Moderate_Intensity_Min,Vigorous_Intensity_Min,Steps,Distance_km,Notes
+25042646802,2026-11-11,2026-11-11 12:39:13,CrossFit ,indoor_cardio,CrossFit,65.5,946,153.0,188.0,LACTATE_THRESHOLD,10,53,4002,0.0,1000 box Step-ups
 25016002350,2026-11-09,2026-11-09 06:37:53,CrossFit,indoor_cardio,CrossFit,39.4,491,137.0,191.0,SPEED,7,30,764,0.0,"4 rounds
 Rowing - 20Cal
 23 Dumbbell burpees deadlifts - 80Lbs"

@@ -1,5 +1,23 @@
 [
   {
+    "Activity_ID": 25042646802,
+    "Date": "2026-11-11",
+    "Start_Time": "2026-11-11 12:39:13",
+    "Activity_Name": "CrossFit ",
+    "Activity_Type": "indoor_cardio",
+    "Category": "CrossFit",
+    "Duration_min": 65.5,
+    "Calories_kcal": 946,
+    "Average_HR": 153.0,
+    "Max_HR": 188.0,
+    "Training_Effect_Label": "LACTATE_THRESHOLD",
+    "Moderate_Intensity_Min": 10,
+    "Vigorous_Intensity_Min": 53,
+    "Steps": 4002,
+    "Distance_km": 0.0,
+    "Notes": "1000 box Step-ups"
+  },
+  {
     "Activity_ID": 25016002350,
     "Date": "2026-11-09",
     "Start_Time": "2026-11-09 06:37:53",

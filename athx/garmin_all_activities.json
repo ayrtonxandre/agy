@@ -1,5 +1,20 @@
 [
   {
+    "Activity_ID": 25042646802,
+    "Date": "2026-11-11",
+    "Start_Time": "2026-11-11 12:39:13",
+    "Activity_Name": "CrossFit ",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 65.5,
+    "Distance_km": 0.0,
+    "Calories_kcal": 946,
+    "Average_HR": 153.0,
+    "Max_HR": 188.0,
+    "Training_Effect": "LACTATE_THRESHOLD",
+    "Notes": "1000 box Step-ups"
+  },
+  {
     "Activity_ID": 25016002350,
     "Date": "2026-11-09",
     "Start_Time": "2026-11-09 06:37:53",
@@ -1392,20 +1407,6 @@
     "Calories_kcal": 366,
     "Average_HR": 105.0,
     "Max_HR": 157.0,
-    "Training_Effect": "ANAEROBIC_CAPACITY"
-  },
-  {
-    "Activity_ID": 23449496719,
-    "Date": "2026-07-02",
-    "Start_Time": "2026-07-02 06:48:14",
-    "Activity_Name": "Strength",
-    "Activity_Type": "strength_training",
-    "Primary_Category": "Strength",
-    "Duration_min": 52.4,
-    "Distance_km": 0.0,
-    "Calories_kcal": 391,
-    "Average_HR": 113.0,
-    "Max_HR": 158.0,
     "Training_Effect": "ANAEROBIC_CAPACITY"
   }
 ]
