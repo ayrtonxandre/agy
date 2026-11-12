@@ -40,5 +40,11 @@
     "VO2Max": 57.0,
     "VO2Max_Precise": 57.3,
     "Category": 0
+  },
+  {
+    "Date": "2026-11-11",
+    "VO2Max": 57.0,
+    "VO2Max_Precise": 57.2,
+    "Category": 0
   }
 ]

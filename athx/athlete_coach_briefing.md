@@ -7,23 +7,22 @@
 ## 2. 🎯 Event-by-Event Benchmark Status (ATHX 2027)
 | Event | 2027 Target | Current Level | Gap | Trend & Projected Date |
 | :--- | :--- | :--- | :--- | :--- |
-| Shoulder-to-Overhead (S2O) | 65.0 kg | 52.5 kg | -12.5 kg | 🟡 +0.44 kg/wk (In Progress) |
+| Shoulder-to-Overhead (S2O) | 65.0 kg | 52.5 kg | -12.5 kg | 🟡 +0.45 kg/wk (In Progress) |
 | Barbell Back Squat | 125.0 kg | 93.3 kg | -31.7 kg | 🟡 +1.13 kg/wk (In Progress) |
-| Deadlift Floor Pull | 160.0 kg | 140.0 kg | -20.0 kg | 🟡 +0.71 kg/wk (In Progress) |
-| 5km Running Pace | 4:30/km | 5:12/km | +42s/km | 🟡 -1.51s/wk (In Progress) |
+| Deadlift Floor Pull | 160.0 kg | 151.7 kg | -8.3 kg | 🟡 +0.3 kg/wk (In Progress) |
+| 5km Running Pace | 4:30/km | 5:12/km | +42s/km | 🟡 -1.52s/wk (In Progress) |
 | Sandbag Carry / Grip | 60.0 kg | 56.0 kg | -4.0 kg | 🟡 +0.14 kg/wk (In Progress) |
 
 ---
 
 ## 3. ⚠️ Critical Deficit & Fatigue Alerts
-- **Volume Starvation**: Chest: 6.3 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Lats/Back: 7.7 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Quads: 5.8 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Hamstrings/Glutes: 5.6 sets/wk (Deficit vs MEV 6.0)
-- **Volume Starvation**: Shoulders: 7.8 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Biceps: 5.5 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Chest: 6.0 sets/wk (Deficit vs MEV 10.0)
+- **Volume Starvation**: Lats/Back: 7.9 sets/wk (Deficit vs MEV 10.0)
+- **Volume Starvation**: Quads: 5.5 sets/wk (Deficit vs MEV 8.0)
+- **Volume Starvation**: Hamstrings/Glutes: 5.5 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Biceps: 5.6 sets/wk (Deficit vs MEV 6.0)
 - **Volume Starvation**: Forearms: 1.1 sets/wk (Deficit vs MEV 4.0)
-- **Acute:Chronic Workload Ratio (ACWR)**: `1.47` (Elevated Fatigue Risk). Acute load is 5,233.2 kg vs chronic baseline 3,553.5 kg. Foster training monotony is `1.25`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
+- **Acute:Chronic Workload Ratio (ACWR)**: `1.47` (Elevated Fatigue Risk). Acute load is 5,259.1 kg vs chronic baseline 3,577.7 kg. Foster training monotony is `1.25`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
 - **Sleep & Recovery**: 7-day average sleep duration is `7.1 hrs` with a composite readiness score of `98.7%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
 ---
@@ -35,7 +34,7 @@
 ---
 
 ## 5. 🏃 Aerobic & Conditioning Engine
-- **Running Trajectory**: The 5km qualifying target of 4:30/km requires dedicated aerobic threshold maintenance. Current best pace sits at `5:07/km` across 10 recorded runs (49.83 km total volume). Conditioning must avoid conflicting with lower-body strength adaptations by emphasizing low-impact Zone 2 rowing or polarized track intervals.
+- **Running Trajectory**: The 5km qualifying target of 4:30/km requires dedicated aerobic threshold maintenance. Current best pace sits at `5:07/km` across 11 recorded runs (56.78 km total volume). Conditioning must avoid conflicting with lower-body strength adaptations by emphasizing low-impact Zone 2 rowing or polarized track intervals.
 
 ---
 
