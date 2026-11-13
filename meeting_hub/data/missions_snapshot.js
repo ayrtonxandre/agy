@@ -2,61 +2,6 @@
 var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MISSIONS_SNAPSHOT = {
   "missions": [
     {
-      "id": "leclerc-siplec",
-      "name": "Leclerc : Siplec Referential and AI Augmentation",
-      "client": "E.Leclerc / Siplec",
-      "directory": "Leclerc Siplec",
-      "status": "active",
-      "archived": false,
-      "brief": "Leclerc Siplec/Agent brief.md",
-      "overview": "Leclerc Siplec/Mission Overview.md",
-      "actions": "Leclerc Siplec/Actions.md",
-      "inbox": "Leclerc Siplec/_inbox",
-      "clientMatch": [
-        "siplec",
-        "leclerc",
-        "entretien siplec",
-        "calypso",
-        "helios",
-        "ulysse",
-        "tata platform",
-        "[main mission]",
-        "main mission"
-      ],
-      "contacts": [
-        "jérôme harousseau",
-        "jerome harousseau",
-        "qing zhou",
-        "juliette lacroix",
-        "gaëtan",
-        "zineb",
-        "guilhem"
-      ],
-      "workstreams": [
-        {
-          "id": "ws-data-industrialization",
-          "name": "Data Architecture & Industrialization",
-          "phase": "Actif",
-          "summary": "Migration des cas d'usage sandbox vers la plateforme cible (Collect -> Data -> Expo, GitLab, DBT, GCP)",
-          "note": "Leclerc Siplec/Data Architecture & Industrialization.md"
-        },
-        {
-          "id": "ws-match-merge",
-          "name": "Referential Quality & Match-Merge",
-          "phase": "Actif",
-          "summary": "Qualité de données et déduplication des 4 000 doublons usines/fournisseurs dans Calypso / Helios",
-          "note": "Leclerc Siplec/Referential Quality & Match-Merge.md"
-        },
-        {
-          "id": "ws-ai-textile-composition",
-          "name": "AI Textile Product Composition",
-          "phase": "Actif",
-          "summary": "Extraction automatisée par IA des compositions textiles à partir de données non structurées",
-          "note": "Leclerc Siplec/AI Textile Product Composition.md"
-        }
-      ]
-    },
-    {
       "id": "ge-enterprise",
       "name": "GE Enterprise & UC Wizard",
       "client": "Artefact Internal",
@@ -235,6 +180,53 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
           "phase": "Actif",
           "summary": "Campagne Eval H2 2026, sessions d'information counselors et entretiens de recrutement",
           "note": "Counseling/Comités d'Évaluation & Peer Reviews.md"
+        }
+      ]
+    },
+    {
+      "id": "cma-cgm",
+      "name": "CMA CGM - AI Agent Builders",
+      "client": "CMA CGM",
+      "directory": "CMA CGM Agent Builders",
+      "status": "active",
+      "archived": false,
+      "brief": "CMA CGM Agent Builders/Agent brief.md",
+      "overview": "CMA CGM Agent Builders/Mission Overview.md",
+      "actions": "CMA CGM Agent Builders/Actions.md",
+      "inbox": "CMA CGM Agent Builders/_inbox",
+      "clientMatch": [
+        "cma cgm",
+        "cma-cgm",
+        "cma",
+        "sync cma cgm",
+        "agent builders",
+        "maia",
+        "icap",
+        "ceva"
+      ],
+      "contacts": [
+        "guillaume digoin",
+        "idriss rachid",
+        "alexis cappe",
+        "mohamed jebali",
+        "alexandre thion de la chaume",
+        "julien smadja",
+        "virgile"
+      ],
+      "workstreams": [
+        {
+          "id": "ws-cma-pitch-icap",
+          "name": "Pitch RFP & Démo ICAP",
+          "phase": "Actif",
+          "summary": "Pitch oral du mardi 17/11, cadrage et démonstration live de l'agent ICAP dans MAIA",
+          "note": "CMA CGM Agent Builders/Pitch RFP & Démo ICAP.md"
+        },
+        {
+          "id": "ws-cma-delivery-waves",
+          "name": "Cadrage & Delivery Waves MAIA",
+          "phase": "Actif",
+          "summary": "Méthodologie en vagues de 6 semaines, industrialisation des agents L1/L2 et outillage transverse",
+          "note": "CMA CGM Agent Builders/Cadrage & Delivery Waves MAIA.md"
         }
       ]
     },
