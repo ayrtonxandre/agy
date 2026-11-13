@@ -1,20 +1,5 @@
 [
   {
-    "calendarDate": "2026-09-28",
-    "weeklyAvg": 71,
-    "lastNightAvg": 49,
-    "lastNight5MinHigh": 87,
-    "baseline": {
-      "lowUpper": 49,
-      "balancedLow": 57,
-      "balancedUpper": 103,
-      "markerValue": 0.40216064
-    },
-    "status": "BALANCED",
-    "feedbackPhrase": "HRV_BALANCED_2",
-    "createTimeStamp": "2026-09-28T06:14:07.487"
-  },
-  {
     "calendarDate": "2026-09-29",
     "weeklyAvg": 63,
     "lastNightAvg": 43,
@@ -628,5 +613,20 @@
     "status": "BALANCED",
     "feedbackPhrase": "HRV_BALANCED_2",
     "createTimeStamp": "2026-11-12T07:02:20.177"
+  },
+  {
+    "calendarDate": "2026-11-13",
+    "weeklyAvg": 63,
+    "lastNightAvg": 64,
+    "lastNight5MinHigh": 101,
+    "baseline": {
+      "lowUpper": 40,
+      "balancedLow": 48,
+      "balancedUpper": 90,
+      "markerValue": 0.42855835
+    },
+    "status": "BALANCED",
+    "feedbackPhrase": "HRV_BALANCED_2",
+    "createTimeStamp": "2026-11-13T06:03:12.274"
   }
 ]

@@ -1,5 +1,23 @@
 [
   {
+    "Activity_ID": 25062584382,
+    "Date": "2026-11-13",
+    "Start_Time": "2026-11-13 08:06:26",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Category": "CrossFit",
+    "Duration_min": 48.8,
+    "Calories_kcal": 497,
+    "Average_HR": 125.0,
+    "Max_HR": 183.0,
+    "Training_Effect_Label": "SPEED",
+    "Moderate_Intensity_Min": 20,
+    "Vigorous_Intensity_Min": 28,
+    "Steps": 1284,
+    "Distance_km": 0.0,
+    "Notes": "Strength\n3 Hang snatch - 65Lbs\n3 Hang snatch - 85Lbs\n3 Hang snatch - 95Lbs\n3 Hang snatch - 100Lbs\n\nWOD\n75 Power Snatchs - 55Lbs"
+  },
+  {
     "Activity_ID": 25042646802,
     "Date": "2026-11-11",
     "Start_Time": "2026-11-11 12:39:13",
@@ -734,23 +752,6 @@
     "Moderate_Intensity_Min": 17,
     "Vigorous_Intensity_Min": 27,
     "Steps": 1144,
-    "Distance_km": 0.0
-  },
-  {
-    "Activity_ID": 23524574947,
-    "Date": "2026-07-07",
-    "Start_Time": "2026-07-07 19:09:02",
-    "Activity_Name": "Cardio",
-    "Activity_Type": "indoor_cardio",
-    "Category": "CrossFit",
-    "Duration_min": 46.5,
-    "Calories_kcal": 503,
-    "Average_HR": 135.0,
-    "Max_HR": 170.0,
-    "Training_Effect_Label": "SPEED",
-    "Moderate_Intensity_Min": 14,
-    "Vigorous_Intensity_Min": 30,
-    "Steps": 1038,
     "Distance_km": 0.0
   }
 ]

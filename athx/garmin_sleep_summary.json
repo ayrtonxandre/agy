@@ -1,132 +1,5 @@
 [
   {
-    "id": 1791839474000,
-    "userProfilePK": 143713176,
-    "calendarDate": "2026-10-13",
-    "sleepTimeSeconds": 24720,
-    "napTimeSeconds": 0,
-    "sleepWindowConfirmed": true,
-    "sleepWindowConfirmationType": "enhanced_confirmed_final",
-    "sleepStartTimestampGMT": 1791839474000,
-    "sleepEndTimestampGMT": 1791864914000,
-    "sleepStartTimestampLocal": 1791846674000,
-    "sleepEndTimestampLocal": 1791872114000,
-    "autoSleepStartTimestampGMT": null,
-    "autoSleepEndTimestampGMT": null,
-    "sleepQualityTypePK": null,
-    "sleepResultTypePK": null,
-    "unmeasurableSleepSeconds": 0,
-    "deepSleepSeconds": 4380,
-    "lightSleepSeconds": 16380,
-    "remSleepSeconds": 3960,
-    "awakeSleepSeconds": 720,
-    "deviceRemCapable": true,
-    "retro": false,
-    "sleepFromDevice": true,
-    "averageSpO2Value": 99.0,
-    "lowestSpO2Value": 93,
-    "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": 65.0,
-    "spo2Threshold": null,
-    "averageRespirationValue": 15.0,
-    "lowestRespirationValue": 11.0,
-    "highestRespirationValue": 22.0,
-    "awakeCount": 1,
-    "avgSleepStress": 24.0,
-    "ageGroup": "ADULT",
-    "avgHeartRate": 64.0,
-    "sleepScoreFeedback": "POSITIVE_CALM",
-    "sleepScoreInsight": "NONE",
-    "sleepScorePersonalizedInsight": "GENERAL_POS_FAIR_OR_POOR_SLEEP",
-    "sleepScores": {
-      "totalDuration": {
-        "qualifierKey": "FAIR",
-        "optimalStart": 28800.0,
-        "optimalEnd": 28800.0
-      },
-      "stress": {
-        "qualifierKey": "FAIR",
-        "optimalStart": 0.0,
-        "optimalEnd": 15.0
-      },
-      "awakeCount": {
-        "qualifierKey": "GOOD",
-        "optimalStart": 0.0,
-        "optimalEnd": 1.0
-      },
-      "overall": {
-        "value": 75,
-        "qualifierKey": "FAIR"
-      },
-      "remPercentage": {
-        "value": 16,
-        "qualifierKey": "FAIR",
-        "optimalStart": 21.0,
-        "optimalEnd": 31.0,
-        "idealStartInSeconds": 5191.2,
-        "idealEndInSeconds": 7663.2
-      },
-      "restlessness": {
-        "qualifierKey": "EXCELLENT",
-        "optimalStart": 0.0,
-        "optimalEnd": 5.0
-      },
-      "lightPercentage": {
-        "value": 66,
-        "qualifierKey": "FAIR",
-        "optimalStart": 30.0,
-        "optimalEnd": 64.0,
-        "idealStartInSeconds": 7416.0,
-        "idealEndInSeconds": 15820.8
-      },
-      "deepPercentage": {
-        "value": 18,
-        "qualifierKey": "GOOD",
-        "optimalStart": 16.0,
-        "optimalEnd": 33.0,
-        "idealStartInSeconds": 3955.2,
-        "idealEndInSeconds": 8157.6
-      }
-    },
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": 2,
-    "sleepNeed": {
-      "userProfilePk": 143713176,
-      "calendarDate": "2026-10-13",
-      "deviceId": 3623138967,
-      "timestampGmt": "2026-10-12T18:53:14",
-      "baseline": 480,
-      "actual": 480,
-      "feedback": "NO_CHANGE_NO_ADJUSTMENTS",
-      "trainingFeedback": "NO_CHANGE",
-      "sleepHistoryAdjustment": "NO_DATA",
-      "hrvAdjustment": "NO_DATA",
-      "napAdjustment": "NO_CHANGE",
-      "displayedForTheDay": false,
-      "preferredActivityTracker": true
-    },
-    "nextSleepNeed": {
-      "userProfilePk": 143713176,
-      "calendarDate": "2026-10-14",
-      "deviceId": 3623138967,
-      "timestampGmt": "2026-10-13T05:18:16",
-      "baseline": 480,
-      "actual": 480,
-      "feedback": "NO_CHANGE_NO_ADJUSTMENTS",
-      "trainingFeedback": "NO_CHANGE",
-      "sleepHistoryAdjustment": "NO_CHANGE",
-      "hrvAdjustment": "NO_CHANGE",
-      "napAdjustment": "NO_CHANGE",
-      "displayedForTheDay": false,
-      "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
-  },
-  {
     "id": 1791923596000,
     "userProfilePK": 143713176,
     "calendarDate": "2026-10-14",
@@ -153,9 +26,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 88,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 58.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 8.0,
     "highestRespirationValue": 23.0,
@@ -216,8 +87,6 @@
         "idealEndInSeconds": 8415.0
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -249,9 +118,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1792009800000,
@@ -280,9 +147,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 90,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 55.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 9.0,
     "highestRespirationValue": 20.0,
@@ -343,8 +208,6 @@
         "idealEndInSeconds": 8652.6
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -376,9 +239,7 @@
       "displayedForTheDay": true,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1792097344000,
@@ -407,9 +268,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 93,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 55.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 10.0,
     "highestRespirationValue": 19.0,
@@ -470,8 +329,6 @@
         "idealEndInSeconds": 8570.43
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -503,9 +360,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": null,
@@ -530,24 +385,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-10-17",
@@ -577,10 +414,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": false,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": null,
@@ -605,24 +439,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-10-18",
@@ -652,10 +468,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": false,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": null,
@@ -680,24 +493,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-10-19",
@@ -727,10 +522,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": false,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": 1792442246000,
@@ -759,9 +551,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 92,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 66.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 16.0,
     "lowestRespirationValue": 9.0,
     "highestRespirationValue": 27.0,
@@ -822,8 +612,6 @@
         "idealEndInSeconds": 8332.5
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -855,9 +643,7 @@
       "displayedForTheDay": true,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": null,
@@ -882,24 +668,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-10-21",
@@ -929,10 +697,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": false,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": null,
@@ -957,24 +722,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-10-22",
@@ -1004,10 +751,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": false,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": 1792700486000,
@@ -1036,9 +780,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 94,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 55.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 9.0,
     "highestRespirationValue": 19.0,
@@ -1099,8 +841,6 @@
         "idealEndInSeconds": 8712.0
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -1132,9 +872,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1792787189000,
@@ -1163,9 +901,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 95,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 57.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 14.0,
     "lowestRespirationValue": 8.0,
     "highestRespirationValue": 19.0,
@@ -1226,8 +962,6 @@
         "idealEndInSeconds": 11223.63
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -1259,9 +993,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": null,
@@ -1286,24 +1018,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-10-25",
@@ -1333,10 +1047,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": false,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": 1792964925000,
@@ -1365,9 +1076,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 88,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 58.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 8.0,
     "highestRespirationValue": 20.0,
@@ -1428,8 +1137,6 @@
         "idealEndInSeconds": 7732.89
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -1461,9 +1168,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1793051824000,
@@ -1492,9 +1197,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 94,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 59.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 9.0,
     "highestRespirationValue": 20.0,
@@ -1555,8 +1258,6 @@
         "idealEndInSeconds": 8979.3
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -1588,9 +1289,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1793134920000,
@@ -1619,9 +1318,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 92,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 57.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 6.0,
     "highestRespirationValue": 20.0,
@@ -1682,8 +1379,6 @@
         "idealEndInSeconds": 9065.43
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -1715,9 +1410,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1793223951000,
@@ -1746,9 +1439,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 92,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 55.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 8.0,
     "highestRespirationValue": 20.0,
@@ -1809,8 +1500,6 @@
         "idealEndInSeconds": 9041.01
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -1842,9 +1531,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1793310506000,
@@ -1873,9 +1560,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 92,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 57.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 10.0,
     "highestRespirationValue": 21.0,
@@ -1936,8 +1621,6 @@
         "idealEndInSeconds": 8353.29
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -1969,9 +1652,7 @@
       "displayedForTheDay": true,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": null,
@@ -1996,24 +1677,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-10-31",
@@ -2043,10 +1706,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": false,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": null,
@@ -2071,24 +1731,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-11-01",
@@ -2118,10 +1760,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": false,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": null,
@@ -2146,24 +1785,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-11-02",
@@ -2193,10 +1814,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": false,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": null,
@@ -2221,24 +1839,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-11-03",
@@ -2268,10 +1868,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": false,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": 1793740845000,
@@ -2300,9 +1897,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 95,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 66.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 7.0,
     "highestRespirationValue": 23.0,
@@ -2363,8 +1958,6 @@
         "idealEndInSeconds": 8118.0
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -2396,9 +1989,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1793829258000,
@@ -2427,9 +2018,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 95,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 63.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 8.0,
     "highestRespirationValue": 24.0,
@@ -2490,8 +2079,6 @@
         "idealEndInSeconds": 9760.41
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -2523,9 +2110,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1793916715000,
@@ -2554,9 +2139,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 94,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 62.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 9.0,
     "highestRespirationValue": 20.0,
@@ -2617,8 +2200,6 @@
         "idealEndInSeconds": 7651.05
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -2666,8 +2247,7 @@
         "updateTimestampGMT": null
       }
     ],
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1794002413000,
@@ -2696,9 +2276,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 90,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 59.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 14.0,
     "lowestRespirationValue": 8.0,
     "highestRespirationValue": 19.0,
@@ -2759,8 +2337,6 @@
         "idealEndInSeconds": 10652.4
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -2792,9 +2368,7 @@
       "displayedForTheDay": true,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1794089239000,
@@ -2823,9 +2397,7 @@
     "averageSpO2Value": 98.0,
     "lowestSpO2Value": 77,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 59.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 10.0,
     "highestRespirationValue": 21.0,
@@ -2886,8 +2458,6 @@
         "idealEndInSeconds": 10428.99
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -2919,9 +2489,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1794171609000,
@@ -2950,9 +2518,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 92,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 57.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 10.0,
     "highestRespirationValue": 20.0,
@@ -3013,8 +2579,6 @@
         "idealEndInSeconds": 9167.4
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -3046,9 +2610,7 @@
       "displayedForTheDay": false,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": null,
@@ -3073,24 +2635,6 @@
     "awakeSleepSeconds": null,
     "deviceRemCapable": false,
     "retro": false,
-    "sleepFromDevice": null,
-    "averageSpO2Value": null,
-    "lowestSpO2Value": null,
-    "highestSpO2Value": null,
-    "numberOfEventsBelowThreshold": null,
-    "averageSpO2HRSleep": null,
-    "spo2Threshold": null,
-    "averageRespirationValue": null,
-    "lowestRespirationValue": null,
-    "highestRespirationValue": null,
-    "awakeCount": null,
-    "avgSleepStress": null,
-    "ageGroup": null,
-    "avgHeartRate": null,
-    "sleepScorePersonalizedInsight": null,
-    "userNote": null,
-    "kidSleepNote": null,
-    "sleepVersion": null,
     "sleepNeed": {
       "userProfilePk": 143713176,
       "calendarDate": "2026-11-10",
@@ -3120,10 +2664,7 @@
       "napAdjustment": "NO_CHANGE",
       "displayedForTheDay": true,
       "preferredActivityTracker": true
-    },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": null,
-    "sleepAlignment": null
+    }
   },
   {
     "id": 1794351767000,
@@ -3152,9 +2693,7 @@
     "averageSpO2Value": 100.0,
     "lowestSpO2Value": 95,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 58.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 15.0,
     "lowestRespirationValue": 8.0,
     "highestRespirationValue": 20.0,
@@ -3215,8 +2754,6 @@
         "idealEndInSeconds": 10157.4
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -3248,9 +2785,7 @@
       "displayedForTheDay": true,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
   },
   {
     "id": 1794436841000,
@@ -3279,9 +2814,7 @@
     "averageSpO2Value": 99.0,
     "lowestSpO2Value": 94,
     "highestSpO2Value": 100,
-    "numberOfEventsBelowThreshold": null,
     "averageSpO2HRSleep": 62.0,
-    "spo2Threshold": null,
     "averageRespirationValue": 16.0,
     "lowestRespirationValue": 7.0,
     "highestRespirationValue": 20.0,
@@ -3342,8 +2875,6 @@
         "idealEndInSeconds": 9009.0
       }
     },
-    "userNote": null,
-    "kidSleepNote": null,
     "sleepVersion": 2,
     "sleepNeed": {
       "userProfilePk": 143713176,
@@ -3375,8 +2906,127 @@
       "displayedForTheDay": true,
       "preferredActivityTracker": true
     },
-    "dailyNapDTOS": null,
-    "breathingDisruptionSeverity": "NONE",
-    "sleepAlignment": null
+    "breathingDisruptionSeverity": "NONE"
+  },
+  {
+    "id": 1794521503000,
+    "userProfilePK": 143713176,
+    "calendarDate": "2026-11-13",
+    "sleepTimeSeconds": 25980,
+    "napTimeSeconds": 0,
+    "sleepWindowConfirmed": true,
+    "sleepWindowConfirmationType": "enhanced_confirmed_final",
+    "sleepStartTimestampGMT": 1794521503000,
+    "sleepEndTimestampGMT": 1794549283000,
+    "sleepStartTimestampLocal": 1794525103000,
+    "sleepEndTimestampLocal": 1794552883000,
+    "autoSleepStartTimestampGMT": null,
+    "autoSleepEndTimestampGMT": null,
+    "sleepQualityTypePK": null,
+    "sleepResultTypePK": null,
+    "unmeasurableSleepSeconds": 0,
+    "deepSleepSeconds": 5100,
+    "lightSleepSeconds": 16680,
+    "remSleepSeconds": 4200,
+    "awakeSleepSeconds": 1800,
+    "deviceRemCapable": true,
+    "retro": false,
+    "sleepFromDevice": true,
+    "averageSpO2Value": 99.0,
+    "lowestSpO2Value": 87,
+    "highestSpO2Value": 100,
+    "averageSpO2HRSleep": 58.0,
+    "averageRespirationValue": 15.0,
+    "lowestRespirationValue": 10.0,
+    "highestRespirationValue": 20.0,
+    "awakeCount": 1,
+    "avgSleepStress": 16.0,
+    "ageGroup": "ADULT",
+    "avgHeartRate": 59.0,
+    "sleepScoreFeedback": "POSITIVE_LONG_AND_DEEP",
+    "sleepScoreInsight": "POSITIVE_EXERCISE",
+    "sleepScorePersonalizedInsight": "MOD_EXERCISE_POS_FAIR_SLEEP_MOD_TO_VIG_DURING_DAY",
+    "sleepScores": {
+      "totalDuration": {
+        "qualifierKey": "GOOD",
+        "optimalStart": 28800.0,
+        "optimalEnd": 28800.0
+      },
+      "stress": {
+        "qualifierKey": "GOOD",
+        "optimalStart": 0.0,
+        "optimalEnd": 15.0
+      },
+      "awakeCount": {
+        "qualifierKey": "FAIR",
+        "optimalStart": 0.0,
+        "optimalEnd": 1.0
+      },
+      "overall": {
+        "value": 78,
+        "qualifierKey": "FAIR"
+      },
+      "remPercentage": {
+        "value": 16,
+        "qualifierKey": "FAIR",
+        "optimalStart": 21.0,
+        "optimalEnd": 31.0,
+        "idealStartInSeconds": 5455.8,
+        "idealEndInSeconds": 8053.8
+      },
+      "restlessness": {
+        "qualifierKey": "FAIR",
+        "optimalStart": 0.0,
+        "optimalEnd": 5.0
+      },
+      "lightPercentage": {
+        "value": 64,
+        "qualifierKey": "GOOD",
+        "optimalStart": 30.0,
+        "optimalEnd": 64.0,
+        "idealStartInSeconds": 7794.0,
+        "idealEndInSeconds": 16627.2
+      },
+      "deepPercentage": {
+        "value": 20,
+        "qualifierKey": "EXCELLENT",
+        "optimalStart": 16.0,
+        "optimalEnd": 33.0,
+        "idealStartInSeconds": 4156.8,
+        "idealEndInSeconds": 8573.4
+      }
+    },
+    "sleepVersion": 2,
+    "sleepNeed": {
+      "userProfilePk": 143713176,
+      "calendarDate": "2026-11-13",
+      "deviceId": 3623138967,
+      "timestampGmt": "2026-11-12T12:34:43",
+      "baseline": 480,
+      "actual": 510,
+      "feedback": "INCREASED",
+      "trainingFeedback": "HIGH_ACWR_AND_CHRONIC",
+      "sleepHistoryAdjustment": "NO_CHANGE",
+      "hrvAdjustment": "NO_CHANGE",
+      "napAdjustment": "NO_CHANGE",
+      "displayedForTheDay": true,
+      "preferredActivityTracker": true
+    },
+    "nextSleepNeed": {
+      "userProfilePk": 143713176,
+      "calendarDate": "2026-11-14",
+      "deviceId": 3623138967,
+      "timestampGmt": "2026-11-13T07:55:15",
+      "baseline": 480,
+      "actual": 500,
+      "feedback": "INCREASED",
+      "trainingFeedback": "HIGH_ACWR_AND_CHRONIC",
+      "sleepHistoryAdjustment": "NO_CHANGE",
+      "hrvAdjustment": "NO_CHANGE",
+      "napAdjustment": "NO_CHANGE",
+      "displayedForTheDay": true,
+      "preferredActivityTracker": true
+    },
+    "breathingDisruptionSeverity": "NONE"
   }
 ]
