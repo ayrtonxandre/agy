@@ -278,6 +278,8 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     "Single Arm Dumbbell Snatch": "Full Body",
     "Single Arm DB Snatch": "Full Body",
     "Dumbbell Snatch": "Full Body",
+    "Power Snatch": "Full Body",
+    "Power Snatches": "Full Body",
     "Dumbbell Burpee Deadlift": "Full Body",
     "Dumbbell Burpees Deadlifts": "Full Body",
     "Burpee Deadlift": "Full Body",
@@ -360,10 +362,10 @@ EXERCISE_COMPOUND_VOLUME: dict[str, dict[str, float]] = {
     "Wall Ball": {"Quads": 1.0, "Shoulders": 0.75},
 
     # Posterior Chain Compounds: Hamstring/Glute hinge + isometric back/lat pull
-    "Barbell Deadlift": {"Hamstrings/Glutes": 1.0, "Lats/Back": 0.75},
-    "Deadlift": {"Hamstrings/Glutes": 1.0, "Lats/Back": 0.75},
-    "Sumo Deadlift": {"Hamstrings/Glutes": 1.0, "Quads": 0.5},
-    "Sumo Deadlift High Pull": {"Hamstrings/Glutes": 0.75, "Shoulders": 0.75, "Lats/Back": 0.5},
+    "Barbell Deadlift": {"Hamstrings/Glutes": 1.0, "Lats/Back": 0.75, "Forearms": 0.5},
+    "Deadlift": {"Hamstrings/Glutes": 1.0, "Lats/Back": 0.75, "Forearms": 0.5},
+    "Sumo Deadlift": {"Hamstrings/Glutes": 1.0, "Quads": 0.5, "Forearms": 0.5},
+    "Sumo Deadlift High Pull": {"Hamstrings/Glutes": 0.75, "Shoulders": 0.75, "Lats/Back": 0.5, "Forearms": 0.5},
     "Kettlebell Swing": {"Hamstrings/Glutes": 1.0, "Core": 0.25},
 
     # Squat & Lunge Compounds: Prime Quad mover + secondary glute/adductor stimulus
@@ -420,9 +422,18 @@ EXERCISE_COMPOUND_VOLUME: dict[str, dict[str, float]] = {
     "T-Bar Row": {"Lats/Back": 1.0, "Biceps": 0.5},
 
     # Olympic & Explosive Full-Body
-    "Snatch": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.5, "Lats/Back": 0.5},
-    "Single Arm Dumbbell Snatch": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.25},
-    "Clean": {"Quads": 0.5, "Hamstrings/Glutes": 0.5, "Lats/Back": 0.5},
+    "Snatch": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.5, "Lats/Back": 0.5, "Forearms": 0.75},
+    "Power Snatch": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.5, "Lats/Back": 0.5, "Forearms": 0.75},
+    "Power Snatches": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.5, "Lats/Back": 0.5, "Forearms": 0.75},
+    "Hang Snatch": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.5, "Lats/Back": 0.5, "Forearms": 0.75},
+    "Hang Snatches": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.5, "Lats/Back": 0.5, "Forearms": 0.75},
+    "Hang Power Snatch": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.5, "Lats/Back": 0.5, "Forearms": 0.75},
+    "Single Arm Dumbbell Snatch": {"Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Quads": 0.25, "Forearms": 0.5},
+    "Clean": {"Quads": 0.5, "Hamstrings/Glutes": 0.5, "Lats/Back": 0.5, "Forearms": 0.5},
+    "Power Clean": {"Quads": 0.5, "Hamstrings/Glutes": 0.5, "Lats/Back": 0.5, "Forearms": 0.5},
+    "Hang Clean": {"Quads": 0.5, "Hamstrings/Glutes": 0.5, "Lats/Back": 0.5, "Forearms": 0.5},
+    "Squat Clean": {"Quads": 0.5, "Hamstrings/Glutes": 0.5, "Lats/Back": 0.5, "Forearms": 0.5},
+    "Clean and Jerk": {"Quads": 0.5, "Hamstrings/Glutes": 0.5, "Shoulders": 0.5, "Lats/Back": 0.5, "Forearms": 0.5},
     "Devil Press": {"Shoulders": 0.75, "Hamstrings/Glutes": 0.5, "Chest": 0.5},
     "Single Arm Dumbbells Devil Press": {"Shoulders": 0.75, "Hamstrings/Glutes": 0.5, "Chest": 0.5},
     "Burpee": {"Quads": 0.35, "Chest": 0.35, "Core": 0.3},

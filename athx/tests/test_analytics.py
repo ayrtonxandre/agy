@@ -113,6 +113,23 @@ class TestATHXSportsScience(unittest.TestCase):
         self.assertEqual(sets[0]["Reps"], 1000)
         self.assertEqual(sets[0]["Session_Type"], "Legs")
 
+    def test_snatch_and_forearm_targeting(self):
+        """Confirms 'Power Snatchs' note typo maps to Snatch and credits Forearms compound volume."""
+        import garmin_note_parser
+        import athx_config
+        sets, parsed = garmin_note_parser.convert_note_to_strength_records(
+            25062584382, "2026-11-13", "CrossFit", "75 Power Snatchs - 55Lbs"
+        )
+        self.assertEqual(len(sets), 1)
+        self.assertEqual(sets[0]["Exercise"], "Snatch")
+        self.assertEqual(sets[0]["Reps"], 75)
+        self.assertAlmostEqual(sets[0]["Weight_kg"], 24.9, places=1)
+
+        # Check compound volume targets Forearms
+        snatch_comp = athx_config.EXERCISE_COMPOUND_VOLUME.get("Snatch", {})
+        self.assertIn("Forearms", snatch_comp)
+        self.assertGreater(snatch_comp["Forearms"], 0.0)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
