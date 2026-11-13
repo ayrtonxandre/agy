@@ -17,11 +17,11 @@
 
 ## 3. ⚠️ Critical Deficit & Fatigue Alerts
 - **Volume Starvation**: Chest: 5.9 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Lats/Back: 7.9 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Quads: 5.5 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Hamstrings/Glutes: 5.5 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Lats/Back: 8.1 sets/wk (Deficit vs MEV 10.0)
+- **Volume Starvation**: Quads: 5.7 sets/wk (Deficit vs MEV 8.0)
+- **Volume Starvation**: Hamstrings/Glutes: 5.7 sets/wk (Deficit vs MEV 6.0)
 - **Volume Starvation**: Biceps: 5.6 sets/wk (Deficit vs MEV 6.0)
-- **Volume Starvation**: Forearms: 1.1 sets/wk (Deficit vs MEV 4.0)
+- **Volume Starvation**: Forearms: 3.2 sets/wk (Deficit vs MEV 4.0)
 - **Acute:Chronic Workload Ratio (ACWR)**: `1.33` (Elevated Fatigue Risk). Acute load is 4,718.4 kg vs chronic baseline 3,559.2 kg. Foster training monotony is `1.09`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
 - **Sleep & Recovery**: 7-day average sleep duration is `7.1 hrs` with a composite readiness score of `98.7%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
