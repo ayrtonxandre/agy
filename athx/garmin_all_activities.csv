@@ -1,4 +1,17 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect,Notes
+25079358680,2026-11-14,2026-11-14 16:23:23,CrossFit,indoor_cardio,Cardio / Cross-Training,68.6,0.0,822,140.0,183.0,SPEED,"Part A
+2 rounds
+15 push press - 95 Lbs
+Rowing - 20 Cal
+Burpees over bar - 20
+1 round 
+10 push press - 95 Lbs
+
+Part B
+3 rounds
+10 deadlifts - 220Lbs
+Bike - 15 Cal
+25 Push ups"
 25062584382,2026-11-13,2026-11-13 08:06:26,CrossFit,indoor_cardio,Cardio / Cross-Training,48.8,0.0,497,125.0,183.0,SPEED,"Strength
 3 Hang snatch - 65Lbs
 3 Hang snatch - 85Lbs
@@ -241,4 +254,3 @@ Puis:
 23550915169,2026-07-10,2026-07-10 19:30:09,Cardio,indoor_cardio,Cardio / Cross-Training,60.3,0.0,794,151.0,193.0,SPEED,
 23543150524,2026-07-10,2026-07-10 06:35:01,Strength,strength_training,Strength,49.8,0.0,377,115.0,146.0,ANAEROBIC_CAPACITY,
 23538715400,2026-07-09,2026-07-09 19:05:56,Cardio,indoor_cardio,Cardio / Cross-Training,49.9,0.0,471,127.0,184.0,SPEED,
-23524575402,2026-07-08,2026-07-08 08:12:07,Strength,strength_training,Strength,53.0,0.0,429,120.0,160.0,ANAEROBIC_CAPACITY,

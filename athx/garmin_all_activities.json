@@ -1,5 +1,20 @@
 [
   {
+    "Activity_ID": 25079358680,
+    "Date": "2026-11-14",
+    "Start_Time": "2026-11-14 16:23:23",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 68.6,
+    "Distance_km": 0.0,
+    "Calories_kcal": 822,
+    "Average_HR": 140.0,
+    "Max_HR": 183.0,
+    "Training_Effect": "SPEED",
+    "Notes": "Part A\n2 rounds\n15 push press - 95 Lbs\nRowing - 20 Cal\nBurpees over bar - 20\n1 round \n10 push press - 95 Lbs\n\nPart B\n3 rounds\n10 deadlifts - 220Lbs\nBike - 15 Cal\n25 Push ups"
+  },
+  {
     "Activity_ID": 25062584382,
     "Date": "2026-11-13",
     "Start_Time": "2026-11-13 08:06:26",
@@ -599,7 +614,7 @@
     "Activity_ID": 24495020352,
     "Date": "2026-09-25",
     "Start_Time": "2026-09-25 16:43:00",
-    "Activity_Name": "🏋️ ATHX 2027: Push & Shoulders (S2O) [65kg / 45kg / 20kg]",
+    "Activity_Name": "\ud83c\udfcb\ufe0f ATHX 2027: Push & Shoulders (S2O) [65kg / 45kg / 20kg]",
     "Activity_Type": "strength_training",
     "Primary_Category": "Strength",
     "Duration_min": 54.5,
@@ -1395,19 +1410,5 @@
     "Average_HR": 127.0,
     "Max_HR": 184.0,
     "Training_Effect": "SPEED"
-  },
-  {
-    "Activity_ID": 23524575402,
-    "Date": "2026-07-08",
-    "Start_Time": "2026-07-08 08:12:07",
-    "Activity_Name": "Strength",
-    "Activity_Type": "strength_training",
-    "Primary_Category": "Strength",
-    "Duration_min": 53.0,
-    "Distance_km": 0.0,
-    "Calories_kcal": 429,
-    "Average_HR": 120.0,
-    "Max_HR": 160.0,
-    "Training_Effect": "ANAEROBIC_CAPACITY"
   }
 ]

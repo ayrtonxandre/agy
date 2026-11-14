@@ -1,5 +1,23 @@
 [
   {
+    "Activity_ID": 25079358680,
+    "Date": "2026-11-14",
+    "Start_Time": "2026-11-14 16:23:23",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Category": "CrossFit",
+    "Duration_min": 68.6,
+    "Calories_kcal": 822,
+    "Average_HR": 140.0,
+    "Max_HR": 183.0,
+    "Training_Effect_Label": "SPEED",
+    "Moderate_Intensity_Min": 15,
+    "Vigorous_Intensity_Min": 51,
+    "Steps": 2180,
+    "Distance_km": 0.0,
+    "Notes": "Part A\n2 rounds\n15 push press - 95 Lbs\nRowing - 20 Cal\nBurpees over bar - 20\n1 round \n10 push press - 95 Lbs\n\nPart B\n3 rounds\n10 deadlifts - 220Lbs\nBike - 15 Cal\n25 Push ups"
+  },
+  {
     "Activity_ID": 25062584382,
     "Date": "2026-11-13",
     "Start_Time": "2026-11-13 08:06:26",
