@@ -130,6 +130,37 @@ class TestATHXSportsScience(unittest.TestCase):
         self.assertIn("Forearms", snatch_comp)
         self.assertGreater(snatch_comp["Forearms"], 0.0)
 
+    def test_hyphenated_rep_parsing_and_saturday_wod(self):
+        """Confirms 'Burpees over bar - 20' correctly parses 20 reps rather than defaulting to 10."""
+        import garmin_note_parser
+        note = """Part A
+2 rounds
+15 push press - 95 Lbs
+Rowing - 20 Cal
+Burpees over bar - 20
+1 round 
+10 push press - 95 Lbs
+
+Part B
+3 rounds
+10 deadlifts - 220Lbs
+Bike - 15 Cal
+25 Push ups"""
+        sets, parsed = garmin_note_parser.convert_note_to_strength_records(
+            25079358680, "2026-11-14", "CrossFit", note
+        )
+        self.assertEqual(len(sets), 11)
+        burpee_sets = [s for s in sets if s["Exercise"] == "Burpee"]
+        self.assertEqual(len(burpee_sets), 2)
+        for bs in burpee_sets:
+            self.assertEqual(bs["Reps"], 20, "Burpees over bar - 20 must parse exactly 20 reps per round")
+
+        deadlift_sets = [s for s in sets if s["Exercise"] == "Deadlift"]
+        self.assertEqual(len(deadlift_sets), 3)
+        for ds in deadlift_sets:
+            self.assertEqual(ds["Reps"], 10)
+            self.assertAlmostEqual(ds["Weight_kg"], 99.8, places=1)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

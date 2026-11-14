@@ -326,18 +326,19 @@ def normalize_exercise_name(raw_name: str) -> str:
     cleaned = re.sub(r"\s+(?:low\s*bar|high\s*bar|on\s+rings?|on\s+bar|rings?)\b", "", cleaned)
     cleaned = re.sub(r"\bso\s+\d+.*$", "", cleaned)
     cleaned = re.sub(r"\blegs\b", "leg", cleaned)
-    cleaned = cleaned.strip()
+    cleaned = cleaned.strip(" \t\n\r,-:@_")
     
     if cleaned in EXERCISE_ALIASES:
         return EXERCISE_ALIASES[cleaned]
-    if raw_name.strip().lower() in EXERCISE_ALIASES:
-        return EXERCISE_ALIASES[raw_name.strip().lower()]
+    raw_cleaned = raw_name.strip(" \t\n\r,-:@_").lower()
+    if raw_cleaned in EXERCISE_ALIASES:
+        return EXERCISE_ALIASES[raw_cleaned]
         
     for ex in athx_config.EXERCISE_MUSCLE_MAP:
         if cleaned == ex.lower() or cleaned == ex.lower() + "s":
             return ex
             
-    return raw_name.strip().title()
+    return raw_name.strip(" \t\n\r,-:@_").title()
 
 
 def is_modifier_segment(segment: str) -> bool:
@@ -361,8 +362,8 @@ def is_modifier_segment(segment: str) -> bool:
     if re.match(r"^(?:\d+:[0-5]\d(?:\s*mins?)?|\d+(?:[.,]\d+)?\s*(?:s|sec|secs|seconds?|min|mins|minutes?))\b$", s, re.I):
         return True
 
-    # Reps: e.g. "15 reps", "15x"
-    if re.match(r"^\d+\s*(?:reps?|x)\b$", s, re.I):
+    # Reps: e.g. "15 reps", "15x", or plain number like "20"
+    if re.match(r"^\d+\s*(?:reps?|x)?$", s, re.I):
         return True
 
     return False
@@ -557,15 +558,15 @@ def parse_single_movement(sm: str, default_sets: int = 1) -> dict[str, Any] | No
             m_rep = re.match(r"^(\d+)\s*(?:reps?|x)?\s+(.*)$", rem, re.IGNORECASE)
             if m_rep:
                 reps = int(m_rep.group(1))
-                raw_name = m_rep.group(2).strip()
+                raw_name = m_rep.group(2).strip(" ,-:@_")
             else:
-                m_rev = re.match(r"^(.*?)\s+(\d+)\s*(?:reps?|x)?$", rem, re.IGNORECASE)
+                m_rev = re.match(r"^(.*?)(?:\s*[-:@_]\s*|\s+)(\d+)\s*(?:reps?|x)?$", rem, re.IGNORECASE)
                 if m_rev:
                     reps = int(m_rev.group(2))
-                    raw_name = m_rev.group(1).strip()
+                    raw_name = m_rev.group(1).strip(" ,-:@_")
                 else:
                     reps = sum(clusters) if clusters else 10
-                    raw_name = rem
+                    raw_name = rem.strip(" ,-:@_")
 
     if clusters and not reps:
         reps = sum(clusters)
