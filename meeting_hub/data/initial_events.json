@@ -1,68 +1,5 @@
 [
   {
-    "id": "_84r48dq48cp30b9g8l1jgb9k74ojaba18p2j0b9j8p13ch1j6h2jiea56c",
-    "source": "🍏 Personal (Ma vie)",
-    "summary": "Rendez-vous chez Cabinet infirmier Danse et Tassin",
-    "start": "2026-10-31T12:35:00+01:00",
-    "end": "2026-10-31T12:40:00+01:00",
-    "location": "25 Rue Bergère, 75009 Paris",
-    "description": "Informations pratiques :\n* Au 1er étage sans ascenseur\n* Sans ascenseur\n* Code : 25B09\n\nAutres informations :\n* Bâtiment tout au fond de la cour, entresol\n\nPour annuler ou déplacer votre RDV, cliquez sur le lien ci-dessous :\nhttps://www.doctolib.fr/guest_access/oWQzUoUw?anonymous_origin=ics_attachment\n\nVia Doctolib",
-    "video_link": "",
-    "html_link": "https://www.google.com/calendar/event?eid=Xzg0cjQ4ZHE0OGNwMzBiOWc4bDFqZ2I5azc0b2phYmExOHAyajBiOWo4cDEzY2gxajZoMmppZWE1NmMgMXA2NHZ0a3JuYnZjYzhiNjE3aGx0amU5aDc0OGQ2c2VAaQ",
-    "attendees": [],
-    "organizer": {
-      "name": "Ma vie",
-      "email": "1p64vtkrnbvcc8b617hltje9h748d6se@import.calendar.google.com",
-      "self": true
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "",
-    "colorTag": ""
-  },
-  {
-    "id": "r5eh4321u0cliesjctmk4q80hk_20261031T151500Z",
-    "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: CrossFit Big WOD",
-    "start": "2026-10-31T16:15:00+01:00",
-    "end": "2026-10-31T17:45:00+01:00",
-    "location": "CrossFit Box",
-    "description": "",
-    "video_link": "",
-    "html_link": "https://www.google.com/calendar/event?eid=cjVlaDQzMjF1MGNsaWVzamN0bWs0cTgwaGtfMjAyNjEwMzFUMTUxNTAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
-    "attendees": [],
-    "organizer": {
-      "name": "Ayrton Andre",
-      "email": "ayrton.andre@artefact.com",
-      "self": true
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "8",
-    "colorTag": "Me-time"
-  },
-  {
-    "id": "tqd3a0td1dv5vi13vck5rsepkk_20261101T083000Z",
-    "source": "ATHX (Training)",
-    "summary": "🏃 ATHX Run 3: Lighter Zone 2 5K (Active Recovery)",
-    "start": "2026-11-01T09:30:00+01:00",
-    "end": "2026-11-01T10:15:00+01:00",
-    "location": "Park / Easy Trail",
-    "description": "Distance: Exactly 5.0 km easy continuous run @ 5:50–6:20/km\n• Heart Rate: Strictly Zone 2 (<140 bpm, conversational)\n• Purpose: Active recovery flush, bringing weekly mileage to ~17 km\n• Follow with 20 min hip/ankle mobility.",
-    "video_link": "",
-    "html_link": "https://www.google.com/calendar/event?eid=dHFkM2EwdGQxZHY1dmkxM3ZjazVyc2Vwa2tfMjAyNjExMDFUMDgzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
-    "attendees": [],
-    "organizer": {
-      "name": "Ayrton Andre",
-      "email": "ayrton.andre@artefact.com",
-      "self": true
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "8",
-    "colorTag": "Me-time"
-  },
-  {
     "id": "c65jvfilisr5pk41ug4j8td30k_20261102",
     "source": "Clariane (Client)",
     "summary": "Clariane (Office)",
@@ -187,11 +124,11 @@
   {
     "id": "62qd0ee1tmr4q1j7mtv6brn0bk_20261103T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",
+    "summary": "🏋️ ATHX 2027: Gym Session A (Squats & S2O Overhead Power)",
     "start": "2026-11-03T06:30:00+01:00",
     "end": "2026-11-03T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session A (Squat, Quads & Lower Hypertrophy)\nTarget: Resolve critical quad volume deficit (elevate from 4.1 to 10+ sets/wk) to target 125 kg Back Squat.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat (4 sets x 5–6 reps @ 75–80% e1RM): 75–80 kg (Target e1RM: 93+ kg)\n2. Bulgarian Split Squats (Dumbbell) (3 sets x 8 reps/leg): 16–20 kg DBs\n3. Leg Press or Hack Squat (3 sets x 10–12 reps): 120–140 kg\n4. Lying or Seated Leg Curl (3 sets x 10–12 reps): 40–50 kg\n5. Standing Calf Raises + Hanging Knee/Leg Raises (3 sets x 15 reps)\n\n⏱️ Rest: 2–3 min on Back Squat; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session A (Squats & S2O Overhead Power)\nRationale: Quads at 4.5 sets/wk vs MEV 8.0. Target +1.25 kg/wk progression to eliminate the -38.7 kg squat deficit.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat: 4 × 6 @ 77.5–82.5 kg (75–80% e1RM)\n2. Bulgarian Split Squat: 3 × 8 / leg @ 2 × 18–22 kg DBs\n3. Shoulder-to-Overhead (Push Press): 4 × 5 @ 45–50 kg (dip-drive & explosive lockout)\n4. Leg Extension: 3 × 12–15 @ RPE 8.5–9 (strict quad hypertrophy)\n5. Hanging Leg Raises / Ab Wheel: 3 × 12–15\n\n⏱️ Rest: 2–3 min on Back Squat & Push Press; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=NjJxZDBlZTF0bXI0cTFqN210djZicm4wYmtfMjAyNjExMDNUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -380,60 +317,6 @@
     "is_all_day": false,
     "colorId": "2",
     "colorTag": "[COUNSELING/HR]"
-  },
-  {
-    "id": "78up8ii84m9utceu5gnu0dlt81",
-    "source": "Leclerc Siplec (Client)",
-    "summary": "Échange mission Leclerc ",
-    "start": "2026-11-04T11:30:00+01:00",
-    "end": "2026-11-04T12:00:00+01:00",
-    "location": "FR-Paris-Richer-Floor 5-Building 1-JARVIS-8p (8) [TV Screen, Visio Conference]",
-    "description": "",
-    "video_link": "https://meet.google.com/cti-dfei-jhf",
-    "html_link": "https://www.google.com/calendar/event?eid=Nzh1cDhpaTg0bTl1dGNldTVnbnUwZGx0ODEgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
-    "attendees": [
-      {
-        "name": "FR-Paris-Richer-Floor 5-Building 1-JARVIS-8p (8) [TV Screen, Visio Conference]",
-        "email": "c_188338utmi65mjhtloa35qa1mcqu4@resource.calendar.google.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": true,
-        "optional": false
-      },
-      {
-        "name": "Qing Zhou",
-        "email": "qing.zhou@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Ayrton Andre",
-        "email": "ayrton.andre@artefact.com",
-        "status": "accepted",
-        "self": true,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Jerome Harousseau",
-        "email": "jerome.harousseau@artefact.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": true
-      }
-    ],
-    "organizer": {
-      "name": "Qing Zhou",
-      "email": "qing.zhou@artefact.com",
-      "self": false
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "7",
-    "colorTag": "[MAIN MISSION]"
   },
   {
     "id": "2kr7lv63poukdc3c5qhqqkiubs_20261104T113000Z",
@@ -688,11 +571,11 @@
   {
     "id": "1iris9llq3bqjgr7o7b65bdrs8_20261105T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Upper S2O)",
+    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)",
     "start": "2026-11-05T06:30:00+01:00",
     "end": "2026-11-05T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Overhead S2O)\nTarget: Resolve posterior chain deficit (elevate from 1.9 to 8+ sets/wk) for 160 kg Deadlift and build S2O drive toward 65 kg standard.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional Deadlift / RDL (4 sets x 5 reps @ 75–80%): 105–115 kg (Target e1RM: 125+ kg)\n2. Barbell Push Press / Strict Press (4 sets x 5 reps): 40–45 kg (Dip-drive & lockout for S2O)\n3. Chest-Supported Barbell / T-Bar Row (3 sets x 8–10 reps): 50–60 kg\n4. Incline Dumbbell Bench Press (3 sets x 8–10 reps): 22–26 kg DBs\n5. Heavy Dumbbell Farmer's Walk / Sandbag Hold (3 sets x 45s): 2x26–30 kg DBs\n6. Biceps Curls + Cable Lateral Raises (3 sets x 12 reps)\n\n⏱️ Rest: 2–3 min on Deadlift/Push Press; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)\nRationale: Closes deadlift gap (-28 kg) & maintains 104 kg bench press without junk fatigue.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional / Trap Bar Deadlift: 4 × 5 @ 75–80% e1RM (115–125 kg)\n2. Barbell Bench Press: 3 × 6–8 @ 75–80 kg (preserve 104 kg e1RM)\n3. Romanian Deadlift (RDL): 3 × 8–10 @ 80–90 kg\n4. Weighted Pull-ups: 3 × 6–8 (+10 to +15 kg)\n5. Heavy Sandbag / Farmer Carries: 3 × 40 m (50 kg bag / KBs)\n\n⏱️ Rest: 2–3 min on Deadlifts & Bench; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=MWlyaXM5bGxxM2JxamdyN283YjY1YmRyczhfMjAyNjExMDVUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -1666,60 +1549,6 @@
     "colorTag": ""
   },
   {
-    "id": "42kupcop25dhj3n6l20hgjgemj",
-    "source": "Leclerc Siplec (Client)",
-    "summary": "Préparation entretien Siplec ",
-    "start": "2026-11-06T17:00:00+01:00",
-    "end": "2026-11-06T17:30:00+01:00",
-    "location": "",
-    "description": "",
-    "video_link": "https://meet.google.com/qtg-nosc-ddg",
-    "html_link": "https://www.google.com/calendar/event?eid=NDJrdXBjb3AyNWRoajNuNmwyMGhnamdlbWogYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
-    "attendees": [
-      {
-        "name": "Qing Zhou",
-        "email": "qing.zhou@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Juliette Lacroix",
-        "email": "juliette.lacroix@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Ayrton Andre",
-        "email": "ayrton.andre@artefact.com",
-        "status": "accepted",
-        "self": true,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Jerome Harousseau",
-        "email": "jerome.harousseau@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      }
-    ],
-    "organizer": {
-      "name": "Jerome Harousseau",
-      "email": "jerome.harousseau@artefact.com",
-      "self": false
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "7",
-    "colorTag": "[MAIN MISSION]"
-  },
-  {
     "id": "iaucvgq8s656cn8jho9qk41hs8_20261106T173000Z",
     "source": "ATHX (Training)",
     "summary": "🏃 ATHX Run 2: 5km Qualifying Threshold Intervals",
@@ -1897,76 +1726,6 @@
     "colorTag": "Me-time"
   },
   {
-    "id": "0d5va7673c1vsq0c76mpi389gl",
-    "source": "Leclerc Siplec (Client)",
-    "summary": "Siplec <> Artefact - Entretien Ayrton PDT-119",
-    "start": "2026-11-09T14:00:00+01:00",
-    "end": "2026-11-09T14:30:00+01:00",
-    "location": "FR-Paris-Richer-Floor 5-Building 1-ORACLE-3p (3)",
-    "description": "Bonjour Gaëtan & Zineb,\nDans le cadre du remplacement de Qing, je vous propose ce créneau pour rencontrer Ayrton.\nJérôme",
-    "video_link": "https://meet.google.com/xeo-cjfb-can",
-    "html_link": "https://www.google.com/calendar/event?eid=MGQ1dmE3NjczYzF2c3EwYzc2bXBpMzg5Z2wgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
-    "attendees": [
-      {
-        "name": "FR-Paris-Richer-Floor 5-Building 1-ORACLE-3p (3)",
-        "email": "c_188evm6alp8cqi5cgeuk6p83f6sak@resource.calendar.google.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": true,
-        "optional": false
-      },
-      {
-        "name": "Ayrton Andre",
-        "email": "ayrton.andre@artefact.com",
-        "status": "accepted",
-        "self": true,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Gaetan Legaillard",
-        "email": "gaetan.legaillard@siplec.leclerc",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Jerome Harousseau-Ext",
-        "email": "jerome.harousseau-ext@siplec.leclerc",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Jerome Harousseau",
-        "email": "jerome.harousseau@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Zineb Tabet",
-        "email": "zineb.tabet@siplec.leclerc",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      }
-    ],
-    "organizer": {
-      "name": "Jerome Harousseau",
-      "email": "jerome.harousseau@artefact.com",
-      "self": false
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "7",
-    "colorTag": "[MAIN MISSION]"
-  },
-  {
     "id": "_64s3ahhm68oj6b9h64s36b9k6513iba28os48b9n60s34ghj74p30d1n70",
     "source": "🍏 Personal (Ma vie)",
     "summary": "Cinema : Godzilla Minus 0",
@@ -2011,11 +1770,11 @@
   {
     "id": "62qd0ee1tmr4q1j7mtv6brn0bk_20261110T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",
+    "summary": "🏋️ ATHX 2027: Gym Session A (Squats & S2O Overhead Power)",
     "start": "2026-11-10T06:30:00+01:00",
     "end": "2026-11-10T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session A (Squat, Quads & Lower Hypertrophy)\nTarget: Resolve critical quad volume deficit (elevate from 4.1 to 10+ sets/wk) to target 125 kg Back Squat.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat (4 sets x 5–6 reps @ 75–80% e1RM): 75–80 kg (Target e1RM: 93+ kg)\n2. Bulgarian Split Squats (Dumbbell) (3 sets x 8 reps/leg): 16–20 kg DBs\n3. Leg Press or Hack Squat (3 sets x 10–12 reps): 120–140 kg\n4. Lying or Seated Leg Curl (3 sets x 10–12 reps): 40–50 kg\n5. Standing Calf Raises + Hanging Knee/Leg Raises (3 sets x 15 reps)\n\n⏱️ Rest: 2–3 min on Back Squat; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session A (Squats & S2O Overhead Power)\nRationale: Quads at 4.5 sets/wk vs MEV 8.0. Target +1.25 kg/wk progression to eliminate the -38.7 kg squat deficit.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat: 4 × 6 @ 77.5–82.5 kg (75–80% e1RM)\n2. Bulgarian Split Squat: 3 × 8 / leg @ 2 × 18–22 kg DBs\n3. Shoulder-to-Overhead (Push Press): 4 × 5 @ 45–50 kg (dip-drive & explosive lockout)\n4. Leg Extension: 3 × 12–15 @ RPE 8.5–9 (strict quad hypertrophy)\n5. Hanging Leg Raises / Ab Wheel: 3 × 12–15\n\n⏱️ Rest: 2–3 min on Back Squat & Push Press; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=NjJxZDBlZTF0bXI0cTFqN210djZicm4wYmtfMjAyNjExMTBUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -2465,11 +2224,11 @@
   {
     "id": "1iris9llq3bqjgr7o7b65bdrs8_20261112T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Upper S2O)",
+    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)",
     "start": "2026-11-12T06:30:00+01:00",
     "end": "2026-11-12T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Overhead S2O)\nTarget: Resolve posterior chain deficit (elevate from 1.9 to 8+ sets/wk) for 160 kg Deadlift and build S2O drive toward 65 kg standard.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional Deadlift / RDL (4 sets x 5 reps @ 75–80%): 105–115 kg (Target e1RM: 125+ kg)\n2. Barbell Push Press / Strict Press (4 sets x 5 reps): 40–45 kg (Dip-drive & lockout for S2O)\n3. Chest-Supported Barbell / T-Bar Row (3 sets x 8–10 reps): 50–60 kg\n4. Incline Dumbbell Bench Press (3 sets x 8–10 reps): 22–26 kg DBs\n5. Heavy Dumbbell Farmer's Walk / Sandbag Hold (3 sets x 45s): 2x26–30 kg DBs\n6. Biceps Curls + Cable Lateral Raises (3 sets x 12 reps)\n\n⏱️ Rest: 2–3 min on Deadlift/Push Press; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)\nRationale: Closes deadlift gap (-28 kg) & maintains 104 kg bench press without junk fatigue.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional / Trap Bar Deadlift: 4 × 5 @ 75–80% e1RM (115–125 kg)\n2. Barbell Bench Press: 3 × 6–8 @ 75–80 kg (preserve 104 kg e1RM)\n3. Romanian Deadlift (RDL): 3 × 8–10 @ 80–90 kg\n4. Weighted Pull-ups: 3 × 6–8 (+10 to +15 kg)\n5. Heavy Sandbag / Farmer Carries: 3 × 40 m (50 kg bag / KBs)\n\n⏱️ Rest: 2–3 min on Deadlifts & Bench; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=MWlyaXM5bGxxM2JxamdyN283YjY1YmRyczhfMjAyNjExMTJUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -3196,6 +2955,27 @@
     "colorTag": "[ARTEFACT INTERNAL]"
   },
   {
+    "id": "_84ok4g9g8os3cb9n8l0kcb9k8op44b9o84s3eb9o6h14ae9p711j8chh88",
+    "source": "🍏 Personal (Ma vie)",
+    "summary": "Votre commande pour la Fondation Cartier pour l'art contemporain",
+    "start": "2026-11-14T14:00:00+01:00",
+    "end": "2026-11-14T15:00:00+01:00",
+    "location": "Fondation Cartier\n2 Place du Palais Royal, 75001 Paris, France",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=Xzg0b2s0ZzlnOG9zM2NiOW44bDBrY2I5azhvcDQ0YjlvODRzM2ViOW82aDE0YWU5cDcxMWo4Y2hoODggMXA2NHZ0a3JuYnZjYzhiNjE3aGx0amU5aDc0OGQ2c2VAaQ",
+    "attendees": [],
+    "organizer": {
+      "name": "Ma vie",
+      "email": "1p64vtkrnbvcc8b617hltje9h748d6se@import.calendar.google.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "",
+    "colorTag": ""
+  },
+  {
     "id": "r5eh4321u0cliesjctmk4q80hk_20261114T151500Z",
     "source": "ATHX (Training)",
     "summary": "🏋️ ATHX 2027: CrossFit Big WOD",
@@ -3313,8 +3093,8 @@
     "id": "0aksbgvd2h8rf67h6qqk8n525a_20261116T100000Z",
     "source": "Counseling & HR (Artefact)",
     "summary": "[Counselling] - Ayrton → Roland",
-    "start": "2026-11-16T11:00:00+01:00",
-    "end": "2026-11-16T11:30:00+01:00",
+    "start": "2026-11-16T11:30:00+01:00",
+    "end": "2026-11-16T12:00:00+01:00",
     "location": "",
     "description": "",
     "video_link": "https://meet.google.com/nzw-pktr-ekg",
@@ -3348,29 +3128,50 @@
     "colorTag": "[COUNSELING/HR]"
   },
   {
-    "id": "5oon2qqq6bha43td77dnojfoen",
-    "source": "Clariane (Client)",
-    "summary": "Thomas / Ayrton - Care Dispensing",
+    "id": "_6so34d1l6op32b9m8orj0b9k8orjab9o8gpk6ba288sjee9g70sj2gi474",
+    "source": "🍏 Personal (Ma vie)",
+    "summary": "Rendez-vous chez Dr Pierre RUBINSTEIN",
     "start": "2026-11-16T14:00:00+01:00",
-    "end": "2026-11-16T14:30:00+01:00",
+    "end": "2026-11-16T14:15:00+01:00",
+    "location": "5 Rue d'Aumale, 75009 Paris-9E-Arrondissement",
+    "description": "Informations pratiques :\n* Au Rez-de-chaussée\n* Sans ascenseur\n* Interphone: Cabinet Médical\n* Code : 2368A\n\nAutres informations :\n* Première porte à gauche en entrant dans l'immeuble.\n\nPour annuler ou déplacer votre RDV, cliquez sur le lien ci-dessous :\nhttps://www.doctolib.fr/guest_access/jZfnWHz2?anonymous_origin=ics_attachment\n\nVia Doctolib",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=XzZzbzM0ZDFsNm9wMzJiOW04b3JqMGI5azhvcmphYjlvOGdwazZiYTI4OHNqZWU5Zzcwc2oyZ2k0NzQgMXA2NHZ0a3JuYnZjYzhiNjE3aGx0amU5aDc0OGQ2c2VAaQ",
+    "attendees": [],
+    "organizer": {
+      "name": "Ma vie",
+      "email": "1p64vtkrnbvcc8b617hltje9h748d6se@import.calendar.google.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "",
+    "colorTag": ""
+  },
+  {
+    "id": "3vth71tjtul49bmcni72oq3l55",
+    "source": "GE Enterprise (Artefact)",
+    "summary": "[GE] - EOM - Camille / Ayrton",
+    "start": "2026-11-16T15:30:00+01:00",
+    "end": "2026-11-16T16:00:00+01:00",
     "location": "",
     "description": "",
-    "video_link": "https://meet.google.com/bbt-fexm-nbq",
-    "html_link": "https://www.google.com/calendar/event?eid=NW9vbjJxcXE2YmhhNDN0ZDc3ZG5vamZvZW4gYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "video_link": "https://meet.google.com/hyj-bicf-nqa",
+    "html_link": "https://www.google.com/calendar/event?eid=M3Z0aDcxdGp0dWw0OWJtY25pNzJvcTNsNTUgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
     "attendees": [
+      {
+        "name": "Camille Kugler",
+        "email": "camille.kugler@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
       {
         "name": "Ayrton Andre",
         "email": "ayrton.andre@artefact.com",
         "status": "accepted",
         "self": true,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Thomas Filaire",
-        "email": "thomas.filaire@artefact.com",
-        "status": "tentative",
-        "self": false,
         "is_resource": false,
         "optional": false
       }
@@ -3382,8 +3183,8 @@
     },
     "status": "confirmed",
     "is_all_day": false,
-    "colorId": "",
-    "colorTag": ""
+    "colorId": "6",
+    "colorTag": "Team Work"
   },
   {
     "id": "5hj63rllg77jsib9sl6j0ajhdm",
@@ -3471,11 +3272,11 @@
   {
     "id": "62qd0ee1tmr4q1j7mtv6brn0bk_20261117T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",
+    "summary": "🏋️ ATHX 2027: Gym Session A (Squats & S2O Overhead Power)",
     "start": "2026-11-17T06:30:00+01:00",
     "end": "2026-11-17T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session A (Squat, Quads & Lower Hypertrophy)\nTarget: Resolve critical quad volume deficit (elevate from 4.1 to 10+ sets/wk) to target 125 kg Back Squat.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat (4 sets x 5–6 reps @ 75–80% e1RM): 75–80 kg (Target e1RM: 93+ kg)\n2. Bulgarian Split Squats (Dumbbell) (3 sets x 8 reps/leg): 16–20 kg DBs\n3. Leg Press or Hack Squat (3 sets x 10–12 reps): 120–140 kg\n4. Lying or Seated Leg Curl (3 sets x 10–12 reps): 40–50 kg\n5. Standing Calf Raises + Hanging Knee/Leg Raises (3 sets x 15 reps)\n\n⏱️ Rest: 2–3 min on Back Squat; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session A (Squats & S2O Overhead Power)\nRationale: Quads at 4.5 sets/wk vs MEV 8.0. Target +1.25 kg/wk progression to eliminate the -38.7 kg squat deficit.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat: 4 × 6 @ 77.5–82.5 kg (75–80% e1RM)\n2. Bulgarian Split Squat: 3 × 8 / leg @ 2 × 18–22 kg DBs\n3. Shoulder-to-Overhead (Push Press): 4 × 5 @ 45–50 kg (dip-drive & explosive lockout)\n4. Leg Extension: 3 × 12–15 @ RPE 8.5–9 (strict quad hypertrophy)\n5. Hanging Leg Raises / Ab Wheel: 3 × 12–15\n\n⏱️ Rest: 2–3 min on Back Squat & Push Press; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=NjJxZDBlZTF0bXI0cTFqN210djZicm4wYmtfMjAyNjExMTdUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -3490,8 +3291,46 @@
     "colorTag": "Me-time"
   },
   {
+    "id": "5oon2qqq6bha43td77dnojfoen",
+    "source": "Clariane (Client)",
+    "summary": "Thomas / Ayrton - Care Dispensing",
+    "start": "2026-11-17T14:00:00+01:00",
+    "end": "2026-11-17T14:30:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "https://meet.google.com/bbt-fexm-nbq",
+    "html_link": "https://www.google.com/calendar/event?eid=NW9vbjJxcXE2YmhhNDN0ZDc3ZG5vamZvZW4gYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Thomas Filaire",
+        "email": "thomas.filaire@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "",
+    "colorTag": ""
+  },
+  {
     "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6ook2ca68op3cga56sp48h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6d33egi46d1j0e1o6cq3ghhk6t0jch1k74pk6dpo651k4hi670og",
-    "source": "💼 Artefact (Work)",
+    "source": "Leclerc Siplec (Client)",
     "summary": "Soutenance Artefact - RFP Agent Builder",
     "start": "2026-11-17T16:30:00+01:00",
     "end": "2026-11-17T17:30:00+01:00",
@@ -3527,7 +3366,7 @@
       {
         "name": "Ayrton Andre",
         "email": "ayrton.andre@artefact.com",
-        "status": "needsAction",
+        "status": "accepted",
         "self": true,
         "is_resource": false,
         "optional": false
@@ -3572,8 +3411,8 @@
     },
     "status": "confirmed",
     "is_all_day": false,
-    "colorId": "",
-    "colorTag": ""
+    "colorId": "7",
+    "colorTag": "[MAIN MISSION]"
   },
   {
     "id": "nn17sih4h6cgni071eit7verj0_20261118",
@@ -3700,11 +3539,11 @@
   {
     "id": "1iris9llq3bqjgr7o7b65bdrs8_20261119T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Upper S2O)",
+    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)",
     "start": "2026-11-19T06:30:00+01:00",
     "end": "2026-11-19T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Overhead S2O)\nTarget: Resolve posterior chain deficit (elevate from 1.9 to 8+ sets/wk) for 160 kg Deadlift and build S2O drive toward 65 kg standard.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional Deadlift / RDL (4 sets x 5 reps @ 75–80%): 105–115 kg (Target e1RM: 125+ kg)\n2. Barbell Push Press / Strict Press (4 sets x 5 reps): 40–45 kg (Dip-drive & lockout for S2O)\n3. Chest-Supported Barbell / T-Bar Row (3 sets x 8–10 reps): 50–60 kg\n4. Incline Dumbbell Bench Press (3 sets x 8–10 reps): 22–26 kg DBs\n5. Heavy Dumbbell Farmer's Walk / Sandbag Hold (3 sets x 45s): 2x26–30 kg DBs\n6. Biceps Curls + Cable Lateral Raises (3 sets x 12 reps)\n\n⏱️ Rest: 2–3 min on Deadlift/Push Press; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)\nRationale: Closes deadlift gap (-28 kg) & maintains 104 kg bench press without junk fatigue.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional / Trap Bar Deadlift: 4 × 5 @ 75–80% e1RM (115–125 kg)\n2. Barbell Bench Press: 3 × 6–8 @ 75–80 kg (preserve 104 kg e1RM)\n3. Romanian Deadlift (RDL): 3 × 8–10 @ 80–90 kg\n4. Weighted Pull-ups: 3 × 6–8 (+10 to +15 kg)\n5. Heavy Sandbag / Farmer Carries: 3 × 40 m (50 kg bag / KBs)\n\n⏱️ Rest: 2–3 min on Deadlifts & Bench; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=MWlyaXM5bGxxM2JxamdyN283YjY1YmRyczhfMjAyNjExMTlUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -3748,7 +3587,7 @@
       {
         "name": "Benjamin De-Girolamo",
         "email": "benjamin.de-girolamo@artefact.com",
-        "status": "needsAction",
+        "status": "accepted",
         "self": false,
         "is_resource": false,
         "optional": false
@@ -4008,7 +3847,7 @@
       {
         "name": "Alice Maigron",
         "email": "alice.maigron@artefact.com",
-        "status": "needsAction",
+        "status": "accepted",
         "self": false,
         "is_resource": false,
         "optional": false
@@ -4132,7 +3971,7 @@
       {
         "name": "Stanislas Dhuart",
         "email": "stanislas.dhuart@artefact.com",
-        "status": "needsAction",
+        "status": "accepted",
         "self": false,
         "is_resource": false,
         "optional": false
@@ -4386,11 +4225,11 @@
   {
     "id": "62qd0ee1tmr4q1j7mtv6brn0bk_20261124T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",
+    "summary": "🏋️ ATHX 2027: Gym Session A (Squats & S2O Overhead Power)",
     "start": "2026-11-24T06:30:00+01:00",
     "end": "2026-11-24T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session A (Squat, Quads & Lower Hypertrophy)\nTarget: Resolve critical quad volume deficit (elevate from 4.1 to 10+ sets/wk) to target 125 kg Back Squat.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat (4 sets x 5–6 reps @ 75–80% e1RM): 75–80 kg (Target e1RM: 93+ kg)\n2. Bulgarian Split Squats (Dumbbell) (3 sets x 8 reps/leg): 16–20 kg DBs\n3. Leg Press or Hack Squat (3 sets x 10–12 reps): 120–140 kg\n4. Lying or Seated Leg Curl (3 sets x 10–12 reps): 40–50 kg\n5. Standing Calf Raises + Hanging Knee/Leg Raises (3 sets x 15 reps)\n\n⏱️ Rest: 2–3 min on Back Squat; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session A (Squats & S2O Overhead Power)\nRationale: Quads at 4.5 sets/wk vs MEV 8.0. Target +1.25 kg/wk progression to eliminate the -38.7 kg squat deficit.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat: 4 × 6 @ 77.5–82.5 kg (75–80% e1RM)\n2. Bulgarian Split Squat: 3 × 8 / leg @ 2 × 18–22 kg DBs\n3. Shoulder-to-Overhead (Push Press): 4 × 5 @ 45–50 kg (dip-drive & explosive lockout)\n4. Leg Extension: 3 × 12–15 @ RPE 8.5–9 (strict quad hypertrophy)\n5. Hanging Leg Raises / Ab Wheel: 3 × 12–15\n\n⏱️ Rest: 2–3 min on Back Squat & Push Press; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=NjJxZDBlZTF0bXI0cTFqN210djZicm4wYmtfMjAyNjExMjRUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -4617,11 +4456,11 @@
   {
     "id": "1iris9llq3bqjgr7o7b65bdrs8_20261126T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Upper S2O)",
+    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)",
     "start": "2026-11-26T06:30:00+01:00",
     "end": "2026-11-26T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Overhead S2O)\nTarget: Resolve posterior chain deficit (elevate from 1.9 to 8+ sets/wk) for 160 kg Deadlift and build S2O drive toward 65 kg standard.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional Deadlift / RDL (4 sets x 5 reps @ 75–80%): 105–115 kg (Target e1RM: 125+ kg)\n2. Barbell Push Press / Strict Press (4 sets x 5 reps): 40–45 kg (Dip-drive & lockout for S2O)\n3. Chest-Supported Barbell / T-Bar Row (3 sets x 8–10 reps): 50–60 kg\n4. Incline Dumbbell Bench Press (3 sets x 8–10 reps): 22–26 kg DBs\n5. Heavy Dumbbell Farmer's Walk / Sandbag Hold (3 sets x 45s): 2x26–30 kg DBs\n6. Biceps Curls + Cable Lateral Raises (3 sets x 12 reps)\n\n⏱️ Rest: 2–3 min on Deadlift/Push Press; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)\nRationale: Closes deadlift gap (-28 kg) & maintains 104 kg bench press without junk fatigue.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional / Trap Bar Deadlift: 4 × 5 @ 75–80% e1RM (115–125 kg)\n2. Barbell Bench Press: 3 × 6–8 @ 75–80 kg (preserve 104 kg e1RM)\n3. Romanian Deadlift (RDL): 3 × 8–10 @ 80–90 kg\n4. Weighted Pull-ups: 3 × 6–8 (+10 to +15 kg)\n5. Heavy Sandbag / Farmer Carries: 3 × 40 m (50 kg bag / KBs)\n\n⏱️ Rest: 2–3 min on Deadlifts & Bench; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=MWlyaXM5bGxxM2JxamdyN283YjY1YmRyczhfMjAyNjExMjZUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -5358,11 +5197,11 @@
   {
     "id": "62qd0ee1tmr4q1j7mtv6brn0bk_20261201T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",
+    "summary": "🏋️ ATHX 2027: Gym Session A (Squats & S2O Overhead Power)",
     "start": "2026-12-01T06:30:00+01:00",
     "end": "2026-12-01T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session A (Squat, Quads & Lower Hypertrophy)\nTarget: Resolve critical quad volume deficit (elevate from 4.1 to 10+ sets/wk) to target 125 kg Back Squat.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat (4 sets x 5–6 reps @ 75–80% e1RM): 75–80 kg (Target e1RM: 93+ kg)\n2. Bulgarian Split Squats (Dumbbell) (3 sets x 8 reps/leg): 16–20 kg DBs\n3. Leg Press or Hack Squat (3 sets x 10–12 reps): 120–140 kg\n4. Lying or Seated Leg Curl (3 sets x 10–12 reps): 40–50 kg\n5. Standing Calf Raises + Hanging Knee/Leg Raises (3 sets x 15 reps)\n\n⏱️ Rest: 2–3 min on Back Squat; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session A (Squats & S2O Overhead Power)\nRationale: Quads at 4.5 sets/wk vs MEV 8.0. Target +1.25 kg/wk progression to eliminate the -38.7 kg squat deficit.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat: 4 × 6 @ 77.5–82.5 kg (75–80% e1RM)\n2. Bulgarian Split Squat: 3 × 8 / leg @ 2 × 18–22 kg DBs\n3. Shoulder-to-Overhead (Push Press): 4 × 5 @ 45–50 kg (dip-drive & explosive lockout)\n4. Leg Extension: 3 × 12–15 @ RPE 8.5–9 (strict quad hypertrophy)\n5. Hanging Leg Raises / Ab Wheel: 3 × 12–15\n\n⏱️ Rest: 2–3 min on Back Squat & Push Press; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=NjJxZDBlZTF0bXI0cTFqN210djZicm4wYmtfMjAyNjEyMDFUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -5390,7 +5229,7 @@
       {
         "name": "Ayrton Andre",
         "email": "ayrton.andre@artefact.com",
-        "status": "needsAction",
+        "status": "accepted",
         "self": true,
         "is_resource": false,
         "optional": false
@@ -5531,11 +5370,11 @@
   {
     "id": "1iris9llq3bqjgr7o7b65bdrs8_20261203T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Upper S2O)",
+    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)",
     "start": "2026-12-03T06:30:00+01:00",
     "end": "2026-12-03T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Overhead S2O)\nTarget: Resolve posterior chain deficit (elevate from 1.9 to 8+ sets/wk) for 160 kg Deadlift and build S2O drive toward 65 kg standard.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional Deadlift / RDL (4 sets x 5 reps @ 75–80%): 105–115 kg (Target e1RM: 125+ kg)\n2. Barbell Push Press / Strict Press (4 sets x 5 reps): 40–45 kg (Dip-drive & lockout for S2O)\n3. Chest-Supported Barbell / T-Bar Row (3 sets x 8–10 reps): 50–60 kg\n4. Incline Dumbbell Bench Press (3 sets x 8–10 reps): 22–26 kg DBs\n5. Heavy Dumbbell Farmer's Walk / Sandbag Hold (3 sets x 45s): 2x26–30 kg DBs\n6. Biceps Curls + Cable Lateral Raises (3 sets x 12 reps)\n\n⏱️ Rest: 2–3 min on Deadlift/Push Press; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)\nRationale: Closes deadlift gap (-28 kg) & maintains 104 kg bench press without junk fatigue.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional / Trap Bar Deadlift: 4 × 5 @ 75–80% e1RM (115–125 kg)\n2. Barbell Bench Press: 3 × 6–8 @ 75–80 kg (preserve 104 kg e1RM)\n3. Romanian Deadlift (RDL): 3 × 8–10 @ 80–90 kg\n4. Weighted Pull-ups: 3 × 6–8 (+10 to +15 kg)\n5. Heavy Sandbag / Farmer Carries: 3 × 40 m (50 kg bag / KBs)\n\n⏱️ Rest: 2–3 min on Deadlifts & Bench; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=MWlyaXM5bGxxM2JxamdyN283YjY1YmRyczhfMjAyNjEyMDNUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -6213,11 +6052,11 @@
   {
     "id": "62qd0ee1tmr4q1j7mtv6brn0bk_20261208T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session A (Squat, Quads & Lower Body MEV)",
+    "summary": "🏋️ ATHX 2027: Gym Session A (Squats & S2O Overhead Power)",
     "start": "2026-12-08T06:30:00+01:00",
     "end": "2026-12-08T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session A (Squat, Quads & Lower Hypertrophy)\nTarget: Resolve critical quad volume deficit (elevate from 4.1 to 10+ sets/wk) to target 125 kg Back Squat.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat (4 sets x 5–6 reps @ 75–80% e1RM): 75–80 kg (Target e1RM: 93+ kg)\n2. Bulgarian Split Squats (Dumbbell) (3 sets x 8 reps/leg): 16–20 kg DBs\n3. Leg Press or Hack Squat (3 sets x 10–12 reps): 120–140 kg\n4. Lying or Seated Leg Curl (3 sets x 10–12 reps): 40–50 kg\n5. Standing Calf Raises + Hanging Knee/Leg Raises (3 sets x 15 reps)\n\n⏱️ Rest: 2–3 min on Back Squat; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session A (Squats & S2O Overhead Power)\nRationale: Quads at 4.5 sets/wk vs MEV 8.0. Target +1.25 kg/wk progression to eliminate the -38.7 kg squat deficit.\n\n⚡ Warm-up (5–8 min):\n• Dynamic hip mobility, ankle dorsiflexion, and bodyweight squats\n\n🏋️ Working Sets & Target Weights:\n1. Barbell Back Squat: 4 × 6 @ 77.5–82.5 kg (75–80% e1RM)\n2. Bulgarian Split Squat: 3 × 8 / leg @ 2 × 18–22 kg DBs\n3. Shoulder-to-Overhead (Push Press): 4 × 5 @ 45–50 kg (dip-drive & explosive lockout)\n4. Leg Extension: 3 × 12–15 @ RPE 8.5–9 (strict quad hypertrophy)\n5. Hanging Leg Raises / Ab Wheel: 3 × 12–15\n\n⏱️ Rest: 2–3 min on Back Squat & Push Press; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=NjJxZDBlZTF0bXI0cTFqN210djZicm4wYmtfMjAyNjEyMDhUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -6740,11 +6579,11 @@
   {
     "id": "1iris9llq3bqjgr7o7b65bdrs8_20261210T053000Z",
     "source": "ATHX (Training)",
-    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Upper S2O)",
+    "summary": "🏋️ ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)",
     "start": "2026-12-10T06:30:00+01:00",
     "end": "2026-12-10T07:30:00+01:00",
     "location": "Gym",
-    "description": "🎯 ATHX 2027: Gym Session B (Deadlift, Posterior Chain & Overhead S2O)\nTarget: Resolve posterior chain deficit (elevate from 1.9 to 8+ sets/wk) for 160 kg Deadlift and build S2O drive toward 65 kg standard.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional Deadlift / RDL (4 sets x 5 reps @ 75–80%): 105–115 kg (Target e1RM: 125+ kg)\n2. Barbell Push Press / Strict Press (4 sets x 5 reps): 40–45 kg (Dip-drive & lockout for S2O)\n3. Chest-Supported Barbell / T-Bar Row (3 sets x 8–10 reps): 50–60 kg\n4. Incline Dumbbell Bench Press (3 sets x 8–10 reps): 22–26 kg DBs\n5. Heavy Dumbbell Farmer's Walk / Sandbag Hold (3 sets x 45s): 2x26–30 kg DBs\n6. Biceps Curls + Cable Lateral Raises (3 sets x 12 reps)\n\n⏱️ Rest: 2–3 min on Deadlift/Push Press; 60–90s on accessories.",
+    "description": "🎯 ATHX 2027: Gym Session B (Deadlift Floor Pull & Upper Maintenance)\nRationale: Closes deadlift gap (-28 kg) & maintains 104 kg bench press without junk fatigue.\n\n⚡ Warm-up (5–8 min):\n• Thoracic mobility, band pull-aparts, light hinge warm-up\n\n🏋️ Working Sets & Target Weights:\n1. Conventional / Trap Bar Deadlift: 4 × 5 @ 75–80% e1RM (115–125 kg)\n2. Barbell Bench Press: 3 × 6–8 @ 75–80 kg (preserve 104 kg e1RM)\n3. Romanian Deadlift (RDL): 3 × 8–10 @ 80–90 kg\n4. Weighted Pull-ups: 3 × 6–8 (+10 to +15 kg)\n5. Heavy Sandbag / Farmer Carries: 3 × 40 m (50 kg bag / KBs)\n\n⏱️ Rest: 2–3 min on Deadlifts & Bench; 60–90s on accessories.",
     "video_link": "",
     "html_link": "https://www.google.com/calendar/event?eid=MWlyaXM5bGxxM2JxamdyN283YjY1YmRyczhfMjAyNjEyMTBUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
     "attendees": [],
@@ -8035,5 +7874,106 @@
     "is_all_day": false,
     "colorId": "8",
     "colorTag": "Me-time"
+  },
+  {
+    "id": "tqd3a0td1dv5vi13vck5rsepkk_20261213T083000Z",
+    "source": "ATHX (Training)",
+    "summary": "🏃 ATHX Run 3: Lighter Zone 2 5K (Active Recovery)",
+    "start": "2026-12-13T09:30:00+01:00",
+    "end": "2026-12-13T10:15:00+01:00",
+    "location": "Park / Easy Trail",
+    "description": "Distance: Exactly 5.0 km easy continuous run @ 5:50–6:20/km\n• Heart Rate: Strictly Zone 2 (<140 bpm, conversational)\n• Purpose: Active recovery flush, bringing weekly mileage to ~17 km\n• Follow with 20 min hip/ankle mobility.",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=dHFkM2EwdGQxZHY1dmkxM3ZjazVyc2Vwa2tfMjAyNjEyMTNUMDgzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "8",
+    "colorTag": "Me-time"
+  },
+  {
+    "id": "c65jvfilisr5pk41ug4j8td30k_20261214",
+    "source": "Clariane (Client)",
+    "summary": "Clariane (Office)",
+    "start": "2026-12-14T00:00:00+01:00",
+    "end": "2026-12-15T00:00:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=YzY1anZmaWxpc3I1cGs0MXVnNGo4dGQzMGtfMjAyNjEyMTQgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": true,
+    "colorId": "",
+    "colorTag": ""
+  },
+  {
+    "id": "gb45nqs5e8f0neicr37ftimff8_20261214T053000Z",
+    "source": "ATHX (Training)",
+    "summary": "⚡ ATHX 2027: CrossFit WOD (Conditioning & Barbell Cycling)",
+    "start": "2026-12-14T06:30:00+01:00",
+    "end": "2026-12-14T07:30:00+01:00",
+    "location": "CrossFit Box",
+    "description": "🎯 ATHX 2027: CrossFit Morning Session\nTime: 06:30 – 07:30\n\n⚡ Focus & Athletic Intent:\n• High-output anaerobic threshold & lactic acid buffering\n• Barbell cycling efficiency under fatigue (Cleans, Snatches, Thrusters)\n• Movement economy & pacing strategy",
+    "video_link": "",
+    "html_link": "https://www.google.com/calendar/event?eid=Z2I0NW5xczVlOGYwbmVpY3IzN2Z0aW1mZjhfMjAyNjEyMTRUMDUzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "8",
+    "colorTag": "Me-time"
+  },
+  {
+    "id": "0aksbgvd2h8rf67h6qqk8n525a_20261214T100000Z",
+    "source": "Counseling & HR (Artefact)",
+    "summary": "[Counselling] - Ayrton → Roland",
+    "start": "2026-12-14T11:00:00+01:00",
+    "end": "2026-12-14T11:30:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "https://meet.google.com/nzw-pktr-ekg",
+    "html_link": "https://www.google.com/calendar/event?eid=MGFrc2JndmQyaDhyZjY3aDZxcWs4bjUyNWFfMjAyNjEyMTRUMTAwMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Roland Juilhard",
+        "email": "roland.juilhard@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "2",
+    "colorTag": "[COUNSELING/HR]"
   }
 ]

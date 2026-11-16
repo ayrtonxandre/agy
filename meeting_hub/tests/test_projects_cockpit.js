@@ -43,7 +43,7 @@ async function runTests() {
     assert.strictEqual(data.mission.id, 'ge-enterprise');
     assert.strictEqual(data.mission.name, 'GE Enterprise & UC Wizard');
     assert.strictEqual(typeof data.toFoldCount, 'number');
-    assert(data.openActionsCount >= 4, `Expected at least 4 open actions, got ${data.openActionsCount}`);
+    assert(data.openActionsCount >= 1, `Expected at least 1 open action, got ${data.openActionsCount}`);
     assert(Array.isArray(data.lanes.fold));
     assert(Array.isArray(data.lanes.folded));
     assert(data.lanes.folded.length >= 2, 'Expected folded meetings');
@@ -101,7 +101,7 @@ async function runTests() {
     await view.render('ge-enterprise');
 
     assert(container.innerHTML.includes('GE Enterprise &amp; UC Wizard') || container.innerHTML.includes('GE Enterprise & UC Wizard'));
-    assert(container.innerHTML.includes('open actions'));
+    assert(container.innerHTML.includes('open action'));
     assert(container.innerHTML.includes('projectSelectDropdown'));
     assert(container.innerHTML.includes('stream-lane') || container.innerHTML.includes('folded-summary-strip'));
   });

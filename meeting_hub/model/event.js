@@ -113,7 +113,8 @@ export class EventModel {
       description: desc,
       source,
       colorId,
-      colorTag
+      colorTag,
+      projectId: raw.projectId || raw.missionId || undefined
     };
   }
 
@@ -138,7 +139,7 @@ export class EventModel {
       return { stream: 'life', client: 'ATHX', isTraining: true };
     }
     if (cId === '7' || cTag === '[MAIN MISSION]') {
-      return { stream: 'work', client: 'Leclerc / Siplec', isTraining: false };
+      return { stream: 'work', client: 'CMA CGM', isTraining: false };
     }
     if (cId === '2' || cId === '10' || cTag === '[COUNSELING/HR]') {
       return { stream: 'work', client: 'Counseling', isTraining: false };
@@ -163,8 +164,8 @@ export class EventModel {
     if (corpus.includes('athx') || corpus.includes('training') || corpus.includes('wod') || corpus.includes('crossfit')) {
       return { stream: 'life', client: 'ATHX', isTraining: true };
     }
-    if (corpus.includes('siplec') || corpus.includes('leclerc')) {
-      return { stream: 'work', client: 'Leclerc / Siplec', isTraining: false };
+    if (corpus.includes('cma') || corpus.includes('cma cgm') || corpus.includes('maia') || corpus.includes('ceva') || corpus.includes('icap')) {
+      return { stream: 'work', client: 'CMA CGM', isTraining: false };
     }
     if (corpus.includes('clariane') || corpus.includes('inicea') || corpus.includes('estela') || corpus.includes('@clariane.fr') ||
         corpus.includes('hdj') || corpus.includes('netsoins') || corpus.includes('molécules onéreuses') || corpus.includes('molecules onereuses') ||

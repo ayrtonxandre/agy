@@ -100,13 +100,25 @@ export class ActionsView {
 
     this.itemsMap = new Map(aggregatedItems.map(i => [i.id, i]));
 
+    // Extract unique owners for dropdown filter
+    const allOwners = Array.from(new Set(
+      aggregatedItems
+        .map(i => (i.owner || '').trim())
+        .filter(Boolean)
+    )).sort((a, b) => a.localeCompare(b));
+
     // Filter items
     let filtered = aggregatedItems;
     if (this.statusFilter === 'open') {
       filtered = filtered.filter(i => !i.done);
     }
     if (this.ownerFilter === 'me') {
-      filtered = filtered.filter(i => (i.owner || '').toLowerCase() === 'me' || (i.owner || '').includes('Ayrton'));
+      filtered = filtered.filter(i => {
+        const o = (i.owner || '').toLowerCase();
+        return o === 'me' || o.includes('ayrton') || o.includes('andré') || o.includes('andre');
+      });
+    } else if (this.ownerFilter && this.ownerFilter !== 'all') {
+      filtered = filtered.filter(i => (i.owner || '').toLowerCase() === this.ownerFilter.toLowerCase());
     }
     if (this.searchQuery) {
       filtered = filtered.filter(i => {
@@ -133,10 +145,20 @@ export class ActionsView {
             <h2 style="font: 600 20px/1.2 var(--font-sans); margin: 0 0 2px;">Open Actions by Client</h2>
             <div class="sub" style="font-size: 12px;">${totalOpen} open actions across all client engagements</div>
           </div>
-          <div style="display: flex; gap: 6px;">
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
             <button class="btn sm ${this.statusFilter === 'open' ? 'pink' : ''}" id="toggleStatusOpenBtn">Open Only</button>
             <button class="btn sm ${this.statusFilter === 'all' ? 'pink' : ''}" id="toggleStatusAllBtn">All Items (${aggregatedItems.length})</button>
             <button class="btn sm ${this.ownerFilter === 'me' ? 'pink' : ''}" id="toggleOwnerMeBtn">Assigned to Me</button>
+            <div style="display: inline-flex; align-items: center; gap: 4px; margin-left: 2px;">
+              <label for="actionsOwnerSelect" style="font-size: 11.5px; color: var(--muted-foreground);">Owner:</label>
+              <select id="actionsOwnerSelect" class="in" style="font-size: 11.5px; padding: 2px 6px; height: 26px; border-radius: var(--radius-sm); background: var(--card); color: var(--foreground); border: 1px solid var(--border);">
+                <option value="all" ${this.ownerFilter === 'all' ? 'selected' : ''}>All Owners (${aggregatedItems.length})</option>
+                <option value="me" ${this.ownerFilter === 'me' ? 'selected' : ''}>Assigned to Me</option>
+                ${allOwners.map(o => `
+                  <option value="${this._escape(o)}" ${this.ownerFilter === o ? 'selected' : ''}>${this._escape(o)}</option>
+                `).join('')}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -197,11 +219,10 @@ export class ActionsView {
                         <button class="btn sm" data-copy-note-action="${this._escape(item.id)}" data-note-file="${this._escape(item.sourceNote || 'Actions.md')}" title="Copy ID: ${this._escape(item.id)}" style="font-size: 10.5px; padding: 2px 7px;">
                           Copy ID
                         </button>
-                      ` : `
-                        <button class="btn-icon delete-action-btn" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" title="Delete action">
-                          ${Icons.trash}
-                        </button>
-                      `}
+                      ` : ''}
+                      <button class="btn-icon delete-action-btn" data-item-id="${this._escape(item.id)}" data-mission-id="${this._escape(item.missionId || '')}" data-meeting-id="${this._escape(item.meetingId || '')}" title="Delete action" style="color: var(--destructive, #ef4444);">
+                        ${Icons.trash}
+                      </button>
                     </div>
                   </div>
                 `).join('')}
@@ -232,6 +253,13 @@ export class ActionsView {
       this.ownerFilter = this.ownerFilter === 'me' ? 'all' : 'me';
       this.render();
     });
+    const ownerSelect = this.container.querySelector('#actionsOwnerSelect');
+    if (ownerSelect) {
+      ownerSelect.addEventListener('change', (e) => {
+        this.ownerFilter = e.target.value;
+        this.render();
+      });
+    }
 
     const searchInput = this.container.querySelector('#actionsSearchInput');
     if (searchInput) {
@@ -338,13 +366,23 @@ export class ActionsView {
 
     // Delete item
     this.container.querySelectorAll('.delete-action-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
         const itemId = btn.dataset.itemId;
+        const missionId = btn.dataset.missionId;
         const meetingId = btn.dataset.meetingId;
-        const note = await this.store.getMeetingData(meetingId);
-        const updatedItems = (note.items || []).filter(it => it.id !== itemId);
-        await this.store.saveMeetingData(meetingId, { items: updatedItems });
-        this.render();
+        if (!confirm(`Are you sure you want to delete action "${itemId}"?`)) {
+          return;
+        }
+        btn.disabled = true;
+        try {
+          await this.store.deleteAction(itemId, missionId, meetingId);
+          await this.render();
+        } catch (err) {
+          console.error('[ActionsView] Failed to delete action:', err);
+          alert(`Failed to delete action: ${err.message || err}`);
+          btn.disabled = false;
+        }
       });
     });
 

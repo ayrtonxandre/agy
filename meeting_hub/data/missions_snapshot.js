@@ -29,7 +29,6 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "edward",
         "feedback edward",
         "[ge]",
-        "ge",
         "team work",
         "[team work]"
       ],
@@ -202,7 +201,9 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "agent builders",
         "maia",
         "icap",
-        "ceva"
+        "ceva",
+        "[main mission]",
+        "main mission"
       ],
       "contacts": [
         "guillaume digoin",
@@ -290,3 +291,4 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
     }
   ]
 };
+if (typeof module !== 'undefined') module.exports = MISSIONS_SNAPSHOT;

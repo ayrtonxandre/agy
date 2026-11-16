@@ -101,7 +101,7 @@ export class ProjectsView {
     const currentId = this.currentProjectId;
 
     // Immediately clear stale HTML when switching to a different mission
-    if (this._renderedProjectId && this._renderedProjectId !== currentId) {
+    if (!this._renderedProjectId || this._renderedProjectId !== currentId) {
       this.container.innerHTML = `
         <div style="padding: 28px; display: flex; align-items: center; gap: 10px; color: var(--muted-foreground); font-size: 13px;">
           <span style="display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--pink-600); border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
@@ -497,22 +497,43 @@ export class ProjectsView {
     }
 
     if (this.currentSubTab === 'actions') {
-      let actList = summary.actions || summary.actionMatrix || [];
+      const rawActions = summary.actions || summary.actionMatrix || [];
+      const uniqueOwners = Array.from(new Set(
+        rawActions.map(a => (a.owner || '').trim()).filter(Boolean)
+      )).sort((a, b) => a.localeCompare(b));
+
+      let actList = rawActions;
       if (this.actionStatusFilter === 'open') {
         actList = actList.filter(a => !a.done);
       } else if (this.actionStatusFilter === 'done') {
         actList = actList.filter(a => a.done);
       }
+      if (this.actionOwnerFilter === 'me') {
+        actList = actList.filter(a => {
+          const o = (a.owner || '').toLowerCase();
+          return o === 'me' || o.includes('ayrton') || o.includes('andré') || o.includes('andre');
+        });
+      } else if (this.actionOwnerFilter && this.actionOwnerFilter !== 'all') {
+        actList = actList.filter(a => (a.owner || '').toLowerCase() === this.actionOwnerFilter.toLowerCase());
+      }
+
       return `
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <div class="sub" style="font-size: 12px;">
               Read-only view from <span style="font-family: var(--font-mono);">Actions.md</span> (single source of truth).
             </div>
-            <div style="display: flex; gap: 6px;">
-              <button class="btn sm ${this.actionStatusFilter === 'open' ? 'active' : ''}" data-act-filter="open">Open</button>
-              <button class="btn sm ${this.actionStatusFilter === 'done' ? 'active' : ''}" data-act-filter="done">Closed</button>
-              <button class="btn sm ${this.actionStatusFilter === 'all' ? 'active' : ''}" data-act-filter="all">All</button>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <select id="missionActionOwnerSelect" style="padding: 4px 8px; font-size: 11.5px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--background); color: var(--foreground); cursor: pointer;">
+                <option value="all" ${this.actionOwnerFilter === 'all' ? 'selected' : ''}>All Owners</option>
+                <option value="me" ${this.actionOwnerFilter === 'me' ? 'selected' : ''}>Assigned to Me</option>
+                ${uniqueOwners.map(o => `<option value="${this._escape(o)}" ${this.actionOwnerFilter.toLowerCase() === o.toLowerCase() ? 'selected' : ''}>${this._escape(o)}</option>`).join('')}
+              </select>
+              <div style="display: flex; gap: 4px;">
+                <button class="btn sm ${this.actionStatusFilter === 'open' ? 'active' : ''}" data-act-filter="open">Open</button>
+                <button class="btn sm ${this.actionStatusFilter === 'done' ? 'active' : ''}" data-act-filter="done">Closed</button>
+                <button class="btn sm ${this.actionStatusFilter === 'all' ? 'active' : ''}" data-act-filter="all">All</button>
+              </div>
             </div>
           </div>
 
@@ -530,9 +551,12 @@ export class ProjectsView {
                   </div>
                   <div style="font-size: 13px; color: var(--foreground); line-height: 1.4;">${this._escape(a.text || a.description)}</div>
                 </div>
-                <div>
+                <div style="display: flex; align-items: center; gap: 4px;">
                   <button class="btn sm" data-copy-action-id="${this._escape(a.id)}" style="font-size: 10.5px; padding: 2px 6px;">
                     Copy ID
+                  </button>
+                  <button class="btn-icon delete-mission-action-btn" data-action-id="${this._escape(a.id)}" title="Delete action" style="color: var(--destructive, #ef4444); padding: 2px 5px;">
+                    ${Icons.trash}
                   </button>
                 </div>
               </div>
@@ -710,7 +734,35 @@ Iron Rules:
       });
     });
 
-    // 6. Copy Action ID button
+    const missionOwnerSelect = this.container.querySelector('#missionActionOwnerSelect');
+    if (missionOwnerSelect) {
+      missionOwnerSelect.addEventListener('change', (e) => {
+        this.actionOwnerFilter = e.target.value;
+        this.render();
+      });
+    }
+
+    // 6. Delete action button
+    this.container.querySelectorAll('.delete-mission-action-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actionId = btn.dataset.actionId;
+        if (!confirm(`Are you sure you want to delete action "${actionId}" from Actions.md?`)) {
+          return;
+        }
+        btn.disabled = true;
+        try {
+          await this.store.deleteAction(actionId, this.currentProjectId);
+          await this.render();
+        } catch (err) {
+          console.error('[ProjectsView] Failed to delete action:', err);
+          alert(`Failed to delete action: ${err.message || err}`);
+          btn.disabled = false;
+        }
+      });
+    });
+
+    // 7. Copy Action ID button
     this.container.querySelectorAll('[data-copy-action-id]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();

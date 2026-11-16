@@ -488,6 +488,9 @@ export class MeetingPanelUI {
                       <button class="btn sm action-edit-btn" data-action-id="${this._escape(a.id)}" data-mission-id="${this._escape(missionId)}" title="Edit action: name, sub-stream, owner, due date" style="font-size: 10px; padding: 2px 5px; display: inline-flex; align-items: center; gap: 3px;">
                         ${Icons.edit}
                       </button>
+                      <button class="btn-icon action-delete-btn" data-action-id="${this._escape(a.id)}" data-mission-id="${this._escape(missionId)}" title="Delete action" style="color: var(--destructive, #ef4444); padding: 2px 4px;">
+                        ${Icons.trash}
+                      </button>
                     </div>
                   </div>
                 `).join('')}
@@ -765,6 +768,9 @@ export class MeetingPanelUI {
                     </button>
                     <button class="btn sm" data-copy-action-id="${this._escape(a.id || a.title)}" style="font-size: 10.5px; padding: 2px 6px; flex-shrink: 0;" title="Copy action ID">
                       Copy ID
+                    </button>
+                    <button class="btn-icon action-delete-btn" data-action-id="${this._escape(a.id || a.title)}" data-mission-id="${this._escape(missionId)}" title="Delete action" style="color: var(--destructive, #ef4444); padding: 2px 4px;">
+                      ${Icons.trash}
                     </button>
                   </div>
                 </div>
@@ -1132,6 +1138,28 @@ export class MeetingPanelUI {
             await this.render();
           }
         });
+      });
+    });
+
+    // 10d. Action delete buttons (Prep and Folded modes)
+    this.container.querySelectorAll('.action-delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actionId = btn.dataset.actionId;
+        const targetMissionId = btn.dataset.missionId || missionId;
+        if (!actionId) return;
+        if (!confirm(`Are you sure you want to delete action "${actionId}" from Actions.md?`)) {
+          return;
+        }
+        btn.disabled = true;
+        try {
+          await this.store.deleteAction(actionId, targetMissionId, this.currentMeetingId);
+          await this.render();
+        } catch (err) {
+          console.error('[MeetingPanel] Delete action failed:', err);
+          alert(`Failed to delete action: ${err.message || err}`);
+          btn.disabled = false;
+        }
       });
     });
 

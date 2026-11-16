@@ -76,26 +76,21 @@ export class MeetingHubStore {
     }
 
     // 2. Fall back to bundled / global snapshot
-    if (typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
-      this.missionsCache = window.MISSIONS_SNAPSHOT.missions;
-      return window.MISSIONS_SNAPSHOT.missions;
+    const globalSnapshot = (typeof window !== 'undefined' ? window.MISSIONS_SNAPSHOT : (typeof globalThis !== 'undefined' ? globalThis.MISSIONS_SNAPSHOT : null));
+    if (globalSnapshot && Array.isArray(globalSnapshot.missions)) {
+      this.missionsCache = globalSnapshot.missions;
+      return globalSnapshot.missions;
     }
 
     // 3. Node environment fallback (for unit tests)
     if (typeof process !== 'undefined' && process.versions && process.versions.node) {
       try {
-        const fs = await import('fs');
-        const p = '/Users/ayrtonandre/Documents/work/AGY/meeting_hub/data/missions_snapshot.js';
-        if (fs.existsSync(p)) {
-          const content = fs.readFileSync(p, 'utf8');
-          const m = content.match(/MISSIONS_SNAPSHOT\s*=\s*(\{[\s\S]*?\});?\s*$/);
-          if (m) {
-            const data = JSON.parse(m[1]);
-            if (Array.isArray(data.missions)) {
-              this.missionsCache = data.missions;
-              return data.missions;
-            }
-          }
+        const { createRequire } = await import('module');
+        const require_ = createRequire(process.cwd() + '/index.js');
+        const snap = require_('/Users/ayrtonandre/Documents/work/AGY/meeting_hub/data/missions_snapshot.js');
+        if (snap && Array.isArray(snap.missions)) {
+          this.missionsCache = snap.missions;
+          return snap.missions;
         }
       } catch (e) {
         // Ignore node fallback error
@@ -814,8 +809,11 @@ export class MeetingHubStore {
   /**
    * Gets pending and folded inbox status for a mission.
    */
-  async getInboxStatus(missionId) {
+  async getInboxStatus(missionId, forceRefresh = false) {
     const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'clariane-hdj';
+    if (!forceRefresh && this.inboxStatusCache && this.inboxStatusCache.has(id)) {
+      return this.inboxStatusCache.get(id);
+    }
     try {
       const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/inbox`);
       if (resp.ok) {
@@ -824,7 +822,7 @@ export class MeetingHubStore {
         const folded = json.folded || json.foldedFiles || [];
         const pendingCount = json.pendingCount !== undefined ? json.pendingCount : (json.total_pending !== undefined ? json.total_pending : pending.length);
         const foldedCount = json.foldedCount !== undefined ? json.foldedCount : (json.total_folded !== undefined ? json.total_folded : folded.length);
-        return {
+        const res = {
           status: 'ok',
           pendingCount,
           files: pending,
@@ -832,6 +830,8 @@ export class MeetingHubStore {
           foldedFiles: folded,
           isOffline: false
         };
+        if (this.inboxStatusCache) this.inboxStatusCache.set(id, res);
+        return res;
       }
     } catch (e) {}
 
@@ -842,7 +842,7 @@ export class MeetingHubStore {
         const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.list_inbox_files('${id}')))"`;
         const out = execSync(cmd, { encoding: 'utf8' });
         const res = JSON.parse(out);
-        return {
+        const result = {
           status: 'ok',
           pendingCount: res.total_pending !== undefined ? res.total_pending : (res.pending || []).length,
           files: res.pending || [],
@@ -850,10 +850,12 @@ export class MeetingHubStore {
           foldedFiles: res.folded || [],
           isOffline: false
         };
+        if (this.inboxStatusCache) this.inboxStatusCache.set(id, result);
+        return result;
       } catch (err) {}
     }
 
-    return {
+    const offlineRes = {
       status: 'offline',
       pendingCount: 0,
       files: [],
@@ -861,6 +863,8 @@ export class MeetingHubStore {
       foldedFiles: [],
       isOffline: true
     };
+    if (this.inboxStatusCache) this.inboxStatusCache.set(id, offlineRes);
+    return offlineRes;
   }
 
   /**
@@ -1091,6 +1095,72 @@ export class MeetingHubStore {
       }
       throw e;
     }
+  }
+
+  /**
+   * Deletes an action from mission Actions.md note or local meeting data.
+   * Invalidates mission summaries cache and notifies subscribers.
+   */
+  async deleteAction(actionId, missionId = null, meetingId = null) {
+    if (!actionId) throw new Error("Missing actionId");
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || null;
+    const body = { actionId, missionId: id };
+
+    // 1. Try deleting from mission Actions.md via HTTP API
+    try {
+      const url = (typeof window === 'undefined') ? 'http://localhost:8080/api/actions/delete' : '/api/actions/delete';
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const result = await resp.json();
+        const targetMission = result.missionId || id;
+        if (targetMission && this.missionSummariesCache) {
+          this.missionSummariesCache.delete(targetMission);
+        } else if (this.missionSummariesCache) {
+          this.missionSummariesCache.clear();
+        }
+        this.notify({ type: 'action_deleted', actionId, missionId: targetMission });
+        return result;
+      }
+    } catch (e) {
+      if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+        try {
+          const { execSync } = await import('child_process');
+          const mArg = id ? `'${id}'` : 'None';
+          const cmd = `python3 -c "import sys, json; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes; res = mission_notes.delete_action('${actionId}', mission_id=${mArg}); print(json.dumps(res))"`;
+          const out = execSync(cmd, { encoding: 'utf8' });
+          const res = JSON.parse(out);
+          const targetMission = res.missionId || id;
+          if (targetMission && this.missionSummariesCache) {
+            this.missionSummariesCache.delete(targetMission);
+          } else if (this.missionSummariesCache) {
+            this.missionSummariesCache.clear();
+          }
+          this.notify({ type: 'action_deleted', actionId, missionId: targetMission });
+          return res;
+        } catch (err) {}
+      }
+    }
+
+    // 2. Also check and remove from IndexedDB meeting notes if meetingId is provided
+    if (meetingId && this.db) {
+      try {
+        const note = await this.getMeetingData(meetingId);
+        if (note && Array.isArray(note.items)) {
+          const updatedItems = note.items.filter(it => it.id !== actionId);
+          await this.saveMeetingData(meetingId, { items: updatedItems });
+          this.notify({ type: 'action_deleted', actionId, meetingId });
+          return { status: 'deleted', actionId, meetingId };
+        }
+      } catch (err) {
+        console.warn('[MeetingStore] Failed deleting from meeting_data:', err);
+      }
+    }
+
+    return { status: 'deleted', actionId };
   }
 
   /**
@@ -1549,25 +1619,32 @@ export class MeetingHubStore {
       };
     }
 
-    // 2. Missions fold counts
+    // 2. Parallel warm-up of inbox status and mission summaries across all missions
+    await Promise.all(missions.map(async m => {
+      const tasks = [];
+      if (!this.inboxStatusCache || !this.inboxStatusCache.has(m.id)) {
+        tasks.push(this.getInboxStatus(m.id).catch(() => ({ pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] })));
+      }
+      if (!this.missionSummariesCache || !this.missionSummariesCache.has(m.id)) {
+        tasks.push(this.getMissionSummary(m.id).catch(() => null));
+      }
+      if (tasks.length > 0) {
+        await Promise.all(tasks);
+      }
+    }));
+
+    // 2b. Missions fold counts
     const missionItems = [];
     let totalPendingInbox = 0;
     let totalFoldMeetings = 0;
 
     for (const m of missions) {
       const mEvents = this.getEventsForProject(m.id);
-      let inboxStatus = this.inboxStatusCache.get(m.id);
-      if (!inboxStatus) {
-        try {
-          inboxStatus = await this.getInboxStatus(m.id);
-        } catch (e) {
-          inboxStatus = { pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] };
-        }
-      }
+      let inboxStatus = (this.inboxStatusCache && this.inboxStatusCache.get(m.id)) || { pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] };
 
       totalPendingInbox += (inboxStatus.pendingCount || 0);
 
-      const mSummary = this.missionSummariesCache.get(m.id) || null;
+      const mSummary = (this.missionSummariesCache && this.missionSummariesCache.get(m.id)) || null;
       let foldCount = 0;
       mEvents.forEach(e => {
         const inboxState = this.meetingInboxState(e.id, inboxStatus, mSummary);
@@ -1591,7 +1668,7 @@ export class MeetingHubStore {
     // 3. My actions count
     let myActionsCount = 0;
     for (const m of missions) {
-      let summary = this.missionSummariesCache.get(m.id);
+      let summary = (this.missionSummariesCache && this.missionSummariesCache.get(m.id)) || null;
       if (!summary) {
         summary = await this.getMissionSummary(m.id);
       }

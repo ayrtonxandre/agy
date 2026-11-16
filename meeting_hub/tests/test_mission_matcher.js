@@ -23,9 +23,9 @@ console.log('--- Running Mission Matcher Verification Tests ---');
 
 const mockRegistry = [
   {
-    id: 'leclerc-siplec',
-    name: 'Leclerc : Siplec Referential and AI Augmentation',
-    clientMatch: ['siplec', 'leclerc', 'entretien siplec', '[main mission]', 'main mission']
+    id: 'cma-cgm',
+    name: 'CMA CGM - AI Agent Builders',
+    clientMatch: ['cma cgm', 'cma-cgm', 'cma', 'sync cma cgm', 'agent builders', 'maia', 'icap', 'ceva', '[main mission]', 'main mission']
   },
   {
     id: 'ge-enterprise',
@@ -85,17 +85,17 @@ test('Priority 1: Matches [MO] to clariane-hdj', () => {
 });
 
 // 2. Visual Calendar Color Tag (Priority 2)
-test('Priority 2: Matches colorId "7" ([MAIN MISSION]) to leclerc-siplec', () => {
-  const event = { title: 'Siplec <> Artefact - Entretien Ayrton PDT-119', colorId: '7' };
+test('Priority 2: Matches colorId "7" ([MAIN MISSION]) to cma-cgm', () => {
+  const event = { title: 'Sync CMA CGM', colorId: '7' };
   const res = matchMission(event, mockRegistry);
-  assert.strictEqual(res.missionId, 'leclerc-siplec');
+  assert.strictEqual(res.missionId, 'cma-cgm');
   assert.strictEqual(res.confidence, 'high');
 });
 
-test('Priority 2: Matches colorTag "[MAIN MISSION]" to leclerc-siplec', () => {
-  const event = { title: 'Point d\'étape', colorTag: '[MAIN MISSION]' };
+test('Priority 2: Matches colorTag "[MAIN MISSION]" to cma-cgm', () => {
+  const event = { title: 'Sync Mistral CMA CGM', colorTag: '[MAIN MISSION]' };
   const res = matchMission(event, mockRegistry);
-  assert.strictEqual(res.missionId, 'leclerc-siplec');
+  assert.strictEqual(res.missionId, 'cma-cgm');
   assert.strictEqual(res.confidence, 'high');
 });
 
@@ -150,17 +150,17 @@ test('Priority 4: Matches attendee Roland Juilhard to counseling', () => {
 
 // 0. Explicit Mission ID (Priority 0)
 test('Priority 0: Explicit projectId or missionId takes precedence', () => {
-  const event = { title: 'Random title', projectId: 'leclerc-siplec', colorId: '11' };
+  const event = { title: 'Random title', projectId: 'cma-cgm', colorId: '11' };
   const res = matchMission(event, mockRegistry);
-  assert.strictEqual(res.missionId, 'leclerc-siplec');
+  assert.strictEqual(res.missionId, 'cma-cgm');
   assert.strictEqual(res.confidence, 'high');
 });
 
 // Title override for conflicting color tags
-test('Priority 2: Title keyword "Leclerc" overrides conflicting color tag "[PRIDEFACT]"', () => {
-  const event = { title: 'Échange mission Leclerc ', colorTag: '[PRIDEFACT]', colorId: '11' };
+test('Priority 2: Title keyword "CMA CGM" overrides conflicting color tag "[PRIDEFACT]"', () => {
+  const event = { title: 'Sync CMA CGM', colorTag: '[PRIDEFACT]', colorId: '11' };
   const res = matchMission(event, mockRegistry);
-  assert.strictEqual(res.missionId, 'leclerc-siplec');
+  assert.strictEqual(res.missionId, 'cma-cgm');
   assert.strictEqual(res.confidence, 'high');
 });
 

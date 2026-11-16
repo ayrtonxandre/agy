@@ -1602,6 +1602,46 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(content)
 
+            # Action Deletion in Actions.md (Phase 5 / Action relevance management)
+            elif clean_path in ("/api/actions/delete", "/api/missions/action/delete"):
+                if not self._is_localhost():
+                    self.send_response(403)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Forbidden: Restricted to localhost"}).encode("utf-8"))
+                    return
+                if not mission_notes:
+                    self.send_response(500)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "mission_notes module not available"}).encode("utf-8"))
+                    return
+
+                action_id = payload.get("actionId") or payload.get("id")
+                mission_id = payload.get("missionId")
+                if not action_id:
+                    self.send_response(400)
+                    content = json.dumps({"error": "Missing 'actionId' in request body"}).encode("utf-8")
+                else:
+                    try:
+                        res = mission_notes.delete_action(action_id, mission_id=mission_id)
+                        content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
+                        self.send_response(200)
+                    except ValueError as ve:
+                        self.send_response(404)
+                        content = json.dumps({"error": str(ve)}).encode("utf-8")
+                    except Exception as e:
+                        self.send_response(500)
+                        content = json.dumps({"error": str(e)}).encode("utf-8")
+
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(content)))
+                self.send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content)
+
             # Granola Sync API (Phase 5)
             elif clean_path in ("/api/granola/sync", "/api/sync/granola"):
                 if not self._is_localhost():

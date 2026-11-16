@@ -1,6 +1,6 @@
 /**
  * Meeting Hub Compiled Application Bundle
- * Generated: 2026-11-13T13:06:28.872Z
+ * Generated: 2026-11-16T09:46:31.275Z
  */
 (function(window, document) {
 'use strict';
@@ -38,7 +38,6 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "edward",
         "feedback edward",
         "[ge]",
-        "ge",
         "team work",
         "[team work]"
       ],
@@ -211,7 +210,9 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "agent builders",
         "maia",
         "icap",
-        "ceva"
+        "ceva",
+        "[main mission]",
+        "main mission"
       ],
       "contacts": [
         "guillaume digoin",
@@ -299,6 +300,7 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
     }
   ]
 };
+if (typeof module !== 'undefined') module.exports = MISSIONS_SNAPSHOT;
 
 window.MeetingHub = window.MeetingHub || {};
 const MeetingHub = window.MeetingHub;
@@ -1208,7 +1210,7 @@ function matchMission(event, registry) {
       }
     }
 
-    // Check if title explicitly specifies a different client/mission (e.g. "Échange mission Leclerc" miscolored)
+    // Check if title explicitly specifies a different client/mission (e.g. miscolored event)
     const titleOverrides = [];
     for (const m of missions) {
       const patterns = (m.clientMatch || [m.name, m.id]).map(s => String(s).toLowerCase().trim());
@@ -1267,18 +1269,28 @@ function matchMission(event, registry) {
       const cleanPat = pat.replace(/[\[\]]/g, '').trim();
       if (!cleanPat) continue;
 
-      // Exact phrase in title
-      if (title.includes(pat) || title.includes(cleanPat)) {
+      // Exact phrase or whole-word match in title
+      let titleMatched = false;
+      if (pat.startsWith('[') && pat.endsWith(']')) {
+        titleMatched = title.includes(pat);
+      } else if (cleanPat.length <= 3) {
+        const regex = new RegExp('(?:^|[^a-zA-Z0-9À-ÿ])' + cleanPat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:$|[^a-zA-Z0-9À-ÿ])', 'i');
+        titleMatched = regex.test(title);
+      } else {
+        titleMatched = title.includes(cleanPat);
+      }
+
+      if (titleMatched) {
         score += 10;
         matchReasons.push(`Title matches "${pat}"`);
       }
       // Tag match
-      if (tags.some(t => t === pat || t === cleanPat || t.includes(cleanPat))) {
+      if (tags.some(t => t === pat || t === cleanPat || (cleanPat.length > 3 && t.includes(cleanPat)))) {
         score += 6;
         matchReasons.push(`Tag matches "${pat}"`);
       }
       // Client field match
-      if (client && (client === pat || client === cleanPat || client.includes(cleanPat))) {
+      if (client && (client === pat || client === cleanPat || (cleanPat.length > 3 && client.includes(cleanPat)))) {
         score += 5;
         matchReasons.push(`Client field matches "${pat}"`);
       }
@@ -1542,7 +1554,8 @@ class EventModel {
       description: desc,
       source,
       colorId,
-      colorTag
+      colorTag,
+      projectId: raw.projectId || raw.missionId || undefined
     };
   }
 
@@ -1567,7 +1580,7 @@ class EventModel {
       return { stream: 'life', client: 'ATHX', isTraining: true };
     }
     if (cId === '7' || cTag === '[MAIN MISSION]') {
-      return { stream: 'work', client: 'Leclerc / Siplec', isTraining: false };
+      return { stream: 'work', client: 'CMA CGM', isTraining: false };
     }
     if (cId === '2' || cId === '10' || cTag === '[COUNSELING/HR]') {
       return { stream: 'work', client: 'Counseling', isTraining: false };
@@ -1592,8 +1605,8 @@ class EventModel {
     if (corpus.includes('athx') || corpus.includes('training') || corpus.includes('wod') || corpus.includes('crossfit')) {
       return { stream: 'life', client: 'ATHX', isTraining: true };
     }
-    if (corpus.includes('siplec') || corpus.includes('leclerc')) {
-      return { stream: 'work', client: 'Leclerc / Siplec', isTraining: false };
+    if (corpus.includes('cma') || corpus.includes('cma cgm') || corpus.includes('maia') || corpus.includes('ceva') || corpus.includes('icap')) {
+      return { stream: 'work', client: 'CMA CGM', isTraining: false };
     }
     if (corpus.includes('clariane') || corpus.includes('inicea') || corpus.includes('estela') || corpus.includes('@clariane.fr') ||
         corpus.includes('hdj') || corpus.includes('netsoins') || corpus.includes('molécules onéreuses') || corpus.includes('molecules onereuses') ||
@@ -3558,26 +3571,21 @@ class MeetingHubStore {
     }
 
     // 2. Fall back to bundled / global snapshot
-    if (typeof window !== 'undefined' && window.MISSIONS_SNAPSHOT && Array.isArray(window.MISSIONS_SNAPSHOT.missions)) {
-      this.missionsCache = window.MISSIONS_SNAPSHOT.missions;
-      return window.MISSIONS_SNAPSHOT.missions;
+    const globalSnapshot = (typeof window !== 'undefined' ? window.MISSIONS_SNAPSHOT : (typeof globalThis !== 'undefined' ? globalThis.MISSIONS_SNAPSHOT : null));
+    if (globalSnapshot && Array.isArray(globalSnapshot.missions)) {
+      this.missionsCache = globalSnapshot.missions;
+      return globalSnapshot.missions;
     }
 
     // 3. Node environment fallback (for unit tests)
     if (typeof process !== 'undefined' && process.versions && process.versions.node) {
       try {
-        const fs = await import('fs');
-        const p = '/Users/ayrtonandre/Documents/work/AGY/meeting_hub/data/missions_snapshot.js';
-        if (fs.existsSync(p)) {
-          const content = fs.readFileSync(p, 'utf8');
-          const m = content.match(/MISSIONS_SNAPSHOT\s*=\s*(\{[\s\S]*?\});?\s*$/);
-          if (m) {
-            const data = JSON.parse(m[1]);
-            if (Array.isArray(data.missions)) {
-              this.missionsCache = data.missions;
-              return data.missions;
-            }
-          }
+        const { createRequire } = await import('module');
+        const require_ = createRequire(process.cwd() + '/index.js');
+        const snap = require_('/Users/ayrtonandre/Documents/work/AGY/meeting_hub/data/missions_snapshot.js');
+        if (snap && Array.isArray(snap.missions)) {
+          this.missionsCache = snap.missions;
+          return snap.missions;
         }
       } catch (e) {
         // Ignore node fallback error
@@ -4296,8 +4304,11 @@ class MeetingHubStore {
   /**
    * Gets pending and folded inbox status for a mission.
    */
-  async getInboxStatus(missionId) {
+  async getInboxStatus(missionId, forceRefresh = false) {
     const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || 'clariane-hdj';
+    if (!forceRefresh && this.inboxStatusCache && this.inboxStatusCache.has(id)) {
+      return this.inboxStatusCache.get(id);
+    }
     try {
       const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/inbox`);
       if (resp.ok) {
@@ -4306,7 +4317,7 @@ class MeetingHubStore {
         const folded = json.folded || json.foldedFiles || [];
         const pendingCount = json.pendingCount !== undefined ? json.pendingCount : (json.total_pending !== undefined ? json.total_pending : pending.length);
         const foldedCount = json.foldedCount !== undefined ? json.foldedCount : (json.total_folded !== undefined ? json.total_folded : folded.length);
-        return {
+        const res = {
           status: 'ok',
           pendingCount,
           files: pending,
@@ -4314,6 +4325,8 @@ class MeetingHubStore {
           foldedFiles: folded,
           isOffline: false
         };
+        if (this.inboxStatusCache) this.inboxStatusCache.set(id, res);
+        return res;
       }
     } catch (e) {}
 
@@ -4324,7 +4337,7 @@ class MeetingHubStore {
         const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.list_inbox_files('${id}')))"`;
         const out = execSync(cmd, { encoding: 'utf8' });
         const res = JSON.parse(out);
-        return {
+        const result = {
           status: 'ok',
           pendingCount: res.total_pending !== undefined ? res.total_pending : (res.pending || []).length,
           files: res.pending || [],
@@ -4332,10 +4345,12 @@ class MeetingHubStore {
           foldedFiles: res.folded || [],
           isOffline: false
         };
+        if (this.inboxStatusCache) this.inboxStatusCache.set(id, result);
+        return result;
       } catch (err) {}
     }
 
-    return {
+    const offlineRes = {
       status: 'offline',
       pendingCount: 0,
       files: [],
@@ -4343,6 +4358,8 @@ class MeetingHubStore {
       foldedFiles: [],
       isOffline: true
     };
+    if (this.inboxStatusCache) this.inboxStatusCache.set(id, offlineRes);
+    return offlineRes;
   }
 
   /**
@@ -4573,6 +4590,72 @@ class MeetingHubStore {
       }
       throw e;
     }
+  }
+
+  /**
+   * Deletes an action from mission Actions.md note or local meeting data.
+   * Invalidates mission summaries cache and notifies subscribers.
+   */
+  async deleteAction(actionId, missionId = null, meetingId = null) {
+    if (!actionId) throw new Error("Missing actionId");
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || null;
+    const body = { actionId, missionId: id };
+
+    // 1. Try deleting from mission Actions.md via HTTP API
+    try {
+      const url = (typeof window === 'undefined') ? 'http://localhost:8080/api/actions/delete' : '/api/actions/delete';
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const result = await resp.json();
+        const targetMission = result.missionId || id;
+        if (targetMission && this.missionSummariesCache) {
+          this.missionSummariesCache.delete(targetMission);
+        } else if (this.missionSummariesCache) {
+          this.missionSummariesCache.clear();
+        }
+        this.notify({ type: 'action_deleted', actionId, missionId: targetMission });
+        return result;
+      }
+    } catch (e) {
+      if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+        try {
+          const { execSync } = await import('child_process');
+          const mArg = id ? `'${id}'` : 'None';
+          const cmd = `python3 -c "import sys, json; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes; res = mission_notes.delete_action('${actionId}', mission_id=${mArg}); print(json.dumps(res))"`;
+          const out = execSync(cmd, { encoding: 'utf8' });
+          const res = JSON.parse(out);
+          const targetMission = res.missionId || id;
+          if (targetMission && this.missionSummariesCache) {
+            this.missionSummariesCache.delete(targetMission);
+          } else if (this.missionSummariesCache) {
+            this.missionSummariesCache.clear();
+          }
+          this.notify({ type: 'action_deleted', actionId, missionId: targetMission });
+          return res;
+        } catch (err) {}
+      }
+    }
+
+    // 2. Also check and remove from IndexedDB meeting notes if meetingId is provided
+    if (meetingId && this.db) {
+      try {
+        const note = await this.getMeetingData(meetingId);
+        if (note && Array.isArray(note.items)) {
+          const updatedItems = note.items.filter(it => it.id !== actionId);
+          await this.saveMeetingData(meetingId, { items: updatedItems });
+          this.notify({ type: 'action_deleted', actionId, meetingId });
+          return { status: 'deleted', actionId, meetingId };
+        }
+      } catch (err) {
+        console.warn('[MeetingStore] Failed deleting from meeting_data:', err);
+      }
+    }
+
+    return { status: 'deleted', actionId };
   }
 
   /**
@@ -5031,25 +5114,32 @@ class MeetingHubStore {
       };
     }
 
-    // 2. Missions fold counts
+    // 2. Parallel warm-up of inbox status and mission summaries across all missions
+    await Promise.all(missions.map(async m => {
+      const tasks = [];
+      if (!this.inboxStatusCache || !this.inboxStatusCache.has(m.id)) {
+        tasks.push(this.getInboxStatus(m.id).catch(() => ({ pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] })));
+      }
+      if (!this.missionSummariesCache || !this.missionSummariesCache.has(m.id)) {
+        tasks.push(this.getMissionSummary(m.id).catch(() => null));
+      }
+      if (tasks.length > 0) {
+        await Promise.all(tasks);
+      }
+    }));
+
+    // 2b. Missions fold counts
     const missionItems = [];
     let totalPendingInbox = 0;
     let totalFoldMeetings = 0;
 
     for (const m of missions) {
       const mEvents = this.getEventsForProject(m.id);
-      let inboxStatus = this.inboxStatusCache.get(m.id);
-      if (!inboxStatus) {
-        try {
-          inboxStatus = await this.getInboxStatus(m.id);
-        } catch (e) {
-          inboxStatus = { pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] };
-        }
-      }
+      let inboxStatus = (this.inboxStatusCache && this.inboxStatusCache.get(m.id)) || { pendingCount: 0, files: [], foldedCount: 0, foldedFiles: [] };
 
       totalPendingInbox += (inboxStatus.pendingCount || 0);
 
-      const mSummary = this.missionSummariesCache.get(m.id) || null;
+      const mSummary = (this.missionSummariesCache && this.missionSummariesCache.get(m.id)) || null;
       let foldCount = 0;
       mEvents.forEach(e => {
         const inboxState = this.meetingInboxState(e.id, inboxStatus, mSummary);
@@ -5073,7 +5163,7 @@ class MeetingHubStore {
     // 3. My actions count
     let myActionsCount = 0;
     for (const m of missions) {
-      let summary = this.missionSummariesCache.get(m.id);
+      let summary = (this.missionSummariesCache && this.missionSummariesCache.get(m.id)) || null;
       if (!summary) {
         summary = await this.getMissionSummary(m.id);
       }
@@ -6836,6 +6926,9 @@ class MeetingPanelUI {
                       <button class="btn sm action-edit-btn" data-action-id="${this._escape(a.id)}" data-mission-id="${this._escape(missionId)}" title="Edit action: name, sub-stream, owner, due date" style="font-size: 10px; padding: 2px 5px; display: inline-flex; align-items: center; gap: 3px;">
                         ${Icons.edit}
                       </button>
+                      <button class="btn-icon action-delete-btn" data-action-id="${this._escape(a.id)}" data-mission-id="${this._escape(missionId)}" title="Delete action" style="color: var(--destructive, #ef4444); padding: 2px 4px;">
+                        ${Icons.trash}
+                      </button>
                     </div>
                   </div>
                 `).join('')}
@@ -7113,6 +7206,9 @@ class MeetingPanelUI {
                     </button>
                     <button class="btn sm" data-copy-action-id="${this._escape(a.id || a.title)}" style="font-size: 10.5px; padding: 2px 6px; flex-shrink: 0;" title="Copy action ID">
                       Copy ID
+                    </button>
+                    <button class="btn-icon action-delete-btn" data-action-id="${this._escape(a.id || a.title)}" data-mission-id="${this._escape(missionId)}" title="Delete action" style="color: var(--destructive, #ef4444); padding: 2px 4px;">
+                      ${Icons.trash}
                     </button>
                   </div>
                 </div>
@@ -7480,6 +7576,28 @@ class MeetingPanelUI {
             await this.render();
           }
         });
+      });
+    });
+
+    // 10d. Action delete buttons (Prep and Folded modes)
+    this.container.querySelectorAll('.action-delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actionId = btn.dataset.actionId;
+        const targetMissionId = btn.dataset.missionId || missionId;
+        if (!actionId) return;
+        if (!confirm(`Are you sure you want to delete action "${actionId}" from Actions.md?`)) {
+          return;
+        }
+        btn.disabled = true;
+        try {
+          await this.store.deleteAction(actionId, targetMissionId, this.currentMeetingId);
+          await this.render();
+        } catch (err) {
+          console.error('[MeetingPanel] Delete action failed:', err);
+          alert(`Failed to delete action: ${err.message || err}`);
+          btn.disabled = false;
+        }
       });
     });
 
@@ -8650,13 +8768,25 @@ class ActionsView {
 
     this.itemsMap = new Map(aggregatedItems.map(i => [i.id, i]));
 
+    // Extract unique owners for dropdown filter
+    const allOwners = Array.from(new Set(
+      aggregatedItems
+        .map(i => (i.owner || '').trim())
+        .filter(Boolean)
+    )).sort((a, b) => a.localeCompare(b));
+
     // Filter items
     let filtered = aggregatedItems;
     if (this.statusFilter === 'open') {
       filtered = filtered.filter(i => !i.done);
     }
     if (this.ownerFilter === 'me') {
-      filtered = filtered.filter(i => (i.owner || '').toLowerCase() === 'me' || (i.owner || '').includes('Ayrton'));
+      filtered = filtered.filter(i => {
+        const o = (i.owner || '').toLowerCase();
+        return o === 'me' || o.includes('ayrton') || o.includes('andré') || o.includes('andre');
+      });
+    } else if (this.ownerFilter && this.ownerFilter !== 'all') {
+      filtered = filtered.filter(i => (i.owner || '').toLowerCase() === this.ownerFilter.toLowerCase());
     }
     if (this.searchQuery) {
       filtered = filtered.filter(i => {
@@ -8683,10 +8813,20 @@ class ActionsView {
             <h2 style="font: 600 20px/1.2 var(--font-sans); margin: 0 0 2px;">Open Actions by Client</h2>
             <div class="sub" style="font-size: 12px;">${totalOpen} open actions across all client engagements</div>
           </div>
-          <div style="display: flex; gap: 6px;">
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
             <button class="btn sm ${this.statusFilter === 'open' ? 'pink' : ''}" id="toggleStatusOpenBtn">Open Only</button>
             <button class="btn sm ${this.statusFilter === 'all' ? 'pink' : ''}" id="toggleStatusAllBtn">All Items (${aggregatedItems.length})</button>
             <button class="btn sm ${this.ownerFilter === 'me' ? 'pink' : ''}" id="toggleOwnerMeBtn">Assigned to Me</button>
+            <div style="display: inline-flex; align-items: center; gap: 4px; margin-left: 2px;">
+              <label for="actionsOwnerSelect" style="font-size: 11.5px; color: var(--muted-foreground);">Owner:</label>
+              <select id="actionsOwnerSelect" class="in" style="font-size: 11.5px; padding: 2px 6px; height: 26px; border-radius: var(--radius-sm); background: var(--card); color: var(--foreground); border: 1px solid var(--border);">
+                <option value="all" ${this.ownerFilter === 'all' ? 'selected' : ''}>All Owners (${aggregatedItems.length})</option>
+                <option value="me" ${this.ownerFilter === 'me' ? 'selected' : ''}>Assigned to Me</option>
+                ${allOwners.map(o => `
+                  <option value="${this._escape(o)}" ${this.ownerFilter === o ? 'selected' : ''}>${this._escape(o)}</option>
+                `).join('')}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -8747,11 +8887,10 @@ class ActionsView {
                         <button class="btn sm" data-copy-note-action="${this._escape(item.id)}" data-note-file="${this._escape(item.sourceNote || 'Actions.md')}" title="Copy ID: ${this._escape(item.id)}" style="font-size: 10.5px; padding: 2px 7px;">
                           Copy ID
                         </button>
-                      ` : `
-                        <button class="btn-icon delete-action-btn" data-item-id="${this._escape(item.id)}" data-meeting-id="${this._escape(item.meetingId || '')}" title="Delete action">
-                          ${Icons.trash}
-                        </button>
-                      `}
+                      ` : ''}
+                      <button class="btn-icon delete-action-btn" data-item-id="${this._escape(item.id)}" data-mission-id="${this._escape(item.missionId || '')}" data-meeting-id="${this._escape(item.meetingId || '')}" title="Delete action" style="color: var(--destructive, #ef4444);">
+                        ${Icons.trash}
+                      </button>
                     </div>
                   </div>
                 `).join('')}
@@ -8782,6 +8921,13 @@ class ActionsView {
       this.ownerFilter = this.ownerFilter === 'me' ? 'all' : 'me';
       this.render();
     });
+    const ownerSelect = this.container.querySelector('#actionsOwnerSelect');
+    if (ownerSelect) {
+      ownerSelect.addEventListener('change', (e) => {
+        this.ownerFilter = e.target.value;
+        this.render();
+      });
+    }
 
     const searchInput = this.container.querySelector('#actionsSearchInput');
     if (searchInput) {
@@ -8888,13 +9034,23 @@ class ActionsView {
 
     // Delete item
     this.container.querySelectorAll('.delete-action-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
         const itemId = btn.dataset.itemId;
+        const missionId = btn.dataset.missionId;
         const meetingId = btn.dataset.meetingId;
-        const note = await this.store.getMeetingData(meetingId);
-        const updatedItems = (note.items || []).filter(it => it.id !== itemId);
-        await this.store.saveMeetingData(meetingId, { items: updatedItems });
-        this.render();
+        if (!confirm(`Are you sure you want to delete action "${itemId}"?`)) {
+          return;
+        }
+        btn.disabled = true;
+        try {
+          await this.store.deleteAction(itemId, missionId, meetingId);
+          await this.render();
+        } catch (err) {
+          console.error('[ActionsView] Failed to delete action:', err);
+          alert(`Failed to delete action: ${err.message || err}`);
+          btn.disabled = false;
+        }
       });
     });
 
@@ -9255,7 +9411,7 @@ class ProjectsView {
     const currentId = this.currentProjectId;
 
     // Immediately clear stale HTML when switching to a different mission
-    if (this._renderedProjectId && this._renderedProjectId !== currentId) {
+    if (!this._renderedProjectId || this._renderedProjectId !== currentId) {
       this.container.innerHTML = `
         <div style="padding: 28px; display: flex; align-items: center; gap: 10px; color: var(--muted-foreground); font-size: 13px;">
           <span style="display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--pink-600); border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
@@ -9651,22 +9807,43 @@ class ProjectsView {
     }
 
     if (this.currentSubTab === 'actions') {
-      let actList = summary.actions || summary.actionMatrix || [];
+      const rawActions = summary.actions || summary.actionMatrix || [];
+      const uniqueOwners = Array.from(new Set(
+        rawActions.map(a => (a.owner || '').trim()).filter(Boolean)
+      )).sort((a, b) => a.localeCompare(b));
+
+      let actList = rawActions;
       if (this.actionStatusFilter === 'open') {
         actList = actList.filter(a => !a.done);
       } else if (this.actionStatusFilter === 'done') {
         actList = actList.filter(a => a.done);
       }
+      if (this.actionOwnerFilter === 'me') {
+        actList = actList.filter(a => {
+          const o = (a.owner || '').toLowerCase();
+          return o === 'me' || o.includes('ayrton') || o.includes('andré') || o.includes('andre');
+        });
+      } else if (this.actionOwnerFilter && this.actionOwnerFilter !== 'all') {
+        actList = actList.filter(a => (a.owner || '').toLowerCase() === this.actionOwnerFilter.toLowerCase());
+      }
+
       return `
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <div class="sub" style="font-size: 12px;">
               Read-only view from <span style="font-family: var(--font-mono);">Actions.md</span> (single source of truth).
             </div>
-            <div style="display: flex; gap: 6px;">
-              <button class="btn sm ${this.actionStatusFilter === 'open' ? 'active' : ''}" data-act-filter="open">Open</button>
-              <button class="btn sm ${this.actionStatusFilter === 'done' ? 'active' : ''}" data-act-filter="done">Closed</button>
-              <button class="btn sm ${this.actionStatusFilter === 'all' ? 'active' : ''}" data-act-filter="all">All</button>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <select id="missionActionOwnerSelect" style="padding: 4px 8px; font-size: 11.5px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--background); color: var(--foreground); cursor: pointer;">
+                <option value="all" ${this.actionOwnerFilter === 'all' ? 'selected' : ''}>All Owners</option>
+                <option value="me" ${this.actionOwnerFilter === 'me' ? 'selected' : ''}>Assigned to Me</option>
+                ${uniqueOwners.map(o => `<option value="${this._escape(o)}" ${this.actionOwnerFilter.toLowerCase() === o.toLowerCase() ? 'selected' : ''}>${this._escape(o)}</option>`).join('')}
+              </select>
+              <div style="display: flex; gap: 4px;">
+                <button class="btn sm ${this.actionStatusFilter === 'open' ? 'active' : ''}" data-act-filter="open">Open</button>
+                <button class="btn sm ${this.actionStatusFilter === 'done' ? 'active' : ''}" data-act-filter="done">Closed</button>
+                <button class="btn sm ${this.actionStatusFilter === 'all' ? 'active' : ''}" data-act-filter="all">All</button>
+              </div>
             </div>
           </div>
 
@@ -9684,9 +9861,12 @@ class ProjectsView {
                   </div>
                   <div style="font-size: 13px; color: var(--foreground); line-height: 1.4;">${this._escape(a.text || a.description)}</div>
                 </div>
-                <div>
+                <div style="display: flex; align-items: center; gap: 4px;">
                   <button class="btn sm" data-copy-action-id="${this._escape(a.id)}" style="font-size: 10.5px; padding: 2px 6px;">
                     Copy ID
+                  </button>
+                  <button class="btn-icon delete-mission-action-btn" data-action-id="${this._escape(a.id)}" title="Delete action" style="color: var(--destructive, #ef4444); padding: 2px 5px;">
+                    ${Icons.trash}
                   </button>
                 </div>
               </div>
@@ -9864,7 +10044,35 @@ Iron Rules:
       });
     });
 
-    // 6. Copy Action ID button
+    const missionOwnerSelect = this.container.querySelector('#missionActionOwnerSelect');
+    if (missionOwnerSelect) {
+      missionOwnerSelect.addEventListener('change', (e) => {
+        this.actionOwnerFilter = e.target.value;
+        this.render();
+      });
+    }
+
+    // 6. Delete action button
+    this.container.querySelectorAll('.delete-mission-action-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const actionId = btn.dataset.actionId;
+        if (!confirm(`Are you sure you want to delete action "${actionId}" from Actions.md?`)) {
+          return;
+        }
+        btn.disabled = true;
+        try {
+          await this.store.deleteAction(actionId, this.currentProjectId);
+          await this.render();
+        } catch (err) {
+          console.error('[ProjectsView] Failed to delete action:', err);
+          alert(`Failed to delete action: ${err.message || err}`);
+          btn.disabled = false;
+        }
+      });
+    });
+
+    // 7. Copy Action ID button
     this.container.querySelectorAll('[data-copy-action-id]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -11444,34 +11652,7 @@ async function bootstrap() {
     
     // Safety check on store
     await MeetingHub.store.init();
-    
-    openActionsCount = await MeetingHub.store.getOpenActionsCount();
     shell.store = MeetingHub.store;
-    await refreshSidebarAndRail();
-    const initialTodaySub = (typeof formatLongDate === 'function') ? formatLongDate(AppState.date) : AppState.date;
-    shell.renderHeader('Today', initialTodaySub);
-
-    // Retrieve & render initial sync status in sidebar
-    try {
-      const initialSyncStatus = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
-      shell.setSyncStatus(initialSyncStatus);
-    } catch (e) {
-      console.warn('[MeetingHub] Could not load sync status:', e);
-    }
-
-    // Refresh sync status relative times every 60s
-    setInterval(async () => {
-      try {
-        const s = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
-        shell.setSyncStatus(s);
-      } catch (e) {}
-    }, 60000);
-
-    // Initialize projects in shell
-    const allProjects = await MeetingHub.store.getAllProjects();
-    const suggestedProjects = await MeetingHub.store.getSuggestedProjects();
-    const activeProjectId = MeetingHub.store.getActiveProjectId() || (allProjects[0] && allProjects[0].id) || 'ge-enterprise';
-    shell.setProjects(allProjects, activeProjectId, suggestedProjects);
 
     todayView = new MeetingHub.TodayView({
       container: leftCol,
@@ -11558,6 +11739,48 @@ async function bootstrap() {
     if (expandTab) {
       expandTab.addEventListener('click', () => setPanelCollapsed(false));
     }
+
+    try {
+      const storedCollapsed = localStorage.getItem('mhub_panel_collapsed');
+      if (storedCollapsed === 'true' && !window.location.hash.startsWith('#/meeting/')) {
+        setPanelCollapsed(true);
+      }
+    } catch (e) {}
+
+    // Handle initial route immediately for instant visual feedback
+    handleHashRoute();
+
+    // Populate sidebar, rail, and projects asynchronously without blocking initial route render
+    (async () => {
+      try {
+        openActionsCount = await MeetingHub.store.getOpenActionsCount();
+        const allProjects = await MeetingHub.store.getAllProjects();
+        const suggestedProjects = await MeetingHub.store.getSuggestedProjects();
+        const activeProjectId = MeetingHub.store.getActiveProjectId() || (allProjects[0] && allProjects[0].id) || 'ge-enterprise';
+        shell.setProjects(allProjects, activeProjectId, suggestedProjects);
+        await refreshSidebarAndRail();
+      } catch (err) {
+        console.warn('[MeetingHub] Background sidebar/rail refresh error:', err);
+      }
+    })();
+
+    // Retrieve & render initial sync status in sidebar
+    (async () => {
+      try {
+        const initialSyncStatus = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
+        shell.setSyncStatus(initialSyncStatus);
+      } catch (e) {
+        console.warn('[MeetingHub] Could not load sync status:', e);
+      }
+    })();
+
+    // Refresh sync status relative times every 60s
+    setInterval(async () => {
+      try {
+        const s = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
+        shell.setSyncStatus(s);
+      } catch (e) {}
+    }, 60000);
 
     // Subscribe to store updates
     MeetingHub.store.subscribe(async (payload) => {

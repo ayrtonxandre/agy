@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 import re
 import json
+import time
 import hashlib
 import urllib.request
 from datetime import datetime
@@ -21,6 +22,23 @@ from typing import Any
 import yaml
 
 MISSIONS_ROOT = Path("/Users/ayrtonandre/Documents/work/Missions").resolve()
+
+# In-memory TTL caching to prevent disk I/O freezes on UI load
+_CACHE_TTL = 8.0  # seconds
+_REGISTRY_CACHE: dict[str, Any] = {"data": None, "mtime": 0.0, "time": 0.0}
+_SUMMARY_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
+_INBOX_CACHE: dict[str, tuple[float, dict[str, Any]]] = {}
+
+def clear_cache(mission_id: str | None = None) -> None:
+    """Clears in-memory caches. If mission_id is provided, invalidates only that mission."""
+    global _REGISTRY_CACHE, _SUMMARY_CACHE, _INBOX_CACHE
+    if mission_id:
+        _SUMMARY_CACHE.pop(mission_id, None)
+        _INBOX_CACHE.pop(mission_id, None)
+    else:
+        _REGISTRY_CACHE = {"data": None, "mtime": 0.0, "time": 0.0}
+        _SUMMARY_CACHE.clear()
+        _INBOX_CACHE.clear()
 
 CALENDAR_COLOR_TAGS: dict[str, str] = {
     "1": "[ARTEFACT INTERNAL]",
@@ -84,14 +102,21 @@ def _atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> Non
 
 
 def get_missions_registry() -> dict[str, Any]:
-    """Reads and parses missions.yaml registry."""
+    """Reads and parses missions.yaml registry with mtime and TTL caching."""
+    global _REGISTRY_CACHE
     registry_file = MISSIONS_ROOT / "missions.yaml"
     if not registry_file.exists():
         return {"missions": []}
 
     try:
+        now = time.time()
+        mtime = registry_file.stat().st_mtime
+        if _REGISTRY_CACHE["data"] is not None and _REGISTRY_CACHE["mtime"] == mtime and (now - _REGISTRY_CACHE["time"] < _CACHE_TTL):
+            return _REGISTRY_CACHE["data"]
+
         content = registry_file.read_text(encoding="utf-8")
         data = yaml.safe_load(content) or {}
+        _REGISTRY_CACHE = {"data": data, "mtime": mtime, "time": now}
         return data
     except Exception as e:
         return {"missions": [], "error": str(e)}
@@ -284,6 +309,12 @@ def get_mission_summary(mission_id: str) -> dict[str, Any]:
     - Inbox files (pending & folded)
     - Stats
     """
+    global _SUMMARY_CACHE
+    now = time.time()
+    cached = _SUMMARY_CACHE.get(mission_id)
+    if cached and (now - cached[0] < _CACHE_TTL):
+        return cached[1]
+
     mission_dir = resolve_safe_path(mission_id)
     registry = get_missions_registry()
 
@@ -366,7 +397,8 @@ def get_mission_summary(mission_id: str) -> dict[str, Any]:
                     title = line.removeprefix("# ").strip()
                     break
 
-            is_workstream = fm.get("type") == "workstream" or "(" in file_path.name or "Transversal" in file_path.name or "Glanum" in file_path.name or "Arbelles" in file_path.name or "Mariéna" in file_path.name
+            yaml_ws_notes = [Path(w.get("note", "")).name for w in mission_meta.get("workstreams", []) if w.get("note")]
+            is_workstream = fm.get("type") == "workstream" or file_path.name in yaml_ws_notes or "(" in file_path.name or "Transversal" in file_path.name or "Glanum" in file_path.name or "Arbelles" in file_path.name or "Mariéna" in file_path.name
 
             # Extract sections: Current state, Decision log, Open points
             tables = parse_markdown_tables(body)
@@ -387,18 +419,18 @@ def get_mission_summary(mission_id: str) -> dict[str, Any]:
                                 "noteTitle": title,
                                 "noteFile": file_path.name
                             })
-                elif "id" in keys and ("description" in keys or "point" in keys or "what" in keys):
+                elif "id" in keys and ("description" in keys or "point" in keys or "what" in keys or "sujet" in keys):
                     for r in t.get("rows", []):
                         op_id = r.get("id", "").strip()
-                        op_what = r.get("description", "") or r.get("what", "")
+                        op_what = r.get("description", "") or r.get("point", "") or r.get("what", "") or r.get("sujet", "")
                         if op_id and op_what:
                             note_open_points.append({
                                 "id": op_id,
                                 "what": op_what,
                                 "why": r.get("why", "") or r.get("source", ""),
-                                "owner": r.get("owner", ""),
+                                "owner": r.get("owner", "") or r.get("porteur", ""),
                                 "date": r.get("date", ""),
-                                "status": r.get("status", "Open"),
+                                "status": r.get("status", "") or r.get("statut", "Open"),
                                 "outcome": r.get("outcome", ""),
                                 "noteTitle": title,
                                 "noteFile": file_path.name
@@ -467,7 +499,7 @@ def get_mission_summary(mission_id: str) -> dict[str, Any]:
     open_actions_count = sum(1 for a in actions_list if not a.get("done"))
     done_actions_count = sum(1 for a in actions_list if a.get("done"))
 
-    return {
+    summary_result = {
         "missionId": mission_meta.get("id", mission_id),
         "projectId": mission_meta.get("id", mission_id),
         "name": mission_meta.get("name", mission_id),
@@ -500,6 +532,8 @@ def get_mission_summary(mission_id: str) -> dict[str, Any]:
             "foldedCount": len(inbox_info.get("folded", []))
         }
     }
+    _SUMMARY_CACHE[mission_id] = (now, summary_result)
+    return summary_result
 
 
 def write_inbox_file(mission_id: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -576,6 +610,7 @@ def write_inbox_file(mission_id: str, payload: dict[str, Any]) -> dict[str, Any]
                                 f.unlink(missing_ok=True)
                             target_file = (inbox_dir / f.name) if not is_folded else file_path
                             target_file.write_text(full_content, encoding="utf-8")
+                            clear_cache(mission_id)
                             return {
                                 "status": "replaced",
                                 "message": f"Minutes updated in mission inbox (replaced existing file for event {event_id})",
@@ -587,6 +622,7 @@ def write_inbox_file(mission_id: str, payload: dict[str, Any]) -> dict[str, Any]
                     continue
 
     file_path.write_text(full_content, encoding="utf-8")
+    clear_cache(mission_id)
 
     return {
         "status": "created",
@@ -599,6 +635,12 @@ def write_inbox_file(mission_id: str, payload: dict[str, Any]) -> dict[str, Any]
 
 def list_inbox_files(mission_id: str) -> dict[str, list[dict[str, Any]]]:
     """Lists pending and folded files in the mission's inbox."""
+    global _INBOX_CACHE
+    now = time.time()
+    cached = _INBOX_CACHE.get(mission_id)
+    if cached and (now - cached[0] < _CACHE_TTL):
+        return cached[1]
+
     mission_dir = resolve_safe_path(mission_id)
     inbox_dir = mission_dir / "_inbox"
     folded_dir = inbox_dir / "_folded"
@@ -652,12 +694,14 @@ def list_inbox_files(mission_id: str) -> dict[str, list[dict[str, Any]]]:
                 except Exception:
                     continue
 
-    return {
+    result = {
         "pending": pending,
         "folded": folded,
         "total_pending": len(pending),
         "total_folded": len(folded)
     }
+    _INBOX_CACHE[mission_id] = (now, result)
+    return result
 
 
 def generate_fold_proposal(mission_id: str, filename: str) -> dict[str, Any]:
@@ -1004,6 +1048,8 @@ def apply_fold(mission_id: str, filename: str) -> dict[str, Any]:
     if inbox_file.exists():
         inbox_file.unlink()
 
+    clear_cache(mission_id)
+
     return {
         "status": "folded",
         "mission": mission_id,
@@ -1032,6 +1078,8 @@ def fold_all_pending(mission_id: str | None = None) -> dict[str, Any]:
                     results.append(res)
                 except Exception as e:
                     results.append({"status": "error", "mission": m_id, "filename": fname, "error": str(e)})
+
+    clear_cache(mission_id)
 
     return {
         "status": "success",
@@ -1168,6 +1216,7 @@ def assign_inbox_file(filename: str, target_mission_id: str, target_event_id: st
     yaml_header = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True).strip()
     dest.write_text(f"---\n{yaml_header}\n---\n\n{body}\n", encoding="utf-8")
     src.unlink(missing_ok=True)
+    clear_cache(target_mission_id)
 
     return {
         "status": "assigned",
@@ -1649,17 +1698,26 @@ def sync_granola_api(api_key: str | None = None, auto_fold: bool = True, events_
             ev_color_id = str(matched_ev.get("colorId") or matched_ev.get("color_id") or "")
             ev_color_tag = str(matched_ev.get("colorTag") or CALENDAR_COLOR_TAGS.get(ev_color_id, "")).lower()
 
+            def _matches_kw(pat: str, text: str) -> bool:
+                if not pat or not text:
+                    return False
+                pat_c = pat.strip().lower()
+                text_c = text.lower()
+                if len(pat_c) <= 3 and not (pat_c.startswith("[") and pat_c.endswith("]")):
+                    return bool(re.search(r'(?i)\b' + re.escape(pat_c) + r'\b', text_c))
+                return pat_c in text_c
+
             for m in missions:
                 patterns = [str(p).lower().strip() for p in m.get("clientMatch", []) if p]
                 m_id = str(m.get("id", "")).lower()
                 clean_color = ev_color_tag.replace("[", "").replace("]", "").strip()
                 if (
-                    any(p in ev_title or p in ev_client or p in ev_tags for p in patterns)
+                    any(_matches_kw(p, ev_title) or _matches_kw(p, ev_client) or any(_matches_kw(p, t) for t in ev_tags) for p in patterns)
                     or (ev_color_tag and any(p == ev_color_tag or p == clean_color for p in patterns))
                 ):
                     target_mission = m
                     break
-                elif m_id in ev_title or m_id in ev_client:
+                elif _matches_kw(m_id, ev_title) or _matches_kw(m_id, ev_client):
                     target_mission = m
                     break
 
@@ -1984,6 +2042,7 @@ def toggle_action(action_id: str, done: bool | None = None, mission_id: str | No
 
     new_content = "\n".join(cleaned_lines).rstrip() + "\n"
     _atomic_write_text(target_file, new_content)
+    clear_cache(target_mission_id)
 
     return {
         "status": "success",
@@ -2215,6 +2274,7 @@ def update_action(action_id: str, updates: dict[str, Any], mission_id: str | Non
 
     new_content = "\n".join(cleaned_lines).rstrip() + "\n"
     _atomic_write_text(target_file, new_content)
+    clear_cache(target_mission_id)
 
     is_final_done = is_currently_done if new_done is None else new_done
     return {
@@ -2235,6 +2295,103 @@ def update_action(action_id: str, updates: dict[str, Any], mission_id: str | Non
         "statut": cells[6],
         "status": "done" if is_final_done else "open",
         "done": is_final_done,
+        "file": target_file.name
+    }
+
+
+def delete_action(action_id: str, mission_id: str | None = None) -> dict[str, Any]:
+    """
+    Deletes an action row from Missions/<Mission>/Actions.md.
+    Removes the table row matching action_id and preserves markdown structure.
+
+    Args:
+        action_id: ID of the action (e.g., 'ACT-GE-05', 'ACT-CLAR-01')
+        mission_id: Optional mission ID. If not provided, searches all registered missions.
+
+    Returns:
+        dict with action metadata and deletion status.
+    """
+    clean_id = action_id.strip()
+    if not clean_id:
+        raise ValueError("Missing action_id")
+
+    candidate_files = []
+    if mission_id:
+        try:
+            m_dir = resolve_safe_path(mission_id)
+            candidate_files.append((mission_id, m_dir / "Actions.md"))
+        except Exception:
+            pass
+
+    registry = get_missions_registry()
+    for m in registry.get("missions", []):
+        m_id = m.get("id") or m.get("directory")
+        if not m_id:
+            continue
+        try:
+            act_path = resolve_safe_path(m_id) / "Actions.md"
+            if (m_id, act_path) not in candidate_files:
+                candidate_files.append((m_id, act_path))
+        except Exception:
+            continue
+
+    target_file = None
+    target_mission_id = None
+    target_content = ""
+
+    id_pattern = rf"^\s*\|\s*{re.escape(clean_id)}\s*\|"
+
+    for m_id, act_file in candidate_files:
+        if act_file.is_file():
+            text = act_file.read_text(encoding="utf-8")
+            for line in text.splitlines():
+                if re.search(id_pattern, line, re.IGNORECASE):
+                    target_file = act_file
+                    target_mission_id = m_id
+                    target_content = text
+                    break
+            if target_file:
+                break
+
+    if not target_file:
+        raise ValueError(f"Action '{clean_id}' not found in any Actions.md file")
+
+    lines = target_content.splitlines()
+    target_row_idx = -1
+    for idx, l in enumerate(lines):
+        if re.search(id_pattern, l, re.IGNORECASE):
+            target_row_idx = idx
+            break
+
+    if target_row_idx == -1:
+        raise ValueError(f"Row for action '{clean_id}' not found in {target_file.name}")
+
+    target_row = lines[target_row_idx]
+    raw_cells = target_row.split("|")
+    cells = [c.strip() for c in raw_cells[1:-1]] if len(raw_cells) >= 3 else [clean_id, clean_id]
+
+    # Delete row
+    lines.pop(target_row_idx)
+
+    # Clean up formatting
+    cleaned_lines = []
+    for idx, l in enumerate(lines):
+        if l.strip() == "---" and cleaned_lines and cleaned_lines[-1].strip() != "":
+            cleaned_lines.append("")
+        cleaned_lines.append(l)
+
+    new_content = "\n".join(cleaned_lines).rstrip() + "\n"
+    _atomic_write_text(target_file, new_content)
+
+    clear_cache(target_mission_id)
+    clear_cache()
+
+    return {
+        "success": True,
+        "status": "deleted",
+        "actionId": cells[0] if cells else clean_id,
+        "missionId": target_mission_id,
+        "title": cells[1] if len(cells) > 1 else clean_id,
         "file": target_file.name
     }
 

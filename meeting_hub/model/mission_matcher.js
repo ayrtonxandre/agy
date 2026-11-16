@@ -111,7 +111,7 @@ export function matchMission(event, registry) {
       }
     }
 
-    // Check if title explicitly specifies a different client/mission (e.g. "Échange mission Leclerc" miscolored)
+    // Check if title explicitly specifies a different client/mission (e.g. miscolored event)
     const titleOverrides = [];
     for (const m of missions) {
       const patterns = (m.clientMatch || [m.name, m.id]).map(s => String(s).toLowerCase().trim());
@@ -170,18 +170,28 @@ export function matchMission(event, registry) {
       const cleanPat = pat.replace(/[\[\]]/g, '').trim();
       if (!cleanPat) continue;
 
-      // Exact phrase in title
-      if (title.includes(pat) || title.includes(cleanPat)) {
+      // Exact phrase or whole-word match in title
+      let titleMatched = false;
+      if (pat.startsWith('[') && pat.endsWith(']')) {
+        titleMatched = title.includes(pat);
+      } else if (cleanPat.length <= 3) {
+        const regex = new RegExp('(?:^|[^a-zA-Z0-9À-ÿ])' + cleanPat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:$|[^a-zA-Z0-9À-ÿ])', 'i');
+        titleMatched = regex.test(title);
+      } else {
+        titleMatched = title.includes(cleanPat);
+      }
+
+      if (titleMatched) {
         score += 10;
         matchReasons.push(`Title matches "${pat}"`);
       }
       // Tag match
-      if (tags.some(t => t === pat || t === cleanPat || t.includes(cleanPat))) {
+      if (tags.some(t => t === pat || t === cleanPat || (cleanPat.length > 3 && t.includes(cleanPat)))) {
         score += 6;
         matchReasons.push(`Tag matches "${pat}"`);
       }
       // Client field match
-      if (client && (client === pat || client === cleanPat || client.includes(cleanPat))) {
+      if (client && (client === pat || client === cleanPat || (cleanPat.length > 3 && client.includes(cleanPat)))) {
         score += 5;
         matchReasons.push(`Client field matches "${pat}"`);
       }

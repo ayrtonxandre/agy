@@ -37,7 +37,7 @@ if (fs.existsSync(missionsYamlPath)) {
   try {
     const jsonStr = execSync(`python3 -c "import yaml, json, sys; print(json.dumps(yaml.safe_load(open(sys.argv[1]))))" "${missionsYamlPath}"`, { encoding: 'utf8' });
     const parsed = JSON.parse(jsonStr);
-    missionsSnapshotJs = `// Auto-generated missions registry snapshot (file:// fallback)\nvar MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MISSIONS_SNAPSHOT = ${JSON.stringify(parsed, null, 2)};\n`;
+    missionsSnapshotJs = `// Auto-generated missions registry snapshot (file:// fallback)\nvar MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MISSIONS_SNAPSHOT = ${JSON.stringify(parsed, null, 2)};\nif (typeof module !== 'undefined') module.exports = MISSIONS_SNAPSHOT;\n`;
     fs.writeFileSync(missionsSnapshotJsPath, missionsSnapshotJs, 'utf8');
     console.log('✔ Updated data/missions_snapshot.js');
   } catch (err) {
@@ -1198,34 +1198,7 @@ async function bootstrap() {
     
     // Safety check on store
     await MeetingHub.store.init();
-    
-    openActionsCount = await MeetingHub.store.getOpenActionsCount();
     shell.store = MeetingHub.store;
-    await refreshSidebarAndRail();
-    const initialTodaySub = (typeof formatLongDate === 'function') ? formatLongDate(AppState.date) : AppState.date;
-    shell.renderHeader('Today', initialTodaySub);
-
-    // Retrieve & render initial sync status in sidebar
-    try {
-      const initialSyncStatus = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
-      shell.setSyncStatus(initialSyncStatus);
-    } catch (e) {
-      console.warn('[MeetingHub] Could not load sync status:', e);
-    }
-
-    // Refresh sync status relative times every 60s
-    setInterval(async () => {
-      try {
-        const s = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
-        shell.setSyncStatus(s);
-      } catch (e) {}
-    }, 60000);
-
-    // Initialize projects in shell
-    const allProjects = await MeetingHub.store.getAllProjects();
-    const suggestedProjects = await MeetingHub.store.getSuggestedProjects();
-    const activeProjectId = MeetingHub.store.getActiveProjectId() || (allProjects[0] && allProjects[0].id) || 'ge-enterprise';
-    shell.setProjects(allProjects, activeProjectId, suggestedProjects);
 
     todayView = new MeetingHub.TodayView({
       container: leftCol,
@@ -1312,6 +1285,48 @@ async function bootstrap() {
     if (expandTab) {
       expandTab.addEventListener('click', () => setPanelCollapsed(false));
     }
+
+    try {
+      const storedCollapsed = localStorage.getItem('mhub_panel_collapsed');
+      if (storedCollapsed === 'true' && !window.location.hash.startsWith('#/meeting/')) {
+        setPanelCollapsed(true);
+      }
+    } catch (e) {}
+
+    // Handle initial route immediately for instant visual feedback
+    handleHashRoute();
+
+    // Populate sidebar, rail, and projects asynchronously without blocking initial route render
+    (async () => {
+      try {
+        openActionsCount = await MeetingHub.store.getOpenActionsCount();
+        const allProjects = await MeetingHub.store.getAllProjects();
+        const suggestedProjects = await MeetingHub.store.getSuggestedProjects();
+        const activeProjectId = MeetingHub.store.getActiveProjectId() || (allProjects[0] && allProjects[0].id) || 'ge-enterprise';
+        shell.setProjects(allProjects, activeProjectId, suggestedProjects);
+        await refreshSidebarAndRail();
+      } catch (err) {
+        console.warn('[MeetingHub] Background sidebar/rail refresh error:', err);
+      }
+    })();
+
+    // Retrieve & render initial sync status in sidebar
+    (async () => {
+      try {
+        const initialSyncStatus = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
+        shell.setSyncStatus(initialSyncStatus);
+      } catch (e) {
+        console.warn('[MeetingHub] Could not load sync status:', e);
+      }
+    })();
+
+    // Refresh sync status relative times every 60s
+    setInterval(async () => {
+      try {
+        const s = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
+        shell.setSyncStatus(s);
+      } catch (e) {}
+    }, 60000);
 
     // Subscribe to store updates
     MeetingHub.store.subscribe(async (payload) => {
