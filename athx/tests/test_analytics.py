@@ -161,6 +161,70 @@ Bike - 15 Cal
             self.assertEqual(ds["Reps"], 10)
             self.assertAlmostEqual(ds["Weight_kg"], 99.8, places=1)
 
+    def test_crossfit_durability_engine(self):
+        """Validates CrossFit Work-Rate Durability Engine handles n>=1 sets, bodyweight imputation, and all 26 WODs."""
+        # 1. Edge case: Single bout benchmark (e.g. CHAD 1000 step-ups)
+        chad_set = [{
+            "Activity_ID": 25042646802,
+            "Date": "2026-11-11",
+            "Activity_Name": "CrossFit",
+            "Session_Type": "Legs",
+            "Exercise": "Box Step-Up",
+            "Reps": 1000,
+            "Weight_kg": 0.0,
+            "Total_Volume_kg": 0.0,
+        }]
+        res_chad = adcg.compute_crossfit_durability(chad_set)
+        self.assertEqual(res_chad["total_evaluated_sessions"], 1)
+        self.assertEqual(res_chad["recent_sessions"][0]["fade_pct"], 0.0)
+        self.assertEqual(res_chad["recent_sessions"][0]["durability_score"], 100.0)
+        self.assertEqual(res_chad["recent_sessions"][0]["rating"], "Elite Stamina")
+
+        # 2. Edge case: 4-set consistent strength bout
+        four_set_wod = [
+            {"Activity_ID": 9998, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 1, "Reps": 10, "Weight_kg": 50.0, "Total_Volume_kg": 500.0},
+            {"Activity_ID": 9998, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 2, "Reps": 10, "Weight_kg": 50.0, "Total_Volume_kg": 500.0},
+            {"Activity_ID": 9998, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 3, "Reps": 10, "Weight_kg": 50.0, "Total_Volume_kg": 500.0},
+            {"Activity_ID": 9998, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 4, "Reps": 10, "Weight_kg": 50.0, "Total_Volume_kg": 500.0},
+        ]
+        res_wod = adcg.compute_crossfit_durability(four_set_wod)
+        self.assertEqual(res_wod["total_evaluated_sessions"], 1)
+        self.assertEqual(res_wod["recent_sessions"][0]["fade_pct"], 0.0)
+        self.assertEqual(res_wod["recent_sessions"][0]["durability_score"], 100.0)
+
+        # 3. Edge case: 4-round WOD with bodyweight movements (8 sets, e.g. Oct 30)
+        eight_set_wod = [
+            {"Activity_ID": 9999, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 1, "Reps": 12, "Weight_kg": 0.0, "Total_Volume_kg": 0.0},
+            {"Activity_ID": 9999, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 2, "Reps": 18, "Weight_kg": 30.0, "Total_Volume_kg": 540.0},
+            {"Activity_ID": 9999, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 3, "Reps": 12, "Weight_kg": 0.0, "Total_Volume_kg": 0.0},
+            {"Activity_ID": 9999, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 4, "Reps": 18, "Weight_kg": 30.0, "Total_Volume_kg": 540.0},
+            {"Activity_ID": 9999, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 5, "Reps": 12, "Weight_kg": 0.0, "Total_Volume_kg": 0.0},
+            {"Activity_ID": 9999, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 6, "Reps": 18, "Weight_kg": 30.0, "Total_Volume_kg": 540.0},
+            {"Activity_ID": 9999, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 7, "Reps": 12, "Weight_kg": 0.0, "Total_Volume_kg": 0.0},
+            {"Activity_ID": 9999, "Date": "2026-10-30", "Activity_Name": "CrossFit", "Set": 8, "Reps": 18, "Weight_kg": 30.0, "Total_Volume_kg": 540.0},
+        ]
+        res_eight = adcg.compute_crossfit_durability(eight_set_wod)
+        self.assertEqual(res_eight["total_evaluated_sessions"], 1)
+        self.assertEqual(res_eight["recent_sessions"][0]["fade_pct"], 0.0)
+        self.assertEqual(res_eight["recent_sessions"][0]["durability_score"], 100.0)
+
+        # 3. Full authentic dataset audit
+        with open(self.strength_json, "r", encoding="utf-8") as f:
+            all_sets = json.load(f)
+
+        full_dur = adcg.compute_crossfit_durability(all_sets)
+        self.assertEqual(full_dur["status"], "ok")
+        self.assertEqual(full_dur["total_evaluated_sessions"], 69)
+        self.assertEqual(full_dur["total_crossfit_sessions"], 26, "Must capture all 26 authentic CrossFit workouts")
+        self.assertGreater(full_dur["crossfit_durability_index"], 80.0)
+
+        # 4. HTML rendering check
+        html = adcg.render_crossfit_durability_html(full_dur)
+        self.assertIn("crossfit-durability-table", html)
+        self.assertIn("CrossFit WODs (26)", html)
+        self.assertIn("Gym Strength (43)", html)
+        self.assertIn("filterDurability", html)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

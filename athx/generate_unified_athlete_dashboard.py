@@ -3830,7 +3830,7 @@ def main():
 
     # Sports Science Analytics: Critical Speed, CrossFit Durability, Recovery Model & Coach Decisions
     critical_speed_data = adcg.compute_critical_speed(running_activities)
-    crossfit_durability_data = adcg.compute_crossfit_durability(garmin_raw)
+    crossfit_durability_data = adcg.compute_crossfit_durability(strength_data.get("processed_sets", garmin_raw))
     garmin_hrv_data = adcg.load_garmin_hrv(BASE_DIR)
     sleep_debt_data = adcg.compute_sleep_debt_model(
         apple_data["sleep"]["history"],
@@ -3856,7 +3856,7 @@ def main():
         base_dir=BASE_DIR,
     )
     print(f"✅ Critical Speed Model: {critical_speed_data['cs_pace_formatted']} ({critical_speed_data['cs_ms']} m/s), D' = {critical_speed_data['d_prime_m']}m, R² = {critical_speed_data['r2']}")
-    print(f"✅ CrossFit Durability Engine: Index {crossfit_durability_data['durability_index']}% across {crossfit_durability_data['total_evaluated_sessions']} audited sessions.")
+    print(f"✅ CrossFit Durability Engine: CF Index {crossfit_durability_data.get('crossfit_durability_index', 0)}% ({crossfit_durability_data.get('total_crossfit_sessions', 0)} WODs) | Overall {crossfit_durability_data['durability_index']}% across {crossfit_durability_data['total_evaluated_sessions']} audited sessions.")
     print(f"✅ Sleep Debt Model (Part C): {sleep_debt_data['total_debt_hrs']}h deficit over {sleep_debt_data['nights_counted']} nights ({sleep_debt_data['status_text']}).")
     print(f"✅ Plews & Buchheit HRV (Part C): Latest {plews_hrv_data['latest_night_ms']} ms ({plews_hrv_data['status_text']}), SWC: {plews_hrv_data['band_lower_ms']}–{plews_hrv_data['band_upper_ms']} ms.")
     print(f"✅ Running Biomechanics: GCT {running_biomechanics_data.get('avg_gct_ms', 0)} ms, VR {running_biomechanics_data.get('avg_vr_pct', 0)}% ({running_biomechanics_data.get('vr_status', 'N/A')}).")

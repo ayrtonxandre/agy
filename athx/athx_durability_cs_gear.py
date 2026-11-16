@@ -195,9 +195,31 @@ def compute_crossfit_durability(sets_data: list[dict]) -> dict:
           Fade <= 3%: Elite Pacing / Unbreakable Stamina
           Fade 3-10%: Controlled Degradation
           Fade > 10%: Late-Round Breakdown
+    Supports workouts with n >= 1 sets (including single-bout benchmarks like CHAD).
+    Imputes bodyweight set volume so bodyweight movements do not trigger false fade spikes.
     """
     if not sets_data:
-        return {"status": "no_data", "durability_index": 0.0, "sessions": []}
+        return {
+            "status": "no_data",
+            "durability_index": 0.0,
+            "crossfit_durability_index": 0.0,
+            "total_evaluated_sessions": 0,
+            "total_crossfit_sessions": 0,
+            "total_gym_sessions": 0,
+            "classifications": {"Elite Stamina": 0, "Controlled Degradation": 0, "Late-Round Breakdown": 0},
+            "recent_sessions": [],
+            "all_sessions": [],
+        }
+
+    def _get_set_eff_volume(s: dict) -> float:
+        tv = s.get("Total_Volume_kg")
+        if tv is not None and float(tv) > 0:
+            return float(tv)
+        reps = float(s.get("Reps") or 0)
+        w = float(s.get("Effective_Weight_kg") or s.get("Weight_kg") or 0.0)
+        if w <= 0:
+            w = 75.0  # Standard bodyweight default load
+        return reps * w
 
     sessions_map = defaultdict(list)
     for s in sets_data:
@@ -209,47 +231,61 @@ def compute_crossfit_durability(sets_data: list[dict]) -> dict:
     classification_counts = {"Elite Stamina": 0, "Controlled Degradation": 0, "Late-Round Breakdown": 0}
 
     for aid, slist in sessions_map.items():
-        if len(slist) < 6:
-            # Need at least 6 sets for meaningful 3-tier partitioning
-            continue
-
         n = len(slist)
-        tier_size = n // 3
-        t1 = slist[:tier_size]
-        t2 = slist[tier_size: 2 * tier_size]
-        t3 = slist[-tier_size:]
-
-        v1 = sum(s.get("Total_Volume_kg", 0) or 0 for s in t1) / len(t1)
-        v3 = sum(s.get("Total_Volume_kg", 0) or 0 for s in t3) / len(t3)
-
-        fade_pct = round(((v1 - v3) / v1) * 100.0, 1) if v1 > 0 else 0.0
-
-        if fade_pct <= 0:
-            score = 100.0
+        if n >= 3:
+            tier_size = max(1, n // 3)
+            t1 = slist[:tier_size]
+            t3 = slist[-tier_size:]
+        elif n == 2:
+            t1 = slist[:1]
+            t3 = slist[1:]
         else:
-            score = round(max(30.0, min(100.0, 100.0 - (fade_pct * 1.5))), 1)
+            t1 = slist
+            t3 = slist
 
-        if fade_pct <= 3.0:
+        v1 = sum(_get_set_eff_volume(s) for s in t1) / len(t1) if t1 else 0.0
+        v3 = sum(_get_set_eff_volume(s) for s in t3) / len(t3) if t3 else 0.0
+
+        if n == 1:
+            fade_pct = 0.0
+            score = 100.0
             rating = "Elite Stamina"
             badge = "badge-ok"
-            classification_counts["Elite Stamina"] += 1
-        elif fade_pct <= 10.0:
-            rating = "Controlled Degradation"
-            badge = "badge-warn"
-            classification_counts["Controlled Degradation"] += 1
         else:
-            rating = "Late-Round Breakdown"
-            badge = "badge-danger"
-            classification_counts["Late-Round Breakdown"] += 1
+            fade_pct = round(((v1 - v3) / v1) * 100.0, 1) if v1 > 0 else 0.0
 
+            if fade_pct <= 0:
+                score = 100.0
+            else:
+                score = round(max(30.0, min(100.0, 100.0 - (fade_pct * 1.5))), 1)
+
+            if fade_pct <= 3.0:
+                rating = "Elite Stamina"
+                badge = "badge-ok"
+            elif fade_pct <= 10.0:
+                rating = "Controlled Degradation"
+                badge = "badge-warn"
+            else:
+                rating = "Late-Round Breakdown"
+                badge = "badge-danger"
+
+        classification_counts[rating] += 1
         durability_scores.append(score)
 
         first_set = slist[0]
+        act_name = first_set.get("Activity_Name", "CrossFit / Strength")
+        stype = first_set.get("Session_Type", "CrossFit")
+        is_cf = any(
+            k in (act_name or "").lower() or k in (stype or "").lower()
+            for k in ["crossfit", "wod", "amrap", "emom", "hyrox", "functional", "metcon"]
+        )
+
         session_reports.append({
             "activity_id": aid,
             "date": first_set.get("Date", ""),
-            "name": first_set.get("Activity_Name", "CrossFit / Strength"),
-            "session_type": first_set.get("Session_Type", "CrossFit"),
+            "name": act_name,
+            "session_type": stype,
+            "is_crossfit": is_cf,
             "total_sets": n,
             "tier1_vol_set": round(v1, 1),
             "tier3_vol_set": round(v3, 1),
@@ -262,12 +298,20 @@ def compute_crossfit_durability(sets_data: list[dict]) -> dict:
     session_reports.sort(key=lambda x: x["date"], reverse=True)
     avg_score = round(sum(durability_scores) / len(durability_scores), 1) if durability_scores else 0.0
 
+    cf_reports = [s for s in session_reports if s["is_crossfit"]]
+    gym_reports = [s for s in session_reports if not s["is_crossfit"]]
+    cf_avg_score = round(sum(s["durability_score"] for s in cf_reports) / len(cf_reports), 1) if cf_reports else avg_score
+
     return {
         "status": "ok",
         "durability_index": avg_score,
+        "crossfit_durability_index": cf_avg_score,
         "total_evaluated_sessions": len(session_reports),
+        "total_crossfit_sessions": len(cf_reports),
+        "total_gym_sessions": len(gym_reports),
         "classifications": classification_counts,
-        "recent_sessions": session_reports[:15],
+        "recent_sessions": session_reports[:35],
+        "all_sessions": session_reports,
     }
 
 
@@ -839,7 +883,7 @@ def build_coach_decision_log(
     # 2. CrossFit & Strength Durability Metrics (Nov 6 & Nov 5, 2026)
     durability_idx = durability.get("durability_index", 85.9)
     recent_sessions = durability.get("recent_sessions", [])
-    cf_session = next((s for s in recent_sessions if s.get("name") == "CrossFit"), recent_sessions[0] if recent_sessions else {})
+    cf_session = next((s for s in recent_sessions if s.get("is_crossfit") or "crossfit" in (s.get("name") or "").lower()), recent_sessions[0] if recent_sessions else {})
     cf_date = cf_session.get("date", "2026-11-06")
     cf_fade = cf_session.get("fade_pct", 0.0)
     cf_score = cf_session.get("durability_score", 100.0)
@@ -1123,25 +1167,31 @@ def render_critical_speed_html(cs_data: dict) -> str:
 
 def render_crossfit_durability_html(dur_data: dict) -> str:
     """Renders the CrossFit Work-Rate Durability Engine for Engine tab."""
-    recent = dur_data.get("recent_sessions", [])
+    all_sessions = dur_data.get("all_sessions") or dur_data.get("recent_sessions", [])
     session_rows = []
-    for s in recent[:8]:
+    for s in all_sessions:
         fade_color = "#34d399" if s["fade_pct"] <= 3.0 else ("#fbbf24" if s["fade_pct"] <= 10.0 else "#f87171")
         fade_sign = "+" if s["fade_pct"] > 0 else ""
+        cat = "crossfit" if s.get("is_crossfit") else "gym"
         session_rows.append(f"""
-        <tr>
-          <td style="color: var(--muted-foreground); font-family: var(--font-mono); font-size: 12px;">{s['date']}</td>
-          <td style="font-weight: 500;">{s['name']} <span style="font-size: 11px; color: var(--muted-foreground);">({s['session_type']})</span></td>
-          <td class="right" style="font-family: var(--font-mono);">{s['total_sets']}</td>
-          <td class="right" style="font-family: var(--font-mono);">{s['tier1_vol_set']:,.0f} kg</td>
-          <td class="right" style="font-family: var(--font-mono);">{s['tier3_vol_set']:,.0f} kg</td>
-          <td class="right" style="font-family: var(--font-mono); color: {fade_color}; font-weight: 600;">{fade_sign}{s['fade_pct']}%</td>
-          <td class="right" style="font-family: var(--font-mono); font-weight: 600;">{s['durability_score']}%</td>
-          <td><span class="badge {s['badge']}">{s['rating']}</span></td>
+        <tr data-category="{cat}">
+          <td style="color: var(--muted-foreground); font-family: var(--font-mono); font-size: 12px; padding: 8px 12px;">{s['date']}</td>
+          <td style="font-weight: 500; padding: 8px 12px;">{s['name']} <span style="font-size: 11px; color: var(--muted-foreground);">({s['session_type']})</span></td>
+          <td class="right" style="font-family: var(--font-mono); padding: 8px 12px;">{s['total_sets']}</td>
+          <td class="right" style="font-family: var(--font-mono); padding: 8px 12px;">{s['tier1_vol_set']:,.0f} kg</td>
+          <td class="right" style="font-family: var(--font-mono); padding: 8px 12px;">{s['tier3_vol_set']:,.0f} kg</td>
+          <td class="right" style="font-family: var(--font-mono); color: {fade_color}; font-weight: 600; padding: 8px 12px;">{fade_sign}{s['fade_pct']}%</td>
+          <td class="right" style="font-family: var(--font-mono); font-weight: 600; padding: 8px 12px;">{s['durability_score']}%</td>
+          <td style="padding: 8px 12px;"><span class="badge {s['badge']}">{s['rating']}</span></td>
         </tr>
         """)
     joined_rows = "\n".join(session_rows)
     cls_map = dur_data.get("classifications", {})
+    total_eval = dur_data.get("total_evaluated_sessions", len(all_sessions))
+    cf_total = dur_data.get("total_crossfit_sessions", len([s for s in all_sessions if s.get("is_crossfit")]))
+    gym_total = dur_data.get("total_gym_sessions", total_eval - cf_total)
+    cf_idx = dur_data.get("crossfit_durability_index", dur_data.get("durability_index", 86.4))
+    overall_idx = dur_data.get("durability_index", 81.8)
 
     return f"""
     <!-- CrossFit & Functional Work-Rate Durability Engine -->
@@ -1151,9 +1201,10 @@ def render_crossfit_durability_html(dur_data: dict) -> str:
           <h2 style="margin: 0; font: 600 16px/1.3 var(--font-sans);">🏋️ CrossFit Work-Rate Durability Engine</h2>
           <span style="font-size: 12px; color: var(--muted-foreground);">Adapted 3-Tier Partition: Initial 1/3 vs Final 1/3 Work Rate &amp; Density</span>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <span class="badge badge-ok">Durability Index: {dur_data.get('durability_index', 87.5)}%</span>
-          <span class="badge badge-neutral">{dur_data.get('total_evaluated_sessions', 100)} Sessions Audited</span>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <span class="badge badge-ok">CF Durability: {cf_idx}%</span>
+          <span class="badge badge-neutral">Overall: {overall_idx}%</span>
+          <span class="badge badge-neutral">{cf_total} CrossFit WODs / {total_eval} Audited</span>
         </div>
       </div>
 
@@ -1166,34 +1217,44 @@ def render_crossfit_durability_html(dur_data: dict) -> str:
         </div>
         <div style="padding: 12px; background: oklch(1 0 0 / 2%); border: 1px solid var(--border); border-radius: 8px;">
           <span style="font-size: 11px; color: var(--muted-foreground); text-transform: uppercase;">Elite Stamina Bouts (&le;3% fade)</span>
-          <div style="font: 600 18px/1.2 var(--font-mono); margin-top: 4px;">{cls_map.get('Elite Stamina', 71)} <span style="font-size: 12px; color: var(--muted-foreground);">sessions</span></div>
+          <div style="font: 600 18px/1.2 var(--font-mono); margin-top: 4px;">{cls_map.get('Elite Stamina', 0)} <span style="font-size: 12px; color: var(--muted-foreground);">sessions</span></div>
           <span style="font-size: 11px; color: var(--muted-foreground);">Negative-split or sustained density</span>
         </div>
         <div style="padding: 12px; background: oklch(1 0 0 / 2%); border: 1px solid var(--border); border-radius: 8px;">
           <span style="font-size: 11px; color: var(--muted-foreground); text-transform: uppercase;">Controlled Degradation (3–10%)</span>
-          <div style="font: 600 18px/1.2 var(--font-mono); margin-top: 4px;">{cls_map.get('Controlled Degradation', 3)} <span style="font-size: 12px; color: var(--muted-foreground);">sessions</span></div>
+          <div style="font: 600 18px/1.2 var(--font-mono); margin-top: 4px;">{cls_map.get('Controlled Degradation', 0)} <span style="font-size: 12px; color: var(--muted-foreground);">sessions</span></div>
           <span style="font-size: 11px; color: var(--muted-foreground);">Normal metabolic fatigue</span>
         </div>
         <div style="padding: 12px; background: oklch(1 0 0 / 2%); border: 1px solid var(--border); border-radius: 8px;">
           <span style="font-size: 11px; color: var(--muted-foreground); text-transform: uppercase;">Late Blowouts (&gt;10% fade)</span>
-          <div style="font: 600 18px/1.2 var(--font-mono); color: #f87171; margin-top: 4px;">{cls_map.get('Late-Round Breakdown', 26)} <span style="font-size: 12px; color: var(--muted-foreground);">sessions</span></div>
+          <div style="font: 600 18px/1.2 var(--font-mono); color: #f87171; margin-top: 4px;">{cls_map.get('Late-Round Breakdown', 0)} <span style="font-size: 12px; color: var(--muted-foreground);">sessions</span></div>
           <span style="font-size: 11px; color: var(--muted-foreground);">Flagged for pacing correction</span>
         </div>
       </div>
 
+      <!-- Durability Filters -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+        <div style="display: flex; gap: 6px;" id="durabilityFilters">
+          <button type="button" class="filter-btn active" onclick="filterDurability('all', this)">All ({total_eval})</button>
+          <button type="button" class="filter-btn" onclick="filterDurability('crossfit', this)">🏋️ CrossFit WODs ({cf_total})</button>
+          <button type="button" class="filter-btn" onclick="filterDurability('gym', this)">🏛️ Gym Strength ({gym_total})</button>
+        </div>
+        <span style="font-size: 11px; color: var(--muted-foreground);" id="durabilityRowCount">Showing all {len(all_sessions)} sessions</span>
+      </div>
+
       <!-- Recent Durability Sessions Table -->
-      <div style="overflow-x: auto; margin-top: 4px;">
-        <table class="data-table" style="font-size: 13px;">
-          <thead>
+      <div style="max-height: 520px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px;">
+        <table class="data-table" id="crossfit-durability-table" style="font-size: 13px; width: 100%; border-collapse: collapse;">
+          <thead style="position: sticky; top: 0; background: var(--card); z-index: 2; box-shadow: 0 1px 0 var(--border);">
             <tr>
-              <th style="width: 100px;">Date</th>
-              <th>Session &amp; Split</th>
-              <th class="right" style="width: 60px;">Sets</th>
-              <th class="right" style="width: 110px;">Tier 1 Density</th>
-              <th class="right" style="width: 110px;">Tier 3 Density</th>
-              <th class="right" style="width: 90px;">Work Fade</th>
-              <th class="right" style="width: 80px;">Durability</th>
-              <th style="width: 160px;">Pacing Quality</th>
+              <th style="width: 100px; padding: 8px 12px;">Date</th>
+              <th style="padding: 8px 12px;">Session &amp; Split</th>
+              <th class="right" style="width: 60px; padding: 8px 12px;">Sets</th>
+              <th class="right" style="width: 110px; padding: 8px 12px;">Tier 1 Density</th>
+              <th class="right" style="width: 110px; padding: 8px 12px;">Tier 3 Density</th>
+              <th class="right" style="width: 90px; padding: 8px 12px;">Work Fade</th>
+              <th class="right" style="width: 80px; padding: 8px 12px;">Durability</th>
+              <th style="width: 160px; padding: 8px 12px;">Pacing Quality</th>
             </tr>
           </thead>
           <tbody>
@@ -1202,6 +1263,30 @@ def render_crossfit_durability_html(dur_data: dict) -> str:
         </table>
       </div>
     </div>
+
+    <script>
+    function filterDurability(type, btn) {{
+      const table = document.getElementById('crossfit-durability-table');
+      if (!table) return;
+      const rows = table.querySelectorAll('tbody tr');
+      let visible = 0;
+      rows.forEach(r => {{
+        if (type === 'all' || r.getAttribute('data-category') === type) {{
+          r.style.display = '';
+          visible++;
+        }} else {{
+          r.style.display = 'none';
+        }}
+      }});
+      const countEl = document.getElementById('durabilityRowCount');
+      if (countEl) {{
+        countEl.textContent = 'Showing ' + visible + ' session' + (visible === 1 ? '' : 's');
+      }}
+      const btns = btn.parentElement.querySelectorAll('.filter-btn');
+      btns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }}
+    </script>
     """
 
 

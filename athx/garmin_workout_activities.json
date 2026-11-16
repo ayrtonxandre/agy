@@ -1,5 +1,40 @@
 [
   {
+    "Activity_ID": 25093639905,
+    "Date": "2026-11-16",
+    "Start_Time": "2026-11-16 06:36:44",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Category": "CrossFit",
+    "Duration_min": 48.5,
+    "Calories_kcal": 479,
+    "Average_HR": 123.0,
+    "Max_HR": 170.0,
+    "Training_Effect_Label": "RECOVERY",
+    "Moderate_Intensity_Min": 22,
+    "Vigorous_Intensity_Min": 24,
+    "Steps": 978,
+    "Distance_km": 0.0,
+    "Notes": "Rowing - 1250M\n23 Hang clean - 107Lbs"
+  },
+  {
+    "Activity_ID": 25088831055,
+    "Date": "2026-11-15",
+    "Start_Time": "2026-11-15 16:01:57",
+    "Activity_Name": "Squash",
+    "Activity_Type": "squash",
+    "Category": "Racket Sports",
+    "Duration_min": 42.6,
+    "Calories_kcal": 370,
+    "Average_HR": 120.0,
+    "Max_HR": 159.0,
+    "Training_Effect_Label": "SPEED",
+    "Moderate_Intensity_Min": 27,
+    "Vigorous_Intensity_Min": 15,
+    "Steps": 2172,
+    "Distance_km": 0.55
+  },
+  {
     "Activity_ID": 25079358680,
     "Date": "2026-11-14",
     "Start_Time": "2026-11-14 16:23:23",
@@ -753,23 +788,6 @@
     "Moderate_Intensity_Min": 5,
     "Vigorous_Intensity_Min": 54,
     "Steps": 2780,
-    "Distance_km": 0.0
-  },
-  {
-    "Activity_ID": 23538715400,
-    "Date": "2026-07-09",
-    "Start_Time": "2026-07-09 19:05:56",
-    "Activity_Name": "Cardio",
-    "Activity_Type": "indoor_cardio",
-    "Category": "CrossFit",
-    "Duration_min": 49.9,
-    "Calories_kcal": 471,
-    "Average_HR": 127.0,
-    "Max_HR": 184.0,
-    "Training_Effect_Label": "SPEED",
-    "Moderate_Intensity_Min": 17,
-    "Vigorous_Intensity_Min": 27,
-    "Steps": 1144,
     "Distance_km": 0.0
   }
 ]
