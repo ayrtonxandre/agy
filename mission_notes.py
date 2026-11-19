@@ -550,13 +550,13 @@ def write_inbox_file(mission_id: str, payload: dict[str, Any]) -> dict[str, Any]
     folded_dir = inbox_dir / "_folded"
     folded_dir.mkdir(parents=True, exist_ok=True)
 
-    event_id = str(payload.get("eventId", "")).strip()
+    event_id = str(payload.get("eventId") or payload.get("atlas_id") or payload.get("granola_id") or "").strip()
     title = str(payload.get("title", "Meeting")).strip()
     date_str = str(payload.get("date", datetime.now().strftime("%Y-%m-%d"))).strip()
     text = str(payload.get("text") or payload.get("content") or payload.get("notes") or "").strip()
 
     if not event_id:
-        raise ValueError("Missing 'eventId' in inbox payload")
+        raise ValueError("Missing 'eventId' (or 'atlas_id'/'granola_id') in inbox payload")
     if not text:
         raise ValueError("Minutes 'text' cannot be empty")
 
@@ -579,6 +579,10 @@ def write_inbox_file(mission_id: str, payload: dict[str, Any]) -> dict[str, Any]
         "hash": content_hash,
         "created_at": datetime.now().isoformat()
     }
+    if payload.get("atlas_id"):
+        frontmatter_dict["atlas_id"] = payload["atlas_id"]
+    if payload.get("atlas_url"):
+        frontmatter_dict["atlas_url"] = payload["atlas_url"]
     if payload.get("granola_id"):
         frontmatter_dict["granola_id"] = payload["granola_id"]
     if payload.get("granola_url"):
@@ -594,7 +598,11 @@ def write_inbox_file(mission_id: str, payload: dict[str, Any]) -> dict[str, Any]
                 try:
                     f_content = f.read_text(encoding="utf-8")
                     fm, _ = parse_frontmatter(f_content)
-                    has_match = (fm.get("eventId") == event_id) or (payload.get("granola_id") and fm.get("granola_id") == payload.get("granola_id"))
+                    has_match = (
+                        (event_id and fm.get("eventId") == event_id)
+                        or (payload.get("atlas_id") and fm.get("atlas_id") == payload.get("atlas_id"))
+                        or (payload.get("granola_id") and fm.get("granola_id") == payload.get("granola_id"))
+                    )
                     if has_match:
                         if fm.get("hash") == content_hash:
                             return {
@@ -663,6 +671,11 @@ def list_inbox_files(mission_id: str) -> dict[str, list[dict[str, Any]]]:
                         "title": fm.get("title", f.stem),
                         "date": fm.get("date"),
                         "googleDocUrl": fm.get("googleDocUrl"),
+                        "source": fm.get("source", "meeting_hub"),
+                        "atlas_id": fm.get("atlas_id"),
+                        "atlas_url": fm.get("atlas_url"),
+                        "granola_id": fm.get("granola_id"),
+                        "granola_url": fm.get("granola_url"),
                         "size": f.stat().st_size,
                         "captured_at": fm.get("created_at") or datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M"),
                         "preview": preview,
@@ -686,6 +699,11 @@ def list_inbox_files(mission_id: str) -> dict[str, list[dict[str, Any]]]:
                         "title": fm.get("title", f.stem),
                         "date": fm.get("date"),
                         "googleDocUrl": fm.get("googleDocUrl"),
+                        "source": fm.get("source", "meeting_hub"),
+                        "atlas_id": fm.get("atlas_id"),
+                        "atlas_url": fm.get("atlas_url"),
+                        "granola_id": fm.get("granola_id"),
+                        "granola_url": fm.get("granola_url"),
                         "size": f.stat().st_size,
                         "captured_at": fm.get("created_at") or datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M"),
                         "preview": preview,
@@ -702,6 +720,11 @@ def list_inbox_files(mission_id: str) -> dict[str, list[dict[str, Any]]]:
     }
     _INBOX_CACHE[mission_id] = (now, result)
     return result
+
+
+def list_folded_files(mission_id: str) -> list[dict[str, Any]]:
+    """Returns the list of folded inbox files for a mission."""
+    return list_inbox_files(mission_id).get("folded", [])
 
 
 def generate_fold_proposal(mission_id: str, filename: str) -> dict[str, Any]:
@@ -898,7 +921,8 @@ def apply_fold(mission_id: str, filename: str) -> dict[str, Any]:
             max_num = 0
 
         # Meeting link
-        meeting_link = f"[meeting](http://localhost:8080/meeting#/calendar/m/{event_id})" if event_id else f"Granola ({date_str})"
+        src_label = "Atlas" if (fm.get("source") == "atlas" or fm.get("atlas_id")) else ("Granola" if (fm.get("source") == "granola" or fm.get("granola_id")) else "Meeting")
+        meeting_link = f"[meeting](http://localhost:8080/meeting#/calendar/m/{event_id})" if event_id else f"{src_label} ({date_str})"
 
         new_rows = []
         for act in extracted_actions:
@@ -1018,7 +1042,8 @@ def apply_fold(mission_id: str, filename: str) -> dict[str, Any]:
 
         if target_note_path and target_note_path.is_file():
             note_text = target_note_path.read_text(encoding="utf-8")
-            meeting_link = f"[meeting](http://localhost:8080/meeting#/calendar/m/{event_id})" if event_id else f"Granola ({date_str})"
+            src_label = "Atlas" if (fm.get("source") == "atlas" or fm.get("atlas_id")) else ("Granola" if (fm.get("source") == "granola" or fm.get("granola_id")) else "Meeting")
+            meeting_link = f"[meeting](http://localhost:8080/meeting#/calendar/m/{event_id})" if event_id else f"{src_label} ({date_str})"
 
             dec_pattern = r'(## Decision log\s*\n\s*\|[^\n]+\n\s*\|[-| ]+\n(?:\|[^\n]+\n)*)'
             m_dec = re.search(dec_pattern, note_text)
@@ -1116,7 +1141,13 @@ def write_unassigned_inbox_file(payload: dict[str, Any]) -> dict[str, Any]:
             try:
                 f_content = f.read_text(encoding="utf-8")
                 fm, _ = parse_frontmatter(f_content)
-                if fm.get("hash") == content_hash:
+                has_match = (
+                    fm.get("hash") == content_hash
+                    or (payload.get("eventId") and fm.get("eventId") == payload.get("eventId"))
+                    or (payload.get("atlas_id") and fm.get("atlas_id") == payload.get("atlas_id"))
+                    or (payload.get("granola_id") and fm.get("granola_id") == payload.get("granola_id"))
+                )
+                if has_match:
                     return {
                         "status": "exists",
                         "message": "Capture already exists in unassigned inbox",
@@ -1144,6 +1175,10 @@ def write_unassigned_inbox_file(payload: dict[str, Any]) -> dict[str, Any]:
         frontmatter_dict["eventId"] = payload["eventId"]
     if payload.get("attendees"):
         frontmatter_dict["attendees"] = payload["attendees"]
+    if payload.get("atlas_id"):
+        frontmatter_dict["atlas_id"] = payload["atlas_id"]
+    if payload.get("atlas_url"):
+        frontmatter_dict["atlas_url"] = payload["atlas_url"]
     if payload.get("granola_id"):
         frontmatter_dict["granola_id"] = payload["granola_id"]
     if payload.get("granola_url"):
@@ -1177,7 +1212,12 @@ def list_unassigned_inbox_files() -> list[dict[str, Any]]:
                     "filename": f.name,
                     "title": fm.get("title", f.stem),
                     "date": fm.get("date", ""),
+                    "eventId": fm.get("eventId"),
                     "source": fm.get("source", "unassigned"),
+                    "atlas_id": fm.get("atlas_id"),
+                    "atlas_url": fm.get("atlas_url"),
+                    "granola_id": fm.get("granola_id"),
+                    "granola_url": fm.get("granola_url"),
                     "size": f.stat().st_size,
                     "captured_at": fm.get("created_at") or datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M"),
                     "preview": preview,
@@ -1227,8 +1267,29 @@ def assign_inbox_file(filename: str, target_mission_id: str, target_event_id: st
     }
 
 
+def get_atlas_folder_config() -> Path | None:
+    """Reads the opt-in watched folder path from local git-ignored atlas_config.json."""
+    config_file = Path(__file__).resolve().parent / "atlas_config.json"
+    if config_file.is_file():
+        try:
+            cfg = json.loads(config_file.read_text(encoding="utf-8"))
+            folder_str = cfg.get("atlasFolder", "").strip()
+            if folder_str:
+                p = Path(folder_str).expanduser().resolve()
+                return p
+        except Exception:
+            pass
+    fallback = MISSIONS_ROOT / "_atlas"
+    if fallback.is_dir():
+        return fallback
+    return None
+
+
 def get_granola_folder_config() -> Path | None:
-    """Reads the opt-in watched folder path from local git-ignored granola_config.json."""
+    """Reads the opt-in watched folder path, delegating to atlas folder config."""
+    atlas_folder = get_atlas_folder_config()
+    if atlas_folder:
+        return atlas_folder
     config_file = Path(__file__).resolve().parent / "granola_config.json"
     if config_file.is_file():
         try:
@@ -1304,20 +1365,20 @@ def match_note_to_mission(title: str, content: str, filename: str) -> tuple[dict
     return best_mission, best_score
 
 
-def process_granola_folder(granola_dir: Path | str | None = None, events_data: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+def process_atlas_folder(atlas_dir: Path | str | None = None, events_data: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     """
-    Scans the opt-in watched Granola folder for exported meeting notes.
+    Scans the opt-in watched Atlas folder for exported meeting notes.
     Matches with matchMission + closest calendar event by time (±1 day).
     - Unambiguous matches -> written to Missions/<Mission>/_inbox/
     - Ambiguous matches -> written to Missions/_inbox/ ('Needs a home')
-    Processed files are moved to _granola/_processed/.
+    Processed files are moved to _atlas/_processed/.
+    Gracefully processes any legacy notes found in _granola/ as fallback.
     """
-    watch_path = Path(granola_dir).resolve() if granola_dir else get_granola_folder_config()
+    watch_path = Path(atlas_dir).resolve() if atlas_dir else get_atlas_folder_config()
     if not watch_path or not watch_path.is_dir():
-        return {"status": "skipped", "message": "No valid watched Granola folder configured", "processed": 0}
-
-    processed_dir = watch_path / "_processed"
-    processed_dir.mkdir(parents=True, exist_ok=True)
+        watch_path = get_granola_folder_config()
+        if not watch_path or not watch_path.is_dir():
+            return {"status": "skipped", "message": "No valid watched Atlas folder configured", "processed": 0}
 
     # Load calendar events for event matching
     if events_data is None:
@@ -1330,16 +1391,34 @@ def process_granola_folder(granola_dir: Path | str | None = None, events_data: l
         else:
             events_data = []
 
-    matched_results = []
-    unassigned_results = []
-    processed_count = 0
+    files_to_process: list[tuple[Path, Path, str]] = []
+
+    primary_proc = watch_path / "_processed"
+    primary_proc.mkdir(parents=True, exist_ok=True)
+    primary_tag = "granola" if "granola" in watch_path.name.lower() else "atlas"
 
     for file_path in sorted(watch_path.iterdir()):
         if not file_path.is_file() or file_path.name.startswith("."):
             continue
-        if file_path.suffix.lower() not in (".md", ".txt"):
-            continue
+        if file_path.suffix.lower() in (".md", ".txt"):
+            files_to_process.append((file_path, primary_proc, primary_tag))
 
+    # Graceful fallback: check legacy _granola directory if different from watch_path
+    legacy_granola = MISSIONS_ROOT / "_granola"
+    if legacy_granola.is_dir() and legacy_granola.resolve() != watch_path.resolve():
+        legacy_proc = legacy_granola / "_processed"
+        legacy_proc.mkdir(parents=True, exist_ok=True)
+        for file_path in sorted(legacy_granola.iterdir()):
+            if not file_path.is_file() or file_path.name.startswith("."):
+                continue
+            if file_path.suffix.lower() in (".md", ".txt"):
+                files_to_process.append((file_path, legacy_proc, "granola"))
+
+    matched_results = []
+    unassigned_results = []
+    processed_count = 0
+
+    for file_path, proc_dir, src_tag in files_to_process:
         try:
             content = file_path.read_text(encoding="utf-8")
         except Exception:
@@ -1348,7 +1427,7 @@ def process_granola_folder(granola_dir: Path | str | None = None, events_data: l
         fm, body = parse_frontmatter(content)
         title = fm.get("title")
         if not title:
-            # Check for markdown header or Granola "Meeting Title: ..."
+            # Check for markdown header or Meeting Title: ...
             m_title = re.search(r"^(?:#|Meeting Title:)\s*([^\n\r]+)", body, re.IGNORECASE | re.MULTILINE)
             title = m_title.group(1).strip() if m_title else file_path.stem
 
@@ -1359,6 +1438,9 @@ def process_granola_folder(granola_dir: Path | str | None = None, events_data: l
             if not m_date:
                 m_date = re.search(r"(?:Date:|\b)(\d{4}-\d{2}-\d{2})\b", body)
             date_str = m_date.group(1) if m_date else datetime.fromtimestamp(file_path.stat().st_mtime).strftime("%Y-%m-%d")
+
+        item_id = fm.get("atlas_id") or fm.get("granola_id") or f"{src_tag}_{file_path.stem}"
+        item_url = fm.get("atlas_url") or fm.get("granola_url") or ""
 
         # 1. Match mission
         matched_mission, score = match_note_to_mission(title, content, file_path.name)
@@ -1379,9 +1461,7 @@ def process_granola_folder(granola_dir: Path | str | None = None, events_data: l
                 ev_title = (ev.get("title") or ev.get("summary") or "").lower()
                 ev_client = (ev.get("client") or "").lower()
                 ev_tags = [str(t).lower() for t in ev.get("tags", [])]
-                ev_id = ev.get("id")
 
-                # Match event to mission
                 belongs = False
                 if any(cm in ev_title or cm in ev_client or cm in ev_tags for cm in client_matches):
                     belongs = True
@@ -1422,7 +1502,11 @@ def process_granola_folder(granola_dir: Path | str | None = None, events_data: l
                     "date": target_date,
                     "attendees": target_ev.get("attendees", []),
                     "googleDocUrl": target_ev.get("googleDocUrl", ""),
-                    "source": "granola",
+                    "source": fm.get("source") or src_tag,
+                    "atlas_id": fm.get("atlas_id") or (item_id if src_tag == "atlas" else None),
+                    "atlas_url": fm.get("atlas_url") or (item_url if src_tag == "atlas" else None),
+                    "granola_id": fm.get("granola_id") or (item_id if src_tag == "granola" else None),
+                    "granola_url": fm.get("granola_url") or (item_url if src_tag == "granola" else None),
                     "text": content
                 })
                 matched_results.append({
@@ -1437,7 +1521,11 @@ def process_granola_folder(granola_dir: Path | str | None = None, events_data: l
                 res = write_unassigned_inbox_file({
                     "title": title,
                     "date": date_str,
-                    "source": "granola",
+                    "source": fm.get("source") or src_tag,
+                    "atlas_id": fm.get("atlas_id") or (item_id if src_tag == "atlas" else None),
+                    "atlas_url": fm.get("atlas_url") or (item_url if src_tag == "atlas" else None),
+                    "granola_id": fm.get("granola_id") or (item_id if src_tag == "granola" else None),
+                    "granola_url": fm.get("granola_url") or (item_url if src_tag == "granola" else None),
                     "suggestedMission": m_id,
                     "suggestedEventId": suggested_eid,
                     "text": content
@@ -1453,7 +1541,11 @@ def process_granola_folder(granola_dir: Path | str | None = None, events_data: l
             res = write_unassigned_inbox_file({
                 "title": title,
                 "date": date_str,
-                "source": "granola",
+                "source": fm.get("source") or src_tag,
+                "atlas_id": fm.get("atlas_id") or (item_id if src_tag == "atlas" else None),
+                "atlas_url": fm.get("atlas_url") or (item_url if src_tag == "atlas" else None),
+                "granola_id": fm.get("granola_id") or (item_id if src_tag == "granola" else None),
+                "granola_url": fm.get("granola_url") or (item_url if src_tag == "granola" else None),
                 "text": content
             })
             unassigned_results.append({
@@ -1463,9 +1555,9 @@ def process_granola_folder(granola_dir: Path | str | None = None, events_data: l
             })
 
         # Move to _processed folder
-        dest = processed_dir / file_path.name
+        dest = proc_dir / file_path.name
         if dest.exists():
-            dest = processed_dir / f"{datetime.now().strftime('%H%M%S')}_{file_path.name}"
+            dest = proc_dir / f"{datetime.now().strftime('%H%M%S')}_{file_path.name}"
         file_path.rename(dest)
         processed_count += 1
 
@@ -1475,6 +1567,43 @@ def process_granola_folder(granola_dir: Path | str | None = None, events_data: l
         "matched": matched_results,
         "unassigned": unassigned_results
     }
+
+
+def process_granola_folder(granola_dir: Path | str | None = None, events_data: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    """Backwards-compatibility alias delegating to process_atlas_folder."""
+    target_dir = Path(granola_dir).resolve() if granola_dir else (get_granola_folder_config() or get_atlas_folder_config())
+    return process_atlas_folder(atlas_dir=target_dir, events_data=events_data)
+
+
+def get_atlas_api_key() -> str | None:
+    """Retrieves Atlas API key from environment, .env file, or atlas_config.json."""
+    key = os.environ.get("ATLAS_API_KEY", "").strip()
+    if key:
+        return key
+
+    env_file = Path(__file__).resolve().parent / ".env"
+    if env_file.is_file():
+        try:
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line.startswith("ATLAS_API_KEY="):
+                    val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    if val:
+                        return val
+        except Exception:
+            pass
+
+    cfg_file = Path(__file__).resolve().parent / "atlas_config.json"
+    if cfg_file.is_file():
+        try:
+            cfg = json.loads(cfg_file.read_text(encoding="utf-8"))
+            val = cfg.get("atlasApiKey", "").strip()
+            if val:
+                return val
+        except Exception:
+            pass
+
+    return None
 
 
 def get_granola_api_key() -> str | None:
@@ -1506,6 +1635,312 @@ def get_granola_api_key() -> str | None:
             pass
 
     return None
+
+
+def fetch_atlas_notes(token: str | None = None, limit: int = 50, api_key: str | None = None) -> list[dict[str, Any]]:
+    """
+    Fetches recent meetings list from Atlas Cloud REST API.
+    GET https://atlas-prod-server-2hmzmxv4ua-uc.a.run.app/api/meetings/
+    """
+    key = api_key or token or get_atlas_api_key()
+    if not key:
+        raise ValueError("Atlas API key not configured")
+
+    url = f"https://atlas-prod-server-2hmzmxv4ua-uc.a.run.app/api/meetings/?limit={limit}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {key}",
+            "User-Agent": "Antigravity-MeetingHub/1.0",
+            "Accept": "application/json"
+        }
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        return data.get("meetings") or data.get("notes") or data.get("data") or []
+    return []
+
+
+def fetch_atlas_note_detail(note_id: str, token: str | None = None, api_key: str | None = None) -> dict[str, Any]:
+    """
+    Fetches full meeting details from Atlas Cloud REST API.
+    GET https://atlas-prod-server-2hmzmxv4ua-uc.a.run.app/api/meetings/{id}
+    """
+    key = api_key or token or get_atlas_api_key()
+    if not key:
+        raise ValueError("Atlas API key not configured")
+
+    url = f"https://atlas-prod-server-2hmzmxv4ua-uc.a.run.app/api/meetings/{note_id}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {key}",
+            "User-Agent": "Antigravity-MeetingHub/1.0",
+            "Accept": "application/json"
+        }
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+
+    return data if isinstance(data, dict) else {}
+
+
+def sync_atlas_api(token: str | None = None, auto_fold: bool = True, events_data: list[dict[str, Any]] | None = None, api_key: str | None = None) -> dict[str, Any]:
+    """
+    Synchronizes meeting notes from Atlas Cloud REST API directly into Mission Inboxes.
+    - Deterministically links calendar events via calendar_event.calendar_event_id.
+    - Matches mission via missions.yaml clientMatch, calendar event, and contact attendees.
+    - Writes raw minutes into Missions/<Mission>/_inbox/<date>_<slug>_<clean_eid>.md with YAML frontmatter.
+    - If auto_fold is True, automatically executes apply_fold(mission_id, filename) to extract
+      actions into Actions.md, decisions into workstream ## Decision log, and archive to _inbox/_folded/.
+    - Ambiguous or unassigned captures land cleanly in Missions/_inbox/ ('Needs a home').
+    - Fully idempotent: already folded or stored notes are skipped without duplication.
+    """
+    key = api_key or token or get_atlas_api_key()
+    if not key:
+        return {"status": "skipped", "message": "Atlas API key not configured", "synced": 0}
+
+    # Load calendar events for event matching
+    if events_data is None:
+        initial_events_path = Path(__file__).resolve().parent / "meeting_hub" / "data" / "initial_events.json"
+        if initial_events_path.is_file():
+            try:
+                events_data = json.loads(initial_events_path.read_text(encoding="utf-8"))
+            except Exception:
+                events_data = []
+        else:
+            events_data = []
+
+    events_by_id = {str(ev.get("id")): ev for ev in (events_data or []) if ev.get("id")}
+
+    try:
+        notes_list = fetch_atlas_notes(key)
+    except Exception as e:
+        return {"status": "error", "message": f"Failed to fetch Atlas notes: {e}"}
+
+    registry = get_missions_registry()
+    missions = registry.get("missions", [])
+
+    # Index existing inbox and folded files across all missions to ensure idempotency
+    existing_items: dict[str, dict[str, Any]] = {}
+    for m in missions:
+        m_id = m.get("id")
+        if not m_id:
+            continue
+        try:
+            m_inbox = list_inbox_files(m_id)
+            for item in m_inbox.get("folded", []):
+                eid = item.get("eventId")
+                aid = item.get("atlas_id")
+                gid = item.get("granola_id")
+                val = {"mission": m_id, "status": "folded", "filename": item.get("filename")}
+                if eid:
+                    existing_items[str(eid)] = val
+                if aid:
+                    existing_items[str(aid)] = val
+                if gid:
+                    existing_items[str(gid)] = val
+            for item in m_inbox.get("pending", []):
+                eid = item.get("eventId")
+                aid = item.get("atlas_id")
+                gid = item.get("granola_id")
+                val = {"mission": m_id, "status": "pending", "filename": item.get("filename")}
+                if eid:
+                    existing_items[str(eid)] = val
+                if aid:
+                    existing_items[str(aid)] = val
+                if gid:
+                    existing_items[str(gid)] = val
+        except Exception:
+            pass
+
+    # Also check unassigned inbox
+    try:
+        unassigned_files = list_unassigned_inbox_files()
+        for uf in unassigned_files:
+            eid = uf.get("eventId") or uf.get("suggestedEventId")
+            aid = uf.get("atlas_id")
+            gid = uf.get("granola_id")
+            val = {"mission": None, "status": "unassigned", "filename": uf.get("filename")}
+            if eid:
+                existing_items[str(eid)] = val
+            if aid:
+                existing_items[str(aid)] = val
+            if gid:
+                existing_items[str(gid)] = val
+    except Exception:
+        pass
+
+    results_synced = []
+    results_folded = []
+    results_unassigned = []
+    results_skipped = []
+
+    for note_summary in notes_list:
+        nid = note_summary.get("id")
+        if not nid:
+            continue
+
+        try:
+            detail = fetch_atlas_note_detail(nid, key)
+        except Exception:
+            detail = note_summary
+
+        cal = detail.get("calendar_event") or {}
+        cal_event_id = cal.get("calendar_event_id") or detail.get("calendar_event_id")
+        note_title = (detail.get("title") or cal.get("event_title") or "Atlas Meeting").strip()
+        summary_md = (
+            detail.get("summary_markdown")
+            or detail.get("summary_text")
+            or detail.get("summary")
+            or detail.get("transcript")
+            or detail.get("content")
+            or detail.get("markdown")
+            or detail.get("notes")
+            or ""
+        ).strip()
+        web_url = detail.get("web_url") or detail.get("url") or f"https://atlas-prod-server-2hmzmxv4ua-uc.a.run.app/meetings/{nid}"
+        attendees_raw = detail.get("attendees") or []
+        attendee_names = []
+        for a in attendees_raw:
+            if isinstance(a, dict):
+                name = a.get("name") or a.get("email")
+                if name:
+                    attendee_names.append(name)
+            elif isinstance(a, str):
+                attendee_names.append(a)
+
+        start_time_raw = cal.get("scheduled_start_time") or detail.get("start_time") or detail.get("created_at") or ""
+        date_str = start_time_raw[:10] if len(start_time_raw) >= 10 else datetime.now().strftime("%Y-%m-%d")
+
+        effective_event_id = cal_event_id or f"atlas_{nid}"
+
+        # Check if already processed
+        if effective_event_id in existing_items or nid in existing_items:
+            existing_info = existing_items.get(effective_event_id) or existing_items.get(nid)
+            if existing_info.get("status") == "folded":
+                results_skipped.append({
+                    "note_id": nid,
+                    "title": note_title,
+                    "eventId": effective_event_id,
+                    "reason": "already_folded"
+                })
+                continue
+            elif existing_info.get("status") == "pending" and auto_fold:
+                m_target = existing_info.get("mission")
+                fname = existing_info.get("filename")
+                if m_target and fname:
+                    fold_res = apply_fold(m_target, fname)
+                    results_folded.append({
+                        "note_id": nid,
+                        "title": note_title,
+                        "mission": m_target,
+                        "filename": fname,
+                        "fold_result": fold_res
+                    })
+                    existing_info["status"] = "folded"
+                    continue
+
+        # Match mission
+        target_mission = None
+
+        # 1. Check calendar event
+        matched_ev = events_by_id.get(cal_event_id) if cal_event_id else None
+        if matched_ev:
+            ev_title = (matched_ev.get("title") or matched_ev.get("summary") or "").lower()
+            ev_client = (matched_ev.get("client") or "").lower()
+            ev_tags = [str(t).lower() for t in matched_ev.get("tags", [])]
+            ev_color_id = str(matched_ev.get("colorId") or matched_ev.get("color_id") or "")
+            ev_color_tag = str(matched_ev.get("colorTag") or CALENDAR_COLOR_TAGS.get(ev_color_id, "")).lower()
+
+            def _matches_kw(pat: str, text: str) -> bool:
+                if not pat or not text:
+                    return False
+                pat_c = pat.strip().lower()
+                text_c = text.lower()
+                if len(pat_c) <= 3 and not (pat_c.startswith("[") and pat_c.endswith("]")):
+                    return bool(re.search(r'(?i)\b' + re.escape(pat_c) + r'\b', text_c))
+                return pat_c in text_c
+
+            for m in missions:
+                patterns = [str(p).lower().strip() for p in m.get("clientMatch", []) if p]
+                m_id = str(m.get("id", "")).lower()
+                clean_color = ev_color_tag.replace("[", "").replace("]", "").strip()
+                if (
+                    any(_matches_kw(p, ev_title) or _matches_kw(p, ev_client) or any(_matches_kw(p, t) for t in ev_tags) for p in patterns)
+                    or (ev_color_tag and any(p == ev_color_tag or p == clean_color for p in patterns))
+                ):
+                    target_mission = m
+                    break
+                elif _matches_kw(m_id, ev_title) or _matches_kw(m_id, ev_client):
+                    target_mission = m
+                    break
+
+        # 2. Match note title and content if not yet matched
+        if not target_mission:
+            matched_m, score = match_note_to_mission(note_title, summary_md, f"{note_title}.md")
+            if matched_m and score >= 15:
+                target_mission = matched_m
+
+        inbox_payload = {
+            "eventId": effective_event_id,
+            "title": note_title,
+            "date": date_str,
+            "attendees": attendee_names,
+            "googleDocUrl": web_url,
+            "atlas_id": nid,
+            "atlas_url": web_url,
+            "source": "atlas",
+            "text": summary_md if summary_md else f"# {note_title}\n\n(No transcript or summary available)"
+        }
+
+        if target_mission:
+            m_id = target_mission["id"]
+            write_res = write_inbox_file(m_id, inbox_payload)
+            filename = write_res.get("filename")
+
+            if write_res.get("status") in ("created", "exists"):
+                if auto_fold and filename:
+                    fold_res = apply_fold(m_id, filename)
+                    results_folded.append({
+                        "note_id": nid,
+                        "title": note_title,
+                        "mission": m_id,
+                        "filename": filename,
+                        "fold_result": fold_res
+                    })
+                    existing_items[effective_event_id] = {"mission": m_id, "status": "folded", "filename": filename}
+                else:
+                    results_synced.append({
+                        "note_id": nid,
+                        "title": note_title,
+                        "mission": m_id,
+                        "filename": filename,
+                        "status": write_res.get("status")
+                    })
+                    existing_items[effective_event_id] = {"mission": m_id, "status": "pending", "filename": filename}
+        else:
+            # Unassigned
+            write_res = write_unassigned_inbox_file(inbox_payload)
+            results_unassigned.append({
+                "note_id": nid,
+                "title": note_title,
+                "filename": write_res.get("filename"),
+                "status": write_res.get("status")
+            })
+
+    return {
+        "status": "success",
+        "fetched": len(notes_list),
+        "folded": results_folded,
+        "synced": results_synced,
+        "unassigned": results_unassigned,
+        "skipped": results_skipped
+    }
 
 
 def fetch_granola_notes(api_key: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
@@ -1573,7 +2008,10 @@ def sync_granola_api(api_key: str | None = None, auto_fold: bool = True, events_
     """
     key = api_key or get_granola_api_key()
     if not key:
-        return {"status": "skipped", "message": "Granola API key not configured", "synced": 0}
+        atlas_key = get_atlas_api_key()
+        if atlas_key:
+            return sync_atlas_api(api_key=atlas_key, auto_fold=auto_fold, events_data=events_data)
+        return {"status": "skipped", "message": "Neither Granola nor Atlas API key configured", "synced": 0}
 
     # Load calendar events for event matching
     if events_data is None:

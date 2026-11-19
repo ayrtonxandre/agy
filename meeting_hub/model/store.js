@@ -1262,25 +1262,56 @@ export class MeetingHubStore {
   }
 
   /**
-   * Granola status check (Phase 5).
+   * Atlas status check.
    */
-  async getGranolaStatus() {
+  async getAtlasStatus() {
     try {
-      const resp = await fetch('/api/granola/status');
+      const resp = await fetch('/api/atlas/status');
       if (resp.ok) {
         return await resp.json();
       }
     } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const configPath = path.resolve('/Users/ayrtonandre/Documents/work/AGY/atlas_config.json');
+        if (fs.existsSync(configPath)) {
+          const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+          const folder = cfg.atlasFolder || '/Users/ayrtonandre/Documents/work/Missions/_atlas';
+          const active = fs.existsSync(folder);
+          let pending = 0;
+          if (active) {
+            pending = fs.readdirSync(folder).filter(f => f.endsWith('.md') && !f.startsWith('.')).length;
+          }
+          return {
+            configured: true,
+            active,
+            folder,
+            pendingFilesCount: pending
+          };
+        }
+      } catch (err) {}
+    }
+
     return { configured: false, active: false, folder: null, pendingFilesCount: 0 };
   }
 
   /**
-   * Triggers Granola watched folder processing (Phase 5).
+   * Granola status check alias for backwards compatibility.
    */
-  async syncGranola(events = null) {
+  async getGranolaStatus() {
+    return this.getAtlasStatus();
+  }
+
+  /**
+   * Triggers Atlas watched folder processing.
+   */
+  async syncAtlas(events = null) {
     const body = { events: events || this.eventsCache || [] };
     try {
-      const resp = await fetch('/api/granola/sync', {
+      const resp = await fetch('/api/atlas/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -1289,6 +1320,7 @@ export class MeetingHubStore {
         const res = await resp.json();
         this.inboxStatusCache.clear();
         this.missionSummariesCache.clear();
+        this.notify({ type: 'atlas_synced', result: res });
         this.notify({ type: 'granola_synced', result: res });
         return res;
       }
@@ -1297,16 +1329,24 @@ export class MeetingHubStore {
     if (typeof process !== 'undefined' && process.versions && process.versions.node) {
       try {
         const { execSync } = await import('child_process');
-        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.process_granola_folder()))"`;
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.process_atlas_folder()))"`;
         const out = execSync(cmd, { encoding: 'utf8' });
         const res = JSON.parse(out);
         this.inboxStatusCache.clear();
         this.missionSummariesCache.clear();
+        this.notify({ type: 'atlas_synced', result: res });
         this.notify({ type: 'granola_synced', result: res });
         return res;
       } catch (err) {}
     }
     return { status: 'skipped', error: 'Sync unavailable' };
+  }
+
+  /**
+   * Granola sync alias for backwards compatibility.
+   */
+  async syncGranola(events = null) {
+    return this.syncAtlas(events);
   }
 
   /**

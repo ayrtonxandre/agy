@@ -127,7 +127,7 @@ Located at [`mission_notes.py`](file:///Users/ayrtonandre/Documents/work/AGY/mis
 ### B. Meeting Minutes Capture (`MinutesEngine` & Drawer)
 Located at [`meeting_hub/model/minutes_engine.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/model/minutes_engine.js) and [`meeting_hub/ui/meeting_panel.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/ui/meeting_panel.js):
 - **Deterministic Regex-Based Parser**: Operates instantly and offline to extract meeting metadata, participants (with clinical/operational roles), topics, and immediate meeting actions.
-- **Minutes Ingestion & Inbox Delivery**: Connects to Google Docs via `/api/docs/fetch` or accepts manual text/Granola notes. Displays live inbox status (`Not sent`, `⏳ In inbox, waiting to be folded`, `✓ Folded into mission notes`) and dispatches to the mission inbox via `#sendToInboxBtn`.
+- **Minutes Ingestion & Inbox Delivery**: Connects to Google Docs via `/api/docs/fetch`, ingests Atlas notes via watched folder (`_atlas/`) or API sync, and accepts manual text inputs. Displays live inbox status (`Not sent`, `⏳ In inbox, waiting to be folded`, `✓ Folded into mission notes`) and dispatches to the mission inbox via `#sendToInboxBtn`.
 - **Decisions & Knowledge Decoupling**: Decisions and domain knowledge entities are no longer extracted into ad-hoc browser memory; they are authoritatively extracted during the note fold workflow.
 
 ### C. Project Base & Workstreams View (`views/projects.js`)

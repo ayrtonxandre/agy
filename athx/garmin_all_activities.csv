@@ -1,4 +1,13 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect,Notes
+25116208797,2026-11-18,2026-11-18 06:35:25,CrossFit,indoor_cardio,Cardio / Cross-Training,43.0,0.0,471,132.0,178.0,SPEED,"WOD
+21 high box jumps
+15 high box jumps
+9 high box jump 
+
+21 deadlifts - 225Lbs
+15 deadlifts - 225Lbs
+9 deadlifts - 225Lbs"
+25105225459,2026-11-17,2026-11-17 07:38:00,Strength,strength_training,Strength,46.2,0.0,360,111.0,147.0,AEROBIC_BASE,
 25093639905,2026-11-16,2026-11-16 06:36:44,CrossFit,indoor_cardio,Cardio / Cross-Training,48.5,0.0,479,123.0,170.0,RECOVERY,"Rowing - 1250M
 23 Hang clean - 107Lbs"
 25088831055,2026-11-15,2026-11-15 16:01:57,Squash,squash,Workout,42.6,0.55,370,120.0,159.0,SPEED,
@@ -253,5 +262,3 @@ Puis:
 23660663184,2026-07-20,2026-07-20 06:33:09,Strength,strength_training,Strength,45.1,0.0,272,102.0,149.0,ANAEROBIC_CAPACITY,
 23644231938,2026-07-18,2026-07-18 17:00:17,Strength,strength_training,Strength,54.8,0.0,460,123.0,166.0,ANAEROBIC_CAPACITY,
 23626509121,2026-07-17,2026-07-17 06:51:53,Strength,strength_training,Strength,39.5,0.0,308,115.0,142.0,AEROBIC_BASE,
-23622101963,2026-07-16,2026-07-16 18:57:45,Strength,strength_training,Strength,63.5,0.0,431,111.0,146.0,AEROBIC_BASE,
-23550915169,2026-07-10,2026-07-10 19:30:09,Cardio,indoor_cardio,Cardio / Cross-Training,60.3,0.0,794,151.0,193.0,SPEED,

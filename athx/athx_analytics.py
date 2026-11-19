@@ -1292,3 +1292,258 @@ def generate_telemetry_digest(
 
     return digest
 
+
+# ------------------------------------------------------------------------------
+# 8. PERSONAL BESTS & ALL-TIME PR ENGINE (STRENGTH & CROSSFIT)
+# ------------------------------------------------------------------------------
+def compute_personal_bests(processed_sets: list[dict], all_activities: list[dict]) -> dict:
+    """
+    Computes audited Personal Bests (PRs) for every distinct exercise tracked
+    in Garmin strength & CrossFit sessions.
+    Distinguishes modality ('Strength' vs 'CrossFit'), recording:
+      - All-time peak load set (Weight kg, Reps, e1RM, Date, Activity, Session)
+      - Peak estimated 1RM (e1RM kg, Weight, Reps, Date, Activity)
+      - Peak repetition set (Reps, Weight, Date, Activity)
+      - Modality-specific bests (Strength PR vs CrossFit PR)
+      - Complete chronological set history
+    """
+    act_by_id = {str(a.get("Activity_ID")): a for a in all_activities if a.get("Activity_ID")}
+    cf_keywords = ["crossfit", "wod", "amrap", "emom", "hyrox", "functional", "metcon"]
+    excluded = {"Unknown", "Unattributed", "Warm Up", "Stretch Butterfly", "Stretch"}
+
+    def _safe_float(val, default: float = 0.0) -> float:
+        try:
+            if val is None or val == "":
+                return default
+            return float(val)
+        except Exception:
+            return default
+
+    def _safe_int(val, default: int = 0) -> int:
+        try:
+            if val is None or val == "":
+                return default
+            return int(float(val))
+        except Exception:
+            return default
+
+    def _classify_act(s: dict) -> tuple[str, str, str]:
+        aid = str(s.get("Activity_ID", ""))
+        act = act_by_id.get(aid, {})
+        aname = s.get("Activity_Name") or act.get("Activity_Name") or ""
+        stype = s.get("Session_Type") or act.get("Activity_Type") or ""
+        is_cf = any(k in aname.lower() or k in stype.lower() for k in cf_keywords)
+        atype = "CrossFit" if is_cf else "Strength"
+        display_name = aname if aname else ("CrossFit WOD" if is_cf else "Strength Session")
+        return atype, display_name, aid
+
+    by_ex: dict[str, dict] = {}
+
+    for s in processed_sets:
+        ex = s.get("Exercise")
+        if not ex or ex in excluded:
+            continue
+
+        act_type, act_name, aid = _classify_act(s)
+        d = s.get("Date", "")
+        if not d:
+            continue
+
+        w = _safe_float(s.get("Weight_kg"))
+        r = _safe_int(s.get("Reps"))
+        e = _safe_float(s.get("e1RM_kg"))
+        vol = _safe_float(s.get("Total_Volume_kg"))
+        if vol <= 0 and w > 0 and r > 0:
+            vol = w * r
+
+        if ex not in by_ex:
+            m = athx_config.EXERCISE_MUSCLE_MAP.get(ex, "Other")
+            if m == "Other":
+                ex_l = ex.lower()
+                if any(k in ex_l for k in ["squat", "leg press", "lunge", "step"]):
+                    m = "Quads"
+                elif any(k in ex_l for k in ["deadlift", "curl", "swing"]):
+                    m = "Hamstrings/Glutes" if ("deadlift" in ex_l or "swing" in ex_l) else "Biceps"
+                elif any(k in ex_l for k in ["press", "push", "bench", "dip"]):
+                    m = "Chest" if "bench" in ex_l else "Shoulders"
+                elif any(k in ex_l for k in ["row", "pull", "chin"]):
+                    m = "Lats/Back"
+                elif any(k in ex_l for k in ["clean", "snatch", "burpee", "thruster", "jack"]):
+                    m = "Full Body"
+                elif any(k in ex_l for k in ["sit up", "raise", "twist", "hollow"]):
+                    m = "Core"
+
+            # Functional Category
+            cat = "Other"
+            ex_l = ex.lower()
+            if any(k in ex_l for k in ["back squat", "bench press", "deadlift", "push press"]) and not any(k in ex_l for k in ["dumbbell", "reverse", "incline"]):
+                cat = "Big 4 Compounds"
+            elif any(k in ex_l for k in ["clean", "snatch", "burpee", "thruster", "devil", "box step", "wall ball", "handstand", "muscle up"]):
+                cat = "CrossFit & Olympic"
+            elif m in ["Quads", "Hamstrings/Glutes", "Calves"]:
+                cat = "Quads & Lower"
+            elif m in ["Lats/Back"]:
+                cat = "Back & Pull"
+            elif m in ["Chest", "Triceps"]:
+                cat = "Chest & Push"
+            elif m in ["Shoulders"]:
+                cat = "Shoulders & S2O"
+            elif m in ["Core"]:
+                cat = "Core & Carries"
+            elif m in ["Biceps", "Forearms"]:
+                cat = "Arms & Grip"
+            else:
+                cat = "Accessories"
+
+            by_ex[ex] = {
+                "exercise": ex,
+                "muscle": m,
+                "category": cat,
+                "total_sets": 0,
+                "strength_sets": 0,
+                "crossfit_sets": 0,
+                "last_date": "",
+                "best_weight_set": None,
+                "best_e1rm_set": None,
+                "best_reps_set": None,
+                "best_strength_set": None,
+                "best_crossfit_set": None,
+                "all_sets": []
+            }
+
+        ex_obj = by_ex[ex]
+        ex_obj["total_sets"] += 1
+        if act_type == "CrossFit":
+            ex_obj["crossfit_sets"] += 1
+        else:
+            ex_obj["strength_sets"] += 1
+        if d > ex_obj["last_date"]:
+            ex_obj["last_date"] = d
+
+        set_rec = {
+            "date": d,
+            "activity_type": act_type,
+            "activity_name": act_name,
+            "activity_id": aid,
+            "set_num": _safe_int(s.get("Set"), 1),
+            "weight_kg": round(w, 1),
+            "reps": r,
+            "e1rm_kg": round(e, 1) if e > 0 else None,
+            "volume_kg": round(vol, 1)
+        }
+        ex_obj["all_sets"].append(set_rec)
+
+        # Peak Weight Set
+        bw = ex_obj["best_weight_set"]
+        if bw is None or (w > bw["weight_kg"]) or (w == bw["weight_kg"] and r > bw["reps"]):
+            ex_obj["best_weight_set"] = set_rec
+
+        # Peak e1RM Set
+        if e > 0:
+            be = ex_obj["best_e1rm_set"]
+            if be is None or e > (be["e1rm_kg"] or 0):
+                ex_obj["best_e1rm_set"] = set_rec
+
+        # Peak Reps Set
+        br = ex_obj["best_reps_set"]
+        if br is None or r > br["reps"] or (r == br["reps"] and w > br["weight_kg"]):
+            ex_obj["best_reps_set"] = set_rec
+
+        # Modality Specific Bests
+        if act_type == "Strength":
+            bs = ex_obj["best_strength_set"]
+            if bs is None or (w > bs["weight_kg"]) or (w == bs["weight_kg"] and r > bs["reps"]):
+                ex_obj["best_strength_set"] = set_rec
+        elif act_type == "CrossFit":
+            bc = ex_obj["best_crossfit_set"]
+            if bc is None or (w > bc["weight_kg"]) or (w == bc["weight_kg"] and r > bc["reps"]):
+                ex_obj["best_crossfit_set"] = set_rec
+
+    ex_list = []
+    str_only = 0
+    cf_only = 0
+    dual = 0
+    heaviest = None
+    highest_e1rm = None
+    highest_reps = None
+
+    for ex, info in by_ex.items():
+        info["all_sets"].sort(key=lambda x: (x["date"], x["set_num"]), reverse=True)
+        if info["strength_sets"] > 0 and info["crossfit_sets"] > 0:
+            info["activity_mode"] = "Both"
+            dual += 1
+        elif info["crossfit_sets"] > 0:
+            info["activity_mode"] = "CrossFit"
+            cf_only += 1
+        else:
+            info["activity_mode"] = "Strength"
+            str_only += 1
+
+        bw = info["best_weight_set"]
+        if bw:
+            if heaviest is None or bw["weight_kg"] > heaviest["weight_kg"]:
+                heaviest = {
+                    "exercise": ex,
+                    "weight_kg": bw["weight_kg"],
+                    "reps": bw["reps"],
+                    "date": bw["date"],
+                    "activity_type": bw["activity_type"],
+                    "activity_name": bw["activity_name"]
+                }
+
+        be = info["best_e1rm_set"]
+        if be and be.get("e1rm_kg"):
+            if highest_e1rm is None or be["e1rm_kg"] > highest_e1rm["e1rm_kg"]:
+                highest_e1rm = {
+                    "exercise": ex,
+                    "e1rm_kg": be["e1rm_kg"],
+                    "weight_kg": be["weight_kg"],
+                    "reps": be["reps"],
+                    "date": be["date"],
+                    "activity_type": be["activity_type"],
+                    "activity_name": be["activity_name"]
+                }
+
+        br = info["best_reps_set"]
+        if br:
+            if highest_reps is None or br["reps"] > highest_reps["reps"]:
+                highest_reps = {
+                    "exercise": ex,
+                    "reps": br["reps"],
+                    "weight_kg": br["weight_kg"],
+                    "date": br["date"],
+                    "activity_type": br["activity_type"],
+                    "activity_name": br["activity_name"]
+                }
+
+        ex_list.append(info)
+
+    # Sort exercise list by peak load descending (tiebreaker: e1RM, then reps)
+    ex_list.sort(key=lambda x: (
+        x["best_weight_set"]["weight_kg"] if x["best_weight_set"] else 0,
+        x["best_e1rm_set"]["e1rm_kg"] if x["best_e1rm_set"] and x["best_e1rm_set"].get("e1rm_kg") else 0,
+        x["best_reps_set"]["reps"] if x["best_reps_set"] else 0
+    ), reverse=True)
+
+    featured_names = [
+        "Barbell Deadlift", "Barbell Back Squat", "Bench Press", "Barbell Bench Press",
+        "Barbell Push Press", "Clean", "Clean and Jerk", "Snatch", "Front Squat",
+        "Burpee", "Box Step-Up", "Pull Up", "Push Up", "Dumbbell Bulgarian Split Squat"
+    ]
+    featured_prs = [item for item in ex_list if item["exercise"] in featured_names]
+
+    return {
+        "summary": {
+            "total_exercises": len(ex_list),
+            "strength_only_exercises": str_only,
+            "crossfit_only_exercises": cf_only,
+            "dual_trained_exercises": dual,
+            "heaviest_lift": heaviest,
+            "highest_e1rm": highest_e1rm,
+            "highest_reps": highest_reps,
+            "featured_prs": featured_prs
+        },
+        "exercises": ex_list
+    }
+
+

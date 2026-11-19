@@ -320,15 +320,15 @@ def build_microcycle(all_activities: list[dict], coach_briefing: dict, as_of_dat
             "why": "Flushes Tuesday quad stiffness with Zone 2 aerobic circulation; fixes overstride cadence to lower GCT."
         },
         3: {  # Thursday
-            "title": "Gym B · Deadlift & Upper", "c": "pull",
+            "title": "Gym B · Upper Power & Hypertrophy", "c": "pull",
             "items": [
-                {"name": "Conventional / Trap Deadlift", "scheme": "4 × 5", "load": "115–125 kg"},
-                {"name": "Barbell Bench Press", "scheme": "3 × 6–8", "load": "75–80 kg"},
-                {"name": "Romanian Deadlift (RDL)", "scheme": "3 × 8–10", "load": "80–90 kg"},
-                {"name": "Weighted Pull-ups", "scheme": "3 × 6–8", "load": "+10 to +15 kg"},
-                {"name": "Heavy Sandbag / Carry", "scheme": "3 × 40 m", "load": "50 kg bag / KBs"}
+                {"name": "Barbell Bench Press", "scheme": "4 × 6–8", "load": "75–82.5 kg"},
+                {"name": "Weighted Pull-ups (or Strict Chin-ups)", "scheme": "4 × 6–8", "load": "+10 to +15 kg"},
+                {"name": "Chest-Supported DB Row", "scheme": "3 × 10–12", "load": "24–28 kg DBs"},
+                {"name": "Incline DB Flyes / Cable Triceps", "scheme": "3 × 12–15", "load": "hypertrophy"},
+                {"name": "Hanging Leg Raises / Dead Hangs", "scheme": "3 × 12–15", "load": "lumbar traction"}
             ],
-            "why": "Closes deadlift gap (-28 kg) & maintains 104 kg bench press without junk fatigue."
+            "why": "Adapted: Deloads lumbar spine & posterior chain after Wed 21-15-9 deadlifts (4.6t); consolidates 104 kg bench press & upper MEV."
         },
         4: {  # Friday
             "title": "CrossFit + Run 2 (5k Intervals)", "c": "cond",
@@ -593,6 +593,58 @@ def build_html(payload_json: str, d: dict) -> str:
     str_sess_json = json.dumps(strength_sessions, ensure_ascii=False)
     eng_acts_json = json.dumps(engine_activities, ensure_ascii=False)
     audit_json = json.dumps(au, ensure_ascii=False)
+    personal_bests = d.get("personal_bests", {})
+    pb_summary = personal_bests.get("summary", {})
+    pb_json = json.dumps(personal_bests, ensure_ascii=False)
+
+    # Personal Bests Redesign Metrics (ATHX Games countdown & 30d PR stats)
+    try:
+        comp_date_obj = datetime.strptime(athx_config.COMPETITION_DATE, "%Y-%m-%d").date()
+        days_to_games = max(0, (comp_date_obj - date.today()).days)
+    except Exception:
+        days_to_games = 191
+
+    pb_total_movements = pb_summary.get("total_exercises", len(personal_bests.get("exercises", [])))
+    cutoff_30d = (date.today() - timedelta(days=30)).strftime("%Y-%m-%d")
+    recent_prs_30d = 0
+    latest_pr_date = "N/A"
+    all_pr_dates = []
+    for ex in personal_bests.get("exercises", []):
+        ld = ex.get("last_date")
+        if ld:
+            all_pr_dates.append(ld)
+            if ld >= cutoff_30d:
+                recent_prs_30d += 1
+    if all_pr_dates:
+        latest_pr_date = max(all_pr_dates)
+
+    comp_benchmarks_list = [
+        {
+            "key": "back_squat",
+            "name": "Back Squat",
+            "target": athx_config.COMPETITION_BENCHMARKS.get("back_squat", {}).get("standard", 125.0),
+            "matches": athx_config.COMPETITION_BENCHMARKS.get("back_squat", {}).get("exercise_matches", ["Barbell Back Squat", "Back Squat", "Barbell Squat", "Squat"]),
+        },
+        {
+            "key": "deadlift",
+            "name": "Deadlift",
+            "target": athx_config.COMPETITION_BENCHMARKS.get("deadlift", {}).get("standard", 160.0),
+            "matches": athx_config.COMPETITION_BENCHMARKS.get("deadlift", {}).get("exercise_matches", ["Barbell Deadlift", "Deadlift", "Straight Leg Deadlift", "Romanian Deadlift", "Sumo Deadlift", "Sumo Deadlift High Pull"]),
+        },
+        {
+            "key": "s2o",
+            "name": "Shoulder-to-Overhead",
+            "target": athx_config.COMPETITION_BENCHMARKS.get("s2o", {}).get("standard", 65.0),
+            "matches": athx_config.COMPETITION_BENCHMARKS.get("s2o", {}).get("exercise_matches", ["Barbell Push Press", "Push Press", "Barbell Shoulder Press", "Shoulder Press", "Overhead Press", "Military Press"]),
+        },
+        {
+            "key": "sandbag_carry",
+            "name": "Sandbag Carry",
+            "target": athx_config.COMPETITION_BENCHMARKS.get("sandbag_carry", {}).get("standard", 60.0),
+            "matches": athx_config.COMPETITION_BENCHMARKS.get("sandbag_carry", {}).get("exercise_matches", ["Sandbag Carry", "Farmers Carry", "Farmers Walk", "Farmer's Walk", "Carry", "Trap Bar Carry"]),
+        },
+    ]
+    comp_benchmarks_json = json.dumps(comp_benchmarks_list, ensure_ascii=False)
 
     # Advanced Sports-Science Pillars: Critical Speed, CrossFit Durability, Recovery Model & Decisions
     cs_data = d.get("critical_speed", {})
@@ -1004,6 +1056,647 @@ def build_html(payload_json: str, d: dict) -> str:
       background: color-mix(in oklch, var(--destructive) 20%, transparent);
       border-color: var(--destructive);
       color: var(--destructive);
+    }}
+
+    /* Personal Bests Badges & Controls */
+    .badge-strength {{
+      background: color-mix(in oklch, var(--primary) 20%, transparent);
+      border-color: var(--primary);
+      color: var(--primary);
+    }}
+
+    .badge-crossfit {{
+      background: color-mix(in oklch, var(--accent) 25%, transparent);
+      border-color: var(--accent);
+      color: var(--accent);
+    }}
+
+    .badge-dual {{
+      background: color-mix(in oklch, var(--chart-2) 25%, transparent);
+      border-color: var(--chart-2);
+      color: var(--chart-2);
+    }}
+
+    /* Personal Bests Master / Dossier Arty Redesign */
+    .pb-header-card {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 20px 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+    }}
+
+    .pb-header-left {{
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }}
+
+    .pb-header-title {{
+      margin: 0;
+      font: 700 26px/1.2 var(--font-sans);
+      color: var(--foreground);
+      letter-spacing: -0.02em;
+    }}
+
+    .pb-header-subline {{
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #9AA7C0;
+    }}
+
+    .pb-header-stats {{
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }}
+
+    .pb-header-stat-item {{
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }}
+
+    @media (max-width: 640px) {{
+      .pb-header-stat-item {{
+        align-items: flex-start;
+      }}
+    }}
+
+    .pb-header-stat-label {{
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #9AA7C0;
+    }}
+
+    .pb-header-stat-val {{
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--foreground);
+    }}
+
+    /* Standards 4-Card Grid */
+    .pb-standards-grid {{
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 16px;
+    }}
+
+    @media (max-width: 1024px) {{
+      .pb-standards-grid {{
+        grid-template-columns: repeat(2, 1fr);
+      }}
+    }}
+
+    @media (max-width: 580px) {{
+      .pb-standards-grid {{
+        grid-template-columns: 1fr;
+      }}
+    }}
+
+    .pb-standard-card {{
+      all: unset;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+      min-height: 88px;
+      box-sizing: border-box;
+    }}
+
+    .pb-standard-card:hover {{
+      border-color: var(--primary);
+      background: color-mix(in oklch, var(--card) 85%, var(--primary));
+    }}
+
+    .pb-standard-card:focus-visible {{
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }}
+
+    .pb-standard-card.active {{
+      border-color: var(--primary);
+      background: color-mix(in oklch, var(--card) 80%, var(--primary));
+      box-shadow: 0 0 0 1px var(--primary);
+    }}
+
+    .pb-standard-top {{
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+    }}
+
+    .pb-standard-name {{
+      font: 600 13px/1.3 var(--font-sans);
+      color: var(--foreground);
+    }}
+
+    .pb-standard-gap {{
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+    }}
+
+    .pb-standard-gap.met {{
+      color: #00FFA3;
+    }}
+
+    .pb-standard-gap.deficit {{
+      color: #FFB454;
+    }}
+
+    .pb-standard-gap.nodata {{
+      color: #9AA7C0;
+    }}
+
+    .pb-standard-values {{
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+    }}
+
+    .pb-standard-curr {{
+      font: 700 20px/1 var(--font-sans);
+      color: var(--foreground);
+    }}
+
+    .pb-standard-target {{
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #9AA7C0;
+    }}
+
+    .pb-progress-track {{
+      width: 100%;
+      height: 6px;
+      background: var(--secondary);
+      border-radius: 3px;
+      overflow: hidden;
+    }}
+
+    .pb-progress-bar {{
+      height: 100%;
+      border-radius: 3px;
+      background: var(--primary);
+      transition: width 0.3s ease;
+    }}
+
+    .pb-progress-bar.met {{
+      background: #00FFA3;
+    }}
+
+    .pb-progress-bar.deficit {{
+      background: #FFB454;
+    }}
+
+    /* Master / Detail Layout */
+    .pb-master-detail {{
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+      align-items: flex-start;
+    }}
+
+    @media (max-width: 900px) {{
+      .pb-master-detail {{
+        flex-direction: column;
+      }}
+    }}
+
+    /* LEFT: Master List Card */
+    .pb-list-card {{
+      width: 360px;
+      min-width: 320px;
+      max-width: 400px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-sizing: border-box;
+    }}
+
+    @media (max-width: 900px) {{
+      .pb-list-card {{
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+      }}
+    }}
+
+    .pb-list-header {{
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }}
+
+    .pb-search-wrap {{
+      position: relative;
+      display: flex;
+      align-items: center;
+    }}
+
+    .pb-search-icon {{
+      position: absolute;
+      left: 12px;
+      width: 16px;
+      height: 16px;
+      color: #9AA7C0;
+      pointer-events: none;
+    }}
+
+    .pb-search-input {{
+      width: 100%;
+      height: 44px;
+      padding: 0 12px 0 36px;
+      background: var(--secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--foreground);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      box-sizing: border-box;
+    }}
+
+    .pb-search-input:focus {{
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+      border-color: var(--primary);
+    }}
+
+    .pb-filter-pills {{
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }}
+
+    .pb-pill-btn {{
+      height: 36px;
+      padding: 0 12px;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: var(--secondary);
+      color: #9AA7C0;
+      font: 500 12px/1 var(--font-sans);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }}
+
+    .pb-pill-btn:hover {{
+      color: var(--foreground);
+      border-color: var(--primary);
+    }}
+
+    .pb-pill-btn:focus-visible {{
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }}
+
+    .pb-pill-btn.active {{
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #FFFFFF;
+      font-weight: 600;
+    }}
+
+    .pb-list-rows {{
+      display: flex;
+      flex-direction: column;
+      max-height: 640px;
+      overflow-y: auto;
+    }}
+
+    .pb-list-row {{
+      all: unset;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 56px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      box-sizing: border-box;
+      background: transparent;
+      transition: background-color 0.15s ease;
+      position: relative;
+    }}
+
+    .pb-list-row:hover {{
+      background: color-mix(in oklch, var(--secondary) 60%, transparent);
+    }}
+
+    .pb-list-row:focus-visible {{
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+    }}
+
+    .pb-list-row.selected {{
+      background: color-mix(in oklch, var(--primary) 12%, transparent);
+      border-left: 3px solid var(--primary);
+      padding-left: 13px;
+    }}
+
+    .pb-row-left {{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }}
+
+    .pb-mode-dot {{
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }}
+
+    .pb-mode-dot.strength {{ background: #6CB8FF; }}
+    .pb-mode-dot.crossfit {{ background: #FFB454; }}
+    .pb-mode-dot.dual {{ background: #C792FF; }}
+
+    .pb-row-info {{
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }}
+
+    .pb-row-name {{
+      font: 600 13px/1.3 var(--font-sans);
+      color: var(--foreground);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }}
+
+    .pb-row-meta {{
+      font-size: 11px;
+      color: #9AA7C0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }}
+
+    .pb-row-right {{
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--foreground);
+      text-align: right;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }}
+
+    .pb-list-footer {{
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      background: color-mix(in oklch, var(--card) 95%, var(--background));
+    }}
+
+    /* RIGHT: Dossier Detail Card */
+    .pb-detail-card {{
+      flex: 1;
+      min-width: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      box-sizing: border-box;
+    }}
+
+    @media (max-width: 640px) {{
+      .pb-detail-card {{
+        padding: 16px;
+      }}
+    }}
+
+    .pb-dossier-header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }}
+
+    .pb-dossier-name {{
+      margin: 0;
+      font: 700 26px/1.2 var(--font-sans);
+      color: var(--foreground);
+      letter-spacing: -0.01em;
+    }}
+
+    .pb-dossier-subline {{
+      margin-top: 4px;
+      font-size: 13px;
+      color: #9AA7C0;
+    }}
+
+    .pb-badge-pill {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font: 600 11px/1 var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border: 1px solid transparent;
+    }}
+
+    .pb-badge-pill.strength {{
+      background: rgba(108, 184, 255, 0.15);
+      border-color: rgba(108, 184, 255, 0.4);
+      color: #6CB8FF;
+    }}
+
+    .pb-badge-pill.crossfit {{
+      background: rgba(255, 180, 84, 0.15);
+      border-color: rgba(255, 180, 84, 0.4);
+      color: #FFB454;
+    }}
+
+    .pb-badge-pill.dual {{
+      background: rgba(199, 146, 255, 0.15);
+      border-color: rgba(199, 146, 255, 0.4);
+      color: #C792FF;
+    }}
+
+    /* 3 Stat Highlight Tiles */
+    .pb-tiles-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }}
+
+    @media (max-width: 768px) {{
+      .pb-tiles-grid {{
+        grid-template-columns: 1fr;
+      }}
+    }}
+
+    .pb-tile {{
+      padding: 14px 16px;
+      background: color-mix(in oklch, var(--card) 60%, var(--background));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }}
+
+    .pb-tile-label {{
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #9AA7C0;
+    }}
+
+    .pb-tile-value {{
+      font: 700 22px/1.1 var(--font-sans);
+      color: var(--foreground);
+    }}
+
+    .pb-tile-value.pink {{
+      color: var(--primary);
+    }}
+
+    .pb-tile-sub {{
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #9AA7C0;
+    }}
+
+    /* Chart Box */
+    .pb-chart-box {{
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: color-mix(in oklch, var(--card) 60%, var(--background));
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }}
+
+    .pb-chart-caption {{
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #9AA7C0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }}
+
+    /* Set History Table */
+    .pb-history-box {{
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }}
+
+    .pb-history-header {{
+      padding: 12px 16px;
+      background: color-mix(in oklch, var(--card) 85%, var(--background));
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }}
+
+    .pb-history-title {{
+      font: 600 13px/1.2 var(--font-sans);
+      color: var(--foreground);
+    }}
+
+    .pb-history-count {{
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #9AA7C0;
+    }}
+
+    .pb-table-wrap {{
+      overflow-x: auto;
+      max-height: 320px;
+      overflow-y: auto;
+    }}
+
+    .pb-history-table {{
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }}
+
+    .pb-history-table th {{
+      text-align: left;
+      padding: 8px 12px;
+      background: var(--card);
+      color: #9AA7C0;
+      font-weight: 500;
+      font-size: 11px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }}
+
+    .pb-history-table th.right {{
+      text-align: right;
+    }}
+
+    .pb-history-table td {{
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--foreground);
+      white-space: nowrap;
+    }}
+
+    .pb-history-table td.mono {{
+      font-family: var(--font-mono);
+    }}
+
+    .pb-history-table td.right {{
+      text-align: right;
+    }}
+
+    .pb-record-tag {{
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(255, 51, 119, 0.15);
+      border: 1px solid var(--primary);
+      color: var(--primary);
     }}
 
     /* Microcycle Day Cards */
@@ -1425,6 +2118,10 @@ def build_html(payload_json: str, d: dict) -> str:
       <div class="nav-item" onclick="switchTab('strengthTab', 'Strength & Hypertrophy', 'Since 1 May 2026')">
         <span class="nav-icon">🏋️</span>
         <span>Strength</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('pbTab', 'Personal Bests', 'All-Time PRs & Records · Strength & CrossFit')">
+        <span class="nav-icon">🏆</span>
+        <span>Personal Bests</span>
       </div>
       <div class="nav-item" onclick="switchTab('engineTab', 'Running & Conditioning', 'Since 1 May 2026')">
         <span class="nav-icon">🏃</span>
@@ -2014,6 +2711,7 @@ def build_html(payload_json: str, d: dict) -> str:
                 <button class="filter-btn" onclick="filterStrength('Legs')">Legs</button>
                 <button class="filter-btn" onclick="filterStrength('Full Body')">Full Body</button>
               </div>
+              <button class="filter-btn" style="border-color: var(--primary); color: var(--primary);" onclick="switchTab('pbTab', 'Personal Bests', 'All-Time PRs & Records · Strength & CrossFit')">🏆 View All Personal Bests</button>
               <input type="text" class="search-box" id="strengthSearchInput" placeholder="Search exercises..." oninput="filterStrength()">
             </div>
           </div>
@@ -2040,6 +2738,72 @@ def build_html(payload_json: str, d: dict) -> str:
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; font-size: 12px; color: var(--muted-foreground);">
             <span id="strengthShowingText">Showing 25 of {len(strength_sessions)}</span>
             <button class="filter-btn" id="btnMoreStrength" onclick="showMoreStrength()">Show 25 more</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================== -->
+      <!-- TAB 3B: ALL-TIME PERSONAL BESTS (MASTER / DOSSIER REDESIGN)     -->
+      <!-- ============================================================== -->
+      <section id="pbTab" class="tab-content">
+        <!-- 1. Header Banner -->
+        <div class="pb-header-card">
+          <div class="pb-header-left">
+            <h2 class="pb-header-title">Personal Bests</h2>
+            <div class="pb-header-subline">ATHX Games · {athx_config.COMPETITION_DATE} · {days_to_games} days out</div>
+          </div>
+          <div class="pb-header-stats">
+            <div class="pb-header-stat-item">
+              <span class="pb-header-stat-label">Tracked Movements</span>
+              <span class="pb-header-stat-val">{pb_total_movements}</span>
+            </div>
+            <div class="pb-header-stat-item">
+              <span class="pb-header-stat-label">PRs (Last 30 Days)</span>
+              <span class="pb-header-stat-val" style="color: var(--primary);">{recent_prs_30d}</span>
+            </div>
+            <div class="pb-header-stat-item">
+              <span class="pb-header-stat-label">Latest PR Date</span>
+              <span class="pb-header-stat-val">{latest_pr_date}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Distance to Competition Standard (4 Clickable Cards) -->
+        <div class="pb-standards-grid" id="pbStandardsGrid" role="region" aria-label="Distance to competition standard">
+          <!-- Rendered dynamically by renderPbStandardsCards() -->
+        </div>
+
+        <!-- 3. Master / Detail Layout -->
+        <div class="pb-master-detail">
+          <!-- LEFT: Master List Card -->
+          <div class="pb-list-card">
+            <div class="pb-list-header">
+              <div class="pb-search-wrap">
+                <svg class="pb-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" class="pb-search-input" id="pbMasterSearch" placeholder="Search movements..." aria-label="Search exercises" oninput="renderPbMasterList()">
+              </div>
+              <div class="pb-filter-pills" id="pbModalityPills" role="radiogroup" aria-label="Filter by modality">
+                <button type="button" class="pb-pill-btn active" data-mode="All" onclick="setPbModalityFilter('All')">All</button>
+                <button type="button" class="pb-pill-btn" data-mode="Strength" onclick="setPbModalityFilter('Strength')">Strength</button>
+                <button type="button" class="pb-pill-btn" data-mode="CrossFit" onclick="setPbModalityFilter('CrossFit')">CrossFit</button>
+                <button type="button" class="pb-pill-btn" data-mode="Dual" onclick="setPbModalityFilter('Dual')">Dual</button>
+              </div>
+            </div>
+            <div class="pb-list-rows" id="pbListRows" role="feed" aria-label="Personal best movements list">
+              <!-- Rendered by renderPbMasterList() -->
+            </div>
+            <div class="pb-list-footer">
+              <span id="pbShowingCount" style="font-size: 11px; color: #9AA7C0; font-family: var(--font-mono);">Showing 0</span>
+              <button type="button" class="filter-btn" id="pbBtnMore" style="padding: 4px 12px; font-size: 11px; min-height: 32px;" onclick="showMorePbMaster()">Show more</button>
+            </div>
+          </div>
+
+          <!-- RIGHT: Dossier Detail Card -->
+          <div class="pb-detail-card" id="pbDossierCard" role="region" aria-label="Movement personal best dossier">
+            <!-- Rendered dynamically by renderPbDossierCard() -->
           </div>
         </div>
       </section>
@@ -2553,6 +3317,8 @@ def build_html(payload_json: str, d: dict) -> str:
   const STRENGTH_SESSIONS = {str_sess_json};
   const ENGINE_ACTIVITIES = {eng_acts_json};
   const AUDIT_RECORDS = (ATHX_DATA.audit && ATHX_DATA.audit.records) || [];
+  const PERSONAL_BESTS = {pb_json};
+  const COMPETITION_BENCHMARKS = {comp_benchmarks_json};
 
   // State
   let activeTabId = 'todayTab';
@@ -2594,6 +3360,9 @@ def build_html(payload_json: str, d: dict) -> str:
   let sleepFilter = 'All';
   let auditLimit = 25;
   let auditFilter = 'All';
+  let pbModeFilter = 'All';
+  let pbMasterLimit = 25;
+  let selectedPbExerciseName = null;
   const expandedRows = new Set();
 
   function switchTab(tabId, title, sub) {{
@@ -3254,6 +4023,565 @@ def build_html(payload_json: str, d: dict) -> str:
     URL.revokeObjectURL(url);
   }}
 
+  // =========================================================================
+  // PERSONAL BESTS (MASTER / DOSSIER ARTY REDESIGN)
+  // =========================================================================
+  function escapePbHtml(str) {{
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }}
+
+  function isMachineOrCableMovement(name) {{
+    if (!name) return false;
+    const n = name.toLowerCase();
+    return (
+      n.includes('machine') ||
+      n.includes('cable') ||
+      n.includes('leg press') ||
+      n.includes('hack squat') ||
+      n.includes('smith') ||
+      n.includes('pulldown') ||
+      n.includes('pec deck') ||
+      n.includes('leg extension') ||
+      n.includes('leg curl') ||
+      n.includes('chest press') ||
+      n.includes('shoulder press machine') ||
+      n.includes('assisted')
+    );
+  }}
+
+  function getDaysAgo(dStr) {{
+    if (!dStr) return '';
+    try {{
+      const d = new Date(dStr + 'T00:00:00');
+      const now = new Date();
+      const diffTime = Math.max(0, now - d);
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) return 'today';
+      if (diffDays === 1) return '1d ago';
+      return `${{diffDays}}d ago`;
+    }} catch (e) {{
+      return dStr;
+    }}
+  }}
+
+  function getCompetitionStandardData(std) {{
+    if (!PERSONAL_BESTS || !PERSONAL_BESTS.exercises) {{
+      return {{ bestEx: null, bestVal: null, gap: null, pct: 0, isMet: false, textVal: 'No data', gapText: 'No data', statusClass: 'nodata' }};
+    }}
+
+    const matchesLower = (std.matches || []).map(m => m.toLowerCase());
+    const candidates = PERSONAL_BESTS.exercises.filter(e => {{
+      const name = (e.exercise || '').toLowerCase();
+      if (isMachineOrCableMovement(name)) return false;
+      return matchesLower.includes(name);
+    }});
+
+    if (candidates.length === 0) {{
+      return {{ bestEx: null, bestVal: null, gap: null, pct: 0, isMet: false, textVal: 'No data', gapText: 'No data', statusClass: 'nodata' }};
+    }}
+
+    let bestEx = null;
+    let bestVal = -1;
+
+    // First try to find best e1RM for loaded sets
+    candidates.forEach(cand => {{
+      if (cand.best_e1rm_set && cand.best_e1rm_set.e1rm_kg && cand.best_e1rm_set.e1rm_kg > bestVal) {{
+        bestVal = cand.best_e1rm_set.e1rm_kg;
+        bestEx = cand;
+      }}
+    }});
+
+    // Fall back to best weight set only if no candidate has e1RM
+    if (bestVal <= 0) {{
+      candidates.forEach(cand => {{
+        if (cand.best_weight_set && cand.best_weight_set.weight_kg && cand.best_weight_set.weight_kg > bestVal) {{
+          bestVal = cand.best_weight_set.weight_kg;
+          bestEx = cand;
+        }}
+      }});
+    }}
+
+    if (bestVal <= 0 || !bestEx) {{
+      return {{ bestEx: null, bestVal: null, gap: null, pct: 0, isMet: false, textVal: 'No data', gapText: 'No data', statusClass: 'nodata' }};
+    }}
+
+    const target = std.target || 100;
+    const gap = bestVal - target;
+    const isMet = gap >= 0;
+    const pct = Math.min(100, Math.max(0, Math.round((bestVal / target) * 100)));
+    const gapText = isMet ? 'Standard met' : `-${{Math.abs(gap).toFixed(1)}} kg`;
+    const statusClass = isMet ? 'met' : 'deficit';
+
+    return {{
+      bestEx,
+      bestVal,
+      gap,
+      pct,
+      isMet,
+      textVal: `${{bestVal.toFixed(1)}} kg`,
+      gapText,
+      statusClass
+    }};
+  }}
+
+  function renderPbStandardsCards() {{
+    const container = document.getElementById('pbStandardsGrid');
+    if (!container || !COMPETITION_BENCHMARKS) return;
+
+    container.innerHTML = COMPETITION_BENCHMARKS.map(std => {{
+      const data = getCompetitionStandardData(std);
+      const isSelected = data.bestEx && data.bestEx.exercise === selectedPbExerciseName;
+      const bestExName = data.bestEx ? escapePbHtml(data.bestEx.exercise) : '';
+      const clickAction = data.bestEx ? `onclick="selectPbExercise('${{escapePbHtml(data.bestEx.exercise)}}', true)"` : '';
+      const ariaLabel = `${{std.name}}: ${{data.textVal}} of ${{std.target}} kg standard, ${{data.gapText}}`;
+
+      return `
+        <button type="button" class="pb-standard-card ${{isSelected ? 'active' : ''}}" ${{clickAction}} aria-label="${{escapePbHtml(ariaLabel)}}">
+          <div class="pb-standard-top">
+            <span class="pb-standard-name">${{escapePbHtml(std.name)}}</span>
+            <span class="pb-standard-gap ${{data.statusClass}}">${{data.gapText}}</span>
+          </div>
+          <div class="pb-standard-values">
+            <span class="pb-standard-curr">${{data.textVal}}</span>
+            <span class="pb-standard-target">/ ${{std.target}} kg</span>
+          </div>
+          <div class="pb-progress-track">
+            <div class="pb-progress-bar ${{data.statusClass}}" style="width: ${{data.pct}}%;"></div>
+          </div>
+        </button>
+      `;
+    }}).join('');
+  }}
+
+  function setPbModalityFilter(mode) {{
+    pbModeFilter = mode;
+    pbMasterLimit = 25;
+    const pills = document.querySelectorAll('#pbModalityPills .pb-pill-btn');
+    pills.forEach(btn => {{
+      if (btn.getAttribute('data-mode') === mode) {{
+        btn.classList.add('active');
+        btn.setAttribute('aria-checked', 'true');
+      }} else {{
+        btn.classList.remove('active');
+        btn.setAttribute('aria-checked', 'false');
+      }}
+    }});
+    renderPbMasterList();
+  }}
+
+  function renderPbMasterList() {{
+    const container = document.getElementById('pbListRows');
+    if (!container || !PERSONAL_BESTS || !PERSONAL_BESTS.exercises) return;
+
+    const query = (document.getElementById('pbMasterSearch')?.value || '').toLowerCase().trim();
+
+    let list = PERSONAL_BESTS.exercises.filter(e => {{
+      if (pbModeFilter === 'Strength' && e.activity_mode !== 'Strength') return false;
+      if (pbModeFilter === 'CrossFit' && e.activity_mode !== 'CrossFit') return false;
+      if (pbModeFilter === 'Dual' && e.activity_mode !== 'Both') return false;
+
+      if (query) {{
+        const matchName = (e.exercise || '').toLowerCase().includes(query);
+        const matchCat = (e.category || '').toLowerCase().includes(query);
+        const matchMus = (e.muscle || '').toLowerCase().includes(query);
+        if (!matchName && !matchCat && !matchMus) return false;
+      }}
+      return true;
+    }});
+
+    // Default sort: most recent PR first (last_date desc)
+    list.sort((a, b) => (b.last_date || '').localeCompare(a.last_date || ''));
+
+    const totalCount = list.length;
+    const visibleList = list.slice(0, pbMasterLimit);
+
+    container.innerHTML = visibleList.map(e => {{
+      const isSel = e.exercise === selectedPbExerciseName;
+      const modeDotClass = e.activity_mode === 'Both' ? 'dual' : (e.activity_mode === 'CrossFit' ? 'crossfit' : 'strength');
+      const isBw = (e.category && e.category.toLowerCase().includes('bodyweight')) || (!e.best_weight_set || e.best_weight_set.weight_kg === 0);
+      
+      let topNumber = '—';
+      if (isBw) {{
+        topNumber = e.best_reps_set ? `${{e.best_reps_set.reps}} reps` : 'BW';
+      }} else if (e.best_weight_set && e.best_weight_set.weight_kg > 0) {{
+        topNumber = `${{e.best_weight_set.weight_kg}} kg`;
+      }} else if (e.best_reps_set) {{
+        topNumber = `${{e.best_reps_set.reps}} reps`;
+      }}
+
+      const daysAgo = getDaysAgo(e.last_date);
+      const subline = `${{e.category || 'General'}}${{daysAgo ? ' · ' + daysAgo : ''}}`;
+
+      return `
+        <button type="button" class="pb-list-row ${{isSel ? 'selected' : ''}}" onclick="selectPbExercise('${{escapePbHtml(e.exercise)}}', false)" aria-label="${{escapePbHtml(e.exercise)}} (${{e.activity_mode}}): ${{topNumber}}">
+          <div class="pb-row-left">
+            <span class="pb-mode-dot ${{modeDotClass}}"></span>
+            <div class="pb-row-info">
+              <div class="pb-row-name">${{escapePbHtml(e.exercise)}}</div>
+              <div class="pb-row-meta">${{escapePbHtml(subline)}}</div>
+            </div>
+          </div>
+          <div class="pb-row-right">${{topNumber}}</div>
+        </button>
+      `;
+    }}).join('');
+
+    const countEl = document.getElementById('pbShowingCount');
+    if (countEl) {{
+      countEl.textContent = `Showing ${{Math.min(visibleList.length, totalCount)}} of ${{totalCount}}`;
+    }}
+
+    const btnMore = document.getElementById('pbBtnMore');
+    if (btnMore) {{
+      btnMore.style.display = (visibleList.length < totalCount) ? 'inline-block' : 'none';
+    }}
+  }}
+
+  function showMorePbMaster() {{
+    pbMasterLimit += 25;
+    renderPbMasterList();
+  }}
+
+  function selectPbExercise(exName, scrollOnMobile) {{
+    selectedPbExerciseName = exName;
+    renderPbStandardsCards();
+    renderPbMasterList();
+    renderPbDossierCard();
+
+    if (scrollOnMobile && window.innerWidth <= 900) {{
+      const dossier = document.getElementById('pbDossierCard');
+      if (dossier) {{
+        dossier.scrollIntoView({{ behavior: 'smooth', block: 'start' }});
+      }}
+    }}
+  }}
+
+  function renderPbInlineProgressionChart(ex) {{
+    const allSets = ex.all_sets || [];
+    if (allSets.length === 0) {{
+      return `
+        <div class="pb-chart-box">
+          <div style="padding: 24px; text-align: center; color: #9AA7C0; font-family: var(--font-mono); font-size: 12px;">
+            No historical sets recorded for this movement yet.
+          </div>
+        </div>
+      `;
+    }}
+
+    const chronoSets = [...allSets].sort((a, b) => {{
+      const dc = (a.date || '').localeCompare(b.date || '');
+      if (dc !== 0) return dc;
+      return (a.set_num || 0) - (b.set_num || 0);
+    }});
+
+    const isBw = (ex.category && ex.category.toLowerCase().includes('bodyweight')) || (!ex.best_weight_set || ex.best_weight_set.weight_kg === 0);
+    const useReps = isBw || ex.activity_mode === 'CrossFit' || (!ex.best_e1rm_set || !ex.best_e1rm_set.e1rm_kg);
+
+    const metricName = useReps ? 'Reps per Set' : 'Estimated 1RM';
+    const unit = useReps ? 'reps' : 'kg';
+
+    const points = chronoSets.map(s => {{
+      const val = useReps ? s.reps : (s.e1rm_kg || s.weight_kg || 0);
+      return {{
+        date: s.date,
+        val: val,
+        weight: s.weight_kg,
+        reps: s.reps,
+        activity: s.activity_name
+      }};
+    }}).filter(p => p.val > 0);
+
+    if (points.length === 0) {{
+      return `
+        <div class="pb-chart-box">
+          <div style="padding: 24px; text-align: center; color: #9AA7C0; font-family: var(--font-mono); font-size: 12px;">
+            No numeric progression points available for chart.
+          </div>
+        </div>
+      `;
+    }}
+
+    const firstDate = points[0].date;
+    const lastDate = points[points.length - 1].date;
+    const vals = points.map(p => p.val);
+    const minVal = Math.min(...vals);
+    const maxVal = Math.max(...vals);
+    const peakIdx = vals.indexOf(maxVal);
+
+    const svgW = 640;
+    const svgH = 150;
+    const padL = 44;
+    const padR = 20;
+    const padT = 16;
+    const padB = 26;
+    const plotW = svgW - padL - padR;
+    const plotH = svgH - padT - padB;
+
+    let yMin = minVal === maxVal ? Math.max(0, minVal - 10) : minVal * 0.9;
+    let yMax = minVal === maxVal ? maxVal + 10 : maxVal * 1.05;
+    if (yMin < 0) yMin = 0;
+    const yRange = (yMax - yMin) || 1;
+
+    const coords = points.map((p, i) => {{
+      const x = points.length === 1 ? padL + plotW / 2 : padL + (i / (points.length - 1)) * plotW;
+      const y = padT + plotH - ((p.val - yMin) / yRange) * plotH;
+      return {{ x, y, p }};
+    }});
+
+    const linePath = 'M ' + coords.map(c => `${{c.x.toFixed(1)}},${{c.y.toFixed(1)}}`).join(' L ');
+    const firstX = coords[0].x.toFixed(1);
+    const lastX = coords[coords.length - 1].x.toFixed(1);
+    const baselineY = (padT + plotH).toFixed(1);
+    const areaPath = `M ${{firstX}},${{baselineY}} L ${{linePath.slice(2)}} L ${{lastX}},${{baselineY}} Z`;
+
+    const midVal = ((yMin + yMax) / 2).toFixed(1);
+    const midY = (padT + plotH / 2).toFixed(1);
+    const gridHtml = `
+      <line x1="${{padL}}" y1="${{padT}}" x2="${{padL + plotW}}" y2="${{padT}}" stroke="var(--border)" stroke-dasharray="3,3" stroke-width="1" />
+      <text x="${{padL - 8}}" y="${{padT + 4}}" fill="#9AA7C0" font-size="9" font-family="var(--font-mono)" text-anchor="end">${{Math.round(yMax)}}</text>
+      <line x1="${{padL}}" y1="${{midY}}" x2="${{padL + plotW}}" y2="${{midY}}" stroke="var(--border)" stroke-dasharray="3,3" stroke-width="1" />
+      <text x="${{padL - 8}}" y="${{Number(midY) + 3}}" fill="#9AA7C0" font-size="9" font-family="var(--font-mono)" text-anchor="end">${{Math.round(midVal)}}</text>
+      <line x1="${{padL}}" y1="${{baselineY}}" x2="${{padL + plotW}}" y2="${{baselineY}}" stroke="var(--border)" stroke-width="1" />
+      <text x="${{padL - 8}}" y="${{Number(baselineY) + 3}}" fill="#9AA7C0" font-size="9" font-family="var(--font-mono)" text-anchor="end">${{Math.round(yMin)}}</text>
+    `;
+
+    const circlesHtml = coords.map((c, i) => {{
+      const isPeak = i === peakIdx;
+      const r = isPeak ? 5 : 3.5;
+      const fill = isPeak ? 'var(--primary)' : 'var(--card)';
+      const stroke = isPeak ? '#FFFFFF' : 'var(--primary)';
+      const sw = isPeak ? 2 : 1.5;
+      const tip = `${{c.p.date}}: ${{c.p.val}} ${{unit}}${{c.p.weight ? ' (' + c.p.weight + 'kg x ' + c.p.reps + ')' : ''}}`;
+      return `
+        <circle cx="${{c.x.toFixed(1)}}" cy="${{c.y.toFixed(1)}}" r="${{r}}" fill="${{fill}}" stroke="${{stroke}}" stroke-width="${{sw}}">
+          <title>${{escapePbHtml(tip)}}</title>
+        </circle>
+      `;
+    }}).join('');
+
+    const captionHtml = `
+      <span>Progression: <strong style="color: var(--foreground);">${{metricName}}</strong> (${{unit}})</span>
+      <span>${{firstDate}} &rarr; ${{lastDate}} · Peak: <strong style="color: var(--primary);">${{maxVal}} ${{unit}}</strong> (${{points[peakIdx].date}})</span>
+    `;
+
+    return `
+      <div class="pb-chart-box">
+        <svg viewBox="0 0 ${{svgW}} ${{svgH}}" width="100%" height="150" style="display: block; overflow: visible;" aria-label="Progression chart of ${{escapePbHtml(ex.exercise)}}">
+          <defs>
+            <linearGradient id="pbProgGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#FF3377" stop-opacity="0.32" />
+              <stop offset="100%" stop-color="#FF3377" stop-opacity="0.0" />
+            </linearGradient>
+          </defs>
+          ${{gridHtml}}
+          <path d="${{areaPath}}" fill="url(#pbProgGrad)" />
+          <path d="${{linePath}}" fill="none" stroke="#FF3377" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+          ${{circlesHtml}}
+        </svg>
+        <div class="pb-chart-caption">
+          ${{captionHtml}}
+        </div>
+      </div>
+    `;
+  }}
+
+  function renderPbDossierCard() {{
+    const container = document.getElementById('pbDossierCard');
+    if (!container || !PERSONAL_BESTS || !PERSONAL_BESTS.exercises) return;
+
+    const ex = PERSONAL_BESTS.exercises.find(e => e.exercise === selectedPbExerciseName) || PERSONAL_BESTS.exercises[0];
+    if (!ex) {{
+      container.innerHTML = '<div style="padding: 24px; color: #9AA7C0;">Select an exercise to inspect dossier.</div>';
+      return;
+    }}
+
+    const bw = ex.best_weight_set || {{}};
+    const be = ex.best_e1rm_set || {{}};
+    const br = ex.best_reps_set || {{}};
+
+    const isBw = (ex.category && ex.category.toLowerCase().includes('bodyweight')) || (!ex.best_weight_set || ex.best_weight_set.weight_kg === 0);
+    const isMachine = isMachineOrCableMovement(ex.exercise);
+
+    let modePillHtml = '';
+    if (ex.activity_mode === 'Both') {{
+      modePillHtml = '<span class="pb-badge-pill dual">Dual (Str &amp; CF)</span>';
+    }} else if (ex.activity_mode === 'CrossFit') {{
+      modePillHtml = '<span class="pb-badge-pill crossfit">CrossFit</span>';
+    }} else {{
+      modePillHtml = '<span class="pb-badge-pill strength">Strength</span>';
+    }}
+
+    const totalWorkingSets = ex.total_sets || (ex.all_sets ? ex.all_sets.length : 0);
+    const dossierSubline = `${{ex.category || 'General'}} · ${{ex.muscle || 'Full Body'}} · ${{totalWorkingSets}} working sets`;
+
+    let tile1Val = '—';
+    let tile1Sub = '—';
+    if (isBw) {{
+      tile1Val = 'Bodyweight';
+      tile1Sub = br.reps !== undefined ? `${{br.reps}} reps · ${{br.date || '—'}}` : 'Bodyweight only';
+    }} else if (bw.weight_kg !== undefined && bw.weight_kg > 0) {{
+      tile1Val = `${{bw.weight_kg}} kg`;
+      tile1Sub = `${{bw.reps}} reps · ${{bw.date || '—'}}`;
+    }} else if (br.reps !== undefined) {{
+      tile1Val = `${{br.reps}} reps`;
+      tile1Sub = br.date || '—';
+    }}
+
+    let tile2Val = '—';
+    let tile2Sub = '—';
+    if (isBw) {{
+      tile2Val = 'n/a';
+      tile2Sub = 'Bodyweight movement';
+    }} else if (isMachine) {{
+      tile2Val = 'n/a';
+      tile2Sub = 'Machine / Cable lift';
+    }} else if (be.e1rm_kg) {{
+      tile2Val = `${{be.e1rm_kg}} kg`;
+      tile2Sub = `${{be.weight_kg}} kg × ${{be.reps}} · ${{be.date || '—'}}`;
+    }} else {{
+      tile2Val = 'n/a';
+      tile2Sub = 'reps > 10 (no e1RM formula)';
+    }}
+
+    let tile3Val = '—';
+    let tile3Sub = '—';
+    if (br.reps !== undefined) {{
+      tile3Val = `${{br.reps}} reps`;
+      const loadStr = br.weight_kg > 0 ? `${{br.weight_kg}} kg` : 'BW';
+      tile3Sub = `${{loadStr}} · ${{br.date || '—'}}`;
+    }}
+
+    const chartHtml = renderPbInlineProgressionChart(ex);
+
+    const sortedSets = [...(ex.all_sets || [])].sort((a, b) => {{
+      const dc = (b.date || '').localeCompare(a.date || '');
+      if (dc !== 0) return dc;
+      return (b.set_num || 0) - (a.set_num || 0);
+    }});
+
+    const historyRows = sortedSets.map(s => {{
+      const isPeakE1rm = (!isBw && !isMachine && be && s.e1rm_kg && s.e1rm_kg === be.e1rm_kg && s.date === be.date && s.weight_kg === be.weight_kg && s.reps === be.reps);
+      const isPeakReps = (br && s.reps === br.reps && s.weight_kg === br.weight_kg && s.date === br.date && !isPeakE1rm);
+      const isPeakLoad = (!isBw && bw && s.weight_kg === bw.weight_kg && s.reps === bw.reps && s.date === bw.date && !isPeakE1rm && !isPeakReps);
+
+      let recordTag = '—';
+      if (isPeakE1rm) {{
+        recordTag = '<span class="pb-record-tag">Peak e1RM</span>';
+      }} else if (isPeakReps) {{
+        recordTag = '<span class="pb-record-tag">Peak Reps</span>';
+      }} else if (isPeakLoad) {{
+        recordTag = '<span class="pb-record-tag">Peak Load</span>';
+      }}
+
+      const loadDisplay = s.weight_kg > 0 ? `${{s.weight_kg}} kg` : 'BW';
+      const e1rmDisplay = (!isBw && !isMachine && s.e1rm_kg) ? `${{s.e1rm_kg}} kg` : '—';
+      const sessName = s.activity_name || 'Strength Session';
+
+      return `
+        <tr>
+          <td class="mono">${{s.date || '—'}}</td>
+          <td style="max-width: 220px; overflow: hidden; text-overflow: ellipsis;" title="${{escapePbHtml(sessName)}}">${{escapePbHtml(sessName)}}</td>
+          <td class="mono right">${{loadDisplay}}</td>
+          <td class="mono right">${{s.reps}}</td>
+          <td class="mono right">${{e1rmDisplay}}</td>
+          <td>${{recordTag}}</td>
+        </tr>
+      `;
+    }}).join('');
+
+    container.innerHTML = `
+      <div class="pb-dossier-header">
+        <div>
+          <h3 class="pb-dossier-name">${{escapePbHtml(ex.exercise)}}</h3>
+          <div class="pb-dossier-subline">${{escapePbHtml(dossierSubline)}}</div>
+        </div>
+        <div>
+          ${{modePillHtml}}
+        </div>
+      </div>
+
+      <div class="pb-tiles-grid">
+        <div class="pb-tile-card">
+          <div class="pb-tile-label">Peak Load</div>
+          <div class="pb-tile-value">${{tile1Val}}</div>
+          <div class="pb-tile-sub">${{escapePbHtml(tile1Sub)}}</div>
+        </div>
+        <div class="pb-tile-card">
+          <div class="pb-tile-label">Est. 1RM</div>
+          <div class="pb-tile-value pink">${{tile2Val}}</div>
+          <div class="pb-tile-sub">${{escapePbHtml(tile2Sub)}}</div>
+        </div>
+        <div class="pb-tile-card">
+          <div class="pb-tile-label">Most Reps in One Set</div>
+          <div class="pb-tile-value">${{tile3Val}}</div>
+          <div class="pb-tile-sub">${{escapePbHtml(tile3Sub)}}</div>
+        </div>
+      </div>
+
+      ${{chartHtml}}
+
+      <div class="pb-history-box">
+        <div class="pb-history-header">
+          <span class="pb-history-title">Set History</span>
+          <span class="pb-history-count">${{sortedSets.length}} recorded sets</span>
+        </div>
+        <div class="pb-table-wrap">
+          <table class="pb-history-table">
+            <thead>
+              <tr>
+                <th style="width: 95px;">Date</th>
+                <th>Session</th>
+                <th class="right" style="width: 75px;">Load</th>
+                <th class="right" style="width: 60px;">Reps</th>
+                <th class="right" style="width: 75px;">e1RM</th>
+                <th style="width: 100px;">Record</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${{historyRows || '<tr><td colspan="6" style="text-align: center; color: #9AA7C0; padding: 16px;">No sets recorded</td></tr>'}}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }}
+
+  function initPersonalBestsView() {{
+    if (!PERSONAL_BESTS || !PERSONAL_BESTS.exercises || PERSONAL_BESTS.exercises.length === 0) return;
+
+    let largestGap = -Infinity;
+    let defaultExercise = null;
+
+    if (COMPETITION_BENCHMARKS && Array.isArray(COMPETITION_BENCHMARKS)) {{
+      COMPETITION_BENCHMARKS.forEach(std => {{
+        const data = getCompetitionStandardData(std);
+        if (data && data.bestEx && data.gap !== null) {{
+          const deficit = -data.gap;
+          if (deficit > largestGap) {{
+            largestGap = deficit;
+            defaultExercise = data.bestEx.exercise;
+          }}
+        }}
+      }});
+    }}
+
+    if (!defaultExercise) {{
+      defaultExercise = PERSONAL_BESTS.exercises[0].exercise;
+    }}
+
+    selectedPbExerciseName = defaultExercise;
+
+    renderPbStandardsCards();
+    renderPbMasterList();
+    renderPbDossierCard();
+  }}
+
   // Chart.js Visualizations
   function initCharts() {{
     const ctxRadar = document.getElementById('muscleRadarChart')?.getContext('2d');
@@ -3691,6 +5019,7 @@ def build_html(payload_json: str, d: dict) -> str:
     }}
     initAnatomyTooltips();
     initKpiPopovers();
+    initPersonalBestsView();
     renderEngineTable();
     renderBodyTable();
     renderSleepTable();
@@ -3864,6 +5193,12 @@ def main():
     print(f"✅ VBT Fatigue Drop-Off: {vbt_velocity_loss_data.get('avg_velocity_loss_pct', 0)}% VL across {vbt_velocity_loss_data.get('evaluated_sessions', 0)} sessions ({vbt_velocity_loss_data.get('vbt_zone', 'N/A')}).")
     print(f"✅ AI Coach Decision Log: {len(coach_decisions_data)} interventions audited against Garmin overnight HRV.")
 
+    personal_bests_data = athx_analytics.compute_personal_bests(
+        strength_data.get("processed_sets", []),
+        all_activities
+    )
+    print(f"✅ Personal Bests Engine: {personal_bests_data['summary']['total_exercises']} exercises audited ({personal_bests_data['summary']['strength_only_exercises']} Strength, {personal_bests_data['summary']['crossfit_only_exercises']} CrossFit, {personal_bests_data['summary']['dual_trained_exercises']} Both).")
+
     dashboard_payload = {
         "config": {
             "data_start": athx_config.DATA_START,
@@ -3897,6 +5232,7 @@ def main():
         "vbt_velocity_loss": vbt_velocity_loss_data,
         "perception_load": perception_load_data,
         "coach_decisions": coach_decisions_data,
+        "personal_bests": personal_bests_data,
     }
 
     payload_json = json.dumps(dashboard_payload, ensure_ascii=False)

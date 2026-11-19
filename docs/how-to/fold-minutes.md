@@ -10,7 +10,7 @@ Meeting Hub does not store project knowledge in browser databases. Instead, plai
 
 ```mermaid
 flowchart LR
-    A["Meeting / Call\n(Granola, Google Doc)"] --> B["Meeting Hub\nDrawer → Minutes Tab"]
+    A["Meeting / Call\n(Atlas, Google Doc)"] --> B["Meeting Hub\nDrawer → Minutes Tab"]
     B -->|POST /api/missions/:id/inbox| C["Mission _inbox/\nRaw Markdown + YAML"]
     C -->|Fold Routine\n(Antigravity / CLI)| D["Authoritative Mission Notes\n• Mission Overview.md\n• Actions.md\n• Facility Notes"]
     D -->|GET /api/missions/:id/summary| E["Meeting Hub Viewports\n• Today Next-Up Card\n• Projects View\n• Actions View"]
@@ -27,7 +27,7 @@ flowchart LR
 2. Select the meeting in the **Today** timeline or **Meetings** list to open the right-hand drawer.
 3. Switch to the **Minutes** tab:
    - If a Google Doc is attached to the calendar invite, click **"Fetch Google Doc"** (`pink` button).
-   - If using **Granola**, an audio transcript, or manual notes, paste the text directly into the minutes textarea.
+   - If using **Atlas**, an audio transcript, or manual notes, notes drop automatically into watched folder `_atlas/` or can be pasted directly into the minutes textarea.
 4. Verify the target mission in the **Mission** dropdown (auto-selected via meeting title bracket tags or `clientMatch` keywords).
 5. Click **"Send to mission inbox"** (`#sendToInboxBtn`):
    - The status badge changes from `Not sent` to `⏳ In inbox, waiting to be folded`.
@@ -104,7 +104,7 @@ Every mission directory adheres to `bootstrapping-missions` standards:
 
 - **What if the orchestrator server is not running?**  
   Meeting Hub runs in standalone `file://` mode using `data/missions_snapshot.js`. You will see the registry and calendar events, but live note summaries and Google Doc fetches will prompt you to run `python3 orchestrator.py serve` (or `meeting`).
-- **Can I add Granola transcripts manually?**  
-  Yes. Simply paste the plain text into the Minutes textarea in the meeting drawer and click **"Send to mission inbox"**.
+- **Can I add Atlas or manual transcripts?**  
+  Yes. Notes dropped in `Missions/_atlas/` are automatically routed. You can also paste plain text into the Minutes textarea in the meeting drawer and click **"Send to mission inbox"**.
 - **Are client minutes secure?**  
   Yes. Client minutes are never baked into `meeting_hub.app.js` or committed to git. All `/api/missions/*` endpoints enforce strict localhost guards (`_is_localhost`), rejecting external network requests with `403 Forbidden`.

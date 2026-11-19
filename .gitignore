@@ -30,6 +30,7 @@ hae_token.txt
 .env
 
 # Local Daemon Logs & Raw Payloads
+atlas_config.json
 granola_config.json
 logs/
 server_access.log

@@ -212,7 +212,8 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "mohamed jebali",
         "alexandre thion de la chaume",
         "julien smadja",
-        "virgile"
+        "virgile",
+        "nicolas pelissero"
       ],
       "workstreams": [
         {

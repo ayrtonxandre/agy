@@ -1,6 +1,6 @@
 /**
  * Meeting Hub Compiled Application Bundle
- * Generated: 2026-11-16T09:46:31.275Z
+ * Generated: 2026-11-19T10:48:43.443Z
  */
 (function(window, document) {
 'use strict';
@@ -221,7 +221,8 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "mohamed jebali",
         "alexandre thion de la chaume",
         "julien smadja",
-        "virgile"
+        "virgile",
+        "nicolas pelissero"
       ],
       "workstreams": [
         {
@@ -2856,15 +2857,17 @@ const SYNC_SOURCES = {
     dotClass: 'amber',
     label: 'Training'
   },
-  granola: {
-    id: 'granola',
-    name: 'Granola',
+  atlas: {
+    id: 'atlas',
+    name: 'Atlas',
     stream: 'work',
-    protocol: 'Granola REST API',
+    protocol: 'Atlas Meeting Capture',
     dotClass: 'purple',
     label: 'Transcripts'
   }
 };
+
+const CALENDAR_SOURCES = SYNC_SOURCES;
 
 class CalendarSyncService {
   /**
@@ -3091,15 +3094,18 @@ class CalendarSyncService {
     await db.put('meta', { key: 'event_count', value: allEvents.length });
     await db.put('meta', { key: 'series_count', value: collapsedSeries.length });
 
-    // Auto-sync Granola meeting transcripts and notes for missions
-    let granolaResult = null;
-    if (store && typeof store.syncGranola === 'function') {
+    // Auto-sync Atlas meeting transcripts and notes for missions
+    let atlasResult = null;
+    const atlasSyncFn = store && (typeof store.syncAtlas === 'function' ? store.syncAtlas : store.syncGranola);
+    if (atlasSyncFn) {
       try {
-        granolaResult = await store.syncGranola();
+        atlasResult = await atlasSyncFn.call(store);
+        await db.put('meta', { key: 'last_sync_atlas', value: nowIso });
+        await db.put('meta', { key: 'sync_status_atlas', value: atlasResult?.status === 'error' ? 'error' : 'active' });
         await db.put('meta', { key: 'last_sync_granola', value: nowIso });
-        await db.put('meta', { key: 'sync_status_granola', value: granolaResult?.status === 'error' ? 'error' : 'active' });
+        await db.put('meta', { key: 'sync_status_granola', value: atlasResult?.status === 'error' ? 'error' : 'active' });
       } catch (ge) {
-        console.warn('[SyncService] Granola auto-sync notice:', ge);
+        console.warn('[SyncService] Atlas auto-sync notice:', ge);
       }
     }
 
@@ -3112,7 +3118,8 @@ class CalendarSyncService {
         eventCount: allEvents.length,
         seriesCount: collapsedSeries.length,
         backendLive: backendSuccess,
-        granola: granolaResult
+        atlas: atlasResult,
+        granola: atlasResult
       });
     }
 
@@ -3124,27 +3131,39 @@ class CalendarSyncService {
       backendLive: backendSuccess,
       eventCount: allEvents.length,
       seriesCount: collapsedSeries.length,
-      granola: granolaResult
+      atlas: atlasResult,
+      granola: atlasResult
     };
   }
 
   /**
-   * Syncs latest transcripts from Granola API across all missions.
+   * Syncs latest transcripts from Atlas API/folder across all missions.
    */
-  static async syncGranolaTranscripts(db, store) {
-    if (store && typeof store.syncGranola === 'function') {
-      const res = await store.syncGranola();
+  static async syncAtlasTranscripts(db, store) {
+    const syncFn = store && (typeof store.syncAtlas === 'function' ? store.syncAtlas : store.syncGranola);
+    if (syncFn) {
+      const res = await syncFn.call(store);
       const nowIso = new Date().toISOString();
+      await db.put('meta', { key: 'last_sync_atlas', value: nowIso });
+      await db.put('meta', { key: 'sync_status_atlas', value: res?.status === 'error' ? 'error' : 'active' });
       await db.put('meta', { key: 'last_sync_granola', value: nowIso });
       await db.put('meta', { key: 'sync_status_granola', value: res?.status === 'error' ? 'error' : 'active' });
       return res;
     }
     return { status: 'skipped', error: 'Store unavailable' };
   }
+
+  /**
+   * Backwards compatibility alias for Granola transcripts.
+   */
+  static async syncGranolaTranscripts(db, store) {
+    return CalendarSyncService.syncAtlasTranscripts(db, store);
+  }
 }
 
 MeetingHub.CalendarSyncService = CalendarSyncService;
 MeetingHub.SYNC_SOURCES = SYNC_SOURCES;
+MeetingHub.CALENDAR_SOURCES = CALENDAR_SOURCES;
 
 /* === Module: model/prep_score.js === */
 /**
@@ -4757,25 +4776,56 @@ class MeetingHubStore {
   }
 
   /**
-   * Granola status check (Phase 5).
+   * Atlas status check.
    */
-  async getGranolaStatus() {
+  async getAtlasStatus() {
     try {
-      const resp = await fetch('/api/granola/status');
+      const resp = await fetch('/api/atlas/status');
       if (resp.ok) {
         return await resp.json();
       }
     } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const configPath = path.resolve('/Users/ayrtonandre/Documents/work/AGY/atlas_config.json');
+        if (fs.existsSync(configPath)) {
+          const cfg = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+          const folder = cfg.atlasFolder || '/Users/ayrtonandre/Documents/work/Missions/_atlas';
+          const active = fs.existsSync(folder);
+          let pending = 0;
+          if (active) {
+            pending = fs.readdirSync(folder).filter(f => f.endsWith('.md') && !f.startsWith('.')).length;
+          }
+          return {
+            configured: true,
+            active,
+            folder,
+            pendingFilesCount: pending
+          };
+        }
+      } catch (err) {}
+    }
+
     return { configured: false, active: false, folder: null, pendingFilesCount: 0 };
   }
 
   /**
-   * Triggers Granola watched folder processing (Phase 5).
+   * Granola status check alias for backwards compatibility.
    */
-  async syncGranola(events = null) {
+  async getGranolaStatus() {
+    return this.getAtlasStatus();
+  }
+
+  /**
+   * Triggers Atlas watched folder processing.
+   */
+  async syncAtlas(events = null) {
     const body = { events: events || this.eventsCache || [] };
     try {
-      const resp = await fetch('/api/granola/sync', {
+      const resp = await fetch('/api/atlas/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -4784,6 +4834,7 @@ class MeetingHubStore {
         const res = await resp.json();
         this.inboxStatusCache.clear();
         this.missionSummariesCache.clear();
+        this.notify({ type: 'atlas_synced', result: res });
         this.notify({ type: 'granola_synced', result: res });
         return res;
       }
@@ -4792,16 +4843,24 @@ class MeetingHubStore {
     if (typeof process !== 'undefined' && process.versions && process.versions.node) {
       try {
         const { execSync } = await import('child_process');
-        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.process_granola_folder()))"`;
+        const cmd = `python3 -c "import sys; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes, json; print(json.dumps(mission_notes.process_atlas_folder()))"`;
         const out = execSync(cmd, { encoding: 'utf8' });
         const res = JSON.parse(out);
         this.inboxStatusCache.clear();
         this.missionSummariesCache.clear();
+        this.notify({ type: 'atlas_synced', result: res });
         this.notify({ type: 'granola_synced', result: res });
         return res;
       } catch (err) {}
     }
     return { status: 'skipped', error: 'Sync unavailable' };
+  }
+
+  /**
+   * Granola sync alias for backwards compatibility.
+   */
+  async syncGranola(events = null) {
+    return this.syncAtlas(events);
   }
 
   /**
@@ -5875,6 +5934,7 @@ class ShellUI {
     onNewMeeting,
     onTodayClick,
     onSyncTrigger,
+    onAtlasSyncTrigger,
     onGranolaSyncTrigger,
     onSearch,
     onExportData,
@@ -5894,7 +5954,9 @@ class ShellUI {
     this.onNewMeeting = onNewMeeting;
     this.onTodayClick = onTodayClick;
     this.onSyncTrigger = onSyncTrigger;
-    this.onGranolaSyncTrigger = onGranolaSyncTrigger;
+    this.onAtlasSyncTrigger = onAtlasSyncTrigger || onGranolaSyncTrigger;
+    this.onGranolaSyncTrigger = this.onAtlasSyncTrigger;
+    this.isSyncingAtlas = false;
     this.isSyncingGranola = false;
     this.onSearch = onSearch;
     this.onExportData = onExportData;
@@ -6209,8 +6271,11 @@ class ShellUI {
       outlook: { name: 'Clariane', label: 'Outlook', dotClass: 'blue', status: 'active', relativeTime: 'Just now' },
       icloud: { name: 'Personal', label: 'iCloud', dotClass: 'green', status: 'active', relativeTime: 'Just now' },
       athx: { name: 'ATHX', label: 'Training', dotClass: 'amber', status: 'active', relativeTime: 'Just now' },
-      granola: { name: 'Granola', label: 'Transcripts', dotClass: 'purple', status: 'active', relativeTime: 'Just now' }
+      atlas: { name: 'Atlas', label: 'Transcripts', dotClass: 'purple', status: 'active', relativeTime: 'Just now' }
     };
+    if (sources.granola && !sources.atlas) {
+      sources.atlas = { ...sources.granola, name: 'Atlas' };
+    }
 
     const renderSourceRow = (key, defaultTitle) => {
       const src = sources[key] || { name: key, dotClass: 'blue', status: 'active', relativeTime: 'Never' };
@@ -6219,11 +6284,12 @@ class ShellUI {
       const dotCls = isErr ? 'sync-source-dot error' : `sync-source-dot ${src.dotClass || 'blue'}`;
       const timeDisplay = isErr ? 'Error' : src.relativeTime;
 
-      const isGranola = key === 'granola';
-      const actionBtn = isGranola ? `
-        <button class="sync-source-action-btn ${this.isSyncingGranola ? 'syncing' : ''}" id="granolaSyncRowBtn" title="Sync last Granola transcripts for each mission">
+      const isAtlas = key === 'atlas' || key === 'granola';
+      const isSyncing = this.isSyncingAtlas || this.isSyncingGranola;
+      const actionBtn = isAtlas ? `
+        <button class="sync-source-action-btn ${isSyncing ? 'syncing' : ''}" id="atlasSyncRowBtn" title="Sync last Atlas transcripts for each mission">
           ${Icons.refreshCw}
-          <span>${this.isSyncingGranola ? 'Syncing...' : 'Sync'}</span>
+          <span>${isSyncing ? 'Syncing...' : 'Sync'}</span>
         </button>
       ` : '';
 
@@ -6253,7 +6319,7 @@ class ShellUI {
       ${renderSourceRow('outlook', 'Office 365 Outlook ICS (Client)')}
       ${renderSourceRow('icloud', 'iCloud CalDAV / ICS (Personal)')}
       ${renderSourceRow('athx', 'ATHX Garmin Training Microcycle')}
-      ${renderSourceRow('granola', 'Granola Transcripts & Meeting Notes API')}
+      ${renderSourceRow('atlas', 'Atlas Transcripts & Meeting Notes')}
     `;
 
     container.querySelector('#sidebarSyncBtn')?.addEventListener('click', () => {
@@ -6262,32 +6328,38 @@ class ShellUI {
       }
     });
 
-    container.querySelector('#granolaSyncRowBtn')?.addEventListener('click', async (e) => {
+    const atlasBtn = container.querySelector('#atlasSyncRowBtn') || container.querySelector('#granolaSyncRowBtn');
+    atlasBtn?.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (this.isSyncingGranola) return;
+      if (this.isSyncingAtlas || this.isSyncingGranola) return;
+      this.isSyncingAtlas = true;
       this.isSyncingGranola = true;
       this.renderSyncSection();
       try {
         let res = null;
-        if (this.onGranolaSyncTrigger) {
-          res = await this.onGranolaSyncTrigger();
+        const trigger = this.onAtlasSyncTrigger || this.onGranolaSyncTrigger;
+        if (trigger) {
+          res = await trigger();
+        } else if (this.store && typeof this.store.syncAtlas === 'function') {
+          res = await this.store.syncAtlas();
         } else if (this.store && typeof this.store.syncGranola === 'function') {
           res = await this.store.syncGranola();
         }
         const foldedCount = res?.folded?.length || 0;
         const syncedCount = res?.synced?.length || 0;
         const msg = (foldedCount > 0 || syncedCount > 0)
-          ? `Granola synced: ${foldedCount} folded, ${syncedCount} queued for missions`
-          : `Granola sync complete: all mission transcripts up to date`;
+          ? `Atlas synced: ${foldedCount} folded, ${syncedCount} queued for missions`
+          : `Atlas sync complete: all mission transcripts up to date`;
         if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
           window.showHubToast(msg);
         }
       } catch (err) {
-        console.error('[Shell] Granola sync error:', err);
+        console.error('[Shell] Atlas sync error:', err);
         if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
-          window.showHubToast(`Granola sync error: ${err.message}`);
+          window.showHubToast(`Atlas sync error: ${err.message}`);
         }
       } finally {
+        this.isSyncingAtlas = false;
         this.isSyncingGranola = false;
         this.renderSyncSection();
       }
@@ -10119,6 +10191,7 @@ class InboxView {
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
     this.onNavigateMission = onNavigateMission;
+    this.isSyncingAtlas = false;
     this.isSyncingGranola = false;
     this.isAutoPulling = false;
   }
@@ -10150,7 +10223,7 @@ class InboxView {
     const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
     const unassignedData = await this.store.getUnassignedInboxFiles();
     const unassignedFiles = Array.isArray(unassignedData) ? unassignedData : (unassignedData?.files || []);
-    const granolaStatus = await this.store.getGranolaStatus();
+    const atlasStatus = await (this.store.getAtlasStatus ? this.store.getAtlasStatus() : this.store.getGranolaStatus());
 
     // 2. Fetch fold meetings and pending inbox per mission
     const foldMeetingsAcross = [];
@@ -10206,9 +10279,9 @@ class InboxView {
               <span class="badge ${totalWaiting > 0 ? 'amber' : 'ok'}">
                 ${totalWaiting} item${totalWaiting !== 1 ? 's' : ''} to review
               </span>
-              ${granolaStatus.active ? `
-                <span class="badge ok" style="font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Watched directory: ${this._escape(granolaStatus.folder || '_granola')}">
-                  ${Icons.folder} Watched folder active
+              ${atlasStatus.active ? `
+                <span class="badge ok" style="font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Watched directory: ${this._escape(atlasStatus.folder || '_atlas')}">
+                  ${Icons.folder} Atlas watched folder active
                 </span>
               ` : ''}
             </div>
@@ -10221,8 +10294,8 @@ class InboxView {
           </div>
 
           <div style="display: flex; gap: 8px; align-items: center;">
-            <button class="btn sm" id="btnSyncGranola" ${this.isSyncingGranola ? 'disabled' : ''} style="display: inline-flex; align-items: center; gap: 6px;">
-              ${Icons.refreshCw} <span>${this.isSyncingGranola ? 'Syncing...' : 'Sync Granola'}</span>
+            <button class="btn sm" id="btnSyncAtlas" ${this.isSyncingAtlas ? 'disabled' : ''} style="display: inline-flex; align-items: center; gap: 6px;">
+              ${Icons.refreshCw} <span>${this.isSyncingAtlas ? 'Syncing...' : 'Sync Atlas'}</span>
             </button>
             <button class="btn sm" id="btnAutoPullDocs" ${this.isAutoPulling ? 'disabled' : ''} style="display: inline-flex; align-items: center; gap: 6px;">
               ${Icons.download} <span>${this.isAutoPulling ? 'Pulling Docs...' : 'Auto-pull Docs'}</span>
@@ -10422,16 +10495,20 @@ class InboxView {
   }
 
   _attachEventListeners(missions) {
-    // 1. Sync Granola button
-    this.container.querySelector('#btnSyncGranola')?.addEventListener('click', async () => {
+    // 1. Sync Atlas button (supports both #btnSyncAtlas and legacy #btnSyncGranola)
+    const btnSyncAtlas = this.container.querySelector('#btnSyncAtlas') || this.container.querySelector('#btnSyncGranola');
+    btnSyncAtlas?.addEventListener('click', async () => {
+      this.isSyncingAtlas = true;
       this.isSyncingGranola = true;
       this.render();
       try {
-        const res = await this.store.syncGranola();
-        this._showToast(`Granola sync complete: ${res.processed || 0} processed, ${res.matched?.length || 0} matched`);
+        const syncFn = this.store.syncAtlas ? this.store.syncAtlas : this.store.syncGranola;
+        const res = await syncFn.call(this.store);
+        this._showToast(`Atlas sync complete: ${res.processed || 0} processed, ${res.matched?.length || 0} matched`);
       } catch (e) {
-        this._showToast(`Granola sync error: ${e.message}`);
+        this._showToast(`Atlas sync error: ${e.message}`);
       } finally {
+        this.isSyncingAtlas = false;
         this.isSyncingGranola = false;
         this.render();
       }
@@ -11321,14 +11398,25 @@ const shell = new MeetingHub.ShellUI({
       shell.setSyncing(false);
     }
   },
-  onGranolaSyncTrigger: async () => {
+  onAtlasSyncTrigger: async () => {
     try {
-      const res = await MeetingHub.CalendarSyncService.syncGranolaTranscripts(MeetingHub.store.db, MeetingHub.store);
+      const res = await MeetingHub.CalendarSyncService.syncAtlasTranscripts(MeetingHub.store.db, MeetingHub.store);
       const status = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
       shell.setSyncStatus(status);
       return res;
     } catch (err) {
-      console.error('[MeetingHub] Granola sync error:', err);
+      console.error('[MeetingHub] Atlas sync error:', err);
+      throw err;
+    }
+  },
+  onGranolaSyncTrigger: async () => {
+    try {
+      const res = await MeetingHub.CalendarSyncService.syncAtlasTranscripts(MeetingHub.store.db, MeetingHub.store);
+      const status = await MeetingHub.CalendarSyncService.getSyncStatus(MeetingHub.store.db);
+      shell.setSyncStatus(status);
+      return res;
+    } catch (err) {
+      console.error('[MeetingHub] Atlas sync error:', err);
       throw err;
     }
   },

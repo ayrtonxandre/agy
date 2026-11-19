@@ -124,10 +124,21 @@ Documents/work/AGY/
 
 ### Mission System of Record & The Fold Workflow
 - **System of Record**: Each mission lives under `/Users/ayrtonandre/Documents/work/Missions/<Mission Name>/` with structured notes (`Agent brief.md`, `Mission Overview.md`, `Actions.md`, `_inbox/`, `_inbox/_folded/`, and facility workstream notes).
-- **Capture Seam**: Meeting Hub connects to Google Docs via `/api/docs/fetch` or accepts manual text/Granola notes. Clicking **"Send to mission inbox"** creates an idempotent Markdown file in `_inbox/` with YAML metadata.
+- **Capture Seam & Atlas Integration**: Notes are captured via:
+  1. **Atlas Watched Folder**: Exported Markdown or text notes saved to `/Users/ayrtonandre/Documents/work/Missions/_atlas/` are ingested automatically. Processed files move to `_atlas/_processed/`.
+  2. **Atlas Cloud API Sync**: Direct REST synchronization with the Atlas cloud service (`GET /api/meetings/`) via `POST /api/atlas/sync` or the "Sync Atlas" UI button using `ATLAS_API_KEY`.
+  3. **Google Docs & Manual Input**: Direct Google Docs fetch via `/api/docs/fetch` or manual note pasting in the meeting drawer.
+- **Deterministic Routing**: Ingested notes match mission initiatives by keyword and tag rules (`clientMatch`), then correlate with the closest calendar event by time (within ±1 day). Unambiguous notes route directly to `Missions/<Mission>/_inbox/`. Ambiguous matches land safely in `Missions/_inbox/` under the Inbox view as "Needs a home" for 1-click mission assignment.
 - **The Fold Routine**: The user or AI agent executes the fold routine (`POST /api/missions/<id>/fold` or `execute_fold.py`), extracting decisions into workstream notes, assigning open points, updating `Actions.md`, and archiving processed minutes to `_folded/`.
 - **Honest Prep Checklist**: Prep score evaluates whether prior meetings of a series were folded into notes, and warns if unprocessed raw minutes are pending in the mission inbox.
 - **Action Matrix**: The Hub acts as a read-only viewport on `Actions.md`. To complete an action, the user copies the ID with 1 click and updates the note directly, preventing browser storage divergence.
+
+### The Atlas Meeting Workflow
+1. **Record with Atlas**: Run Atlas during the call to capture audio, transcription, and meeting summaries locally.
+2. **Ingest Notes**: Save or export meeting notes into `/Users/ayrtonandre/Documents/work/Missions/_atlas/`, or click **Sync Atlas** in Meeting Hub to fetch from the Atlas API.
+3. **Review Inbox (`#/inbox`)**: Unambiguous meetings route automatically into their mission's `_inbox/`. Unassigned notes appear under "Needs a home" with a 1-click dropdown to route to the correct mission.
+4. **Fold Minutes**: Run the fold routine (`POST /api/missions/<id>/fold` or ask the assistant). Extracted actions update `Actions.md`, decisions update workstream logs, and minutes move to `_inbox/_folded/`.
+5. **Prep Next Meeting**: For upcoming meetings, the 48-hour checklist displays previous decisions, open points, and pending actions from the folded minutes.
 
 ### 9 Configured Project Initiatives & Bracket Matching
 The system categorizes 259 calendar events across 9 active initiatives. Meeting titles with bracket tags (`[TAG]`) receive top matching priority:
@@ -501,6 +512,7 @@ The coach synthesizes an authoritative answer referencing actual numbers from th
 | :--- | :--- |
 | **[`meeting_hub/index.html`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/index.html)** | Production runner loading compiled Meeting Hub bundle (`/meeting`) with dark navy theme and collapsible panels. |
 | **[`meeting_hub/`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/)** | Modular frontend application directory: `model/` (Store, ProjectEngine, MinutesEngine, PrepScore), `views/` (Today, Projects, Decisions), `ui/` (Shell, MeetingPanel, Icons, Styles), and `data/` (events, docs cache, importer). |
+| **[`mission_notes.py`](file:///Users/ayrtonandre/Documents/work/AGY/mission_notes.py)** | Core mission notes ingestion engine: Atlas watched folder processing, cloud REST sync, frontmatter extraction, and folding pipeline. |
 | **[`meeting_hub/meeting_intelligence.py`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/meeting_intelligence.py)** | Executive briefing engine integrating biological readiness (sleep, HRV, ACWR) with daily meeting agendas. |
 | **[`meeting_hub/build.js`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/build.js)** | Zero-dependency ES-module concatenator compiling clean standalone production distribution (317 KB). |
 | **[`meeting_hub/tests/`](file:///Users/ayrtonandre/Documents/work/AGY/meeting_hub/tests/)** | Automated test suite verifying project models, 48h checklists, honest coverage, and decision deduplication. |
@@ -578,6 +590,9 @@ GEMINI_API_KEY=AIzaSy...
 # OPENAI_BASE_URL=https://api.openai.com/v1
 # OPENAI_MODEL=gpt-4o-mini
 # ANTHROPIC_API_KEY=sk-ant-...
+
+# Optional: Atlas Cloud API Token (for automated meeting transcripts & notes sync)
+# ATLAS_API_KEY=your_atlas_api_token_here
 
 # Server / Docker Deployment
 DOCKER_ROOT=/home/user/docker

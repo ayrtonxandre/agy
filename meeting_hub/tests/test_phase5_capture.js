@@ -21,6 +21,7 @@ const AGY_DIR = path.resolve(__dirname, '..', '..');
 const MISSIONS_ROOT = path.resolve(AGY_DIR, '..', 'Missions');
 const UNASSIGNED_DIR = path.join(MISSIONS_ROOT, '_inbox');
 const GRANOLA_DIR = path.join(MISSIONS_ROOT, '_granola');
+const ATLAS_DIR = path.join(MISSIONS_ROOT, '_atlas');
 
 async function runPhase5Tests() {
   console.log('--- Running Phase 5: Frictionless Capture Test Suite ---');
@@ -130,23 +131,23 @@ async function runPhase5Tests() {
     if (fs.existsSync(geInboxPath)) fs.unlinkSync(geInboxPath);
   });
 
-  // Test 3: Granola watched folder ingestion
-  await it('Granola watched folder ingests notes and routes to mission', async () => {
-    if (!fs.existsSync(GRANOLA_DIR)) {
-      fs.mkdirSync(GRANOLA_DIR, { recursive: true });
+  // Test 3: Atlas watched folder ingestion (with Granola backwards-compatibility)
+  await it('Atlas watched folder ingests notes and routes to mission', async () => {
+    if (!fs.existsSync(ATLAS_DIR)) {
+      fs.mkdirSync(ATLAS_DIR, { recursive: true });
     }
 
-    // Place a simulated Granola export file
-    const granolaFile = path.join(GRANOLA_DIR, '2026-10-30_Weekly_Sync_Datastore_GE.md');
-    fs.writeFileSync(granolaFile, '# Weekly Sync - Datastore GE\n\nAttendees: Ayrton Andre, GE Lead\n\nMinutes:\n- Reviewed UC Wizard prompts\n- Finalized dataset specs\n', 'utf8');
+    // Place a simulated Atlas export file
+    const atlasFile = path.join(ATLAS_DIR, '2026-10-30_Weekly_Sync_Datastore_GE.md');
+    fs.writeFileSync(atlasFile, '# Weekly Sync - Datastore GE\n\nAttendees: Ayrton Andre, GE Lead\n\nMinutes:\n- Reviewed UC Wizard prompts\n- Finalized dataset specs\n', 'utf8');
 
-    // Trigger granola sync
-    const syncResult = await store.syncGranola();
+    // Trigger atlas sync
+    const syncResult = await store.syncAtlas();
     assert.ok(syncResult.status === 'success' || syncResult.status === 'ok');
-    assert.ok(syncResult.processed >= 1, 'Should have processed at least 1 granola file');
+    assert.ok(syncResult.processed >= 1, 'Should have processed at least 1 atlas file');
 
-    // Verify it was moved out of _granola
-    assert.strictEqual(fs.existsSync(granolaFile), false, 'Original granola file should be removed/moved');
+    // Verify it was moved out of _atlas
+    assert.strictEqual(fs.existsSync(atlasFile), false, 'Original atlas file should be removed/moved');
 
     // Verify it landed in GE Enterprise inbox
     const geInboxDir = path.join(MISSIONS_ROOT, 'GE Enterprise', '_inbox');
@@ -166,7 +167,7 @@ async function runPhase5Tests() {
   });
 
   // Test 4: InboxView rendering (3 distinct groups)
-  await it('InboxView renders the 3 capture groups and Granola status', async () => {
+  await it('InboxView renders the 3 capture groups and Atlas status', async () => {
     // Mock DOM container
     class MockElement {
       constructor(tagName = 'div') {
@@ -238,8 +239,9 @@ async function runPhase5Tests() {
     // Check Group 3: Waiting to fold
     assert.strictEqual(html.includes('Waiting to fold'), true, 'Should render Group 3 Waiting to fold header');
 
-    // Check Granola status pill
-    assert.strictEqual(html.includes('Watched folder active') || html.includes('Sync Granola'), true, 'Should render Granola watched folder status');
+    // Check Atlas status pill & sync button
+    assert.strictEqual(html.includes('Atlas watched folder active') || html.includes('Sync Atlas'), true, 'Should render Atlas watched folder status');
+    assert.strictEqual(html.includes('btnSyncAtlas') || html.includes('btnSyncGranola'), true, 'Should render Sync Atlas button');
 
     // Check Fold Now Antigravity prompt copy button
     assert.strictEqual(html.includes('data-btn-fold-prompt'), true, 'Should render Fold Now prompt copy button');

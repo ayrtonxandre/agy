@@ -1,4 +1,12 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Category,Duration_min,Calories_kcal,Average_HR,Max_HR,Training_Effect_Label,Moderate_Intensity_Min,Vigorous_Intensity_Min,Steps,Distance_km,Notes
+25116208797,2026-11-18,2026-11-18 06:35:25,CrossFit,indoor_cardio,CrossFit,43.0,471,132.0,178.0,SPEED,15,27,1028,0.0,"WOD
+21 high box jumps
+15 high box jumps
+9 high box jump 
+
+21 deadlifts - 225Lbs
+15 deadlifts - 225Lbs
+9 deadlifts - 225Lbs"
 25093639905,2026-11-16,2026-11-16 06:36:44,CrossFit,indoor_cardio,CrossFit,48.5,479,123.0,170.0,RECOVERY,22,24,978,0.0,"Rowing - 1250M
 23 Hang clean - 107Lbs"
 25088831055,2026-11-15,2026-11-15 16:01:57,Squash,squash,Racket Sports,42.6,370,120.0,159.0,SPEED,27,15,2172,0.55,
@@ -200,4 +208,3 @@ Puis:
 23767850616,2026-07-28,2026-07-28 19:04:29,Cardio,indoor_cardio,CrossFit,48.8,495,131.0,175.0,SPEED,16,30,920,0.0,
 23767848801,2026-07-27,2026-07-27 22:11:19,Bouldering,bouldering,Conditioning / Cardio,40.3,355,124.0,159.0,SPEED,14,20,504,0.0,
 23706415890,2026-07-23,2026-07-23 19:09:15,Cardio,indoor_cardio,CrossFit,49.2,590,144.0,185.0,SPEED,8,36,1432,0.0,
-23550915169,2026-07-10,2026-07-10 19:30:09,Cardio,indoor_cardio,CrossFit,60.3,794,151.0,193.0,SPEED,5,54,2780,0.0,

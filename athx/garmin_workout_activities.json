@@ -1,5 +1,23 @@
 [
   {
+    "Activity_ID": 25116208797,
+    "Date": "2026-11-18",
+    "Start_Time": "2026-11-18 06:35:25",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Category": "CrossFit",
+    "Duration_min": 43.0,
+    "Calories_kcal": 471,
+    "Average_HR": 132.0,
+    "Max_HR": 178.0,
+    "Training_Effect_Label": "SPEED",
+    "Moderate_Intensity_Min": 15,
+    "Vigorous_Intensity_Min": 27,
+    "Steps": 1028,
+    "Distance_km": 0.0,
+    "Notes": "WOD\n21 high box jumps\n15 high box jumps\n9 high box jump \n\n21 deadlifts - 225Lbs\n15 deadlifts - 225Lbs\n9 deadlifts - 225Lbs"
+  },
+  {
     "Activity_ID": 25093639905,
     "Date": "2026-11-16",
     "Start_Time": "2026-11-16 06:36:44",
@@ -771,23 +789,6 @@
     "Moderate_Intensity_Min": 8,
     "Vigorous_Intensity_Min": 36,
     "Steps": 1432,
-    "Distance_km": 0.0
-  },
-  {
-    "Activity_ID": 23550915169,
-    "Date": "2026-07-10",
-    "Start_Time": "2026-07-10 19:30:09",
-    "Activity_Name": "Cardio",
-    "Activity_Type": "indoor_cardio",
-    "Category": "CrossFit",
-    "Duration_min": 60.3,
-    "Calories_kcal": 794,
-    "Average_HR": 151.0,
-    "Max_HR": 193.0,
-    "Training_Effect_Label": "SPEED",
-    "Moderate_Intensity_Min": 5,
-    "Vigorous_Intensity_Min": 54,
-    "Steps": 2780,
     "Distance_km": 0.0
   }
 ]

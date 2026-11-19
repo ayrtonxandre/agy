@@ -987,7 +987,7 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     "outlook": {"name": "Clariane", "protocol": "Office 365 ICS", "status": "active", "last_sync": now_iso},
                     "icloud": {"name": "Personal", "protocol": "iCloud CalDAV", "status": "active", "last_sync": now_iso},
                     "athx": {"name": "ATHX", "protocol": "Garmin Training", "status": "active", "last_sync": now_iso},
-                    "granola": {"name": "Granola", "protocol": "Granola REST API", "status": "active", "last_sync": now_iso}
+                    "atlas": {"name": "Atlas", "protocol": "Atlas Meeting Capture", "status": "active", "last_sync": now_iso}
                 }
             }
             if sync_file.exists():
@@ -996,12 +996,21 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     if isinstance(loaded, dict):
                         status_data = loaded
                         if "sources" in status_data and isinstance(status_data["sources"], dict):
-                            status_data["sources"].setdefault("granola", {
-                                "name": "Granola",
-                                "protocol": "Granola REST API",
+                            if "granola" in status_data["sources"] and "atlas" not in status_data["sources"]:
+                                status_data["sources"]["atlas"] = {
+                                    "name": "Atlas",
+                                    "protocol": "Atlas Meeting Capture",
+                                    "status": status_data["sources"]["granola"].get("status", "active"),
+                                    "last_sync": status_data["sources"]["granola"].get("last_sync", now_iso)
+                                }
+                            status_data["sources"].setdefault("atlas", {
+                                "name": "Atlas",
+                                "protocol": "Atlas Meeting Capture",
                                 "status": "active",
                                 "last_sync": status_data.get("last_sync", now_iso)
                             })
+                            # Keep granola alias for backward compatibility
+                            status_data["sources"].setdefault("granola", status_data["sources"]["atlas"])
                 except Exception:
                     pass
             content = json.dumps(status_data, indent=2).encode("utf-8")
@@ -1161,15 +1170,16 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     self.send_cors_headers()
                     self.end_headers()
 
-        # Granola Status API (Phase 5)
-        elif clean_path in ("/api/granola", "/api/granola/status"):
-            folder_cfg = mission_notes.get_granola_folder_config() if mission_notes else None
-            api_key = mission_notes.get_granola_api_key() if mission_notes else None
+        # Atlas Status API (with Granola aliases)
+        elif clean_path in ("/api/atlas", "/api/atlas/status", "/api/granola", "/api/granola/status"):
+            folder_cfg = mission_notes.get_atlas_folder_config() if mission_notes else None
+            api_key = mission_notes.get_atlas_api_key() if mission_notes else None
             unassigned = mission_notes.list_unassigned_inbox_files() if mission_notes else []
             data = {
                 "configured": bool(folder_cfg or api_key),
                 "active": bool(folder_cfg or api_key),
                 "folder": str(folder_cfg) if folder_cfg else None,
+                "apiKey": bool(api_key),
                 "hasApiKey": bool(api_key),
                 "pendingFilesCount": len(unassigned)
             }
@@ -1329,21 +1339,22 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     }
                 }
 
-                # Preserve Granola source metadata if present
+                # Preserve Atlas source metadata if present (with fallback to granola)
                 sync_file = CAL_DATA_DIR / "calendar_sync_status.json"
-                existing_granola = None
+                existing_atlas = None
                 if sync_file.exists():
                     try:
                         old_meta = json.loads(sync_file.read_text(encoding="utf-8"))
-                        existing_granola = old_meta.get("sources", {}).get("granola")
+                        existing_atlas = old_meta.get("sources", {}).get("atlas") or old_meta.get("sources", {}).get("granola")
                     except Exception:
                         pass
-                sources_meta["granola"] = existing_granola or {
-                    "name": "Granola",
-                    "protocol": "Granola REST API",
+                sources_meta["atlas"] = existing_atlas or {
+                    "name": "Atlas",
+                    "protocol": "Atlas Meeting Capture",
                     "last_sync": now_str,
                     "status": "active"
                 }
+                sources_meta["granola"] = sources_meta["atlas"]
 
                 # Update sync status metadata
                 sync_meta = {
@@ -1642,8 +1653,8 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(content)
 
-            # Granola Sync API (Phase 5)
-            elif clean_path in ("/api/granola/sync", "/api/sync/granola"):
+            # Atlas Sync API (Phase 5) with Granola aliases
+            elif clean_path in ("/api/atlas/sync", "/api/sync/atlas", "/api/granola/sync", "/api/sync/granola"):
                 if not self._is_localhost():
                     self.send_response(403)
                     self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -1660,38 +1671,42 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                     return
 
                 events_data = payload.get("events")
-                api_key = mission_notes.get_granola_api_key()
+                api_key = mission_notes.get_atlas_api_key()
                 res = None
                 if api_key:
                     try:
-                        res = mission_notes.sync_granola_api(api_key=api_key, auto_fold=True, events_data=events_data)
+                        res = mission_notes.sync_atlas_api(api_key=api_key, auto_fold=True, events_data=events_data)
                     except Exception as ge:
-                        log_event(f"Granola API sync notice: {ge}")
+                        log_event(f"Atlas API sync notice: {ge}")
                 if not res or res.get("status") in ("skipped", "error"):
-                    folder_res = mission_notes.process_granola_folder(events_data=events_data)
+                    folder_res = mission_notes.process_atlas_folder(events_data=events_data)
                     if res and res.get("status") == "error":
                         folder_res["api_error"] = res.get("message")
                     res = folder_res
 
                 if res:
                     sync_file = CAL_DATA_DIR / "calendar_sync_status.json"
-                    if sync_file.exists():
-                        try:
-                            cur_meta = json.loads(sync_file.read_text(encoding="utf-8"))
-                            if not isinstance(cur_meta, dict):
-                                cur_meta = {}
-                            if "sources" not in cur_meta or not isinstance(cur_meta["sources"], dict):
-                                cur_meta["sources"] = {}
-                            cur_meta["sources"]["granola"] = {
-                                "name": "Granola",
-                                "protocol": "Granola REST API",
-                                "last_sync": datetime.now(LOCAL_TZ).isoformat(),
-                                "status": "active" if res.get("status") != "error" else "error",
-                                "error": res.get("message") if res.get("status") == "error" else None
-                            }
-                            sync_file.write_text(json.dumps(cur_meta, indent=2), encoding="utf-8")
-                        except Exception:
-                            pass
+                    try:
+                        cur_meta = {}
+                        if sync_file.exists():
+                            loaded = json.loads(sync_file.read_text(encoding="utf-8"))
+                            if isinstance(loaded, dict):
+                                cur_meta = loaded
+                        if "sources" not in cur_meta or not isinstance(cur_meta["sources"], dict):
+                            cur_meta["sources"] = {}
+                        atlas_status_info = {
+                            "name": "Atlas",
+                            "protocol": "Atlas Meeting Capture",
+                            "last_sync": datetime.now(LOCAL_TZ).isoformat(),
+                            "status": "active" if res.get("status") != "error" else "error",
+                            "error": res.get("message") if res.get("status") == "error" else None
+                        }
+                        cur_meta["sources"]["atlas"] = atlas_status_info
+                        cur_meta["sources"]["granola"] = atlas_status_info
+                        sync_file.parent.mkdir(parents=True, exist_ok=True)
+                        sync_file.write_text(json.dumps(cur_meta, indent=2), encoding="utf-8")
+                    except Exception:
+                        pass
 
                 content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
                 self.send_response(200 if res.get("status") != "error" else 500)

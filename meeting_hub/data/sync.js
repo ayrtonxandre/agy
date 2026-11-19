@@ -47,15 +47,17 @@ export const SYNC_SOURCES = {
     dotClass: 'amber',
     label: 'Training'
   },
-  granola: {
-    id: 'granola',
-    name: 'Granola',
+  atlas: {
+    id: 'atlas',
+    name: 'Atlas',
     stream: 'work',
-    protocol: 'Granola REST API',
+    protocol: 'Atlas Meeting Capture',
     dotClass: 'purple',
     label: 'Transcripts'
   }
 };
+
+export const CALENDAR_SOURCES = SYNC_SOURCES;
 
 export class CalendarSyncService {
   /**
@@ -282,15 +284,18 @@ export class CalendarSyncService {
     await db.put('meta', { key: 'event_count', value: allEvents.length });
     await db.put('meta', { key: 'series_count', value: collapsedSeries.length });
 
-    // Auto-sync Granola meeting transcripts and notes for missions
-    let granolaResult = null;
-    if (store && typeof store.syncGranola === 'function') {
+    // Auto-sync Atlas meeting transcripts and notes for missions
+    let atlasResult = null;
+    const atlasSyncFn = store && (typeof store.syncAtlas === 'function' ? store.syncAtlas : store.syncGranola);
+    if (atlasSyncFn) {
       try {
-        granolaResult = await store.syncGranola();
+        atlasResult = await atlasSyncFn.call(store);
+        await db.put('meta', { key: 'last_sync_atlas', value: nowIso });
+        await db.put('meta', { key: 'sync_status_atlas', value: atlasResult?.status === 'error' ? 'error' : 'active' });
         await db.put('meta', { key: 'last_sync_granola', value: nowIso });
-        await db.put('meta', { key: 'sync_status_granola', value: granolaResult?.status === 'error' ? 'error' : 'active' });
+        await db.put('meta', { key: 'sync_status_granola', value: atlasResult?.status === 'error' ? 'error' : 'active' });
       } catch (ge) {
-        console.warn('[SyncService] Granola auto-sync notice:', ge);
+        console.warn('[SyncService] Atlas auto-sync notice:', ge);
       }
     }
 
@@ -303,7 +308,8 @@ export class CalendarSyncService {
         eventCount: allEvents.length,
         seriesCount: collapsedSeries.length,
         backendLive: backendSuccess,
-        granola: granolaResult
+        atlas: atlasResult,
+        granola: atlasResult
       });
     }
 
@@ -315,21 +321,32 @@ export class CalendarSyncService {
       backendLive: backendSuccess,
       eventCount: allEvents.length,
       seriesCount: collapsedSeries.length,
-      granola: granolaResult
+      atlas: atlasResult,
+      granola: atlasResult
     };
   }
 
   /**
-   * Syncs latest transcripts from Granola API across all missions.
+   * Syncs latest transcripts from Atlas API/folder across all missions.
    */
-  static async syncGranolaTranscripts(db, store) {
-    if (store && typeof store.syncGranola === 'function') {
-      const res = await store.syncGranola();
+  static async syncAtlasTranscripts(db, store) {
+    const syncFn = store && (typeof store.syncAtlas === 'function' ? store.syncAtlas : store.syncGranola);
+    if (syncFn) {
+      const res = await syncFn.call(store);
       const nowIso = new Date().toISOString();
+      await db.put('meta', { key: 'last_sync_atlas', value: nowIso });
+      await db.put('meta', { key: 'sync_status_atlas', value: res?.status === 'error' ? 'error' : 'active' });
       await db.put('meta', { key: 'last_sync_granola', value: nowIso });
       await db.put('meta', { key: 'sync_status_granola', value: res?.status === 'error' ? 'error' : 'active' });
       return res;
     }
     return { status: 'skipped', error: 'Store unavailable' };
+  }
+
+  /**
+   * Backwards compatibility alias for Granola transcripts.
+   */
+  static async syncGranolaTranscripts(db, store) {
+    return CalendarSyncService.syncAtlasTranscripts(db, store);
   }
 }

@@ -16,6 +16,7 @@ export class ShellUI {
     onNewMeeting,
     onTodayClick,
     onSyncTrigger,
+    onAtlasSyncTrigger,
     onGranolaSyncTrigger,
     onSearch,
     onExportData,
@@ -35,7 +36,9 @@ export class ShellUI {
     this.onNewMeeting = onNewMeeting;
     this.onTodayClick = onTodayClick;
     this.onSyncTrigger = onSyncTrigger;
-    this.onGranolaSyncTrigger = onGranolaSyncTrigger;
+    this.onAtlasSyncTrigger = onAtlasSyncTrigger || onGranolaSyncTrigger;
+    this.onGranolaSyncTrigger = this.onAtlasSyncTrigger;
+    this.isSyncingAtlas = false;
     this.isSyncingGranola = false;
     this.onSearch = onSearch;
     this.onExportData = onExportData;
@@ -350,8 +353,11 @@ export class ShellUI {
       outlook: { name: 'Clariane', label: 'Outlook', dotClass: 'blue', status: 'active', relativeTime: 'Just now' },
       icloud: { name: 'Personal', label: 'iCloud', dotClass: 'green', status: 'active', relativeTime: 'Just now' },
       athx: { name: 'ATHX', label: 'Training', dotClass: 'amber', status: 'active', relativeTime: 'Just now' },
-      granola: { name: 'Granola', label: 'Transcripts', dotClass: 'purple', status: 'active', relativeTime: 'Just now' }
+      atlas: { name: 'Atlas', label: 'Transcripts', dotClass: 'purple', status: 'active', relativeTime: 'Just now' }
     };
+    if (sources.granola && !sources.atlas) {
+      sources.atlas = { ...sources.granola, name: 'Atlas' };
+    }
 
     const renderSourceRow = (key, defaultTitle) => {
       const src = sources[key] || { name: key, dotClass: 'blue', status: 'active', relativeTime: 'Never' };
@@ -360,11 +366,12 @@ export class ShellUI {
       const dotCls = isErr ? 'sync-source-dot error' : `sync-source-dot ${src.dotClass || 'blue'}`;
       const timeDisplay = isErr ? 'Error' : src.relativeTime;
 
-      const isGranola = key === 'granola';
-      const actionBtn = isGranola ? `
-        <button class="sync-source-action-btn ${this.isSyncingGranola ? 'syncing' : ''}" id="granolaSyncRowBtn" title="Sync last Granola transcripts for each mission">
+      const isAtlas = key === 'atlas' || key === 'granola';
+      const isSyncing = this.isSyncingAtlas || this.isSyncingGranola;
+      const actionBtn = isAtlas ? `
+        <button class="sync-source-action-btn ${isSyncing ? 'syncing' : ''}" id="atlasSyncRowBtn" title="Sync last Atlas transcripts for each mission">
           ${Icons.refreshCw}
-          <span>${this.isSyncingGranola ? 'Syncing...' : 'Sync'}</span>
+          <span>${isSyncing ? 'Syncing...' : 'Sync'}</span>
         </button>
       ` : '';
 
@@ -394,7 +401,7 @@ export class ShellUI {
       ${renderSourceRow('outlook', 'Office 365 Outlook ICS (Client)')}
       ${renderSourceRow('icloud', 'iCloud CalDAV / ICS (Personal)')}
       ${renderSourceRow('athx', 'ATHX Garmin Training Microcycle')}
-      ${renderSourceRow('granola', 'Granola Transcripts & Meeting Notes API')}
+      ${renderSourceRow('atlas', 'Atlas Transcripts & Meeting Notes')}
     `;
 
     container.querySelector('#sidebarSyncBtn')?.addEventListener('click', () => {
@@ -403,32 +410,38 @@ export class ShellUI {
       }
     });
 
-    container.querySelector('#granolaSyncRowBtn')?.addEventListener('click', async (e) => {
+    const atlasBtn = container.querySelector('#atlasSyncRowBtn') || container.querySelector('#granolaSyncRowBtn');
+    atlasBtn?.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (this.isSyncingGranola) return;
+      if (this.isSyncingAtlas || this.isSyncingGranola) return;
+      this.isSyncingAtlas = true;
       this.isSyncingGranola = true;
       this.renderSyncSection();
       try {
         let res = null;
-        if (this.onGranolaSyncTrigger) {
-          res = await this.onGranolaSyncTrigger();
+        const trigger = this.onAtlasSyncTrigger || this.onGranolaSyncTrigger;
+        if (trigger) {
+          res = await trigger();
+        } else if (this.store && typeof this.store.syncAtlas === 'function') {
+          res = await this.store.syncAtlas();
         } else if (this.store && typeof this.store.syncGranola === 'function') {
           res = await this.store.syncGranola();
         }
         const foldedCount = res?.folded?.length || 0;
         const syncedCount = res?.synced?.length || 0;
         const msg = (foldedCount > 0 || syncedCount > 0)
-          ? `Granola synced: ${foldedCount} folded, ${syncedCount} queued for missions`
-          : `Granola sync complete: all mission transcripts up to date`;
+          ? `Atlas synced: ${foldedCount} folded, ${syncedCount} queued for missions`
+          : `Atlas sync complete: all mission transcripts up to date`;
         if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
           window.showHubToast(msg);
         }
       } catch (err) {
-        console.error('[Shell] Granola sync error:', err);
+        console.error('[Shell] Atlas sync error:', err);
         if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
-          window.showHubToast(`Granola sync error: ${err.message}`);
+          window.showHubToast(`Atlas sync error: ${err.message}`);
         }
       } finally {
+        this.isSyncingAtlas = false;
         this.isSyncingGranola = false;
         this.renderSyncSection();
       }

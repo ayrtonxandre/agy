@@ -1,5 +1,34 @@
 [
   {
+    "Activity_ID": 25116208797,
+    "Date": "2026-11-18",
+    "Start_Time": "2026-11-18 06:35:25",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 43.0,
+    "Distance_km": 0.0,
+    "Calories_kcal": 471,
+    "Average_HR": 132.0,
+    "Max_HR": 178.0,
+    "Training_Effect": "SPEED",
+    "Notes": "WOD\n21 high box jumps\n15 high box jumps\n9 high box jump \n\n21 deadlifts - 225Lbs\n15 deadlifts - 225Lbs\n9 deadlifts - 225Lbs"
+  },
+  {
+    "Activity_ID": 25105225459,
+    "Date": "2026-11-17",
+    "Start_Time": "2026-11-17 07:38:00",
+    "Activity_Name": "Strength",
+    "Activity_Type": "strength_training",
+    "Primary_Category": "Strength",
+    "Duration_min": 46.2,
+    "Distance_km": 0.0,
+    "Calories_kcal": 360,
+    "Average_HR": 111.0,
+    "Max_HR": 147.0,
+    "Training_Effect": "AEROBIC_BASE"
+  },
+  {
     "Activity_ID": 25093639905,
     "Date": "2026-11-16",
     "Start_Time": "2026-11-16 06:36:44",
@@ -643,7 +672,7 @@
     "Activity_ID": 24495020352,
     "Date": "2026-09-25",
     "Start_Time": "2026-09-25 16:43:00",
-    "Activity_Name": "🏋️ ATHX 2027: Push & Shoulders (S2O) [65kg / 45kg / 20kg]",
+    "Activity_Name": "\ud83c\udfcb\ufe0f ATHX 2027: Push & Shoulders (S2O) [65kg / 45kg / 20kg]",
     "Activity_Type": "strength_training",
     "Primary_Category": "Strength",
     "Duration_min": 54.5,
@@ -1383,33 +1412,5 @@
     "Average_HR": 115.0,
     "Max_HR": 142.0,
     "Training_Effect": "AEROBIC_BASE"
-  },
-  {
-    "Activity_ID": 23622101963,
-    "Date": "2026-07-16",
-    "Start_Time": "2026-07-16 18:57:45",
-    "Activity_Name": "Strength",
-    "Activity_Type": "strength_training",
-    "Primary_Category": "Strength",
-    "Duration_min": 63.5,
-    "Distance_km": 0.0,
-    "Calories_kcal": 431,
-    "Average_HR": 111.0,
-    "Max_HR": 146.0,
-    "Training_Effect": "AEROBIC_BASE"
-  },
-  {
-    "Activity_ID": 23550915169,
-    "Date": "2026-07-10",
-    "Start_Time": "2026-07-10 19:30:09",
-    "Activity_Name": "Cardio",
-    "Activity_Type": "indoor_cardio",
-    "Primary_Category": "Cardio / Cross-Training",
-    "Duration_min": 60.3,
-    "Distance_km": 0.0,
-    "Calories_kcal": 794,
-    "Average_HR": 151.0,
-    "Max_HR": 193.0,
-    "Training_Effect": "SPEED"
   }
 ]

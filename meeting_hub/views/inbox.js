@@ -14,6 +14,7 @@ export class InboxView {
     this.store = store;
     this.onSelectMeeting = onSelectMeeting;
     this.onNavigateMission = onNavigateMission;
+    this.isSyncingAtlas = false;
     this.isSyncingGranola = false;
     this.isAutoPulling = false;
   }
@@ -45,7 +46,7 @@ export class InboxView {
     const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
     const unassignedData = await this.store.getUnassignedInboxFiles();
     const unassignedFiles = Array.isArray(unassignedData) ? unassignedData : (unassignedData?.files || []);
-    const granolaStatus = await this.store.getGranolaStatus();
+    const atlasStatus = await (this.store.getAtlasStatus ? this.store.getAtlasStatus() : this.store.getGranolaStatus());
 
     // 2. Fetch fold meetings and pending inbox per mission
     const foldMeetingsAcross = [];
@@ -101,9 +102,9 @@ export class InboxView {
               <span class="badge ${totalWaiting > 0 ? 'amber' : 'ok'}">
                 ${totalWaiting} item${totalWaiting !== 1 ? 's' : ''} to review
               </span>
-              ${granolaStatus.active ? `
-                <span class="badge ok" style="font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Watched directory: ${this._escape(granolaStatus.folder || '_granola')}">
-                  ${Icons.folder} Watched folder active
+              ${atlasStatus.active ? `
+                <span class="badge ok" style="font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Watched directory: ${this._escape(atlasStatus.folder || '_atlas')}">
+                  ${Icons.folder} Atlas watched folder active
                 </span>
               ` : ''}
             </div>
@@ -116,8 +117,8 @@ export class InboxView {
           </div>
 
           <div style="display: flex; gap: 8px; align-items: center;">
-            <button class="btn sm" id="btnSyncGranola" ${this.isSyncingGranola ? 'disabled' : ''} style="display: inline-flex; align-items: center; gap: 6px;">
-              ${Icons.refreshCw} <span>${this.isSyncingGranola ? 'Syncing...' : 'Sync Granola'}</span>
+            <button class="btn sm" id="btnSyncAtlas" ${this.isSyncingAtlas ? 'disabled' : ''} style="display: inline-flex; align-items: center; gap: 6px;">
+              ${Icons.refreshCw} <span>${this.isSyncingAtlas ? 'Syncing...' : 'Sync Atlas'}</span>
             </button>
             <button class="btn sm" id="btnAutoPullDocs" ${this.isAutoPulling ? 'disabled' : ''} style="display: inline-flex; align-items: center; gap: 6px;">
               ${Icons.download} <span>${this.isAutoPulling ? 'Pulling Docs...' : 'Auto-pull Docs'}</span>
@@ -317,16 +318,20 @@ export class InboxView {
   }
 
   _attachEventListeners(missions) {
-    // 1. Sync Granola button
-    this.container.querySelector('#btnSyncGranola')?.addEventListener('click', async () => {
+    // 1. Sync Atlas button (supports both #btnSyncAtlas and legacy #btnSyncGranola)
+    const btnSyncAtlas = this.container.querySelector('#btnSyncAtlas') || this.container.querySelector('#btnSyncGranola');
+    btnSyncAtlas?.addEventListener('click', async () => {
+      this.isSyncingAtlas = true;
       this.isSyncingGranola = true;
       this.render();
       try {
-        const res = await this.store.syncGranola();
-        this._showToast(`Granola sync complete: ${res.processed || 0} processed, ${res.matched?.length || 0} matched`);
+        const syncFn = this.store.syncAtlas ? this.store.syncAtlas : this.store.syncGranola;
+        const res = await syncFn.call(this.store);
+        this._showToast(`Atlas sync complete: ${res.processed || 0} processed, ${res.matched?.length || 0} matched`);
       } catch (e) {
-        this._showToast(`Granola sync error: ${e.message}`);
+        this._showToast(`Atlas sync error: ${e.message}`);
       } finally {
+        this.isSyncingAtlas = false;
         this.isSyncingGranola = false;
         this.render();
       }
