@@ -1,6 +1,6 @@
 ## 1. 🎖️ Executive Readiness Verdict
 - **Overall Readiness Rating**: `76% • Moderate Risk (Volume Asymmetry & Lower Body Deficits)`
-- **Macro Assessment**: Athlete demonstrates strong upper-body pushing and pulling hypertrophy volume, but total lower body stimulus (quads and posterior chain) is operating below Minimum Effective Volume (MEV). With 27 weeks until the ATHX Games 2027, the primary qualification risk lies in barbell squat and deadlift capacity alongside the 5km running pace gap. Rebalancing weekly volume toward lower-body compounds while protecting current systemic ACWR (1.13) is the mandatory training priority.
+- **Macro Assessment**: Athlete demonstrates strong upper-body pushing and pulling hypertrophy volume, but total lower body stimulus (quads and posterior chain) is operating below Minimum Effective Volume (MEV). With 27 weeks until the ATHX Games 2027, the primary qualification risk lies in barbell squat and deadlift capacity alongside the 5km running pace gap. Rebalancing weekly volume toward lower-body compounds while protecting current systemic ACWR (1.20) is the mandatory training priority.
 
 ---
 
@@ -8,23 +8,23 @@
 | Event | 2027 Target | Current Level | Gap | Trend & Projected Date |
 | :--- | :--- | :--- | :--- | :--- |
 | Shoulder-to-Overhead (S2O) | 65.0 kg | 58.3 kg | -6.7 kg | 🟡 +0.25 kg/wk (In Progress) |
-| Barbell Back Squat | 125.0 kg | 96.0 kg | -29.0 kg | 🟡 +1.07 kg/wk (In Progress) |
+| Barbell Back Squat | 125.0 kg | 112.3 kg | -12.7 kg | 🟡 +0.47 kg/wk (In Progress) |
 | Deadlift Floor Pull | 160.0 kg | 151.7 kg | -8.3 kg | 🟡 +0.31 kg/wk (In Progress) |
-| 5km Running Pace | 4:30/km | 5:12/km | +42s/km | 🟡 -1.57s/wk (In Progress) |
+| 5km Running Pace | 4:30/km | 5:12/km | +42s/km | 🟡 -1.58s/wk (In Progress) |
 | Sandbag Carry / Grip | 60.0 kg | 56.0 kg | -4.0 kg | 🟡 +0.15 kg/wk (In Progress) |
 
 ---
 
 ## 3. ⚠️ Critical Deficit & Fatigue Alerts
-- **Volume Starvation**: Chest: 5.3 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Lats/Back: 7.5 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Quads: 5.9 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Hamstrings/Glutes: 5.8 sets/wk (Deficit vs MEV 6.0)
-- **Volume Starvation**: Shoulders: 7.9 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Biceps: 4.9 sets/wk (Deficit vs MEV 6.0)
-- **Volume Starvation**: Forearms: 3.2 sets/wk (Deficit vs MEV 4.0)
-- **Acute:Chronic Workload Ratio (ACWR)**: `1.13` (Sweet Spot (Optimal)). Acute load is 4,778.8 kg vs chronic baseline 4,239.8 kg. Foster training monotony is `1.30`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
-- **Sleep & Recovery**: 7-day average sleep duration is `7.1 hrs` with a composite readiness score of `95.7%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
+- **Volume Starvation**: Chest: 5.0 sets/wk (Deficit vs MEV 10.0)
+- **Volume Starvation**: Lats/Back: 7.2 sets/wk (Deficit vs MEV 10.0)
+- **Volume Starvation**: Quads: 6.0 sets/wk (Deficit vs MEV 8.0)
+- **Volume Starvation**: Hamstrings/Glutes: 5.7 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Triceps: 5.9 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Biceps: 4.8 sets/wk (Deficit vs MEV 6.0)
+- **Volume Starvation**: Forearms: 3.1 sets/wk (Deficit vs MEV 4.0)
+- **Acute:Chronic Workload Ratio (ACWR)**: `1.20` (Sweet Spot (Optimal)). Acute load is 5,210.2 kg vs chronic baseline 4,344.8 kg. Foster training monotony is `1.37`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
+- **Sleep & Recovery**: 7-day average sleep duration is `7.1 hrs` with a composite readiness score of `98.0%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
 
 ---
 
@@ -35,7 +35,7 @@
 ---
 
 ## 5. 🏃 Aerobic & Conditioning Engine
-- **Running Trajectory**: The 5km qualifying target of 4:30/km requires dedicated aerobic threshold maintenance. Current best pace sits at `5:07/km` across 11 recorded runs (56.78 km total volume). Conditioning must avoid conflicting with lower-body strength adaptations by emphasizing low-impact Zone 2 rowing or polarized track intervals.
+- **Running Trajectory**: The 5km qualifying target of 4:30/km requires dedicated aerobic threshold maintenance. Current best pace sits at `5:07/km` across 12 recorded runs (61.78 km total volume). Conditioning must avoid conflicting with lower-body strength adaptations by emphasizing low-impact Zone 2 rowing or polarized track intervals.
 
 ---
 

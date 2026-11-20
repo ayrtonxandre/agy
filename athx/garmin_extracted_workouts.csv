@@ -1,4 +1,46 @@
 Activity_ID,Date,Activity_Name,Exercise,Set,Reps,Weight_kg,Total_Volume_kg,e1RM_kg,Duration_s,Session_Type
+25137921680,2026-11-20,CrossFit,Back Squat,5,3,102.1,306.3,112.3,0.0,Legs
+25137921680,2026-11-20,CrossFit,Back Squat,4,3,93.0,279.0,102.3,0.0,Legs
+25137921680,2026-11-20,CrossFit,Back Squat,3,3,83.9,251.7,92.3,0.0,Legs
+25137921680,2026-11-20,CrossFit,Wall Ball,3,15,9.1,136.5,0.0,0.0,Legs
+25137921680,2026-11-20,CrossFit,Pull Up,3,8,0.0,0.0,0.0,0.0,Legs
+25137921680,2026-11-20,CrossFit,Back Squat,2,5,65.8,329.0,76.8,0.0,Legs
+25137921680,2026-11-20,CrossFit,Wall Ball,2,15,9.1,136.5,0.0,0.0,Legs
+25137921680,2026-11-20,CrossFit,Pull Up,2,8,0.0,0.0,0.0,0.0,Legs
+25137921680,2026-11-20,CrossFit,Back Squat,1,8,47.6,380.8,60.3,0.0,Legs
+25137921680,2026-11-20,CrossFit,Wall Ball,1,15,9.1,136.5,0.0,0.0,Legs
+25137921680,2026-11-20,CrossFit,Pull Up,1,8,0.0,0.0,0.0,0.0,Legs
+25133712675,2026-11-19,Strength,Barbell Row,5,7,65.0,455.0,80.2,34.7,Upper Push
+25133712675,2026-11-19,Strength,Barbell Bench Press,4,6,75.0,450.0,90.0,34.8,Upper Push
+25133712675,2026-11-19,Strength,Barbell Shoulder Press,4,5,45.0,225.0,52.5,36.9,Upper Push
+25133712675,2026-11-19,Strength,Barbell Row,4,8,60.0,480.0,76.0,27.4,Upper Push
+25133712675,2026-11-19,Strength,Barbell Bench Press,3,6,70.0,420.0,84.0,31.1,Upper Push
+25133712675,2026-11-19,Strength,Dumbbell Hammer Curl,3,16,16.0,256.0,,68.1,Upper Push
+25133712675,2026-11-19,Strength,Barbell Biceps Curl,3,8,30.0,240.0,38.0,41.6,Upper Push
+25133712675,2026-11-19,Strength,Barbell Shoulder Press,3,7,40.0,280.0,49.3,40.1,Upper Push
+25133712675,2026-11-19,Strength,Barbell Row,3,8,50.0,400.0,63.3,33.0,Upper Push
+25133712675,2026-11-19,Strength,Pull Up,3,5,0.0,0.0,,18.1,Upper Push
+25133712675,2026-11-19,Strength,Triceps Pressdown,3,8,30.0,240.0,38.0,26.7,Upper Push
+25133712675,2026-11-19,Strength,Lateral Raise,3,8,24.0,192.0,30.4,46.5,Upper Push
+25133712675,2026-11-19,Strength,Triceps Press,3,10,100.0,1000.0,,29.2,Upper Push
+25133712675,2026-11-19,Strength,Barbell Bench Press,2,6,60.0,360.0,72.0,30.4,Upper Push
+25133712675,2026-11-19,Strength,Dumbbell Hammer Curl,2,16,14.0,224.0,,47.2,Upper Push
+25133712675,2026-11-19,Strength,Barbell Biceps Curl,2,8,25.0,200.0,31.7,36.6,Upper Push
+25133712675,2026-11-19,Strength,Barbell Shoulder Press,2,8,30.0,240.0,38.0,35.4,Upper Push
+25133712675,2026-11-19,Strength,Barbell Row,2,8,40.0,320.0,50.7,30.7,Upper Push
+25133712675,2026-11-19,Strength,Pull Up,2,5,0.0,0.0,,13.3,Upper Push
+25133712675,2026-11-19,Strength,Triceps Pressdown,2,8,25.0,200.0,31.7,23.7,Upper Push
+25133712675,2026-11-19,Strength,Lateral Raise,2,8,20.0,160.0,25.3,28.2,Upper Push
+25133712675,2026-11-19,Strength,Triceps Press,2,10,80.0,800.0,106.7,40.0,Upper Push
+25133712675,2026-11-19,Strength,Barbell Bench Press,1,10,20.0,200.0,26.7,78.8,Upper Push
+25133712675,2026-11-19,Strength,Dumbbell Hammer Curl,1,16,12.0,192.0,,44.2,Upper Push
+25133712675,2026-11-19,Strength,Barbell Biceps Curl,1,8,20.0,160.0,25.3,43.5,Upper Push
+25133712675,2026-11-19,Strength,Barbell Shoulder Press,1,8,20.0,160.0,25.3,30.7,Upper Push
+25133712675,2026-11-19,Strength,Barbell Row,1,8,20.0,160.0,25.3,23.3,Upper Push
+25133712675,2026-11-19,Strength,Pull Up,1,5,0.0,0.0,,14.4,Upper Push
+25133712675,2026-11-19,Strength,Triceps Pressdown,1,8,20.0,160.0,25.3,25.9,Upper Push
+25133712675,2026-11-19,Strength,Lateral Raise,1,8,16.0,128.0,20.3,30.3,Upper Push
+25133712675,2026-11-19,Strength,Triceps Press,1,10,75.0,750.0,100.0,26.4,Upper Push
 25116208797,2026-11-18,CrossFit,Deadlift,3,9,102.1,918.9,132.7,0.0,Pull
 25116208797,2026-11-18,CrossFit,Deadlift,2,15,102.1,1531.5,0.0,0.0,Pull
 25116208797,2026-11-18,CrossFit,Deadlift,1,21,102.1,2144.1,0.0,0.0,Pull
@@ -1088,71 +1130,3 @@ Activity_ID,Date,Activity_Name,Exercise,Set,Reps,Weight_kg,Total_Volume_kg,e1RM_
 23673195620,2026-07-21,Strength,Lunge,1,16,36.0,576.0,,59.4,Lower Body
 23673195620,2026-07-21,Strength,Barbell Deadlift,1,16,36.0,576.0,,81.0,Lower Body
 23673195620,2026-07-21,Strength,Squat,1,8,80.0,640.0,101.3,42.6,Lower Body
-23660663184,2026-07-20,Strength,Curl,5,6,30.0,180.0,36.0,48.0,Lower Body
-23660663184,2026-07-20,Strength,Curl,4,8,25.0,200.0,31.7,32.7,Lower Body
-23660663184,2026-07-20,Strength,Lat Pulldown,4,40,12.0,480.0,,56.1,Lower Body
-23660663184,2026-07-20,Strength,Lat Pulldown,3,8,60.0,480.0,76.0,34.7,Lower Body
-23660663184,2026-07-20,Strength,Seated Cable Row,3,8,60.0,480.0,76.0,25.4,Lower Body
-23660663184,2026-07-20,Strength,Curl,3,8,20.0,160.0,25.3,30.1,Lower Body
-23660663184,2026-07-20,Strength,Lat Pulldown,2,10,50.0,500.0,66.7,38.3,Lower Body
-23660663184,2026-07-20,Strength,Seated Cable Row,2,8,60.0,480.0,76.0,22.2,Lower Body
-23660663184,2026-07-20,Strength,Curl,2,12,20.0,240.0,,41.6,Lower Body
-23660663184,2026-07-20,Strength,Unknown,2,8,0.0,0.0,,45.7,Lower Body
-23660663184,2026-07-20,Strength,Pull Up,2,9,0.0,0.0,,27.1,Lower Body
-23660663184,2026-07-20,Strength,Jumping Jacks,1,28,0.0,0.0,,51.0,Lower Body
-23660663184,2026-07-20,Strength,Lat Pulldown,1,10,42.5,425.0,56.7,21.3,Lower Body
-23660663184,2026-07-20,Strength,Seated Cable Row,1,8,50.0,400.0,63.3,25.2,Lower Body
-23660663184,2026-07-20,Strength,Squat,1,10,40.0,400.0,53.3,36.8,Lower Body
-23660663184,2026-07-20,Strength,Triceps Extension,1,8,50.0,400.0,63.3,29.3,Lower Body
-23660663184,2026-07-20,Strength,Dumbbell Kickback,1,8,55.0,440.0,69.7,29.4,Lower Body
-23660663184,2026-07-20,Strength,Curl,1,12,20.0,240.0,,41.6,Lower Body
-23660663184,2026-07-20,Strength,Lateral Raise,1,8,28.0,224.0,35.5,38.5,Lower Body
-23660663184,2026-07-20,Strength,Unknown,1,40,14.0,560.0,,106.0,Lower Body
-23660663184,2026-07-20,Strength,Bench Dip,1,40,14.0,560.0,,88.1,Lower Body
-23660663184,2026-07-20,Strength,Pull Up,1,8,0.0,0.0,,22.7,Lower Body
-23644231938,2026-07-18,Strength,Triceps Extension,6,12,0.0,0.0,,50.8,Upper Push
-23644231938,2026-07-18,Strength,Triceps Extension,5,8,21.5,172.0,27.2,37.5,Upper Push
-23644231938,2026-07-18,Strength,Triceps Extension,4,8,21.5,172.0,27.2,30.2,Upper Push
-23644231938,2026-07-18,Strength,Bench Press,3,10,50.0,500.0,66.7,41.9,Upper Push
-23644231938,2026-07-18,Strength,Push Up,3,8,0.0,0.0,,23.5,Upper Push
-23644231938,2026-07-18,Strength,Lateral Raise,3,16,10.0,160.0,,29.9,Upper Push
-23644231938,2026-07-18,Strength,Triceps Extension,3,8,17.5,140.0,22.2,35.3,Upper Push
-23644231938,2026-07-18,Strength,Cable Crossover,3,14,0.0,0.0,,20.9,Upper Push
-23644231938,2026-07-18,Strength,Bench Press,2,10,40.0,400.0,53.3,19.0,Upper Push
-23644231938,2026-07-18,Strength,Push Up,2,9,0.0,0.0,,21.3,Upper Push
-23644231938,2026-07-18,Strength,Lateral Raise,2,20,8.0,160.0,,34.2,Upper Push
-23644231938,2026-07-18,Strength,Triceps Extension,2,10,20.0,200.0,26.7,33.6,Upper Push
-23644231938,2026-07-18,Strength,Triceps Pressdown,2,10,25.0,250.0,33.3,36.0,Upper Push
-23644231938,2026-07-18,Strength,Unknown,2,8,29.0,232.0,36.7,33.3,Upper Push
-23644231938,2026-07-18,Strength,Cable Crossover,2,14,0.0,0.0,,22.1,Upper Push
-23644231938,2026-07-18,Strength,Jumping Jacks,1,33,0.0,0.0,,60.5,Upper Push
-23644231938,2026-07-18,Strength,Bench Press,1,10,20.0,200.0,26.7,36.9,Upper Push
-23644231938,2026-07-18,Strength,Triceps Extension,1,8,60.0,480.0,76.0,40.9,Upper Push
-23644231938,2026-07-18,Strength,Push Up,1,8,0.0,0.0,,23.7,Upper Push
-23644231938,2026-07-18,Strength,Lateral Raise,1,20,10.0,200.0,,31.4,Upper Push
-23644231938,2026-07-18,Strength,Lat Pulldown,1,8,30.0,240.0,38.0,34.6,Upper Push
-23644231938,2026-07-18,Strength,Unknown,1,8,30.0,240.0,38.0,50.3,Upper Push
-23644231938,2026-07-18,Strength,Triceps Pressdown,1,10,21.5,215.0,28.7,27.0,Upper Push
-23644231938,2026-07-18,Strength,Sit Up,1,12,0.0,0.0,,40.7,Upper Push
-23644231938,2026-07-18,Strength,Snatch,1,12,0.0,0.0,,44.9,Upper Push
-23644231938,2026-07-18,Strength,Cable Crossover,1,14,0.0,0.0,,25.5,Upper Push
-23626509121,2026-07-17,Strength,Unknown,10,20,70.0,1400.0,,30.5,Lower Body
-23626509121,2026-07-17,Strength,Unknown,9,19,65.0,1235.0,,26.1,Lower Body
-23626509121,2026-07-17,Strength,Unknown,8,10,80.0,800.0,106.7,19.9,Lower Body
-23626509121,2026-07-17,Strength,Unknown,7,10,70.0,700.0,93.3,19.4,Lower Body
-23626509121,2026-07-17,Strength,Unknown,6,10,60.0,600.0,80.0,32.0,Lower Body
-23626509121,2026-07-17,Strength,Unknown,5,20,22.5,450.0,,73.4,Lower Body
-23626509121,2026-07-17,Strength,Unknown,4,20,28.5,570.0,,62.1,Lower Body
-23626509121,2026-07-17,Strength,Unknown,3,20,22.5,450.0,,76.2,Lower Body
-23626509121,2026-07-17,Strength,Barbell Deadlift,3,10,32.0,320.0,,33.7,Lower Body
-23626509121,2026-07-17,Strength,Unknown,2,10,150.0,1500.0,200.0,32.3,Lower Body
-23626509121,2026-07-17,Strength,Row,2,10,200.0,2000.0,266.7,51.0,Lower Body
-23626509121,2026-07-17,Strength,Barbell Deadlift,2,10,24.0,240.0,,36.5,Lower Body
-23626509121,2026-07-17,Strength,Dumbbell Flye,2,10,70.0,700.0,,35.9,Lower Body
-23626509121,2026-07-17,Strength,Jumping Jacks,1,7,0.0,0.0,,93.3,Lower Body
-23626509121,2026-07-17,Strength,Unknown,1,10,100.0,1000.0,133.3,29.8,Lower Body
-23626509121,2026-07-17,Strength,Row,1,10,180.0,1800.0,240.0,38.7,Lower Body
-23626509121,2026-07-17,Strength,Barbell Deadlift,1,10,20.0,200.0,,37.8,Lower Body
-23626509121,2026-07-17,Strength,Shrug,1,19,70.0,1330.0,,29.3,Lower Body
-23626509121,2026-07-17,Strength,Dumbbell Flye,1,10,50.0,500.0,,41.1,Lower Body
-23626509121,2026-07-17,Strength,Lunge,1,10,80.0,800.0,106.7,39.8,Lower Body

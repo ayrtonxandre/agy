@@ -1,5 +1,48 @@
 [
   {
+    "Activity_ID": 25137921680,
+    "Date": "2026-11-20",
+    "Start_Time": "2026-11-20 06:35:16",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 53.0,
+    "Distance_km": 0.0,
+    "Calories_kcal": 534,
+    "Average_HR": 125.0,
+    "Max_HR": 167.0,
+    "Training_Effect": "SPEED",
+    "Notes": "Strength \n8 back squats - 105Lbs\n5 back squats - 145Lbs\n3 back squats - 185Lbs\n3 back squats - 205Lbs\n3 back squats - 225Lbs\n\nWOD - 3 rounds\n15 wall balls - 20Lbs\n8 pull ups \n10 broad jumps"
+  },
+  {
+    "Activity_ID": 25133712675,
+    "Date": "2026-11-19",
+    "Start_Time": "2026-11-19 18:23:00",
+    "Activity_Name": "Strength",
+    "Activity_Type": "strength_training",
+    "Primary_Category": "Strength",
+    "Duration_min": 67.7,
+    "Distance_km": 0.0,
+    "Calories_kcal": 466,
+    "Average_HR": 109.0,
+    "Max_HR": 154.0,
+    "Training_Effect": "ANAEROBIC_CAPACITY"
+  },
+  {
+    "Activity_ID": 25121576456,
+    "Date": "2026-11-18",
+    "Start_Time": "2026-11-18 17:05:43",
+    "Activity_Name": "Treadmill Running",
+    "Activity_Type": "treadmill_running",
+    "Primary_Category": "Running",
+    "Duration_min": 30.1,
+    "Distance_km": 5.0,
+    "Calories_kcal": 461,
+    "Average_HR": 152.0,
+    "Max_HR": 177.0,
+    "Training_Effect": "TEMPO"
+  },
+  {
     "Activity_ID": 25116208797,
     "Date": "2026-11-18",
     "Start_Time": "2026-11-18 06:35:25",
@@ -1370,47 +1413,5 @@
     "Average_HR": 121.0,
     "Max_HR": 153.0,
     "Training_Effect": "ANAEROBIC_CAPACITY"
-  },
-  {
-    "Activity_ID": 23660663184,
-    "Date": "2026-07-20",
-    "Start_Time": "2026-07-20 06:33:09",
-    "Activity_Name": "Strength",
-    "Activity_Type": "strength_training",
-    "Primary_Category": "Strength",
-    "Duration_min": 45.1,
-    "Distance_km": 0.0,
-    "Calories_kcal": 272,
-    "Average_HR": 102.0,
-    "Max_HR": 149.0,
-    "Training_Effect": "ANAEROBIC_CAPACITY"
-  },
-  {
-    "Activity_ID": 23644231938,
-    "Date": "2026-07-18",
-    "Start_Time": "2026-07-18 17:00:17",
-    "Activity_Name": "Strength",
-    "Activity_Type": "strength_training",
-    "Primary_Category": "Strength",
-    "Duration_min": 54.8,
-    "Distance_km": 0.0,
-    "Calories_kcal": 460,
-    "Average_HR": 123.0,
-    "Max_HR": 166.0,
-    "Training_Effect": "ANAEROBIC_CAPACITY"
-  },
-  {
-    "Activity_ID": 23626509121,
-    "Date": "2026-07-17",
-    "Start_Time": "2026-07-17 06:51:53",
-    "Activity_Name": "Strength",
-    "Activity_Type": "strength_training",
-    "Primary_Category": "Strength",
-    "Duration_min": 39.5,
-    "Distance_km": 0.0,
-    "Calories_kcal": 308,
-    "Average_HR": 115.0,
-    "Max_HR": 142.0,
-    "Training_Effect": "AEROBIC_BASE"
   }
 ]

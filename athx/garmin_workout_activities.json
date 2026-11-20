@@ -1,5 +1,23 @@
 [
   {
+    "Activity_ID": 25137921680,
+    "Date": "2026-11-20",
+    "Start_Time": "2026-11-20 06:35:16",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Category": "CrossFit",
+    "Duration_min": 53.0,
+    "Calories_kcal": 534,
+    "Average_HR": 125.0,
+    "Max_HR": 167.0,
+    "Training_Effect_Label": "SPEED",
+    "Moderate_Intensity_Min": 18,
+    "Vigorous_Intensity_Min": 29,
+    "Steps": 1058,
+    "Distance_km": 0.0,
+    "Notes": "Strength \n8 back squats - 105Lbs\n5 back squats - 145Lbs\n3 back squats - 185Lbs\n3 back squats - 205Lbs\n3 back squats - 225Lbs\n\nWOD - 3 rounds\n15 wall balls - 20Lbs\n8 pull ups \n10 broad jumps"
+  },
+  {
     "Activity_ID": 25116208797,
     "Date": "2026-11-18",
     "Start_Time": "2026-11-18 06:35:25",

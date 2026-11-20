@@ -1,4 +1,17 @@
 Activity_ID,Date,Start_Time,Activity_Name,Activity_Type,Primary_Category,Duration_min,Distance_km,Calories_kcal,Average_HR,Max_HR,Training_Effect,Notes
+25137921680,2026-11-20,2026-11-20 06:35:16,CrossFit,indoor_cardio,Cardio / Cross-Training,53.0,0.0,534,125.0,167.0,SPEED,"Strength 
+8 back squats - 105Lbs
+5 back squats - 145Lbs
+3 back squats - 185Lbs
+3 back squats - 205Lbs
+3 back squats - 225Lbs
+
+WOD - 3 rounds
+15 wall balls - 20Lbs
+8 pull ups 
+10 broad jumps"
+25133712675,2026-11-19,2026-11-19 18:23:00,Strength,strength_training,Strength,67.7,0.0,466,109.0,154.0,ANAEROBIC_CAPACITY,
+25121576456,2026-11-18,2026-11-18 17:05:43,Treadmill Running,treadmill_running,Running,30.1,5.0,461,152.0,177.0,TEMPO,
 25116208797,2026-11-18,2026-11-18 06:35:25,CrossFit,indoor_cardio,Cardio / Cross-Training,43.0,0.0,471,132.0,178.0,SPEED,"WOD
 21 high box jumps
 15 high box jumps
@@ -259,6 +272,3 @@ Puis:
 23698912079,2026-07-23,2026-07-23 07:12:06,Strength,strength_training,Strength,48.0,0.0,385,118.0,150.0,ANAEROBIC_CAPACITY,
 23686021858,2026-07-22,2026-07-22 06:30:38,Strength,strength_training,Strength,52.7,0.0,438,121.0,161.0,ANAEROBIC_CAPACITY,
 23673195620,2026-07-21,2026-07-21 07:32:23,Strength,strength_training,Strength,37.5,0.0,328,121.0,153.0,ANAEROBIC_CAPACITY,
-23660663184,2026-07-20,2026-07-20 06:33:09,Strength,strength_training,Strength,45.1,0.0,272,102.0,149.0,ANAEROBIC_CAPACITY,
-23644231938,2026-07-18,2026-07-18 17:00:17,Strength,strength_training,Strength,54.8,0.0,460,123.0,166.0,ANAEROBIC_CAPACITY,
-23626509121,2026-07-17,2026-07-17 06:51:53,Strength,strength_training,Strength,39.5,0.0,308,115.0,142.0,AEROBIC_BASE,
