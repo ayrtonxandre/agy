@@ -161,6 +161,7 @@ def sync_garmin_personal(limit: int = 250, days_history: int = 45) -> dict:
     all_running_records: list[dict] = []
     all_workout_records: list[dict] = []
     all_master_activities: list[dict] = []
+    strength_seen_count: int = 0
 
     for idx, act in enumerate(activities, 1):
         act_id = act.get("activityId")
@@ -269,7 +270,9 @@ def sync_garmin_personal(limit: int = 250, days_history: int = 45) -> dict:
         # ----------------------------------------------------------------------
         is_strength = ("strength" in type_key or "strength" in act_name.lower())
         if is_strength:
-            if act_id in cached_sets_by_id and (not desc or desc == cached_notes_by_id.get(act_id, "")):
+            strength_seen_count += 1
+            # Always re-fetch the latest 5 strength sessions so post-workout exercise corrections in Garmin Connect sync
+            if strength_seen_count > 5 and act_id in cached_sets_by_id and (not desc or desc == cached_notes_by_id.get(act_id, "")):
                 cached_session_sets = cached_sets_by_id[act_id]
                 all_strength_sets.extend(cached_session_sets)
                 session_vol = sum(float(r.get("Total_Volume_kg") or 0.0) for r in cached_session_sets)

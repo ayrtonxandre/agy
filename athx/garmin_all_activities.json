@@ -1,5 +1,19 @@
 [
   {
+    "Activity_ID": 25202187173,
+    "Date": "2026-11-26",
+    "Start_Time": "2026-11-26 06:42:00",
+    "Activity_Name": "Strength",
+    "Activity_Type": "strength_training",
+    "Primary_Category": "Strength",
+    "Duration_min": 50.5,
+    "Distance_km": 0.0,
+    "Calories_kcal": 359,
+    "Average_HR": 109.0,
+    "Max_HR": 154.0,
+    "Training_Effect": "AEROBIC_BASE"
+  },
+  {
     "Activity_ID": 25191581334,
     "Date": "2026-11-25",
     "Start_Time": "2026-11-25 06:32:24",
@@ -17,7 +31,7 @@
   {
     "Activity_ID": 25185767894,
     "Date": "2026-11-24",
-    "Start_Time": "2026-11-24 17:01:02",
+    "Start_Time": "2026-11-24 17:01:00",
     "Activity_Name": "Strength",
     "Activity_Type": "strength_training",
     "Primary_Category": "Strength",
