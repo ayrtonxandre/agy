@@ -77,6 +77,7 @@ def log_event(msg: str):
         print(f"Failed to write to access log: {e}", flush=True)
 
 GIT_LOCK = threading.Lock()
+PAYLOAD_LOCK = threading.Lock()
 
 def git_auto_commit_and_push(reason: str = "apple health webhook sync"):
     """Batches and pushes data and dashboard changes to GitHub origin/main in background."""
@@ -150,6 +151,10 @@ ATHLETIC_SCHEDULE = {
 
 def process_health_auto_export_payload(payload: dict) -> dict:
     """Parses JSON received from Health Auto Export app and updates local CSVs."""
+    with PAYLOAD_LOCK:
+        return _process_health_auto_export_payload_locked(payload)
+
+def _process_health_auto_export_payload_locked(payload: dict) -> dict:
     now_str = datetime.now(LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
 
     # Save raw payload for debugging
