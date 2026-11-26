@@ -1,67 +1,68 @@
 ## 1. 🎖️ Executive Readiness Verdict
-- **Overall Readiness Rating**: `76% • Moderate Risk (Volume Asymmetry & Lower Body Deficits)`
-- **Macro Assessment**: Athlete demonstrates strong upper-body pushing and pulling hypertrophy volume, but total lower body stimulus (quads and posterior chain) is operating below Minimum Effective Volume (MEV). With 27 weeks until the ATHX Games 2027, the primary qualification risk lies in barbell squat and deadlift capacity alongside the 5km running pace gap. Rebalancing weekly volume toward lower-body compounds while protecting current systemic ACWR (1.20) is the mandatory training priority.
-
----
+-   **Overall Readiness Rating**: 86% • Moderate Risk (Aerobic Capacity & Upper Body Hypertrophy Deficit)
+-   **Macro Assessment**: Current strength adaptation velocity for S2O, Back Squat, and Deadlift is significantly exceeding the required rate, projecting qualification standard achievement well ahead of May 2027. However, the 5km running pace progression is precisely at the minimum required rate, indicating a tight margin for error. Furthermore, critical hypertrophy deficits in Chest and Lats/Back, coupled with a significant data gap in weight trend and sleep efficiency, present foundational risks to sustained performance and optimal body recomposition.
 
 ## 2. 🎯 Event-by-Event Benchmark Status (ATHX 2027)
+
 | Event | 2027 Target | Current Level | Gap | Trend & Projected Date |
 | :--- | :--- | :--- | :--- | :--- |
-| Shoulder-to-Overhead (S2O) | 65.0 kg | 58.3 kg | -6.7 kg | 🟡 +0.25 kg/wk (In Progress) |
-| Barbell Back Squat | 125.0 kg | 112.3 kg | -12.7 kg | 🟡 +0.47 kg/wk (In Progress) |
-| Deadlift Floor Pull | 160.0 kg | 151.7 kg | -8.3 kg | 🟡 +0.31 kg/wk (In Progress) |
-| 5km Running Pace | 4:30/km | 5:12/km | +42s/km | 🟡 -1.58s/wk (In Progress) |
-| Sandbag Carry / Grip | 60.0 kg | 56.0 kg | -4.0 kg | 🟡 +0.15 kg/wk (In Progress) |
-
----
+| Shoulder-to-Overhead (S2O) | 65.0 kg | 58.3 kg | -6.7 kg | Accelerating (+1.45 kg/wk vs +0.26 kg/wk req.), On Track |
+| Back Squat | 125.0 kg | 112.3 kg | -12.7 kg | Accelerating (+5.58 kg/wk vs +0.49 kg/wk req.), On Track |
+| Deadlift | 160.0 kg | 151.7 kg | -8.3 kg | Accelerating (+5.85 kg/wk vs +0.32 kg/wk req.), On Track |
+| 5km Running Pace | 4:30/km | 5:12/km | +42s/km | On Pace (tight margin, -1.63s/wk req.) |
+| Sandbag Carry / Grip | 60.0 kg | 56.0 kg | -4.0 kg | Requires consistent progression, volume increase needed |
 
 ## 3. ⚠️ Critical Deficit & Fatigue Alerts
-- **Volume Starvation**: Chest: 5.0 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Lats/Back: 7.2 sets/wk (Deficit vs MEV 10.0)
-- **Volume Starvation**: Quads: 6.0 sets/wk (Deficit vs MEV 8.0)
-- **Volume Starvation**: Hamstrings/Glutes: 5.7 sets/wk (Deficit vs MEV 6.0)
-- **Volume Starvation**: Triceps: 5.9 sets/wk (Deficit vs MEV 6.0)
-- **Volume Starvation**: Biceps: 4.8 sets/wk (Deficit vs MEV 6.0)
-- **Volume Starvation**: Forearms: 3.1 sets/wk (Deficit vs MEV 4.0)
-- **Acute:Chronic Workload Ratio (ACWR)**: `1.20` (Sweet Spot (Optimal)). Acute load is 5,210.2 kg vs chronic baseline 4,344.8 kg. Foster training monotony is `1.37`. Fatigue accumulation is currently within the safe adaptation band, allowing immediate volume absorption in lagging muscle groups.
-- **Sleep & Recovery**: 7-day average sleep duration is `7.1 hrs` with a composite readiness score of `98.0%`. Biological recovery bandwidth is adequate to support increased lower-body training density.
-
----
+-   **Volume Deficits**:
+    -   **Chest**: 7.6 sets/wk, which is 24% below the Minimum Effective Volume (MEV) of 10.0 sets/wk. This deficit will impede upper body pressing strength and overall robustness.
+    -   **Lats/Back**: 9.9 sets/wk, marginally below the MEV of 10.0 sets/wk. While close, this indicates insufficient stimulus for optimal pulling strength and postural stability, especially given the high Deadlift progression.
+    -   **Core**: 1.7 sets/wk, significantly below the Minimum Adaptative Volume (MAV) range of 6.0-12.0 sets/wk. This poses a risk to spinal integrity and power transfer during compound lifts and dynamic movements.
+    -   **Forearms**: 4.8 sets/wk, at MEV (4.0) but below the MAV range of 6.0-12.0 sets/wk. This will limit grip endurance and direct Sandbag Carry progression.
+-   **ACWR and Foster Monotony/Strain**:
+    -   ACWR (0.96) is in the optimal "Sweet Spot," indicating well-managed acute-to-chronic load.
+    -   Foster Monotony (1.01) and Foster Strain (27.3) are low, suggesting adequate variability and recovery within the training structure. This indicates capacity for targeted volume increases without immediate fatigue risk.
+-   **Sleep Duration/Efficiency & Recovery Composite Friction**:
+    -   Average sleep duration (7.6 hrs/7d) is adequate.
+    -   However, `usable_efficiency_pct` is null, and `sleep_coverage_pct` is critically low at 1.9%. This represents a severe data integrity gap. Without accurate sleep efficiency and consistent tracking, the high `readiness_composite_score_pct` (94.8%) may be masking underlying recovery debt or suboptimal sleep quality. This must be rectified immediately for reliable recovery monitoring.
 
 ## 4. 🧬 Hypertrophy & Workload Engineering
-- **Volume Distribution**: Upper body pressing and pulling maintain consistent sets within or near Maximum Adaptive Volume (MAV). Conversely, quad and hamstring sets require an immediate 4–6 set weekly infusion to cross the MEV threshold and trigger structural hypertrophy.
-- **Recomposition & Mass Velocity**: Current mass is `81.1 kg` against the competition standard of `85.0 kg` (+3.9 kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
-
----
+-   **Volume Distribution**:
+    -   **Push**: Chest volume is critically low (7.6 sets/wk), while Shoulders (11.1 sets/wk) and Triceps (8.2 sets/wk) are near MEV but below MAV. This indicates an overall under-prioritization of upper body pushing volume, which will eventually limit S2O and general pressing strength.
+    -   **Pull**: Lats/Back volume is marginally below MEV (9.9 sets/wk), and Biceps (6.0 sets/wk) are at MEV. This suggests insufficient stimulus for robust pulling strength, which is critical for Deadlift and overall structural balance.
+    -   **Legs**: Quads (14.1 sets/wk) are effectively within the MAV range, and Hamstrings/Glutes (9.7 sets/wk) are near MEV. Lower body volume is generally well-managed and supports the strong Back Squat and Deadlift progression.
+    -   The `split_distribution` shows 45% Full Body, which, while efficient, has allowed specific muscle group deficits to emerge due to insufficient targeted volume within those sessions.
+-   **Recomposition Status**:
+    -   Current weight is 81.6 kg, with a target of 85.0 kg, requiring a 3.4 kg gain over 26 weeks (approx. 0.13 kg/wk).
+    -   The `weight_7d_trend_kg` is null, indicating a critical data gap in tracking weekly weight velocity. Without this, it is impossible to assess the athlete's current recomposition trajectory or adjust caloric intake effectively to meet the target weight.
 
 ## 5. 🏃 Aerobic & Conditioning Engine
-- **Running Trajectory**: The 5km qualifying target of 4:30/km requires dedicated aerobic threshold maintenance. Current best pace sits at `5:07/km` across 12 recorded runs (61.78 km total volume). Conditioning must avoid conflicting with lower-body strength adaptations by emphasizing low-impact Zone 2 rowing or polarized track intervals.
+-   **5k Pace Gap**: The current 5:12/km pace is 42 seconds/km off the 4:30/km target. The required rate of -1.63s/wk is aggressive and leaves no room for inconsistent training.
+-   **Running Cadence/Mechanics**: `avg_ground_contact_time_ms` (281.4 ms) and `avg_vertical_ratio_pct` (8.34%) are within acceptable ranges, suggesting no immediate gross mechanical inefficiencies.
+-   **VO2Max**: A `latest_vo2max` of 57.2 is excellent, indicating a strong physiological engine.
+-   **Aerobic Threshold Stability**: Not directly provided, but the significant 5k pace gap despite high VO2Max suggests a potential deficit in aerobic threshold, lactate clearance, or specific pace endurance. The athlete possesses the raw engine but struggles to sustain higher intensities for the required duration. The current training volume (61.78 km over 12 runs) is decent, but the intensity distribution needs to be optimized for pace development.
 
----
+## 6. 📋 7-Day Tactical Microcycle Prescription
 
-## 6. 📋 7-Day Tactical Microcycle Prescription (Mon/Wed/Fri/Sat CrossFit • Tue/Thu Gym • Wed/Fri/Sun Run)
-- **Monday [CrossFit - Metabolic Conditioning & Work Capacity]**:
-  - Box WOD (Conditioning, Gymnastics & Olympic skill). Protect systemic load; hydrate and fuel for Tuesday's heavy squat stimulus.
-- **Tuesday [Gym - Lower Body Squat & S2O Overhead Anchor]**:
-  - Barbell Back Squat: 4×6 @ 75–80% e1RM (target: +1.25 kg/wk progression)
-  - Bulgarian Split Squats: 3×8–10 / leg (unilateral strength & knee stability)
-  - Shoulder-to-Overhead (Push Press / S2O): 4×5 @ 45–50 kg (explosive triple extension)
-  - Leg Extensions: 3×12–15 (strict quad hypertrophy) + Core Anti-Extension: 3 sets
-- **Wednesday [Double: CrossFit WOD + Run 1 (Aerobic Base & Cadence)]**:
-  - CrossFit WOD (box programming)
-  - Run 1 (Base & Flush): 5.0–6.0 km @ 5:40–6:10/km (Zone 2, HR <145 bpm)
-  - Focus: Metronome locked at 172–174 spm to eliminate overstriding and drop GCT <265 ms
-- **Thursday [Gym - Posterior Chain Deadlift & Upper Body Maintenance]**:
-  - Conventional / Trap Bar Deadlift: 4×5 @ 75–80% e1RM (explosive floor pull)
-  - Barbell Bench Press: 3×6–8 @ 75–80 kg (preserve 104 kg e1RM without junk volume)
-  - Romanian Deadlifts (RDLs): 3×8–10 (loaded eccentric hamstring stretch)
-  - Weighted Pull-ups: 3×6–8 (+10–15 kg) + Heavy Carries: 3×40m (ATHX sandbag/grip prep)
-- **Friday [Double: CrossFit WOD + Run 2 (5km Race Pace Intervals)]**:
-  - CrossFit WOD (box programming)
-  - Run 2 (Threshold Intervals): 1.0 km warm-up + 4–5×1,000m @ 4:25–4:35/km (90s rest) + 1.0 km cool-down (~6.5 km)
-  - Focus: Closing the 37s/km gap to standard 4:30/km pace
-- **Saturday [CrossFit - Team / Long Engine WOD]**:
-  - Box Saturday WOD (Partner / Long aerobic engine metcon)
-- **Sunday [Run 3 - Lighter Recovery Run (Zone 2 5K)]**:
-  - Distance: Exactly 5.0 km easy conversational run @ 5:50–6:20/km
-  - Focus: Pure active recovery & parasympathetic flush. Keep HR strictly Zone 2 (<140 bpm). Sets up weekly running volume at ~17 km.
+**Objective**: Address hypertrophy deficits (Chest, Lats/Back, Core, Forearms), maintain strength progression, aggressively target 5k pace, and rectify critical data gaps.
+
+**Priority 1 (Mandatory Lift/Volume)**:
+*   **Day 1 (Strength Focus - Lower/Push)**:
+    *   **Barbell Back Squat**: 4 sets x 3-5 reps @ 90-95 kg (80-85% of 1RM). Focus on controlled eccentric and explosive concentric.
+    *   **Barbell Bench Press**: 4 sets x 6-8 reps @ 63-68 kg (70-75% of 1RM). *Addresses Chest volume deficit.*
+    *   **Weighted Pull-ups**: 3 sets x 6-8 reps. *Addresses Lats/Back volume deficit.*
+    *   **Hanging Leg Raises**: 3 sets x 10-15 reps. *Addresses Core volume deficit.*
+*   **Day 2 (Strength Focus - Upper/Pull)**:
+    *   **Deadlift Floor Pull**: 3 sets x 3-5 reps @ 121-129 kg (80-85% of 1RM). Maintain strict form.
+    *   **Shoulder-to-Overhead (Push Press)**: 4 sets x 3-5 reps @ 44-47 kg (75-80% of 1RM). Focus on powerful hip drive.
+    *   **Bent-Over Barbell Rows**: 3 sets x 8-10 reps. *Additional Lats/Back volume.*
+    *   **Incline Dumbbell Press**: 3 sets x 8-10 reps. *Additional Chest volume.*
+*   **Day 3 (Accessory/Volume Focus - Full Body)**:
+    *   **Front Squat**: 3 sets x 5-7 reps @ 63-68 kg (70-75% of e1RM).
+    *   **Single-Arm Dumbbell Rows**: 3 sets x 8-10 reps per arm. *Additional Lats/Back volume.*
+    *   **Dumbbell Bench Press**: 3 sets x 8-10 reps. *Additional Chest volume.*
+    *   **Sandbag Carry**: 3 sets x 50m @ 55-60 kg. *Addresses Forearm/Grip volume and Sandbag Carry event.*
+    *   **Plank Variations**: 3 sets x 45-60 seconds. *Additional Core volume.*
+
+**Priority 2 (Conditioning Session)**:
+*   **Day 1 (Interval Run - 5k Pace Specific)**:
+    *   Warm-up: 10 min easy jog.

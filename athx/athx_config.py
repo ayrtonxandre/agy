@@ -316,6 +316,7 @@ EXERCISE_MUSCLE_MAP: dict[str, str] = {
     "Snatch Barbell": "Full Body",
     "Wall Ball": "Quads",
     "Box Jump": "Quads",
+    "Box Jumps": "Quads",
     "Toes to Bar": "Core",
     "Toes To Bar": "Core",
     "Burpee": "Full Body",
@@ -439,6 +440,8 @@ EXERCISE_COMPOUND_VOLUME: dict[str, dict[str, float]] = {
     "Burpee": {"Quads": 0.35, "Chest": 0.35, "Core": 0.3},
     "Burpee Box Jump": {"Quads": 0.5, "Chest": 0.25, "Core": 0.25},
     "Burpee Box Jumps": {"Quads": 0.5, "Chest": 0.25, "Core": 0.25},
+    "Box Jump": {"Quads": 0.5, "Core": 0.25},
+    "Box Jumps": {"Quads": 0.5, "Core": 0.25},
 
     # Carries
     "Farmers Walk": {"Forearms": 1.0, "Core": 0.5},
@@ -457,6 +460,8 @@ PLAUSIBLE_LOAD_RANGES: dict[str, tuple[float, float]] = {
     "Burpees": (0.0, 50.0),
     "Burpee Box Jump": (0.0, 50.0),
     "Burpee Box Jumps": (0.0, 50.0),
+    "Box Jump": (0.0, 50.0),
+    "Box Jumps": (0.0, 50.0),
     "Push Up": (0.0, 45.0),            # Weight > 45 kg on pushups is user-bodyweight artifact (e.g. 90 kg)
     "Pull Up": (0.0, 50.0),            # Added weight > 50 kg is artifact (e.g. 110 kg entered as bodyweight)
     "Chin Up": (0.0, 50.0),
@@ -569,6 +574,8 @@ BODYWEIGHT_EXERCISES: set[str] = {
     "Dead Hang",
     "Ring Row",
     "Inverted Row",
+    "Box Jump",
+    "Box Jumps",
 }
 
 # ------------------------------------------------------------------------------

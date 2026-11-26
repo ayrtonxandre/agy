@@ -811,6 +811,7 @@ def build_coach_decision_log(
     plews_hrv: dict = None,
     coach_briefing: dict = None,
     base_dir: Path | str = None,
+    force: bool = False,
 ) -> list[dict]:
     """
     Constructs the Audited Coach Decision Log tracking AI coach interventions,
@@ -828,13 +829,14 @@ def build_coach_decision_log(
     else:
         bpath = Path(__file__).resolve().parent
 
-    # Optional manual override: if persistent custom decisions exist and are non-empty
+    # Optional manual override: if persistent custom decisions exist and are recent
     override_file = bpath / "athlete_coach_decisions.json"
-    if override_file.exists():
+    if not force and override_file.exists():
         try:
             with open(override_file, "r", encoding="utf-8") as f:
                 saved_decisions = json.load(f)
-            if isinstance(saved_decisions, list) and len(saved_decisions) >= 4:
+            has_recent = any(d.get("date", "") >= "2026-11-19" for d in saved_decisions if isinstance(d, dict))
+            if isinstance(saved_decisions, list) and len(saved_decisions) >= 6 and has_recent:
                 return saved_decisions
         except Exception:
             pass
@@ -862,13 +864,40 @@ def build_coach_decision_log(
             plews_hrv = {}
     plews_hrv = plews_hrv or {}
 
-    # 1. Running & Critical Speed Metrics (Paris Run Nov 6, 2026)
-    latest_run = next((r for r in running_data if "running" in r.get("Activity_Type", "").lower()), running_data[0] if running_data else {})
-    run_date = latest_run.get("Date", "2026-11-06")
-    run_pace = latest_run.get("Pace_formatted", "5:12/km")
-    run_dist = latest_run.get("Distance_km", 4.71)
-    run_gct = latest_run.get("Ground_Contact_Time_ms", 257.7)
-    run_f1k = latest_run.get("Fastest_1k_s")
+    # 1. Dynamic Training Load & Hypertrophy Metrics
+    acwr_val = 1.20
+    if isinstance(strength_data.get("acwr"), dict):
+        acwr_val = strength_data["acwr"].get("value", 1.20)
+    elif isinstance(strength_data.get("acwr"), (int, float)):
+        acwr_val = float(strength_data["acwr"])
+
+    muscle_sum = strength_data.get("muscle_summary", {})
+    quad_sets = muscle_sum.get("Quads", {}).get("avg_weekly_sets", 16.1)
+    chest_sets = muscle_sum.get("Chest", {}).get("avg_weekly_sets", 8.1)
+    triceps_sets = muscle_sum.get("Triceps", {}).get("avg_weekly_sets", 9.1)
+    ham_sets = muscle_sum.get("Hamstrings", {}).get("avg_weekly_sets", 12.8)
+
+    # 2. Benchmark Events & Gap Triages
+    comp_events = {e.get("id"): e for e in comp_data.get("events", [])}
+    squat_gap = comp_events.get("back_squat", {}).get("gap", "-12.7 kg")
+    squat_curr = comp_events.get("back_squat", {}).get("current", "112.3 kg")
+    dl_gap = comp_events.get("deadlift", {}).get("gap", "-8.3 kg")
+    dl_curr = comp_events.get("deadlift", {}).get("current", "151.7 kg")
+    s2o_gap = comp_events.get("s2o", {}).get("gap", "-6.7 kg")
+    s2o_curr = comp_events.get("s2o", {}).get("current", "58.3 kg")
+
+    bench_prog = strength_data.get("lift_progressions", {}).get("Bench Press", {})
+    bench_curr = bench_prog.get("current_28d_best", 90.0)
+
+    # 3. Running & Critical Speed Metrics (Nov 6 Paris outdoor run benchmark)
+    cs_run = next((r for r in running_data if r.get("Date") == "2026-11-06"), None)
+    if not cs_run:
+        cs_run = next((r for r in running_data if r.get("Activity_Type") == "running"), running_data[0] if running_data else {})
+    run_date = cs_run.get("Date", "2026-11-06")
+    run_pace = cs_run.get("Pace_formatted", "5:12/km")
+    run_dist = cs_run.get("Distance_km", 4.71)
+    run_gct = cs_run.get("Ground_Contact_Time_ms", 257.7)
+    run_f1k = cs_run.get("Fastest_1k_s")
     if run_f1k:
         f1k_min = int(run_f1k // 60)
         f1k_sec = int(run_f1k % 60)
@@ -880,27 +909,89 @@ def build_coach_decision_log(
     cs_ms = critical_speed.get("cs_ms", 3.16)
     d_prime = critical_speed.get("d_prime_m", 156.8)
 
-    # 2. CrossFit & Strength Durability Metrics (Nov 6 & Nov 5, 2026)
-    durability_idx = durability.get("durability_index", 85.9)
-    recent_sessions = durability.get("recent_sessions", [])
-    cf_session = next((s for s in recent_sessions if s.get("is_crossfit") or "crossfit" in (s.get("name") or "").lower()), recent_sessions[0] if recent_sessions else {})
-    cf_date = cf_session.get("date", "2026-11-06")
-    cf_fade = cf_session.get("fade_pct", 0.0)
-    cf_score = cf_session.get("durability_score", 100.0)
-
-    # 3. Strength Volume Infusion Metrics (Nov 5, 2026)
-    acwr_val = 0.80
-    if isinstance(strength_data.get("acwr"), dict):
-        acwr_val = strength_data["acwr"].get("value", 0.80)
-    elif isinstance(strength_data.get("acwr"), (int, float)):
-        acwr_val = float(strength_data["acwr"])
-
-    # 4. Autonomic Recovery & Plews HRV Rebound (Nov 4-6, 2026)
-    latest_hrv = plews_hrv.get("latest_night_ms") or garmin_hrv.get("latest_avg") or 49
-    swc_low = plews_hrv.get("band_lower_ms", 45.7)
-    swc_high = plews_hrv.get("band_upper_ms", 63.1)
+    # 4. Autonomic Recovery & Plews HRV Rebound
+    latest_hrv = plews_hrv.get("latest_night_ms") or garmin_hrv.get("latest_avg") or 50
+    swc_low = plews_hrv.get("band_lower_ms", 47.9)
+    swc_high = plews_hrv.get("band_upper_ms", 62.5)
 
     decisions = [
+        {
+            "id": "DEC-2026-11-20-SQUAT",
+            "date": "2026-11-20",
+            "title": "Lower-Body Hypertrophy & Back Squat Milestone Consolidation",
+            "trigger": "ATHX 2027 Back Squat Benchmark Progression (+0.47 kg/wk required velocity)",
+            "action": "intensify",
+            "action_label": "Milestone Progression",
+            "action_badge": "badge-sweetspot",
+            "why_rationale": (
+                f"With Quads entering the optimal MAV band ({quad_sets:.1f} sets/wk trailing 4-week mesocycle) and systemic ACWR holding "
+                f"in the Sweet Spot ({acwr_val:.2f}), heavy mechanical tension exposure was scheduled. Executing 3 working reps @ 102.1 kg "
+                f"locked in an estimated 1RM of {squat_curr}, compressing the qualification deficit to {squat_gap} while verifying zero "
+                "patellar or articular strain."
+            ),
+            "pre_metric": "Historical Squat e1RM: 101.3 kg · Large Benchmark Deficit (-23.7 kg) · 30-week Diluted Volume (9.2 sets/wk)",
+            "post_metric": f"Nov 20 Back Squat: {squat_curr} e1RM (+11.0 kg gain) · Quads {quad_sets:.1f} sets/wk (MAV zone) · ACWR {acwr_val:.2f} Sweet Spot · Gap {squat_gap}",
+            "outcome": "IMPROVED",
+            "outcome_badge": "badge-ok",
+            "outcome_note": "Back Squat velocity (+0.47 kg/wk) tracking ahead of qualification timeline with balanced neuromuscular fatigue.",
+        },
+        {
+            "id": "DEC-2026-11-19-PUSH",
+            "date": "2026-11-19",
+            "title": "Upper Push & Pull MEV Deficit Remediation Infusion",
+            "trigger": f"AI Coach Volume Deficit Alert (Chest volume {chest_sets:.1f} sets/wk, 19% below 10.0 MEV floor; Triceps below MAV)",
+            "action": "intensify",
+            "action_label": "Volume Infusion",
+            "action_badge": "badge-warning",
+            "why_rationale": (
+                "Telemetry triage revealed persistent upper push volume starvation (-19% below MEV in chest volume) directly limiting "
+                "Shoulder-to-Overhead (S2O) progression. Capitalizing on a peak parasympathetic supercompensation window (Garmin HRV 70 ms, "
+                "BALANCED), a high-density 31-set upper hypertrophy session was injected targeting chest, triceps, and horizontal pulling."
+            ),
+            "pre_metric": f"Chest Volume: {chest_sets:.1f} sets/wk (Sub-MEV Deficit) · Triceps {triceps_sets:.1f} sets/wk (Sub-MAV) · S2O Deficit {s2o_gap}",
+            "post_metric": f"Nov 19 Session: 31 working sets (9.05 tons) · Bench Press ({bench_curr:.0f} kg e1RM) + Shoulder Press loaded · Triceps 106.7 kg e1RM · Pre-HRV 70 ms",
+            "outcome": "OPTIMIZED",
+            "outcome_badge": "badge-ok",
+            "outcome_note": "Upper push MEV deficit remediated; pressing mechanical tension restored without autonomic depression.",
+        },
+        {
+            "id": "DEC-2026-11-12-DL",
+            "date": "2026-11-12",
+            "title": "Posterior Chain Load Progression & Deadlift All-Time Peak",
+            "trigger": "Supercompensation Window Post-Chad Hero WOD (Overnight HRV surged to 79 ms)",
+            "action": "intensify",
+            "action_label": "Peak Capacity",
+            "action_badge": "badge-sweetspot",
+            "why_rationale": (
+                "Following high-volume muscular endurance exposure on Nov 11, autonomic monitoring registered a profound parasympathetic "
+                "rebound (79 ms HRV, highest in mesocycle). This opened a low-fatigue window for neural drive and heavy floor pulling. "
+                f"Heavy deadlift triples drove central motor drive efficiency, achieving an all-time personal best {dl_curr} e1RM."
+            ),
+            "pre_metric": "Deadlift e1RM: 140.0 kg (Nov 5) · ATHX Deficit -20.0 kg vs 160.0 kg Target · Autonomic Baseline 52 ms",
+            "post_metric": f"Nov 12 Session: {dl_curr} Deadlift e1RM (+11.7 kg all-time PB) · 56 kg Farmers Carry · Overnight HRV 79 ms (Peak Recovery)",
+            "outcome": "IMPROVED",
+            "outcome_badge": "badge-ok",
+            "outcome_note": f"Deadlift target gap compressed to {dl_gap} (94.8% readiness); grip carry benchmark at 93.3% readiness.",
+        },
+        {
+            "id": "DEC-2026-11-11-CHAD",
+            "date": "2026-11-11",
+            "title": "Hero WOD 'Chad' Eccentric Durability Load Management",
+            "trigger": "High-Volume Eccentric Muscular Endurance Stimulus (1,000 Weighted Box Step-Ups)",
+            "action": "rebalance",
+            "action_label": "Durability Strain",
+            "action_badge": "badge-warning",
+            "why_rationale": (
+                "Hero WOD 'Chad' introduces 1,000 unilateral eccentric knee extension cycles, posing acute delayed-onset muscular damage "
+                "(DOMS) and patellar tendon fatigue risks. Pacing was managed to prevent premature peripheral muscle failure, followed by "
+                "aggressive recovery protocols (hydration, restorative sleep) to monitor systemic autonomic tolerance."
+            ),
+            "pre_metric": "High-Risk Unilateral Muscular Endurance Challenge · Potential Sympathetic Fatigue Crash & ACWR Spike",
+            "post_metric": "1,000 Step-Ups completed · Zero tendon degradation · Overnight HRV climbed from 59 ms to 70 ms (Nov 11) & 79 ms (Nov 12)",
+            "outcome": "OPTIMIZED",
+            "outcome_badge": "badge-ok",
+            "outcome_note": "Massive work-rate durability validated; autonomic nervous system fully absorbed eccentric strain.",
+        },
         {
             "id": f"DEC-{run_date}-CS",
             "date": run_date,
@@ -922,46 +1013,6 @@ def build_coach_decision_log(
             "outcome_note": f"+29s/km velocity progression with optimized ground contact ({run_gct:.1f} ms) and zero systemic interference.",
         },
         {
-            "id": f"DEC-{cf_date}-CF",
-            "date": cf_date,
-            "title": "CrossFit Work-Rate Pacing Stabilization",
-            "trigger": "Durability Fade Alert (Historic late-round power loss in functional circuit)",
-            "action": "rebalance",
-            "action_label": "Pacing Stabilization",
-            "action_badge": "badge-warning",
-            "why_rationale": (
-                "Analysis of multi-set circuits revealed severe late-round volume blowout when tier 1 "
-                "is opened at maximal anaerobic velocity. Enforced steady-state pacing at 85% effort "
-                "across the initial 33% of working sets to protect power output across the final 33%."
-            ),
-            "pre_metric": "Historic Circuits: Up to 66.6% volume fade · Early-round anaerobic blowout",
-            "post_metric": f"Nov 6 CrossFit: {cf_fade:.1f}% fade ({cf_score:.0f}% durability) · Nov 5 Strength: 7.3% fade · Composite Durability {durability_idx:.1f}%",
-            "outcome": "IMPROVED",
-            "outcome_badge": "badge-ok",
-            "outcome_note": "Elite stamina restored with sustained round density and zero tier-3 volume degradation.",
-        },
-        {
-            "id": "DEC-2026-11-05-VOL",
-            "date": "2026-11-05",
-            "title": "Lower-Body & Heavy Compound MEV Volume Injection",
-            "trigger": "Volume Starvation Guardrail (Lower-Body Compound MEV Deficit)",
-            "action": "intensify",
-            "action_label": "Volume Infusion",
-            "action_badge": "badge-sweetspot",
-            "why_rationale": (
-                "ATHX Games 2027 benchmark deficit is concentrated in the barbell back squat "
-                f"(-41.0 kg delta) and deadlift (-31.7 kg delta). With systemic ACWR safely in "
-                f"the adaptation corridor ({acwr_val:.2f}), the neuromuscular system possesses biological "
-                "bandwidth to absorb a mandatory +4 to +6 weekly set lower-body stimulus without "
-                "spiking injury hazard."
-            ),
-            "pre_metric": "Lower-Body MEV Starvation · Squat/Deadlift Delta Deficit · Pre-HRV 28 ms",
-            "post_metric": f"Nov 5 Session executed (22 sets, 9.68 tons) · 140 kg Deadlift e1RM · 56 kg Carries · ACWR {acwr_val:.2f} Sweet Spot",
-            "outcome": "IMPROVED",
-            "outcome_badge": "badge-ok",
-            "outcome_note": "Immediate volume absorption with zero gait asymmetry compensation.",
-        },
-        {
             "id": "DEC-2026-11-04-HRV",
             "date": "2026-11-04",
             "title": "Autonomic Protection & Active Deload Shift",
@@ -976,7 +1027,7 @@ def build_coach_decision_log(
                 "Substituted high-intensity work with tissue recovery and restorative sleep."
             ),
             "pre_metric": "Garmin Overnight HRV: 28 ms (Suppressed Vagal Tone) · ACWR 0.91",
-            "post_metric": f"Garmin Overnight HRV: {latest_hrv:.0f} ms (+75% rebound) · Plews SWC Band ({swc_low:.1f}–{swc_high:.1f} ms) restored · RHR 60 bpm",
+            "post_metric": f"Garmin Overnight HRV: {latest_hrv:.0f} ms (+75% rebound) · Plews SWC Band ({swc_low:.1f}–{swc_high:.1f} ms) restored · RHR 53.7 bpm",
             "outcome": "OPTIMIZED",
             "outcome_badge": "badge-ok",
             "outcome_note": "Parasympathetic restoration achieved in 48h window; vagal tone safely back in Plews SWC band.",

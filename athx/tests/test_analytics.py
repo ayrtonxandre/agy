@@ -24,6 +24,7 @@ class TestATHXSportsScience(unittest.TestCase):
         self.athx_dir = ATHX_DIR
         self.running_json = self.athx_dir / "garmin_running_activities.json"
         self.strength_json = self.athx_dir / "garmin_extracted_workouts.json"
+        os.environ["ATHX_OFFLINE_ONLY"] = "1"
 
     def test_critical_speed_model(self):
         """Validates 2-parameter hyperbolic Critical Speed model (Distance = CS * t + D')."""
@@ -215,14 +216,14 @@ Bike - 15 Cal
         full_dur = adcg.compute_crossfit_durability(all_sets)
         self.assertEqual(full_dur["status"], "ok")
         self.assertEqual(full_dur["total_evaluated_sessions"], 69)
-        self.assertEqual(full_dur["total_crossfit_sessions"], 26, "Must capture all 26 authentic CrossFit workouts")
+        self.assertEqual(full_dur["total_crossfit_sessions"], 28, "Must capture all 28 authentic CrossFit workouts")
         self.assertGreater(full_dur["crossfit_durability_index"], 80.0)
 
         # 4. HTML rendering check
         html = adcg.render_crossfit_durability_html(full_dur)
         self.assertIn("crossfit-durability-table", html)
-        self.assertIn("CrossFit WODs (26)", html)
-        self.assertIn("Gym Strength (43)", html)
+        self.assertIn("CrossFit WODs (28)", html)
+        self.assertIn("Gym Strength (41)", html)
         self.assertIn("filterDurability", html)
 
 

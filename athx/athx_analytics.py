@@ -309,7 +309,12 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
     muscle_summary = {}
     for m, band in athx_config.MEV_MRV_BANDS.items():
         tot_sets = round(sum(weekly_matrix[m]), 1)
-        avg_wk = round(tot_sets / weeks_count, 1)
+        avg_wk_all_time = round(tot_sets / weeks_count, 1)
+
+        # Mesocycle volume: trailing 4 weeks reflects current training status
+        recent_weeks = weekly_matrix[m][-4:] if len(weekly_matrix[m]) >= 4 else weekly_matrix[m]
+        avg_wk = round(sum(recent_weeks) / len(recent_weeks), 1) if recent_weeks else 0.0
+
         mev = band["mev"]
         mav_min = band["mav_min"]
         mav_max = band["mav_max"]
@@ -334,6 +339,7 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
         muscle_summary[m] = {
             "total_sets": tot_sets,
             "avg_weekly_sets": avg_wk,
+            "avg_weekly_sets_all_time": avg_wk_all_time,
             "mev": mev,
             "mav_min": mav_min,
             "mav_max": mav_max,
@@ -345,9 +351,12 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
 
     # Add Unattributed to summary
     unattr_total = round(sum(weekly_matrix["Unattributed"]), 1)
+    unattr_recent = weekly_matrix["Unattributed"][-4:] if len(weekly_matrix["Unattributed"]) >= 4 else weekly_matrix["Unattributed"]
+    unattr_avg_wk = round(sum(unattr_recent) / len(unattr_recent), 1) if unattr_recent else 0.0
     muscle_summary["Unattributed"] = {
         "total_sets": unattr_total,
-        "avg_weekly_sets": round(unattr_total / weeks_count, 1),
+        "avg_weekly_sets": unattr_avg_wk,
+        "avg_weekly_sets_all_time": round(unattr_total / weeks_count, 1),
         "mev": 0, "mav_min": 0, "mav_max": 0, "mrv": 0,
         "status": "Unattributed Sets",
         "badge_class": "badge-neutral",
@@ -547,7 +556,7 @@ def process_strength_data(raw_records: list[dict], audit: DataAuditTracker) -> d
 # ------------------------------------------------------------------------------
 # 2. APPLE HEALTH & SLEEP DATA ENGINE
 # ------------------------------------------------------------------------------
-def process_apple_health(base_dir: Path, audit: DataAuditTracker) -> dict:
+def process_apple_health(base_dir: Path, audit: DataAuditTracker, acwr_val: float | None = None) -> dict:
     """Processes body composition, nutrition, sleep, and mobility since DATA_START."""
     data_start = parse_date(athx_config.DATA_START)
 
@@ -675,6 +684,8 @@ def process_apple_health(base_dir: Path, audit: DataAuditTracker) -> dict:
     sleep_coverage_pct = round((len(raw_sleep) / total_calendar_days) * 100.0, 1)
 
     avg_sleep_dur = round(sum(r["Total_Sleep_hrs"] for r in raw_sleep) / len(raw_sleep), 1) if raw_sleep else 0.0
+    recent_sleep = [r["Total_Sleep_hrs"] for r in raw_sleep[-7:]] if raw_sleep else []
+    recent_sleep_dur = round(sum(recent_sleep) / len(recent_sleep), 1) if recent_sleep else avg_sleep_dur
     avg_deep_dur = round(sum(r["Deep_Sleep_hrs"] for r in raw_sleep) / len(raw_sleep), 1) if raw_sleep else 0.0
     avg_rem_dur = round(sum(r["REM_Sleep_hrs"] for r in raw_sleep) / len(raw_sleep), 1) if raw_sleep else 0.0
 
@@ -744,9 +755,9 @@ def process_apple_health(base_dir: Path, audit: DataAuditTracker) -> dict:
     max_steps = max((r["Steps"] for r in raw_act), default=0)
 
     # 2e. Transparent Recovery & Readiness Composite Score (0 - 100%)
-    # Sleep Score (target TARGET_SLEEP_HRS, default 7.5h)
+    # Sleep Score (evaluated on trailing 7-night mesocycle against target)
     target_sleep = getattr(athx_config, "TARGET_SLEEP_HRS", 7.5)
-    sleep_score = min(100.0, max(0.0, (avg_sleep_dur / target_sleep) * 100.0))
+    sleep_score = min(100.0, max(0.0, (recent_sleep_dur / target_sleep) * 100.0))
     
     # RHR Score (deviation from baseline: each 1 bpm elevation above baseline loses 15 points)
     rhr_diff = curr_rhr - baseline_rhr
@@ -763,11 +774,23 @@ def process_apple_health(base_dir: Path, audit: DataAuditTracker) -> dict:
     # Protein Score (target >= 1.6 g/kg)
     protein_score = min(100.0, max(0.0, (prot_per_kg / 1.6) * 100.0))
 
+    # ACWR Dynamic Score
+    acwr_eff = acwr_val if (acwr_val is not None and acwr_val > 0) else 1.05
+    if 0.8 <= acwr_eff <= 1.3:
+        acwr_score = max(75.0, 100.0 - abs(acwr_eff - 1.05) * 40.0)
+        acwr_label = f"{acwr_eff:.2f} (Sweet Spot)"
+    elif acwr_eff < 0.8:
+        acwr_score = max(50.0, 85.0 - (0.8 - acwr_eff) * 80.0)
+        acwr_label = f"{acwr_eff:.2f} (Deload)"
+    else:
+        acwr_score = max(40.0, 90.0 - (acwr_eff - 1.3) * 120.0)
+        acwr_label = f"{acwr_eff:.2f} (Fatigue Risk)"
+
     readiness_composite = round(
         (sleep_score * athx_config.READINESS_WEIGHTS["sleep_debt"]) +
         (rhr_score * athx_config.READINESS_WEIGHTS["rhr_baseline"]) +
         (asym_score * athx_config.READINESS_WEIGHTS["gait_asymmetry"]) +
-        (100.0 * athx_config.READINESS_WEIGHTS["acwr_band"]) +  # default sweetspot
+        (acwr_score * athx_config.READINESS_WEIGHTS["acwr_band"]) +
         (protein_score * athx_config.READINESS_WEIGHTS["protein_intake"]),
         1
     )
@@ -795,6 +818,7 @@ def process_apple_health(base_dir: Path, audit: DataAuditTracker) -> dict:
         },
         "sleep": {
             "avg_sleep_hrs": avg_sleep_dur,
+            "recent_sleep_hrs": recent_sleep_dur,
             "avg_deep_hrs": avg_deep_dur,
             "avg_rem_hrs": avg_rem_dur,
             "coverage_pct": sleep_coverage_pct,
@@ -822,10 +846,10 @@ def process_apple_health(base_dir: Path, audit: DataAuditTracker) -> dict:
         "readiness_composite": {
             "score": readiness_composite,
             "components": {
-                "sleep": {"score": round(sleep_score, 1), "weight": 25, "value": f"{avg_sleep_dur}h avg"},
+                "sleep": {"score": round(sleep_score, 1), "weight": 25, "value": f"{recent_sleep_dur}h 7d avg"},
                 "rhr": {"score": round(rhr_score, 1), "weight": 25, "value": f"{curr_rhr} bpm (base {baseline_rhr})"},
                 "asymmetry": {"score": round(asym_score, 1), "weight": 20, "value": f"{curr_asym}% 7d"},
-                "acwr": {"score": 100.0, "weight": 20, "value": "Optimal Sweetspot"},
+                "acwr": {"score": round(acwr_score, 1), "weight": 20, "value": acwr_label},
                 "protein": {"score": round(protein_score, 1), "weight": 10, "value": f"{prot_per_kg} g/kg"}
             }
         }
@@ -1156,10 +1180,13 @@ def evaluate_competition_readiness(strength_res: dict, apple_res: dict, running_
         }
     ]
 
+    overall_readiness_pct = round(sum(e["readiness_pct"] for e in events) / len(events), 1) if events else 80.0
+
     return {
         "competition_date": athx_config.COMPETITION_DATE,
         "weeks_remaining": int(round(weeks_remaining)),
         "periodization_phase": "Phase 1: Hypertrophy & Base Capacity (Accumulation)",
+        "overall_event_readiness_pct": overall_readiness_pct,
         "events": events,
         "radar_data": {
             "labels": [e["name"] for e in events],

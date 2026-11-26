@@ -105,7 +105,7 @@ def clean_workout_category(type_key: str, name: str) -> str:
     return "Conditioning / Cardio"
 
 
-def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
+def sync_garmin_personal(limit: int = 250, days_history: int = 45) -> dict:
     """Executes full sync against the official Garmin Personal API."""
     print("================================================================================")
     print("🚀 ATHX 2027 — GARMIN CONNECT OFFICIAL PERSONAL API SYNC")
@@ -127,7 +127,7 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
                 garmin_unofficial = None
                 print(f"ℹ️ Garmin Connect session note: {e}")
 
-    # 1. Load local cache to preserve notes/history
+    # 1. Load local cache to preserve notes/history and avoid redundant API/LLM calls
     cached_sets_by_id: dict[int, list[dict]] = {}
     if OUTPUT_JSON.exists():
         try:
@@ -139,6 +139,18 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
                     cached_sets_by_id.setdefault(aid, []).append(r)
         except Exception:
             pass
+
+    cached_notes_by_id: dict[int, str] = {}
+    for cache_path in (OUTPUT_ALL_JSON, OUTPUT_WORKOUTS_JSON):
+        if cache_path.exists():
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    for item in json.load(f):
+                        aid = item.get("Activity_ID")
+                        if aid and item.get("Notes"):
+                            cached_notes_by_id[aid] = str(item.get("Notes")).strip()
+            except Exception:
+                pass
 
     # 2. Query Activities
     print(f"\n📡 Querying last {limit} activities from official Personal API...")
@@ -257,6 +269,14 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
         # ----------------------------------------------------------------------
         is_strength = ("strength" in type_key or "strength" in act_name.lower())
         if is_strength:
+            if act_id in cached_sets_by_id and (not desc or desc == cached_notes_by_id.get(act_id, "")):
+                cached_session_sets = cached_sets_by_id[act_id]
+                all_strength_sets.extend(cached_session_sets)
+                session_vol = sum(float(r.get("Total_Volume_kg") or 0.0) for r in cached_session_sets)
+                session_type = cached_session_sets[0].get("Session_Type", "Strength") if cached_session_sets else "Strength"
+                print(f"🏋️ [{idx}/{len(activities)}] Strength (cached): '{act_name}' on {date_str} — {len(cached_session_sets)} sets ({session_vol:,.0f} kg volume) [Split: {session_type}]")
+                continue
+
             session_extracted_sets: list[dict] = []
             all_exercises_in_session: list[str] = []
 
@@ -412,12 +432,19 @@ def sync_garmin_personal(limit: int = 100, days_history: int = 45) -> dict:
         # Case C: OTHER WORKOUTS (Cardio, CrossFit WODs, Rowing)
         # ----------------------------------------------------------------------
         if desc:
-            note_sets, parsed_info = garmin_note_parser.convert_note_to_strength_records(
-                act_id, date_str, act_name, desc
-            )
-            if note_sets:
-                all_strength_sets.extend(note_sets)
-                print(f"🏋️ [{idx}/{len(activities)}] [CrossFit WOD Note Deciphered ({parsed_info.get('parser_used', 'LLM')})]: {len(note_sets)} sets from '{act_name}'")
+            if act_id in cached_sets_by_id and desc == cached_notes_by_id.get(act_id, ""):
+                cached_wod_sets = cached_sets_by_id[act_id]
+                all_strength_sets.extend(cached_wod_sets)
+                print(f"🏋️ [{idx}/{len(activities)}] [CrossFit WOD Cached]: {len(cached_wod_sets)} sets from '{act_name}'")
+            else:
+                note_sets, parsed_info = garmin_note_parser.convert_note_to_strength_records(
+                    act_id, date_str, act_name, desc
+                )
+                if note_sets:
+                    all_strength_sets.extend(note_sets)
+                    print(f"🏋️ [{idx}/{len(activities)}] [CrossFit WOD Note Deciphered ({parsed_info.get('parser_used', 'LLM')})]: {len(note_sets)} sets from '{act_name}'")
+        elif act_id in cached_sets_by_id:
+            all_strength_sets.extend(cached_sets_by_id[act_id])
 
         category = clean_workout_category(type_key, act_name)
         workout_entry = {

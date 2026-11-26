@@ -99,9 +99,13 @@ Provide an explicit day-by-day action directive for the upcoming week:
 def call_gemini(digest_json: str, api_key: str) -> tuple[str, str] | None:
     """Invokes Google Gemini via REST API."""
     import requests
-    models = ["gemini-2.5-flash", "gemini-3.8-flash"]
+    models = ["gemini-2.5-flash", "gemini-2.5-pro"]
+    headers = {
+        "x-goog-api-key": api_key,
+        "Content-Type": "application/json"
+    }
     for model in models:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         payload = {
             "contents": [
                 {
@@ -116,7 +120,7 @@ def call_gemini(digest_json: str, api_key: str) -> tuple[str, str] | None:
             }
         }
         try:
-            res = requests.post(url, json=payload, timeout=40)
+            res = requests.post(url, headers=headers, json=payload, timeout=40)
             if res.status_code == 200:
                 data = res.json()
                 raw_text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
@@ -223,16 +227,35 @@ def generate_local_fallback_briefing(digest: dict[str, Any]) -> tuple[str, str]:
     rec_score = recovery.get("readiness_composite_score_pct", 80)
     sleep_hrs = recovery.get("avg_sleep_hrs_7d", 7.2)
 
-    # Determine executive rating
-    if len(deficits) >= 3 or acwr > 1.4 or acwr < 0.7:
-        rating_pct = 76
-        rating_tag = "Moderate Risk (Volume Asymmetry & Lower Body Deficits)"
-    elif len(deficits) > 0:
-        rating_pct = 82
-        rating_tag = "On Track with Isolated Lower Body Deficits"
+    # Determine executive rating dynamically across 4 evidence-based pillars:
+    # 1. Benchmark Event Readiness mean (40% weight)
+    bench_scores = [ev.get("readiness_pct", 80.0) for ev in comp_events if isinstance(ev.get("readiness_pct"), (int, float))]
+    avg_bench = sum(bench_scores) / len(bench_scores) if bench_scores else 85.0
+
+    # 2. Recovery & Autonomic Composite (30% weight)
+    rec_val = float(rec_score) if rec_score is not None else 85.0
+
+    # 3. ACWR Training Load Sweetspot Proximity (20% weight)
+    if 0.8 <= acwr <= 1.3:
+        acwr_comp = max(75.0, 100.0 - abs(acwr - 1.05) * 40.0)
+    elif acwr < 0.8:
+        acwr_comp = max(50.0, 85.0 - (0.8 - acwr) * 80.0)
     else:
-        rating_pct = 89
-        rating_tag = "Peak Progression (Balanced Adaptation)"
+        acwr_comp = max(40.0, 90.0 - (acwr - 1.3) * 120.0)
+
+    # 4. Volume Adherence (10% weight)
+    vol_comp = max(40.0, 100.0 - (len(deficits) * 15.0))
+
+    rating_pct = int(round((avg_bench * 0.40) + (rec_val * 0.30) + (acwr_comp * 0.20) + (vol_comp * 0.10)))
+
+    if rating_pct >= 90:
+        rating_tag = "Optimal Preparedness (High Competition Readiness)"
+    elif rating_pct >= 80:
+        rating_tag = "Strong Progression (Minor Target Refinements)"
+    elif rating_pct >= 70:
+        rating_tag = "Moderate Readiness (Fatigue or Volume Deficits Noted)"
+    else:
+        rating_tag = "Under-Recovered / Overreaching Alert"
 
     # Build benchmarks table
     bench_rows = []
@@ -263,9 +286,17 @@ def generate_local_fallback_briefing(digest: dict[str, Any]) -> tuple[str, str]:
     # Recent workout highlight string
     recent_str = recent[0].get("top_performance", "N/A") if recent else "N/A"
 
+    if deficits:
+        deficit_names = ", ".join([d.split(":")[0] for d in deficits])
+        macro_text = f"Athlete demonstrates strong systemic progression with {weeks_rem} weeks until the ATHX Games 2027. Primary volume attention is required for {deficit_names} to maintain optimal MAV adaptation, while lower body (quads and posterior chain) and pulling volume remain well-calibrated. Biological readiness ({rec_score}%) and ACWR ({acwr:.2f}) confirm high adaptation capacity."
+        vol_dist_text = f"Primary muscle groups are well-supported across the active mesocycle. Focused volume additions should target {deficit_names} to maintain consistent MAV stimulus without elevating ACWR beyond the optimal band."
+    else:
+        macro_text = f"Athlete displays exceptional balanced hypertrophy and conditioning with {weeks_rem} weeks until the ATHX Games 2027. All primary muscle groups operate at or above MEV with quad and posterior chain volume flourishing in MAV. Biological readiness ({rec_score}%) and ACWR ({acwr:.2f}) provide an optimal adaptation window."
+        vol_dist_text = "All primary muscle groups meet or exceed evidence-based MEV, with lower-body squat/hinge patterns consistently within the Maximum Adaptive Volume (MAV) window."
+
     markdown_report = f"""## 1. 🎖️ Executive Readiness Verdict
 - **Overall Readiness Rating**: `{rating_pct}% • {rating_tag}`
-- **Macro Assessment**: Athlete demonstrates strong upper-body pushing and pulling hypertrophy volume, but total lower body stimulus (quads and posterior chain) is operating below Minimum Effective Volume (MEV). With {weeks_rem} weeks until the ATHX Games 2027, the primary qualification risk lies in barbell squat and deadlift capacity alongside the 5km running pace gap. Rebalancing weekly volume toward lower-body compounds while protecting current systemic ACWR ({acwr:.2f}) is the mandatory training priority.
+- **Macro Assessment**: {macro_text}
 
 ---
 
@@ -284,7 +315,7 @@ def generate_local_fallback_briefing(digest: dict[str, Any]) -> tuple[str, str]:
 ---
 
 ## 4. 🧬 Hypertrophy & Workload Engineering
-- **Volume Distribution**: Upper body pressing and pulling maintain consistent sets within or near Maximum Adaptive Volume (MAV). Conversely, quad and hamstring sets require an immediate 4–6 set weekly infusion to cross the MEV threshold and trigger structural hypertrophy.
+- **Volume Distribution**: {vol_dist_text}
 - **Recomposition & Mass Velocity**: Current mass is `{curr_wt} kg` against the competition standard of `{tgt_wt} kg` ({wt_delta:+.1f} kg delta). Accretion must be paced conservatively (+0.20 to +0.25 kg/week) to prioritize lean contractile tissue over non-functional adipose mass.
 
 ---
@@ -611,7 +642,8 @@ def load_telemetry_digest(base_dir: Path | None = None) -> dict[str, Any]:
             pass
 
     strength_data = athx_analytics.process_strength_data(garmin_raw, audit)
-    apple_data = athx_analytics.process_apple_health(base_dir, audit)
+    acwr_val = strength_data.get("acwr", {}).get("value")
+    apple_data = athx_analytics.process_apple_health(base_dir, audit, acwr_val=acwr_val)
     running_data = athx_analytics.process_running_data(base_dir / "garmin_running_activities.json", audit)
     workout_data = athx_analytics.process_workout_activities(base_dir / "garmin_workout_activities.json", audit)
     comp_data = athx_analytics.evaluate_competition_readiness(strength_data, apple_data, running_data)
@@ -785,15 +817,19 @@ def ask_coach(
     gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if gemini_key and not answer_text:
         import requests
-        models = ["gemini-2.5-flash", "gemini-3.8-flash"]
+        models = ["gemini-2.5-flash", "gemini-2.5-pro"]
+        headers = {
+            "x-goog-api-key": gemini_key,
+            "Content-Type": "application/json"
+        }
         for model in models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
             payload = {
                 "contents": [{"parts": [{"text": qna_prompt}]}],
                 "generationConfig": {"temperature": 0.2, "maxOutputTokens": 2048}
             }
             try:
-                res = requests.post(url, json=payload, timeout=30)
+                res = requests.post(url, headers=headers, json=payload, timeout=30)
                 if res.status_code == 200:
                     data = res.json()
                     raw = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")

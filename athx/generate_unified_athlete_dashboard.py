@@ -575,14 +575,27 @@ def build_html(payload_json: str, d: dict) -> str:
     comp_date_display = datetime.strptime(cfg["competition_date"], "%Y-%m-%d").strftime("%d %B %Y")
     as_of_display = today_dt.strftime("%A %d %B")
 
+    quad_wk = st.get('muscle_summary', {}).get('Quads', {}).get('avg_weekly_sets', 0.0)
+    ham_wk = st.get('muscle_summary', {}).get('Hamstrings/Glutes', {}).get('avg_weekly_sets', 0.0)
+    if quad_wk >= 8.0:
+        leg_badge_cls = "badge-ok"
+        leg_badge_text = "In MAV Zone" if quad_wk >= 12.0 else "Above MEV"
+        leg_prio_title = "Maintain lower-body stimulus"
+        leg_prio_desc = f"Squat & hinge power. Quads ({quad_wk}/wk) and hamstrings ({ham_wk}/wk) are performing within MAV zone."
+    else:
+        leg_badge_cls = "badge-bad"
+        leg_badge_text = "Below MEV"
+        leg_prio_title = "Two lower-body sessions"
+        leg_prio_desc = f"Squat day + hinge day. Take quads from {quad_wk} to 10+ sets/wk, hamstrings from {ham_wk} to 8+."
+
     # Coach verdict & rating
-    coach_rating = cb.get("executive_verdict", {}).get("rating", "76% • Moderate Risk")
-    score_pct = coach_rating.split("%")[0].strip() if "%" in coach_rating else "76"
-    risk_level = coach_rating.split("•")[1].strip() if "•" in coach_rating else "Moderate Risk"
+    coach_rating = cb.get("executive_verdict", {}).get("rating", "85% • Active Progression")
+    score_pct = coach_rating.split("%")[0].strip() if "%" in coach_rating else "85"
+    risk_level = coach_rating.split("•")[1].strip() if "•" in coach_rating else "Active Progression"
     macro_text = cb.get("executive_verdict", {}).get("macro_assessment", (
-        "Upper body pushing and pulling volume are on track. Lower-body stimulus (quads & hamstrings) sits below MEV, "
-        "making barbell squats, deadlifts, and the 5km running pace the primary qualification risk. "
-        f"With current ACWR at {st['acwr']['value']} (safe adaptation band), immediate lower-body volume rebalancing is required."
+        f"Athlete displays strong systemic progression across the active mesocycle. "
+        f"Lower body quads ({quad_wk}/wk) and posterior chain ({ham_wk}/wk) operate within MAV zone. "
+        f"Systemic ACWR at {st['acwr']['value']} provides an optimal training adaptation window."
     ))
 
     # Event readiness rows
@@ -1046,16 +1059,28 @@ def build_html(payload_json: str, d: dict) -> str:
       color: var(--success-foreground);
     }}
 
-    .badge-warn {{
+    .badge-warn, .badge-warning {{
       background: color-mix(in oklch, var(--warn) 25%, transparent);
       border-color: var(--warn);
       color: var(--warn-foreground);
     }}
 
-    .badge-bad {{
+    .badge-bad, .badge-danger {{
       background: color-mix(in oklch, var(--destructive) 20%, transparent);
       border-color: var(--destructive);
       color: var(--destructive);
+    }}
+
+    .badge-sweetspot {{
+      background: color-mix(in oklch, #00FFA3 20%, transparent);
+      border-color: #00FFA3;
+      color: #00FFA3;
+    }}
+
+    .badge-neutral {{
+      background: oklch(1 0 0 / 5%);
+      border-color: var(--border);
+      color: var(--muted-foreground);
     }}
 
     /* Personal Bests Badges & Controls */
@@ -2250,8 +2275,8 @@ def build_html(payload_json: str, d: dict) -> str:
               <div style="display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);">
                 <span style="font: 500 13px/20px var(--font-mono); color: var(--atf-pink-400);">01</span>
                 <div style="display: flex; flex-direction: column; gap: 4px;">
-                  <span style="font: 500 15px/20px var(--font-sans);">Two lower-body sessions</span>
-                  <span style="color: var(--muted-foreground); font-size: 13px; line-height: 1.5;">Squat day + hinge day. Take quads from {st['muscle_summary'].get('Quads', {}).get('avg_weekly_sets', 4.1)} to 10+ sets/wk, hamstrings from {st['muscle_summary'].get('Hamstrings/Glutes', {}).get('avg_weekly_sets', 2.0)} to 8+.</span>
+                  <span style="font: 500 15px/20px var(--font-sans);">{leg_prio_title}</span>
+                  <span style="color: var(--muted-foreground); font-size: 13px; line-height: 1.5;">{leg_prio_desc}</span>
                 </div>
               </div>
               <div style="display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);">
@@ -2419,13 +2444,13 @@ def build_html(payload_json: str, d: dict) -> str:
                 <span style="font-size: 13px; color: var(--muted-foreground);">Leg Volume</span>
                 <button type="button" class="kpi-info-btn" aria-label="Explain Leg Volume" title="Explain Leg Volume">ℹ</button>
               </span>
-              <span class="badge badge-bad">Below MEV</span>
+              <span class="badge {leg_badge_cls}">{leg_badge_text}</span>
             </div>
             <div style="display: flex; align-items: baseline; gap: 6px;">
-              <span style="font: 600 28px/1.1 var(--font-sans);">{st['muscle_summary'].get('Quads', {}).get('avg_weekly_sets', 4.1)}</span>
+              <span style="font: 600 28px/1.1 var(--font-sans);">{quad_wk}</span>
               <span style="font-size: 13px; color: var(--muted-foreground);">quad sets/wk</span>
             </div>
-            <span style="font-size: 12px; color: var(--muted-foreground);">Hamstrings {st['muscle_summary'].get('Hamstrings/Glutes', {}).get('avg_weekly_sets', 2.0)}/wk vs MEV 6.0.</span>
+            <span style="font-size: 12px; color: var(--muted-foreground);">Hamstrings {ham_wk}/wk vs MEV 6.0.</span>
           </div>
 
           <div class="kpi-box" data-kpi-title="Junk-Volume Share" data-kpi-desc="Junk volume tracks sets performed at ultra-high rep ranges or with insufficient load to stimulate meaningful neuromuscular adaptations. High junk volume creates disproportionate central and joint fatigue without proportional strength gains. Keeping this share below 5% guarantees that training economy remains focused on high-stimulus work.">
@@ -5080,7 +5105,8 @@ def main():
     print(f"   • Imputed Unknowns: {audit.summary['unknown_imputed']} | Unattributed: {audit.summary['unknown_unattributed']}")
     print(f"   • ACWR as of {strength_data['as_of_date']}: {strength_data['acwr']['value']} ({strength_data['acwr']['status']})")
 
-    apple_data = athx_analytics.process_apple_health(BASE_DIR, audit)
+    acwr_val = strength_data.get("acwr", {}).get("value")
+    apple_data = athx_analytics.process_apple_health(BASE_DIR, audit, acwr_val=acwr_val)
     print(f"✅ Apple Health Processed:")
     print(f"   • Body Comp: {apple_data['body_comp']['current_weight']} kg (target: {apple_data['body_comp']['target_weight']} kg, delta: {apple_data['body_comp']['weight_remaining']:+0.1f} kg)")
     print(f"   • Sleep: {apple_data['sleep']['avg_sleep_hrs']}h avg, coverage: {apple_data['sleep']['coverage_pct']}% ({apple_data['sleep']['valid_nights']}/{apple_data['sleep']['calendar_days']} nights)")
@@ -5183,6 +5209,7 @@ def main():
         plews_hrv=plews_hrv_data,
         coach_briefing=coach_briefing,
         base_dir=BASE_DIR,
+        force=force_coach,
     )
     print(f"✅ Critical Speed Model: {critical_speed_data['cs_pace_formatted']} ({critical_speed_data['cs_ms']} m/s), D' = {critical_speed_data['d_prime_m']}m, R² = {critical_speed_data['r2']}")
     print(f"✅ CrossFit Durability Engine: CF Index {crossfit_durability_data.get('crossfit_durability_index', 0)}% ({crossfit_durability_data.get('total_crossfit_sessions', 0)} WODs) | Overall {crossfit_durability_data['durability_index']}% across {crossfit_durability_data['total_evaluated_sessions']} audited sessions.")

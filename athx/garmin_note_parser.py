@@ -61,6 +61,8 @@ EXERCISE_ALIASES: dict[str, str] = {
     "overhead walking lunges": "Overhead Lunge",
     "walking lunge": "Lunge",
     "walking lunges": "Lunge",
+    "goblet lunge": "Lunge",
+    "goblet lunges": "Lunge",
     "leg press": "Leg Press",
     "hack squat": "Hack Squat",
     "leg extension": "Leg Extension",
@@ -790,7 +792,7 @@ SYSTEM_PROMPT = """You are an expert sports physiologist and athletic data analy
 Your task is to parse an athlete's unstructured free-text Garmin activity note (from CrossFit, HIIT, circuit training, or gym workouts) into structured JSON.
 
 Canonical ATHX Exercises list:
-Front Squat, Back Squat, Goblet Squat, Split Squat, Bulgarian Split Squat, Lunge, Overhead Lunge, Leg Press, Hack Squat, Leg Extension,
+Front Squat, Back Squat, Goblet Squat, Split Squat, Bulgarian Split Squat, Lunge, Overhead Lunge, Box Step-Up, Step-Up, Box Step-Over, Leg Press, Hack Squat, Leg Extension,
 Deadlift, Romanian Deadlift, Straight Leg Deadlift, Hip Thrust, Kettlebell Swing,
 Bench Press, Incline Bench Press, Dumbbell Bench Press, Overhead Press, Barbell Push Press, Shoulder Press, Military Press, Push Up, Dip, Thruster,
 Pull Up, Chin Up, Muscle Up, Row, Barbell Row, Bent Over Row, Dumbbell Row, Lat Pulldown, Shrug, Face Pull, Ring Row,
@@ -841,9 +843,13 @@ Respond ONLY with valid JSON conforming to this schema:
 def call_gemini(note_text: str, api_key: str) -> dict[str, Any] | None:
     """Invokes Google Gemini via REST API."""
     import requests
-    models = ["gemini-2.5-flash", "gemini-3.8-flash"]
+    models = ["gemini-2.5-flash", "gemini-2.5-pro"]
+    headers = {
+        "x-goog-api-key": api_key,
+        "Content-Type": "application/json"
+    }
     for model in models:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         payload = {
             "contents": [
                 {
@@ -858,7 +864,7 @@ def call_gemini(note_text: str, api_key: str) -> dict[str, Any] | None:
             }
         }
         try:
-            res = requests.post(url, json=payload, timeout=30)
+            res = requests.post(url, headers=headers, json=payload, timeout=20)
             if res.status_code == 200:
                 data = res.json()
                 raw_text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
@@ -946,34 +952,35 @@ def call_anthropic(note_text: str, api_key: str) -> dict[str, Any] | None:
 def parse_workout_note(note_text: str) -> dict[str, Any]:
     """
     Deciphers activity notes using the best available method:
-      1. Google Gemini (if GEMINI_API_KEY set)
-      2. OpenAI (if OPENAI_API_KEY set)
-      3. Anthropic (if ANTHROPIC_API_KEY set)
+      1. Google Gemini (if GEMINI_API_KEY set and not in offline mode)
+      2. OpenAI (if OPENAI_API_KEY set and not in offline mode)
+      3. Anthropic (if ANTHROPIC_API_KEY set and not in offline mode)
       4. Local rule-based parser (always available fallback)
     """
     if not note_text or not note_text.strip():
         return {"is_workout": False, "exercises": [], "conditioning": [], "summary": ""}
 
-    # 1. Try Gemini
-    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if gemini_key:
-        res = call_gemini(note_text, gemini_key)
-        if res and res.get("is_workout"):
-            return res
+    if os.getenv("ATHX_OFFLINE_ONLY") != "1":
+        # 1. Try Gemini
+        gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if gemini_key:
+            res = call_gemini(note_text, gemini_key)
+            if res and res.get("is_workout"):
+                return res
 
-    # 2. Try OpenAI
-    openai_key = os.getenv("OPENAI_API_KEY")
-    if openai_key:
-        res = call_openai(note_text, openai_key)
-        if res and res.get("is_workout"):
-            return res
+        # 2. Try OpenAI
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if openai_key:
+            res = call_openai(note_text, openai_key)
+            if res and res.get("is_workout"):
+                return res
 
-    # 3. Try Anthropic
-    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
-    if anthropic_key:
-        res = call_anthropic(note_text, anthropic_key)
-        if res and res.get("is_workout"):
-            return res
+        # 3. Try Anthropic
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+        if anthropic_key:
+            res = call_anthropic(note_text, anthropic_key)
+            if res and res.get("is_workout"):
+                return res
 
     # 4. Fallback: Local rule-based parser
     return parse_note_rules(note_text)
