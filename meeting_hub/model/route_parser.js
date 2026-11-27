@@ -22,7 +22,7 @@
  * - #/projects                        -> Project root redirect
  */
 
-const KNOWLEDGE_TABS = ['workstreams', 'decisions', 'actions', 'contacts', 'brief'];
+const KNOWLEDGE_TABS = ['workstreams', 'decisions', 'actions', 'contacts', 'decks', 'docs', 'brief'];
 const CALENDAR_TABS = ['today', 'week', 'meetings', 'series'];
 
 export function parseRoute(hash) {

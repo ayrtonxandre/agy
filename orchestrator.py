@@ -703,10 +703,13 @@ def _process_health_auto_export_payload_locked(payload: dict) -> dict:
     return {"status": "success", "updates": updates, "timestamp": now_str}
 
 def fetch_google_doc(doc_ref: str) -> dict:
-    """Fetches a Google Doc by ID or URL using credentials from env or drive_token.json, falling back to docs_cache.json."""
+    """Fetches a Google Doc or Google Slides Presentation by ID or URL, falling back to public export and docs_cache.json."""
     import re
-    # Extract ID from ref (can be full URL or bare ID)
+    import urllib.request
+    # Extract ID and resource type from ref (can be full URL or bare ID)
     clean_ref = (doc_ref or "").strip()
+    is_presentation = "/presentation/d/" in clean_ref
+    is_spreadsheet = "/spreadsheets/d/" in clean_ref
     match = re.search(r'/d/([a-zA-Z0-9_-]+)', clean_ref)
     doc_id = match.group(1) if match else clean_ref
     doc_id = doc_id.split('/')[0].split('?')[0].split('#')[0]
@@ -727,9 +730,57 @@ def fetch_google_doc(doc_ref: str) -> dict:
         except Exception as e:
             log_event(f"Notice: Failed to read docs_cache.json: {e}")
 
-    # Attempt live fetch via Google Drive v3 API using env var or local token
+    # 1. Try public export endpoint for shared links (Google Slides, Docs, Sheets)
+    export_urls = []
+    if is_presentation:
+        export_urls = [
+            ("Deck", f"https://docs.google.com/presentation/d/{doc_id}/export/txt"),
+            ("Doc", f"https://docs.google.com/document/d/{doc_id}/export?format=txt")
+        ]
+    elif is_spreadsheet:
+        export_urls = [
+            ("Sheet", f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=csv")
+        ]
+    else:
+        export_urls = [
+            ("Doc", f"https://docs.google.com/document/d/{doc_id}/export?format=txt"),
+            ("Deck", f"https://docs.google.com/presentation/d/{doc_id}/export/txt")
+        ]
+
+    for doc_kind, exp_url in export_urls:
+        try:
+            req = urllib.request.Request(exp_url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                raw_bytes = resp.read()
+                content = raw_bytes.decode("utf-8", errors="replace")
+                if content and not content.lstrip().lower().startswith("<!doctype html"):
+                    first_line = next((l.strip() for l in content.splitlines() if l.strip()), f"Google {doc_kind}")
+                    title = first_line[:80]
+                    cache_data[doc_id] = {"title": title, "type": doc_kind, "url": clean_ref, "content": content}
+                    try:
+                        cache_file.parent.mkdir(parents=True, exist_ok=True)
+                        cache_file.write_text(json.dumps(cache_data, indent=2, ensure_ascii=False), encoding="utf-8")
+                    except Exception:
+                        pass
+                    log_event(f"📄 Retrieved Google {doc_kind} '{title}' ({doc_id}) via direct export")
+                    return {
+                        "status": "success",
+                        "docId": doc_id,
+                        "type": doc_kind,
+                        "title": title,
+                        "content": content,
+                        "source": "google_export"
+                    }
+        except Exception:
+            pass
+
+    # 2. Attempt live fetch via Google Drive v3 API using env var or local token
     token_env = os.environ.get("GOOGLE_DRIVE_TOKEN") or os.environ.get("GOOGLE_TOKEN_JSON") or os.environ.get("DRIVE_TOKEN_JSON")
     token_path = BASE_DIR / "drive_token.json"
+    if not token_path.exists():
+        alt_token = BASE_DIR / "tools" / "google_drive" / "drive_token.json"
+        if alt_token.exists():
+            token_path = alt_token
 
     if token_env or token_path.exists():
         try:
@@ -1504,6 +1555,24 @@ class AthleteServerHandler(BaseHTTPRequestHandler):
                             res = mission_notes.fold_all_pending(mission_id)
                             content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
                             self.send_response(200 if res.get("status") == "success" else 500)
+                        elif action == "links":
+                            if payload.get("action") == "delete" or payload.get("delete"):
+                                target = payload.get("id") or payload.get("url") or ""
+                                res = mission_notes.delete_mission_link(mission_id, target)
+                                self.send_response(200)
+                            else:
+                                # Auto-fetch title/content if Google Doc/Slides URL and title not provided
+                                url_val = str(payload.get("url") or "").strip()
+                                if url_val and "docs.google.com/" in url_val:
+                                    doc_info = fetch_google_doc(url_val)
+                                    if doc_info.get("status") == "success":
+                                        if not payload.get("title"):
+                                            payload["title"] = doc_info.get("title")
+                                        if not payload.get("type") and doc_info.get("type"):
+                                            payload["type"] = doc_info.get("type")
+                                res = mission_notes.add_mission_link(mission_id, payload)
+                                self.send_response(200 if res.get("status") in ("created", "exists") else 400)
+                            content = json.dumps(res, indent=2, ensure_ascii=False).encode("utf-8")
                         else:
                             self.send_response(404)
                             content = json.dumps({"error": f"Unknown mission POST action: {action}"}).encode("utf-8")

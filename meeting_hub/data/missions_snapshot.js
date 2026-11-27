@@ -13,6 +13,16 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
       "overview": "ENGIE DIP MDM ASSET/Mission Overview.md",
       "actions": "ENGIE DIP MDM ASSET/Actions.md",
       "inbox": "ENGIE DIP MDM ASSET/_inbox",
+      "links": [
+        {
+          "id": "LNK-01",
+          "title": "DIP - MDM - Master deck Asset (45 slides)",
+          "type": "Deck",
+          "url": "https://docs.google.com/presentation/d/1rWv9FQGNXzyWjj6t1GFlz50DJzxrRMhg-Ao6EIXqfWY/edit?usp=sharing",
+          "notes": "Core Model definitions (Site/FL, Unit, Equipment), Unit Type 4 families, Unit Quantity, Connection Point, 5 GBU examples, Network edge cases, 24/7 & Cyber & H&S business needs",
+          "date": "2026-11-26"
+        }
+      ],
       "clientMatch": [
         "[engie] - dip mdm asset",
         "[dip mdm asset]",

@@ -1,6 +1,6 @@
 /**
  * Meeting Hub Compiled Application Bundle
- * Generated: 2026-11-27T14:38:33.799Z
+ * Generated: 2026-11-27T17:28:23.607Z
  */
 (function(window, document) {
 'use strict';
@@ -22,6 +22,16 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
       "overview": "ENGIE DIP MDM ASSET/Mission Overview.md",
       "actions": "ENGIE DIP MDM ASSET/Actions.md",
       "inbox": "ENGIE DIP MDM ASSET/_inbox",
+      "links": [
+        {
+          "id": "LNK-01",
+          "title": "DIP - MDM - Master deck Asset (45 slides)",
+          "type": "Deck",
+          "url": "https://docs.google.com/presentation/d/1rWv9FQGNXzyWjj6t1GFlz50DJzxrRMhg-Ao6EIXqfWY/edit?usp=sharing",
+          "notes": "Core Model definitions (Site/FL, Unit, Equipment), Unit Type 4 families, Unit Quantity, Connection Point, 5 GBU examples, Network edge cases, 24/7 & Cyber & H&S business needs",
+          "date": "2026-11-26"
+        }
+      ],
       "clientMatch": [
         "[engie] - dip mdm asset",
         "[dip mdm asset]",
@@ -951,7 +961,7 @@ MeetingHub.getMondayOfWeek = getMondayOfWeek;
  * - #/projects                        -> Project root redirect
  */
 
-const KNOWLEDGE_TABS = ['workstreams', 'decisions', 'actions', 'contacts', 'brief'];
+const KNOWLEDGE_TABS = ['workstreams', 'decisions', 'actions', 'contacts', 'decks', 'docs', 'brief'];
 const CALENDAR_TABS = ['today', 'week', 'meetings', 'series'];
 
 function parseRoute(hash) {
@@ -3698,8 +3708,9 @@ class MeetingHubStore {
       overview: m.overview,
       actions: m.actions,
       inbox: m.inbox,
+      links: m.links || m.docSources || [],
+      docSources: m.docSources || m.links || [],
       clientMatch: m.clientMatch || [m.name, m.id],
-      docSources: [],
       workstreams: Array.isArray(m.workstreams) ? m.workstreams.map(w => ({
         id: w.id || `ws-${(w.name || w.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
         title: w.name || w.title || 'Workstream',
@@ -4577,6 +4588,81 @@ class MeetingHubStore {
       }
       throw e;
     }
+  }
+
+  /**
+   * Adds a deck/doc link to a mission's Links.md (and fetches/caches Google Docs/Slides content).
+   */
+  async addMissionLink(missionId, payload = {}) {
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || this.activeProjectId || 'engie-dip-mdm-asset';
+    const body = {
+      title: (payload.title || '').trim(),
+      url: (payload.url || '').trim(),
+      type: (payload.type || '').trim(),
+      notes: (payload.notes || '').trim()
+    };
+    if (!body.url) throw new Error('Missing link URL');
+
+    try {
+      const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/links`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const res = await resp.json();
+        this.missionSummariesCache.delete(id);
+        this.notify({ type: 'mission_links_updated', missionId: id, link: res });
+        return res;
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const b64 = Buffer.from(JSON.stringify(body), 'utf8').toString('base64');
+        const cmd = `python3 -c "import sys, base64, json; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes; p = json.loads(base64.b64decode('${b64}').decode('utf-8')); print(json.dumps(mission_notes.add_mission_link('${id}', p)))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        this.missionSummariesCache.delete(id);
+        this.notify({ type: 'mission_links_updated', missionId: id, link: res });
+        return res;
+      } catch (err) {}
+    }
+    throw new Error('Start the server with `meeting` to save mission links.');
+  }
+
+  /**
+   * Deletes a deck/doc link from a mission's Links.md.
+   */
+  async deleteMissionLink(missionId, targetIdOrUrl) {
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || this.activeProjectId;
+    try {
+      const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/links`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id: targetIdOrUrl, url: targetIdOrUrl })
+      });
+      if (resp.ok) {
+        const res = await resp.json();
+        this.missionSummariesCache.delete(id);
+        this.notify({ type: 'mission_links_updated', missionId: id });
+        return res;
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys, json; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes; print(json.dumps(mission_notes.delete_mission_link('${id}', '${String(targetIdOrUrl).replace(/'/g, "\\'")}')) )"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        this.missionSummariesCache.delete(id);
+        this.notify({ type: 'mission_links_updated', missionId: id });
+        return res;
+      } catch (err) {}
+    }
+    throw new Error('Failed to delete mission link');
   }
 
   /**
@@ -9615,6 +9701,7 @@ class ProjectsView {
     const actions = summary.actions || summary.actionMatrix || [];
     const decisions = summary.decisionRegister || summary.decisions || [];
     const contacts = summary.contacts || [];
+    const links = summary.links || mission.links || mission.docSources || [];
 
     // Next meeting display text
     let nextMeetingText = 'No upcoming meeting in ≤48h';
@@ -9658,6 +9745,15 @@ class ProjectsView {
               <span class="sub" style="font-size: 11px; display: inline-flex; align-items: center; gap: 4px;" title="Mission notes folder in system of record">
                 ${Icons.folder} ${this._escape(mission.directory || mission.id)}
               </span>
+              ${links.length > 0 ? `
+                <span style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  ${links.slice(0, 3).map(l => `
+                    <a href="${this._escape(l.url)}" target="_blank" rel="noopener" class="badge info" style="font-size: 11px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="${this._escape(l.notes || l.url)}">
+                      ${Icons.externalLink} ${this._escape(l.type || 'Doc')}: ${this._escape(l.title || l.name)}
+                    </a>
+                  `).join('')}
+                </span>
+              ` : ''}
             </div>
           </div>
 
@@ -9756,6 +9852,9 @@ class ProjectsView {
           </button>
           <button data-cockpit-tab="contacts" class="${this.currentSubTab === 'contacts' ? 'on' : ''}">
             Contacts (${contacts.length})
+          </button>
+          <button data-cockpit-tab="decks" class="${(this.currentSubTab === 'decks' || this.currentSubTab === 'docs') ? 'on' : ''}">
+            Decks &amp; Docs (${links.length})
           </button>
           <button data-cockpit-tab="brief" class="${this.currentSubTab === 'brief' ? 'on' : ''}">
             Brief
@@ -10044,6 +10143,68 @@ class ProjectsView {
       `;
     }
 
+    if (this.currentSubTab === 'decks' || this.currentSubTab === 'docs') {
+      const linkList = summary.links || data.mission?.links || data.mission?.docSources || [];
+      return `
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div class="sub" style="font-size: 12px;">
+              Project decks, specifications, spreadsheets &amp; shared documents stored in <span style="font-family: var(--font-mono);">Links.md</span> (accessible to Antigravity).
+            </div>
+          </div>
+
+          <!-- Add New Deck / Doc Form -->
+          <div class="card" style="padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: var(--secondary);">
+            <select id="newMissionLinkType" class="in sm" style="width: 100px; height: 32px; font-size: 12px; background: var(--card); color: var(--foreground); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 0 8px;">
+              <option value="Deck">Deck</option>
+              <option value="Doc">Doc</option>
+              <option value="Sheet">Sheet</option>
+              <option value="Repo">Repo</option>
+            </select>
+            <input id="newMissionLinkTitle" type="text" class="in sm" placeholder="Title (e.g. DIP - MDM - Master deck Asset)" style="flex: 1; min-width: 180px; height: 32px; font-size: 12px; padding: 0 10px;" />
+            <input id="newMissionLinkUrl" type="url" class="in sm" placeholder="https://docs.google.com/presentation/d/..." style="flex: 2; min-width: 240px; height: 32px; font-size: 12px; padding: 0 10px;" />
+            <input id="newMissionLinkNotes" type="text" class="in sm" placeholder="Short note / context (optional)" style="flex: 1; min-width: 160px; height: 32px; font-size: 12px; padding: 0 10px;" />
+            <button id="addMissionLinkBtn" class="btn sm" style="height: 32px; padding: 0 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+              ${Icons.plus} <span>Add Link</span>
+            </button>
+          </div>
+
+          <div style="display: grid; gap: 8px;">
+            ${linkList.length > 0 ? linkList.map(l => `
+              <div class="card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 240px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                    <span class="badge info" style="font-size: 10.5px; font-weight: 600;">${this._escape(l.type || 'Doc')}</span>
+                    ${l.id ? `<span style="font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground);">${this._escape(l.id)}</span>` : ''}
+                    <a href="${this._escape(l.url)}" target="_blank" rel="noopener" style="font-size: 14px; font-weight: 600; color: var(--foreground); text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                      <span>${this._escape(l.title || l.name || l.url)}</span>
+                      ${Icons.externalLink}
+                    </a>
+                    ${l.date ? `<span class="sub" style="font-size: 11px;">${this._escape(l.date)}</span>` : ''}
+                  </div>
+                  ${l.notes ? `<div class="sub" style="font-size: 12px; color: var(--muted-foreground); margin-bottom: 3px;">${this._escape(l.notes)}</div>` : ''}
+                  <div style="font-family: var(--font-mono); font-size: 11px; color: var(--muted-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 680px;">
+                    ${this._escape(l.url)}
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <a href="${this._escape(l.url)}" target="_blank" rel="noopener" class="btn sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px;">
+                    ${Icons.externalLink} <span>Open</span>
+                  </a>
+                  <button class="btn sm" data-sync-link-url="${this._escape(l.url)}" title="Fetch &amp; cache latest text content for Antigravity" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; cursor: pointer;">
+                    ${Icons.refreshCw} <span>Sync Content</span>
+                  </button>
+                  <button class="btn-icon" data-delete-link="${this._escape(l.id || l.url)}" title="Remove link from Links.md" style="color: var(--destructive, #ef4444); padding: 4px; cursor: pointer;">
+                    ${Icons.trash}
+                  </button>
+                </div>
+              </div>
+            `).join('') : '<div class="sub">No decks or docs linked for this mission yet. Use the form above to add a Google Slides deck, Google Doc, or repository link.</div>'}
+          </div>
+        </div>
+      `;
+    }
+
     if (this.currentSubTab === 'brief') {
       return `
         <div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
@@ -10227,6 +10388,78 @@ Iron Rules:
         btn.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 4px;">${Icons.check} Copied</span>`;
         alert(`Copied action ID "${actId}" to clipboard.\nEdit Actions.md directly in your editor to modify (notes are the single source of truth).`);
         setTimeout(() => { btn.innerHTML = orig; }, 1200);
+      });
+    });
+
+    // 8. Add Mission Link (Decks & Docs tab)
+    const addLinkBtn = this.container.querySelector('#addMissionLinkBtn');
+    if (addLinkBtn) {
+      addLinkBtn.addEventListener('click', async () => {
+        const typeEl = this.container.querySelector('#newMissionLinkType');
+        const titleEl = this.container.querySelector('#newMissionLinkTitle');
+        const urlEl = this.container.querySelector('#newMissionLinkUrl');
+        const notesEl = this.container.querySelector('#newMissionLinkNotes');
+        const url = (urlEl?.value || '').trim();
+        if (!url) {
+          alert('Enter a valid URL (Google Slides, Google Docs, etc.).');
+          return;
+        }
+        addLinkBtn.disabled = true;
+        try {
+          await this.store.addMissionLink(this.currentProjectId, {
+            type: typeEl?.value || 'Deck',
+            title: (titleEl?.value || '').trim(),
+            url,
+            notes: (notesEl?.value || '').trim()
+          });
+          if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
+            window.showHubToast('Saved link to mission Links.md');
+          }
+          await this.render();
+        } catch (err) {
+          alert(`Could not save link: ${err.message || err}`);
+          addLinkBtn.disabled = false;
+        }
+      });
+    }
+
+    // 9. Sync Deck/Doc Content button
+    this.container.querySelectorAll('[data-sync-link-url]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const url = btn.dataset.syncLinkUrl;
+        if (!url) return;
+        btn.disabled = true;
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = `${Icons.refreshCw} <span>Syncing...</span>`;
+        try {
+          const res = await this.store.fetchGoogleDoc(url);
+          if (typeof window !== 'undefined' && typeof window.showHubToast === 'function') {
+            window.showHubToast(`Synced "${res.title || 'document'}" (${(res.text || '').length} chars cached)`);
+          }
+        } catch (err) {
+          alert(`Sync notice: ${err.message || err}`);
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+        }
+      });
+    });
+
+    // 10. Delete Mission Link button
+    this.container.querySelectorAll('[data-delete-link]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const target = btn.dataset.deleteLink;
+        if (!target || !confirm('Remove this link from Links.md?')) return;
+        btn.disabled = true;
+        try {
+          await this.store.deleteMissionLink(this.currentProjectId, target);
+          await this.render();
+        } catch (err) {
+          alert(`Failed to remove link: ${err.message || err}`);
+          btn.disabled = false;
+        }
       });
     });
   }

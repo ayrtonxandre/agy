@@ -113,8 +113,9 @@ export class MeetingHubStore {
       overview: m.overview,
       actions: m.actions,
       inbox: m.inbox,
+      links: m.links || m.docSources || [],
+      docSources: m.docSources || m.links || [],
       clientMatch: m.clientMatch || [m.name, m.id],
-      docSources: [],
       workstreams: Array.isArray(m.workstreams) ? m.workstreams.map(w => ({
         id: w.id || `ws-${(w.name || w.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
         title: w.name || w.title || 'Workstream',
@@ -992,6 +993,81 @@ export class MeetingHubStore {
       }
       throw e;
     }
+  }
+
+  /**
+   * Adds a deck/doc link to a mission's Links.md (and fetches/caches Google Docs/Slides content).
+   */
+  async addMissionLink(missionId, payload = {}) {
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || this.activeProjectId || 'engie-dip-mdm-asset';
+    const body = {
+      title: (payload.title || '').trim(),
+      url: (payload.url || '').trim(),
+      type: (payload.type || '').trim(),
+      notes: (payload.notes || '').trim()
+    };
+    if (!body.url) throw new Error('Missing link URL');
+
+    try {
+      const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/links`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (resp.ok) {
+        const res = await resp.json();
+        this.missionSummariesCache.delete(id);
+        this.notify({ type: 'mission_links_updated', missionId: id, link: res });
+        return res;
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const b64 = Buffer.from(JSON.stringify(body), 'utf8').toString('base64');
+        const cmd = `python3 -c "import sys, base64, json; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes; p = json.loads(base64.b64decode('${b64}').decode('utf-8')); print(json.dumps(mission_notes.add_mission_link('${id}', p)))"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        this.missionSummariesCache.delete(id);
+        this.notify({ type: 'mission_links_updated', missionId: id, link: res });
+        return res;
+      } catch (err) {}
+    }
+    throw new Error('Start the server with `meeting` to save mission links.');
+  }
+
+  /**
+   * Deletes a deck/doc link from a mission's Links.md.
+   */
+  async deleteMissionLink(missionId, targetIdOrUrl) {
+    const id = (missionId === 'clariane' ? 'clariane-hdj' : missionId) || this.activeProjectId;
+    try {
+      const resp = await fetch(`/api/missions/${encodeURIComponent(id)}/links`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id: targetIdOrUrl, url: targetIdOrUrl })
+      });
+      if (resp.ok) {
+        const res = await resp.json();
+        this.missionSummariesCache.delete(id);
+        this.notify({ type: 'mission_links_updated', missionId: id });
+        return res;
+      }
+    } catch (e) {}
+
+    if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+      try {
+        const { execSync } = await import('child_process');
+        const cmd = `python3 -c "import sys, json; sys.path.insert(0, '/Users/ayrtonandre/Documents/work/AGY'); import mission_notes; print(json.dumps(mission_notes.delete_mission_link('${id}', '${String(targetIdOrUrl).replace(/'/g, "\\'")}')) )"`;
+        const out = execSync(cmd, { encoding: 'utf8' });
+        const res = JSON.parse(out);
+        this.missionSummariesCache.delete(id);
+        this.notify({ type: 'mission_links_updated', missionId: id });
+        return res;
+      } catch (err) {}
+    }
+    throw new Error('Failed to delete mission link');
   }
 
   /**

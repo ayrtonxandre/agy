@@ -218,8 +218,12 @@ def _normalize_header_key(header: str) -> str:
         return "status"
     if any(k in h for k in ("source", "rÃ©f", "réf", "contexte", "context", "why", "pourquoi")):
         return "source"
-    if any(k in h for k in ("name", "nom", "contact")):
+    if any(k in h for k in ("name", "nom", "contact", "title", "titre")):
         return "name"
+    if any(k in h for k in ("type", "kind", "catégorie", "categorie", "format")):
+        return "type"
+    if any(k in h for k in ("url", "link", "lien", "href")):
+        return "url"
     if any(k in h for k in ("role", "rÃ´le", "rôle")):
         return "role"
     if any(k in h for k in ("date",)):
@@ -379,13 +383,52 @@ def get_mission_summary(mission_id: str) -> dict[str, Any]:
                     "notes": r.get("notes", "") or r.get("owns", "")
                 })
 
+    # 2b. Parse Links.md (Decks & Docs repository per mission)
+    links_file = mission_dir / "Links.md"
+    links_list = []
+    if links_file.is_file():
+        lnk_content = links_file.read_text(encoding="utf-8")
+        lnk_tables = parse_markdown_tables(lnk_content)
+        for t in lnk_tables:
+            for r in t.get("rows", []):
+                title_raw = r.get("name") or r.get("description") or ""
+                url_raw = r.get("url") or r.get("source") or ""
+                if not title_raw and not url_raw:
+                    continue
+                # Extract markdown link [label](url) if present
+                m_url = re.search(r'\((https?://[^\s\)]+)\)', url_raw)
+                clean_url = m_url.group(1) if m_url else url_raw.strip()
+                lnk_type = (r.get("type") or "Doc").strip()
+                links_list.append({
+                    "id": r.get("id", ""),
+                    "title": title_raw.strip(),
+                    "type": lnk_type,
+                    "url": clean_url,
+                    "notes": r.get("notes") or r.get("description") if r.get("name") else "",
+                    "date": r.get("date", ""),
+                    "file": "Links.md"
+                })
+    # Also include any links declared in missions.yaml under docSources or links
+    for y_lnk in (mission_meta.get("links") or mission_meta.get("docSources") or []):
+        if isinstance(y_lnk, dict) and y_lnk.get("url"):
+            if not any(existing.get("url") == y_lnk.get("url") for existing in links_list):
+                links_list.append({
+                    "id": y_lnk.get("id", ""),
+                    "title": y_lnk.get("title") or y_lnk.get("name") or "Resource",
+                    "type": y_lnk.get("type", "Doc"),
+                    "url": y_lnk.get("url"),
+                    "notes": y_lnk.get("notes") or y_lnk.get("description") or "",
+                    "date": y_lnk.get("date", ""),
+                    "file": "missions.yaml"
+                })
+
     # 3. Parse Notes: Workstreams, Decisions, and Open Points
     workstreams = []
     decisions = []
     open_points = []
 
     for file_path in sorted(mission_dir.glob("*.md")):
-        if file_path.name in ("Actions.md", "Contacts.md", "Agent brief.md", "AGENTS.md") or file_path.name.startswith("."):
+        if file_path.name in ("Actions.md", "Contacts.md", "Links.md", "Agent brief.md", "AGENTS.md") or file_path.name.startswith("."):
             continue
 
         try:
@@ -526,6 +569,7 @@ def get_mission_summary(mission_id: str) -> dict[str, Any]:
             "done": done_actions_count
         },
         "contacts": contacts_list,
+        "links": links_list,
         "inbox": inbox_info,
         "inboxStats": {
             "pendingCount": len(inbox_info.get("pending", [])),
@@ -2837,4 +2881,117 @@ def delete_action(action_id: str, mission_id: str | None = None) -> dict[str, An
         "title": cells[1] if len(cells) > 1 else clean_id,
         "file": target_file.name
     }
+
+
+def add_mission_link(mission_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """
+    Adds or updates a deck/doc link in Missions/<Mission>/Links.md.
+    Idempotent on URL.
+    """
+    mission_dir = resolve_safe_path(mission_id)
+    mission_dir.mkdir(parents=True, exist_ok=True)
+    links_file = mission_dir / "Links.md"
+
+    url = str(payload.get("url") or "").strip()
+    if not url:
+        raise ValueError("Missing 'url' in link payload")
+
+    title = str(payload.get("title") or payload.get("name") or "").strip()
+    if not title:
+        if "/presentation/d/" in url:
+            title = "Google Slides Deck"
+        elif "/document/d/" in url:
+            title = "Google Doc"
+        elif "/spreadsheets/d/" in url:
+            title = "Google Sheet"
+        else:
+            title = url
+
+    lnk_type = str(payload.get("type") or "").strip()
+    if not lnk_type:
+        if "/presentation/d/" in url or url.lower().endswith((".ppt", ".pptx", ".pdf")):
+            lnk_type = "Deck"
+        elif "/spreadsheets/d/" in url or url.lower().endswith((".xls", ".xlsx", ".csv")):
+            lnk_type = "Sheet"
+        else:
+            lnk_type = "Doc"
+
+    notes = str(payload.get("notes") or payload.get("description") or "").strip().replace("|", "-")
+    date_str = str(payload.get("date") or datetime.now().strftime("%Y-%m-%d")).strip()
+    clean_title = title.replace("|", "-")
+
+    if not links_file.is_file():
+        initial_md = f"""# Decks & Docs: {mission_id}
+
+Centralized links to reference presentations (decks), specifications (docs), spreadsheets, and repositories for this mission.
+
+| ID | Title | Type | URL | Notes | Date |
+|---|---|---|---|---|---|
+"""
+        _atomic_write_text(links_file, initial_md)
+
+    text = links_file.read_text(encoding="utf-8")
+
+    # Check if URL already exists
+    if url in text:
+        clear_cache(mission_id)
+        return {
+            "status": "exists",
+            "missionId": mission_id,
+            "title": clean_title,
+            "type": lnk_type,
+            "url": url,
+            "file": "Links.md"
+        }
+
+    matches = re.findall(r"(LNK-\d+)", text)
+    next_num = max([int(m.split("-")[1]) for m in matches], default=0) + 1
+    lnk_id = str(payload.get("id") or f"LNK-{next_num:02d}").strip()
+
+    new_row = f"| {lnk_id} | {clean_title} | {lnk_type} | [Open]({url}) | {notes} | {date_str} |"
+    updated_text = text.rstrip() + "\n" + new_row + "\n"
+    _atomic_write_text(links_file, updated_text)
+    clear_cache(mission_id)
+
+    return {
+        "status": "created",
+        "id": lnk_id,
+        "missionId": mission_id,
+        "title": clean_title,
+        "type": lnk_type,
+        "url": url,
+        "notes": notes,
+        "date": date_str,
+        "file": "Links.md"
+    }
+
+
+def delete_mission_link(mission_id: str, link_id_or_url: str) -> dict[str, Any]:
+    """Deletes a link row from Missions/<Mission>/Links.md by ID or URL."""
+    target = str(link_id_or_url or "").strip()
+    if not target:
+        raise ValueError("Missing link ID or URL")
+
+    mission_dir = resolve_safe_path(mission_id)
+    links_file = mission_dir / "Links.md"
+    if not links_file.is_file():
+        raise FileNotFoundError(f"Links.md not found for mission {mission_id}")
+
+    lines = links_file.read_text(encoding="utf-8").splitlines()
+    new_lines = []
+    removed = False
+    for line in lines:
+        if line.strip().startswith("|") and not re.match(r"^\|\s*ID\s*\|", line, re.I) and not re.match(r"^\|[\s:-]+\|$", line):
+            if target in line:
+                removed = True
+                continue
+        new_lines.append(line)
+
+    if not removed:
+        raise ValueError(f"Link '{target}' not found in Links.md")
+
+    _atomic_write_text(links_file, "\n".join(new_lines).rstrip() + "\n")
+    clear_cache(mission_id)
+    return {"status": "deleted", "missionId": mission_id, "target": target}
+
 
