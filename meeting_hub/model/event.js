@@ -16,7 +16,13 @@ export class EventModel {
       return true;
     }
     const status = String(raw.status || '').toLowerCase();
-    if (status === 'cancelled' || status === 'canceled' || status === 'declined') {
+    if (raw.status === 'cancelled' || raw.status === 'canceled' || raw.status === 'declined') {
+      return true;
+    }
+    const rawColorId = raw.colorId !== undefined && raw.colorId !== null ? String(raw.colorId) : (raw.color_id !== undefined && raw.color_id !== null ? String(raw.color_id) : '');
+    const rawColorTag = String(raw.colorTag || (rawColorId && CALENDAR_COLOR_TAGS[rawColorId]) || '');
+    const rawDate = String(raw.date || (typeof raw.start === 'string' && raw.start.includes('T') ? raw.start.slice(0, 10) : '') || '');
+    if ((rawColorId === '7' || rawColorTag === '[MAIN MISSION]') && rawDate && rawDate < '2026-11-26') {
       return true;
     }
     const summary = String(raw.summary || raw.title || '').trim().toLowerCase();
@@ -139,7 +145,7 @@ export class EventModel {
       return { stream: 'life', client: 'ATHX', isTraining: true };
     }
     if (cId === '7' || cTag === '[MAIN MISSION]') {
-      return { stream: 'work', client: 'CMA CGM', isTraining: false };
+      return { stream: 'work', client: 'ENGIE', isTraining: false };
     }
     if (cId === '2' || cId === '10' || cTag === '[COUNSELING/HR]') {
       return { stream: 'work', client: 'Counseling', isTraining: false };
@@ -163,6 +169,9 @@ export class EventModel {
 
     if (corpus.includes('athx') || corpus.includes('training') || corpus.includes('wod') || corpus.includes('crossfit')) {
       return { stream: 'life', client: 'ATHX', isTraining: true };
+    }
+    if (corpus.includes('engie') || corpus.includes('dip mdm') || corpus.includes('mdm asset')) {
+      return { stream: 'work', client: 'ENGIE', isTraining: false };
     }
     if (corpus.includes('cma') || corpus.includes('cma cgm') || corpus.includes('maia') || corpus.includes('ceva') || corpus.includes('icap')) {
       return { stream: 'work', client: 'CMA CGM', isTraining: false };

@@ -225,6 +225,12 @@ def is_event_deleted_or_declined(ev: dict, deleted_ids: set[str] | None = None) 
     status = str(ev.get("status", "")).lower()
     if status in ("cancelled", "canceled", "declined"):
         return True
+    c_id = str(ev.get("colorId", "") or ev.get("color_id", "") or "")
+    c_tag = str(ev.get("colorTag", "") or CALENDAR_COLOR_TAGS.get(c_id, "") or "")
+    ev_start = ev.get("start")
+    ev_date_str = ev_start.strftime("%Y-%m-%d") if hasattr(ev_start, "strftime") else str(ev.get("date") or ev_start or "")[:10]
+    if (c_id == "7" or c_tag == "[MAIN MISSION]") and ev_date_str and ev_date_str < "2026-11-26":
+        return True
     summary = str(ev.get("summary", "")).strip().lower()
     if summary.startswith(("canceled:", "cancelled:", "annulé:", "annulé :")):
         return True
@@ -296,7 +302,7 @@ def get_unified_events(start_dt: datetime, end_dt: datetime) -> list[dict]:
                     ):
                         src = "ATHX (Training)"
                     elif color_id == "7" or color_tag == "[MAIN MISSION]":
-                        src = "Leclerc Siplec (Client)"
+                        src = "[ENGIE] - DIP MDM ASSET (Client)"
                     elif color_id in ("2", "10") or color_tag == "[COUNSELING/HR]":
                         src = "Counseling & HR (Artefact)"
                     elif color_id in ("4", "11") or color_tag == "[PRIDEFACT]":

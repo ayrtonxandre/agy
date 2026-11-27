@@ -1,6 +1,6 @@
 /**
  * Meeting Hub Compiled Application Bundle
- * Generated: 2026-11-19T13:41:58.975Z
+ * Generated: 2026-11-27T14:38:33.799Z
  */
 (function(window, document) {
 'use strict';
@@ -10,6 +10,61 @@ window.DOCS_CACHE = {};
 // Auto-generated missions registry snapshot (file:// fallback)
 var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MISSIONS_SNAPSHOT = {
   "missions": [
+    {
+      "id": "engie-dip-mdm-asset",
+      "name": "[ENGIE] - DIP MDM ASSET",
+      "client": "ENGIE",
+      "directory": "ENGIE DIP MDM ASSET",
+      "status": "active",
+      "archived": false,
+      "mainMissionFrom": "2026-11-26",
+      "brief": "ENGIE DIP MDM ASSET/Agent brief.md",
+      "overview": "ENGIE DIP MDM ASSET/Mission Overview.md",
+      "actions": "ENGIE DIP MDM ASSET/Actions.md",
+      "inbox": "ENGIE DIP MDM ASSET/_inbox",
+      "clientMatch": [
+        "[engie] - dip mdm asset",
+        "[dip mdm asset]",
+        "dip mdm asset",
+        "[engie]",
+        "engie",
+        "dip - mdm",
+        "asset focus",
+        "mdm asset",
+        "intro engie",
+        "[main mission]",
+        "main mission"
+      ],
+      "contacts": [
+        "omar fekih-hassen",
+        "grégoire bassaler",
+        "gregoire bassaler",
+        "charles steimberg",
+        "céline regnault",
+        "celine regnault",
+        "alain delava",
+        "léa rother",
+        "lea rother",
+        "gaëtan fenouil",
+        "gaetan fenouil"
+      ],
+      "workstreams": [
+        {
+          "id": "ws-engie-asset-model",
+          "name": "Asset & Sites Core Model",
+          "phase": "Actif",
+          "summary": "Modèle non-hiérarchique (Site/Functional Location, Unit, Equipment), tables satellites GBU (LEI, R&F, Networks, S&EM), liens datés et cas d'usage 24/7",
+          "note": "ENGIE DIP MDM ASSET/Asset & Sites Core Model.md"
+        },
+        {
+          "id": "ws-engie-mdm-arch",
+          "name": "MDM Architecture & Unique Group ID",
+          "phase": "Actif",
+          "summary": "Chantier critique Unique ID Groupe inter-GBU, architecture de consolidation Informatica (~90% read-only), gouvernance Data Owner et roadmap Q1 2027",
+          "note": "ENGIE DIP MDM ASSET/MDM Architecture & Unique Group ID.md"
+        }
+      ]
+    },
     {
       "id": "ge-enterprise",
       "name": "GE Enterprise & UC Wizard",
@@ -196,8 +251,8 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
       "name": "CMA CGM - AI Agent Builders",
       "client": "CMA CGM",
       "directory": "CMA CGM Agent Builders",
-      "status": "active",
-      "archived": false,
+      "status": "archived",
+      "archived": true,
       "brief": "CMA CGM Agent Builders/Agent brief.md",
       "overview": "CMA CGM Agent Builders/Mission Overview.md",
       "actions": "CMA CGM Agent Builders/Actions.md",
@@ -210,9 +265,7 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "agent builders",
         "maia",
         "icap",
-        "ceva",
-        "[main mission]",
-        "main mission"
+        "ceva"
       ],
       "contacts": [
         "guillaume digoin",
@@ -1124,6 +1177,8 @@ const CALENDAR_COLOR_TAGS = {
   '11': '[PRIDEFACT]'
 };
 
+const MAIN_MISSION_CUTOFF_DATE = '2026-11-26';
+
 function matchMission(event, registry) {
   if (!event) return null;
   const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
@@ -1132,6 +1187,14 @@ function matchMission(event, registry) {
   const rawTitle = (event.title || event.summary || '').trim();
   const title = rawTitle.toLowerCase();
   const client = (event.client || '').toLowerCase().trim();
+  const eventDate = String(event.date || (typeof event.start === 'string' && event.start.includes('T') ? event.start.slice(0, 10) : '') || '').trim();
+  const colorId = event.colorId !== undefined && event.colorId !== null ? String(event.colorId) : '';
+  const colorTag = (event.colorTag || (colorId && CALENDAR_COLOR_TAGS[colorId]) || '').trim();
+  const isMainMissionTagged = (colorId === '7' || colorTag.toLowerCase() === '[main mission]' || title.includes('[main mission]'));
+  if (isMainMissionTagged && eventDate && eventDate < MAIN_MISSION_CUTOFF_DATE && !event.projectId && !event.missionId) {
+    return null;
+  }
+
   const tags = (Array.isArray(event.tags) ? event.tags : []).map(t => String(t).toLowerCase().trim());
   const attendees = (Array.isArray(event.attendees) ? event.attendees : []).map(a => {
     if (typeof a === 'string') return a.toLowerCase().trim();
@@ -1194,8 +1257,6 @@ function matchMission(event, registry) {
   }
 
   // 2. Second priority: Calendar Color Tag (visual color assigned in Google Calendar)
-  const colorId = event.colorId !== undefined && event.colorId !== null ? String(event.colorId) : '';
-  const colorTag = (event.colorTag || (colorId && CALENDAR_COLOR_TAGS[colorId]) || '').trim();
   if (colorTag) {
     const colorClean = colorTag.toLowerCase().trim();
     const colorInner = colorClean.replace(/[\[\]]/g, '').trim();
@@ -1345,6 +1406,7 @@ function matchMission(event, registry) {
 }
 
 MeetingHub.CALENDAR_COLOR_TAGS = CALENDAR_COLOR_TAGS;
+MeetingHub.MAIN_MISSION_CUTOFF_DATE = MAIN_MISSION_CUTOFF_DATE;
 MeetingHub.matchMission = matchMission;
 
 /* === Module: model/lane_classifier.js === */
@@ -1458,7 +1520,13 @@ class EventModel {
       return true;
     }
     const status = String(raw.status || '').toLowerCase();
-    if (status === 'cancelled' || status === 'canceled' || status === 'declined') {
+    if (raw.status === 'cancelled' || raw.status === 'canceled' || raw.status === 'declined') {
+      return true;
+    }
+    const rawColorId = raw.colorId !== undefined && raw.colorId !== null ? String(raw.colorId) : (raw.color_id !== undefined && raw.color_id !== null ? String(raw.color_id) : '');
+    const rawColorTag = String(raw.colorTag || (rawColorId && CALENDAR_COLOR_TAGS[rawColorId]) || '');
+    const rawDate = String(raw.date || (typeof raw.start === 'string' && raw.start.includes('T') ? raw.start.slice(0, 10) : '') || '');
+    if ((rawColorId === '7' || rawColorTag === '[MAIN MISSION]') && rawDate && rawDate < '2026-11-26') {
       return true;
     }
     const summary = String(raw.summary || raw.title || '').trim().toLowerCase();
@@ -1581,7 +1649,7 @@ class EventModel {
       return { stream: 'life', client: 'ATHX', isTraining: true };
     }
     if (cId === '7' || cTag === '[MAIN MISSION]') {
-      return { stream: 'work', client: 'CMA CGM', isTraining: false };
+      return { stream: 'work', client: 'ENGIE', isTraining: false };
     }
     if (cId === '2' || cId === '10' || cTag === '[COUNSELING/HR]') {
       return { stream: 'work', client: 'Counseling', isTraining: false };
@@ -1605,6 +1673,9 @@ class EventModel {
 
     if (corpus.includes('athx') || corpus.includes('training') || corpus.includes('wod') || corpus.includes('crossfit')) {
       return { stream: 'life', client: 'ATHX', isTraining: true };
+    }
+    if (corpus.includes('engie') || corpus.includes('dip mdm') || corpus.includes('mdm asset')) {
+      return { stream: 'work', client: 'ENGIE', isTraining: false };
     }
     if (corpus.includes('cma') || corpus.includes('cma cgm') || corpus.includes('maia') || corpus.includes('ceva') || corpus.includes('icap')) {
       return { stream: 'work', client: 'CMA CGM', isTraining: false };
@@ -2580,7 +2651,7 @@ class EventsImporter {
   static async importInitialData(db, options = {}) {
     const existingCount = await db.count('events');
     const seedVersionMeta = await db.get('meta', 'seed_version');
-    const currentSeedVersion = 6; // version 6 refreshes live calendar seeds for Nov 2026
+    const currentSeedVersion = 7; // version 7 updates MAIN MISSION cutoff (2026-11-26) & ENGIE DIP MDM ASSET
     const deletedIdsSet = await EventsImporter._loadDeletedIdsSet(db);
 
     let rawList = options.rawEvents;

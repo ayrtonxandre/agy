@@ -24,6 +24,8 @@ export const CALENDAR_COLOR_TAGS = {
   '11': '[PRIDEFACT]'
 };
 
+export const MAIN_MISSION_CUTOFF_DATE = '2026-11-26';
+
 export function matchMission(event, registry) {
   if (!event) return null;
   const missions = Array.isArray(registry) ? registry : (registry?.missions || []);
@@ -32,6 +34,14 @@ export function matchMission(event, registry) {
   const rawTitle = (event.title || event.summary || '').trim();
   const title = rawTitle.toLowerCase();
   const client = (event.client || '').toLowerCase().trim();
+  const eventDate = String(event.date || (typeof event.start === 'string' && event.start.includes('T') ? event.start.slice(0, 10) : '') || '').trim();
+  const colorId = event.colorId !== undefined && event.colorId !== null ? String(event.colorId) : '';
+  const colorTag = (event.colorTag || (colorId && CALENDAR_COLOR_TAGS[colorId]) || '').trim();
+  const isMainMissionTagged = (colorId === '7' || colorTag.toLowerCase() === '[main mission]' || title.includes('[main mission]'));
+  if (isMainMissionTagged && eventDate && eventDate < MAIN_MISSION_CUTOFF_DATE && !event.projectId && !event.missionId) {
+    return null;
+  }
+
   const tags = (Array.isArray(event.tags) ? event.tags : []).map(t => String(t).toLowerCase().trim());
   const attendees = (Array.isArray(event.attendees) ? event.attendees : []).map(a => {
     if (typeof a === 'string') return a.toLowerCase().trim();
@@ -94,8 +104,6 @@ export function matchMission(event, registry) {
   }
 
   // 2. Second priority: Calendar Color Tag (visual color assigned in Google Calendar)
-  const colorId = event.colorId !== undefined && event.colorId !== null ? String(event.colorId) : '';
-  const colorTag = (event.colorTag || (colorId && CALENDAR_COLOR_TAGS[colorId]) || '').trim();
   if (colorTag) {
     const colorClean = colorTag.toLowerCase().trim();
     const colorInner = colorClean.replace(/[\[\]]/g, '').trim();

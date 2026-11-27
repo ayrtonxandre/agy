@@ -37,11 +37,11 @@ async function runTests() {
   const store = new MeetingHubStore();
   await store.init();
 
-  // Test 1: getMissionHubData for ge-enterprise returns fold cards and actions
-  await itAsync('store.getMissionHubData("ge-enterprise") returns correct counts and cards', async () => {
-    const data = await store.getMissionHubData('ge-enterprise', new Date('2026-10-31T12:00:00Z'));
-    assert.strictEqual(data.mission.id, 'ge-enterprise');
-    assert.strictEqual(data.mission.name, 'GE Enterprise & UC Wizard');
+  // Test 1: getMissionHubData for engie-dip-mdm-asset returns fold cards and actions
+  await itAsync('store.getMissionHubData("engie-dip-mdm-asset") returns correct counts and cards', async () => {
+    const data = await store.getMissionHubData('engie-dip-mdm-asset', new Date('2026-11-27T16:00:00Z'));
+    assert.strictEqual(data.mission.id, 'engie-dip-mdm-asset');
+    assert.strictEqual(data.mission.name, '[ENGIE] - DIP MDM ASSET');
     assert.strictEqual(typeof data.toFoldCount, 'number');
     assert(data.openActionsCount >= 1, `Expected at least 1 open action, got ${data.openActionsCount}`);
     assert(Array.isArray(data.lanes.fold));

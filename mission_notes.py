@@ -910,6 +910,7 @@ def apply_fold(mission_id: str, filename: str) -> dict[str, Any]:
             max_num = max(int(m[1]) for m in matches)
         else:
             default_prefixes = {
+                "engie-dip-mdm-asset": "ACT-ENG-",
                 "ge-enterprise": "ACT-GE-",
                 "clariane-hdj": "ACT-CLAR-",
                 "pridefact": "ACT-PRF-",
@@ -967,7 +968,9 @@ def apply_fold(mission_id: str, filename: str) -> dict[str, Any]:
             # Resolve workstream / entity
             ws_name = "General"
             m_lower = (mission_id + " " + title + " " + act_title).lower()
-            if mission_id == "ge-enterprise":
+            if mission_id == "engie-dip-mdm-asset":
+                ws_name = "MDM Architecture & Unique Group ID" if any(w in m_lower for w in ["unique id", "id groupe", "informatica", "consolidation", "architecture", "roadmap"]) else "Asset & Sites Core Model"
+            elif mission_id == "ge-enterprise":
                 ws_name = "UC Wizard" if any(w in m_lower for w in ["wizard", "dyoc", "one pager", "slide", "adk"]) else "GE Enterprise"
             elif mission_id == "clariane-hdj":
                 if "arbelles" in m_lower: ws_name = "Les Arbelles"
@@ -1018,7 +1021,9 @@ def apply_fold(mission_id: str, filename: str) -> dict[str, Any]:
     added_decisions = []
     target_note_path = None
     if decisions_found:
-        if mission_id == "ge-enterprise":
+        if mission_id == "engie-dip-mdm-asset":
+            target_note_path = mission_dir / "MDM Architecture & Unique Group ID.md" if any(w in (title + body).lower() for w in ["unique id", "id groupe", "informatica", "consolidation", "architecture"]) else mission_dir / "Asset & Sites Core Model.md"
+        elif mission_id == "ge-enterprise":
             target_note_path = mission_dir / "UC Wizard Development.md" if any(w in (title + body).lower() for w in ["wizard", "dyoc", "one pager"]) else mission_dir / "GE Enterprise Stream.md"
         elif mission_id == "clariane-hdj":
             target_note_path = mission_dir / "Transversal SIH HM & Moteur Foundry.md"

@@ -38,7 +38,7 @@ export class EventsImporter {
   static async importInitialData(db, options = {}) {
     const existingCount = await db.count('events');
     const seedVersionMeta = await db.get('meta', 'seed_version');
-    const currentSeedVersion = 6; // version 6 refreshes live calendar seeds for Nov 2026
+    const currentSeedVersion = 7; // version 7 updates MAIN MISSION cutoff (2026-11-26) & ENGIE DIP MDM ASSET
     const deletedIdsSet = await EventsImporter._loadDeletedIdsSet(db);
 
     let rawList = options.rawEvents;

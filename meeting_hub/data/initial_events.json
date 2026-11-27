@@ -210,68 +210,6 @@
     "colorTag": "Team Work"
   },
   {
-    "id": "32v0q49qf7kkvufa0mh4qmdgvs",
-    "source": "Leclerc Siplec (Client)",
-    "summary": "Sync CMA CGM",
-    "start": "2026-11-13T12:00:00+01:00",
-    "end": "2026-11-13T12:30:00+01:00",
-    "location": "",
-    "description": "",
-    "video_link": "https://meet.google.com/iee-rwxk-pde",
-    "html_link": "https://www.google.com/calendar/event?eid=MzJ2MHE0OXFmN2trdnVmYTBtaDRxbWRndnMgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
-    "attendees": [
-      {
-        "name": "Idriss Rachid",
-        "email": "idriss.rachid@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Ayrton Andre",
-        "email": "ayrton.andre@artefact.com",
-        "status": "accepted",
-        "self": true,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Guillaume Digoin",
-        "email": "guillaume.digoin@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Alexis Cappe",
-        "email": "alexis.cappe@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Mohamed Jebali",
-        "email": "mohamed.jebali@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      }
-    ],
-    "organizer": {
-      "name": "Guillaume Digoin",
-      "email": "guillaume.digoin@artefact.com",
-      "self": false
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "7",
-    "colorTag": "[MAIN MISSION]"
-  },
-  {
     "id": "61qa13uh639h6uc585fiimmrg0",
     "source": "💼 Artefact (Work)",
     "summary": "Wellbeing: Unlock your potential by lightening your mental load",
@@ -592,130 +530,6 @@
     "colorTag": "Team Work"
   },
   {
-    "id": "5hj63rllg77jsib9sl6j0ajhdm",
-    "source": "Leclerc Siplec (Client)",
-    "summary": "Sync Mistral CMA CGM",
-    "start": "2026-11-16T16:00:00+01:00",
-    "end": "2026-11-16T17:00:00+01:00",
-    "location": "",
-    "description": "Point tech et démo sur Mistral / Maia interface.",
-    "video_link": "https://meet.google.com/ase-cmsh-avt",
-    "html_link": "https://www.google.com/calendar/event?eid=NWhqNjNybGxnNzdqc2liOXNsNmowYWpoZG0gYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
-    "attendees": [
-      {
-        "name": "Idriss Rachid",
-        "email": "idriss.rachid@artefact.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": true
-      },
-      {
-        "name": "Ayrton Andre",
-        "email": "ayrton.andre@artefact.com",
-        "status": "accepted",
-        "self": true,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Guillaume Digoin",
-        "email": "guillaume.digoin@artefact.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": true
-      },
-      {
-        "name": "Alexis Cappe",
-        "email": "alexis.cappe@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Mohamed Jebali",
-        "email": "mohamed.jebali@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      }
-    ],
-    "organizer": {
-      "name": "Mohamed Jebali",
-      "email": "mohamed.jebali@artefact.com",
-      "self": false
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "7",
-    "colorTag": "[MAIN MISSION]"
-  },
-  {
-    "id": "3r1an3ire220i4r3ol75l02dgc",
-    "source": "Leclerc Siplec (Client)",
-    "summary": "Prep oral CMA",
-    "start": "2026-11-16T18:00:00+01:00",
-    "end": "2026-11-16T18:30:00+01:00",
-    "location": "",
-    "description": "",
-    "video_link": "https://meet.google.com/bng-ajwu-jey",
-    "html_link": "https://www.google.com/calendar/event?eid=M3IxYW4zaXJlMjIwaTRyM29sNzVsMDJkZ2MgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
-    "attendees": [
-      {
-        "name": "Idriss Rachid",
-        "email": "idriss.rachid@artefact.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Ayrton Andre",
-        "email": "ayrton.andre@artefact.com",
-        "status": "accepted",
-        "self": true,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Guillaume Digoin",
-        "email": "guillaume.digoin@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Alexis Cappe",
-        "email": "alexis.cappe@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Alexandre Thion-De-La-Chaume",
-        "email": "alexandre.thion-de-la-chaume@artefact.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      }
-    ],
-    "organizer": {
-      "name": "Guillaume Digoin",
-      "email": "guillaume.digoin@artefact.com",
-      "self": false
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "7",
-    "colorTag": "[MAIN MISSION]"
-  },
-  {
     "id": "dcmudnn8h1uok6eohpq8e5916g_20261117",
     "source": "💼 Artefact (Work)",
     "summary": "Office",
@@ -832,92 +646,6 @@
     "is_all_day": false,
     "colorId": "6",
     "colorTag": "Team Work"
-  },
-  {
-    "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g6ook2ca68op3cga56sp48h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g6d33egi46d1j0e1o6cq3ghhk6t0jch1k74pk6dpo651k4hi670og",
-    "source": "Leclerc Siplec (Client)",
-    "summary": "Soutenance Artefact - RFP Agent Builder",
-    "start": "2026-11-17T16:30:00+01:00",
-    "end": "2026-11-17T17:30:00+01:00",
-    "location": "Réunion Microsoft Teams",
-    "description": "\n________________________________________________________________________________\nRéunion Microsoft Teams\nRejoindre : https://teams.microsoft.com/meet/3217346193151518?p=NKPvBaVCT1XP87Fja2\nNuméro de réunion : 321 734 619 315 151 8\nCode secret : 7eL7aF2E\n________________________________\nBesoin d'aide ?<https://aka.ms/JoinTeamsMeeting?omkt=fr-FR> | Référence système<https://teams.microsoft.com/l/meetup-join/19%3ameeting_OWU2ZTY0NjQtNDFkMi00ODZjLThiNTAtOTEzYmE4OTlhNGUx%40thread.v2/0?context=%7b%22Tid%22%3a%229d314297-75dc-4329-8f94-a66489b4b9bb%22%2c%22Oid%22%3a%221673828a-4664-46f0-915e-4e45206d27a5%22%7d>\nParticiper par téléphone\n+33 1 70 99 53 68,,962048942#<tel:+33170995368,,962048942#> France, All locations\nTrouver un numéro local<https://dialin.teams.cloud.microsoft/0a8459ad-73e7-4ad1-832c-20c519488366?id=962048942>\nNuméro de conférence téléphonique : 962 048 942#\nInviter quelqu’un à prendre part à une conversation sur un appareil en visioconférence\nClé du locataire : teams@video.cma-cgm.com\nNuméro de vidéo : 122 939 066 4\nPlus d’informations<https://pexip.me/teams/video.cma-cgm.com/1229390664>\nPour les organisateurs : Options de réunion<https://teams.microsoft.com/meetingOptions/?organizerId=1673828a-4664-46f0-915e-4e45206d27a5&tenantId=9d314297-75dc-4329-8f94-a66489b4b9bb&threadId=19_meeting_OWU2ZTY0NjQtNDFkMi00ODZjLThiNTAtOTEzYmE4OTlhNGUx@thread.v2&messageId=0&language=fr-FR> | Réinitialiser le code PIN d'appel<https://dialin.teams.cloud.microsoft/usp/pstnconferencing>\n________________________________________________________________________________\n",
-    "video_link": "https://teams.microsoft.com/meet/3217346193151518?p=NKPvBaVCT1XP87Fja2",
-    "html_link": "https://www.google.com/calendar/event?eid=XzYwcTMwYzFnNjBvMzBlMWk2MG80YWMxZzYwcmo4Z3BsODhyajJjMWg4NHMzNGg5ZzYwczMwYzFnNjBvMzBjMWc2b29rMmNhNjhvcDNjZ2E1NnNwNDhoMWc2NG8zMGMxZzYwbzMwYzFnNjBvMzBjMWc2MG8zMmMxZzYwbzMwYzFnNmQzM2VnaTQ2ZDFqMGUxbzZjcTNnaGhrNnQwamNoMWs3NHBrNmRwbzY1MWs0aGk2NzBvZyBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
-    "attendees": [
-      {
-        "name": "Guillaume DIGOIN",
-        "email": "guillaume.digoin@artefact.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Idriss RACHID",
-        "email": "idriss.rachid@artefact.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Alexandre THION DE LA CHAUME",
-        "email": "alexandre.thion-de-la-chaume@artefact.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Ayrton Andre",
-        "email": "ayrton.andre@artefact.com",
-        "status": "accepted",
-        "self": true,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Alexis CAPPE",
-        "email": "alexis.cappe@artefact.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Ho Npelissero",
-        "email": "ho.npelissero@cma-cgm.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "MONTELS Raphael",
-        "email": "ext.rmontels@cma-cgm.com",
-        "status": "accepted",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      },
-      {
-        "name": "Ho Vboss",
-        "email": "ho.vboss@cma-cgm.com",
-        "status": "needsAction",
-        "self": false,
-        "is_resource": false,
-        "optional": false
-      }
-    ],
-    "organizer": {
-      "name": "MONTELS Raphael",
-      "email": "ext.rmontels@cma-cgm.com",
-      "self": false
-    },
-    "status": "confirmed",
-    "is_all_day": false,
-    "colorId": "7",
-    "colorTag": "[MAIN MISSION]"
   },
   {
     "id": "nn17sih4h6cgni071eit7verj0_20261118",
@@ -3223,7 +2951,7 @@
   },
   {
     "id": "_60q30c1g60o30e1i60o4ac1g60rj8gpl88rj2c1h84s34h9g60s30c1g60o30c1g892jah9l88qk2gpn6t248h1g64o30c1g60o30c1g60o30c1g60o32c1g60o30c1g89330di4652jic9l64q34d1k8ks46e9o6ooj8di588sjed1p8krg",
-    "source": "💼 Artefact (Work)",
+    "source": "[ENGIE] - DIP MDM ASSET (Client)",
     "summary": "[DIP MDM ASSET] Introduction Ayrton",
     "start": "2026-11-27T09:00:00+01:00",
     "end": "2026-11-27T09:30:00+01:00",
@@ -3272,17 +3000,125 @@
     },
     "status": "confirmed",
     "is_all_day": false,
-    "colorId": "",
-    "colorTag": ""
+    "colorId": "7",
+    "colorTag": "[MAIN MISSION]"
+  },
+  {
+    "id": "2j89sjg1354ae9uabpdd7clcer",
+    "source": "[ENGIE] - DIP MDM ASSET (Client)",
+    "summary": "[ENGIE] - Intro Ayrton",
+    "start": "2026-11-27T14:45:00+01:00",
+    "end": "2026-11-27T15:15:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "https://meet.google.com/hqw-pqfw-iwv",
+    "html_link": "https://www.google.com/calendar/event?eid=Mmo4OXNqZzEzNTRhZTl1YWJwZGQ3Y2xjZXIgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [
+      {
+        "name": "Gregoire Bassaler",
+        "email": "gregoire.bassaler@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Charles Steimberg",
+        "email": "charles.steimberg@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": true
+      },
+      {
+        "name": "Omar Fekih-Hassen",
+        "email": "omar.fekih-hassen@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Ayrton Andre",
+      "email": "ayrton.andre@artefact.com",
+      "self": true
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "7",
+    "colorTag": "[MAIN MISSION]"
+  },
+  {
+    "id": "0rv4h23ptqk29kh06g54lmj2oa",
+    "source": "PrideFact (Artefact)",
+    "summary": "[BI-MONTHLY] - Last minute Synchro",
+    "start": "2026-11-27T15:30:00+01:00",
+    "end": "2026-11-27T16:00:00+01:00",
+    "location": "FR-Paris-Richer-Floor 5-Building 1-WALL-E-4p (4)",
+    "description": "",
+    "video_link": "https://meet.google.com/evt-irhi-woz",
+    "html_link": "https://www.google.com/calendar/event?eid=MHJ2NGgyM3B0cWsyOWtoMDZnNTRsbWoyb2EgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
+    "attendees": [
+      {
+        "name": "Edward Toulemonde",
+        "email": "edward.toulemonde@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Benjamin De-Girolamo",
+        "email": "benjamin.de-girolamo@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "FR-Paris-Richer-Floor 5-Building 1-WALL-E-4p (4)",
+        "email": "c_1881rhodqr1kmidmgujormkb97p0k@resource.calendar.google.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": true,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Benjamin De-Girolamo",
+      "email": "benjamin.de-girolamo@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "11",
+    "colorTag": "[PRIDEFACT]"
   },
   {
     "id": "7e9atpibopa2v6jlu4ecgfp109",
-    "source": "Clariane (Client)",
+    "source": "Artefact (Work)",
     "summary": "Bi-Monthly DA - Clariane REX ",
     "start": "2026-11-27T16:00:00+01:00",
     "end": "2026-11-27T17:00:00+01:00",
     "location": "FR-Paris-Richer-Floor 2-Building 2-ELIZA-14p (14) [TV Screen, Visio Conference]",
-    "description": "<p>📆 <b>Bi-Monthly DA #74 présenté par la Team Clariane ⚕️</b></p><p><b><br></b></p><p><b>Au programme :</b></p><ul><li><br>💡 <b>LLMs intégrés en pipeline :</b> découvrez nos bonnes pratiques pour embarquer des LLMs de manière fiable et industrialisée directement au cœur d’un pipeline data sur un cas d’usage de facturation.</li><li><br>⚙️ <b>Dev assisté par IA &amp; Write-back ERP :</b> comment nous avons utilisé l’IA pour accélérer le développement d’une application React interactive pour le planning, et nos clés pour concevoir une application soignée avec <i>write-back</i> ERP pour des pharmaciens !</li><li><br>💻 <b>It’s Demo Time !</b> Un condensé de démos concrètes des UCs développés chez Clariane pour simplifier le quotidien des équipes métier (Facturation, Kinés, Pharmaciens).</li><li>🎯 <b>Lessons learned :</b> nos principaux <i>key takeaways</i>, nos tops &amp; flops techniques et métier, et nos conseils pratiques pour passer du prototype à l’adoption terrain !</li></ul><p><br></p><p>👉 <b>Rdv ce vendredi 27 Novembre pour en savoir plus !</b></p>",
+    "description": "<p>📆 <b>Bi-Monthly DA #74 présenté par la Team Clariane ⚕️</b></p><p><b><br></b></p><p><b>Au programme :</b></p><ul><li>💡 <b>LLMs intégrés en pipeline :</b> découvrez nos bonnes pratiques pour embarquer des LLMs de manière fiable et industrialisée directement au cœur d’un pipeline data sur un cas d’usage de facturation.</li><li>⚙️ <b>Dev assisté par IA &amp; Write-back ERP :</b> comment nous avons utilisé l’IA pour accélérer le développement d’une application React interactive pour le planning, et nos clés pour concevoir une application soignée avec <i>write-back</i> ERP pour des pharmaciens !</li><li>💻 <b>It’s Demo Time !</b> Un condensé de démos concrètes des UCs développés chez Clariane pour simplifier le quotidien des équipes métier (Facturation, Kinés, Pharmaciens).</li><li>🎯 <b>Lessons learned :</b> nos principaux <i>key takeaways</i>, nos tops &amp; flops techniques et métier, et nos conseils pratiques pour passer du prototype à l’adoption terrain !</li></ul><p><br></p><p>👉 <b>Rdv ce vendredi 27 Novembre pour en savoir plus !</b></p>",
     "video_link": "https://meet.google.com/usi-uckz-svg",
     "html_link": "https://www.google.com/calendar/event?eid=N2U5YXRwaWJvcGEydjZqbHU0ZWNnZnAxMDkgYXlydG9uLmFuZHJlQGFydGVmYWN0LmNvbQ",
     "attendees": [
@@ -3342,8 +3178,8 @@
     },
     "status": "confirmed",
     "is_all_day": false,
-    "colorId": "",
-    "colorTag": ""
+    "colorId": "3",
+    "colorTag": "[ARTEFACT INTERNAL]"
   },
   {
     "id": "iaucvgq8s656cn8jho9qk41hs8_20261127T173000Z",
@@ -3472,6 +3308,76 @@
     "colorTag": "Me-time"
   },
   {
+    "id": "5ctct3qeugl62c2dv4lqvdn00o_20261130T083000Z",
+    "source": "[ENGIE] - DIP MDM ASSET (Client)",
+    "summary": "DIP - MDM - Asset focus",
+    "start": "2026-11-30T09:30:00+01:00",
+    "end": "2026-11-30T10:00:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "https://meet.google.com/ypu-vtzm-hsu",
+    "html_link": "https://www.google.com/calendar/event?eid=NWN0Y3QzcWV1Z2w2MmMyZHY0bHF2ZG4wMG9fMjAyNjExMzBUMDgzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Gregoire Bassaler",
+        "email": "gregoire.bassaler@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Charles Steimberg",
+        "email": "charles.steimberg@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Omar Fekih-Hassen",
+        "email": "omar.fekih-hassen@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Charles Steimberg",
+        "email": "charles.steimberg@external.engie.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Gregoire Bassaler",
+        "email": "gregoire.bassaler@external.engie.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Gregoire Bassaler",
+      "email": "gregoire.bassaler@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "7",
+    "colorTag": "[MAIN MISSION]"
+  },
+  {
     "id": "0aksbgvd2h8rf67h6qqk8n525a_20261130T100000Z",
     "source": "Counseling & HR (Artefact)",
     "summary": "[Counselling] - Ayrton → Roland",
@@ -3523,7 +3429,7 @@
       {
         "name": "Ayrton Andre",
         "email": "ayrton.andre@artefact.com",
-        "status": "needsAction",
+        "status": "accepted",
         "self": true,
         "is_resource": false,
         "optional": false
@@ -3768,6 +3674,76 @@
     "is_all_day": false,
     "colorId": "8",
     "colorTag": "Me-time"
+  },
+  {
+    "id": "5ctct3qeugl62c2dv4lqvdn00o_20261202T083000Z",
+    "source": "[ENGIE] - DIP MDM ASSET (Client)",
+    "summary": "DIP - MDM - Asset focus",
+    "start": "2026-12-02T09:30:00+01:00",
+    "end": "2026-12-02T10:00:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "https://meet.google.com/ypu-vtzm-hsu",
+    "html_link": "https://www.google.com/calendar/event?eid=NWN0Y3QzcWV1Z2w2MmMyZHY0bHF2ZG4wMG9fMjAyNjEyMDJUMDgzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Gregoire Bassaler",
+        "email": "gregoire.bassaler@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Charles Steimberg",
+        "email": "charles.steimberg@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Omar Fekih-Hassen",
+        "email": "omar.fekih-hassen@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Charles Steimberg",
+        "email": "charles.steimberg@external.engie.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Gregoire Bassaler",
+        "email": "gregoire.bassaler@external.engie.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Gregoire Bassaler",
+      "email": "gregoire.bassaler@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "7",
+    "colorTag": "[MAIN MISSION]"
   },
   {
     "id": "2kr7lv63poukdc3c5qhqqkiubs_20261202T113000Z",
@@ -4653,6 +4629,76 @@
     "colorTag": "Me-time"
   },
   {
+    "id": "5ctct3qeugl62c2dv4lqvdn00o_20261207T083000Z",
+    "source": "💼 Artefact (Work)",
+    "summary": "DIP - MDM - Asset focus",
+    "start": "2026-12-07T09:30:00+01:00",
+    "end": "2026-12-07T10:00:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "https://meet.google.com/ypu-vtzm-hsu",
+    "html_link": "https://www.google.com/calendar/event?eid=NWN0Y3QzcWV1Z2w2MmMyZHY0bHF2ZG4wMG9fMjAyNjEyMDdUMDgzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Gregoire Bassaler",
+        "email": "gregoire.bassaler@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Charles Steimberg",
+        "email": "charles.steimberg@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Omar Fekih-Hassen",
+        "email": "omar.fekih-hassen@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Charles Steimberg",
+        "email": "charles.steimberg@external.engie.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Gregoire Bassaler",
+        "email": "gregoire.bassaler@external.engie.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Gregoire Bassaler",
+      "email": "gregoire.bassaler@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "",
+    "colorTag": ""
+  },
+  {
     "id": "3ghselt9avavcoju8k3htnbp6c",
     "source": "Clariane (Client)",
     "summary": "[Clariane] Team Event Pink Mamma",
@@ -5259,6 +5305,76 @@
     "colorTag": "[ARTEFACT INTERNAL]"
   },
   {
+    "id": "5ctct3qeugl62c2dv4lqvdn00o_20261209T083000Z",
+    "source": "💼 Artefact (Work)",
+    "summary": "DIP - MDM - Asset focus",
+    "start": "2026-12-09T09:30:00+01:00",
+    "end": "2026-12-09T10:00:00+01:00",
+    "location": "",
+    "description": "",
+    "video_link": "https://meet.google.com/ypu-vtzm-hsu",
+    "html_link": "https://www.google.com/calendar/event?eid=NWN0Y3QzcWV1Z2w2MmMyZHY0bHF2ZG4wMG9fMjAyNjEyMDlUMDgzMDAwWiBheXJ0b24uYW5kcmVAYXJ0ZWZhY3QuY29t",
+    "attendees": [
+      {
+        "name": "Gregoire Bassaler",
+        "email": "gregoire.bassaler@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Charles Steimberg",
+        "email": "charles.steimberg@artefact.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Omar Fekih-Hassen",
+        "email": "omar.fekih-hassen@artefact.com",
+        "status": "accepted",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Ayrton Andre",
+        "email": "ayrton.andre@artefact.com",
+        "status": "accepted",
+        "self": true,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Charles Steimberg",
+        "email": "charles.steimberg@external.engie.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      },
+      {
+        "name": "Gregoire Bassaler",
+        "email": "gregoire.bassaler@external.engie.com",
+        "status": "needsAction",
+        "self": false,
+        "is_resource": false,
+        "optional": false
+      }
+    ],
+    "organizer": {
+      "name": "Gregoire Bassaler",
+      "email": "gregoire.bassaler@artefact.com",
+      "self": false
+    },
+    "status": "confirmed",
+    "is_all_day": false,
+    "colorId": "",
+    "colorTag": ""
+  },
+  {
     "id": "2kpmtqu06o2qqo30grgg56os1g_20261209T173000Z",
     "source": "ATHX (Training)",
     "summary": "🏃 ATHX Run 1: Zone 2 Aerobic Base & Cadence Drill",
@@ -5343,7 +5459,7 @@
       {
         "name": "Jamila Nasri",
         "email": "jamila.nasri@artefact.com",
-        "status": "needsAction",
+        "status": "declined",
         "self": false,
         "is_resource": false,
         "optional": false
@@ -6737,9 +6853,9 @@
   {
     "id": "2skf6uafvj0shld827g33rjpks_20261215T090000Z",
     "source": "Counseling & HR (Artefact)",
-    "summary": "[Counselling] - Jamila → Ayrton",
-    "start": "2026-12-15T10:00:00+01:00",
-    "end": "2026-12-15T10:30:00+01:00",
+    "summary": "[Restit éval | PDP] Jamila /Ayrton",
+    "start": "2026-12-15T09:30:00+01:00",
+    "end": "2026-12-15T10:00:00+01:00",
     "location": "",
     "description": "",
     "video_link": "https://meet.google.com/kes-ntzr-qve",
@@ -6748,7 +6864,7 @@
       {
         "name": "Ayrton Andre",
         "email": "ayrton.andre@artefact.com",
-        "status": "accepted",
+        "status": "needsAction",
         "self": true,
         "is_resource": false,
         "optional": false

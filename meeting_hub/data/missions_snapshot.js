@@ -2,6 +2,61 @@
 var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MISSIONS_SNAPSHOT = {
   "missions": [
     {
+      "id": "engie-dip-mdm-asset",
+      "name": "[ENGIE] - DIP MDM ASSET",
+      "client": "ENGIE",
+      "directory": "ENGIE DIP MDM ASSET",
+      "status": "active",
+      "archived": false,
+      "mainMissionFrom": "2026-11-26",
+      "brief": "ENGIE DIP MDM ASSET/Agent brief.md",
+      "overview": "ENGIE DIP MDM ASSET/Mission Overview.md",
+      "actions": "ENGIE DIP MDM ASSET/Actions.md",
+      "inbox": "ENGIE DIP MDM ASSET/_inbox",
+      "clientMatch": [
+        "[engie] - dip mdm asset",
+        "[dip mdm asset]",
+        "dip mdm asset",
+        "[engie]",
+        "engie",
+        "dip - mdm",
+        "asset focus",
+        "mdm asset",
+        "intro engie",
+        "[main mission]",
+        "main mission"
+      ],
+      "contacts": [
+        "omar fekih-hassen",
+        "grégoire bassaler",
+        "gregoire bassaler",
+        "charles steimberg",
+        "céline regnault",
+        "celine regnault",
+        "alain delava",
+        "léa rother",
+        "lea rother",
+        "gaëtan fenouil",
+        "gaetan fenouil"
+      ],
+      "workstreams": [
+        {
+          "id": "ws-engie-asset-model",
+          "name": "Asset & Sites Core Model",
+          "phase": "Actif",
+          "summary": "Modèle non-hiérarchique (Site/Functional Location, Unit, Equipment), tables satellites GBU (LEI, R&F, Networks, S&EM), liens datés et cas d'usage 24/7",
+          "note": "ENGIE DIP MDM ASSET/Asset & Sites Core Model.md"
+        },
+        {
+          "id": "ws-engie-mdm-arch",
+          "name": "MDM Architecture & Unique Group ID",
+          "phase": "Actif",
+          "summary": "Chantier critique Unique ID Groupe inter-GBU, architecture de consolidation Informatica (~90% read-only), gouvernance Data Owner et roadmap Q1 2027",
+          "note": "ENGIE DIP MDM ASSET/MDM Architecture & Unique Group ID.md"
+        }
+      ]
+    },
+    {
       "id": "ge-enterprise",
       "name": "GE Enterprise & UC Wizard",
       "client": "Artefact Internal",
@@ -187,8 +242,8 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
       "name": "CMA CGM - AI Agent Builders",
       "client": "CMA CGM",
       "directory": "CMA CGM Agent Builders",
-      "status": "active",
-      "archived": false,
+      "status": "archived",
+      "archived": true,
       "brief": "CMA CGM Agent Builders/Agent brief.md",
       "overview": "CMA CGM Agent Builders/Mission Overview.md",
       "actions": "CMA CGM Agent Builders/Actions.md",
@@ -201,9 +256,7 @@ var MISSIONS_SNAPSHOT = (typeof window !== "undefined" ? window : globalThis).MI
         "agent builders",
         "maia",
         "icap",
-        "ceva",
-        "[main mission]",
-        "main mission"
+        "ceva"
       ],
       "contacts": [
         "guillaume digoin",

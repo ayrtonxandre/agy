@@ -23,9 +23,15 @@ console.log('--- Running Mission Matcher Verification Tests ---');
 
 const mockRegistry = [
   {
+    id: 'engie-dip-mdm-asset',
+    name: '[ENGIE] - DIP MDM ASSET',
+    clientMatch: ['[engie] - dip mdm asset', '[dip mdm asset]', 'dip mdm asset', '[engie]', 'engie', 'dip - mdm', 'asset focus', 'mdm asset', 'intro engie', '[main mission]', 'main mission'],
+    contacts: ['Omar Fekih-Hassen', 'Grégoire Bassaler', 'Charles Steimberg', 'Céline Regnault', 'Alain Delava']
+  },
+  {
     id: 'cma-cgm',
     name: 'CMA CGM - AI Agent Builders',
-    clientMatch: ['cma cgm', 'cma-cgm', 'cma', 'sync cma cgm', 'agent builders', 'maia', 'icap', 'ceva', '[main mission]', 'main mission']
+    clientMatch: ['cma cgm', 'cma-cgm', 'cma', 'sync cma cgm', 'agent builders', 'maia', 'icap', 'ceva']
   },
   {
     id: 'ge-enterprise',
@@ -85,18 +91,24 @@ test('Priority 1: Matches [MO] to clariane-hdj', () => {
 });
 
 // 2. Visual Calendar Color Tag (Priority 2)
-test('Priority 2: Matches colorId "7" ([MAIN MISSION]) to cma-cgm', () => {
-  const event = { title: 'Sync CMA CGM', colorId: '7' };
+test('Priority 2: Matches colorId "7" ([MAIN MISSION]) on/after 2026-11-26 to engie-dip-mdm-asset', () => {
+  const event = { title: 'DIP - MDM - Asset focus', date: '2026-11-30', colorId: '7' };
   const res = matchMission(event, mockRegistry);
-  assert.strictEqual(res.missionId, 'cma-cgm');
+  assert.strictEqual(res.missionId, 'engie-dip-mdm-asset');
   assert.strictEqual(res.confidence, 'high');
 });
 
-test('Priority 2: Matches colorTag "[MAIN MISSION]" to cma-cgm', () => {
-  const event = { title: 'Sync Mistral CMA CGM', colorTag: '[MAIN MISSION]' };
+test('Priority 2: Matches colorTag "[MAIN MISSION]" on/after 2026-11-26 to engie-dip-mdm-asset', () => {
+  const event = { title: '[DIP MDM ASSET] Introduction Ayrton', date: '2026-11-27', colorTag: '[MAIN MISSION]' };
   const res = matchMission(event, mockRegistry);
-  assert.strictEqual(res.missionId, 'cma-cgm');
+  assert.strictEqual(res.missionId, 'engie-dip-mdm-asset');
   assert.strictEqual(res.confidence, 'high');
+});
+
+test('Priority 2: Forgets MAIN MISSION events prior to 2026-11-26', () => {
+  const event = { title: 'Sync CMA CGM', date: '2026-11-16', colorId: '7', colorTag: '[MAIN MISSION]' };
+  const res = matchMission(event, mockRegistry);
+  assert.strictEqual(res, null);
 });
 
 test('Priority 2: Matches colorId "2" ([COUNSELING/HR]) to counseling', () => {
@@ -157,10 +169,10 @@ test('Priority 0: Explicit projectId or missionId takes precedence', () => {
 });
 
 // Title override for conflicting color tags
-test('Priority 2: Title keyword "CMA CGM" overrides conflicting color tag "[PRIDEFACT]"', () => {
-  const event = { title: 'Sync CMA CGM', colorTag: '[PRIDEFACT]', colorId: '11' };
+test('Priority 2: Title keyword "Intro ENGIE" overrides conflicting color tag "[PRIDEFACT]"', () => {
+  const event = { title: 'Ayrton / Charles - Intro ENGIE', date: '2026-11-26', colorTag: '[PRIDEFACT]', colorId: '11' };
   const res = matchMission(event, mockRegistry);
-  assert.strictEqual(res.missionId, 'cma-cgm');
+  assert.strictEqual(res.missionId, 'engie-dip-mdm-asset');
   assert.strictEqual(res.confidence, 'high');
 });
 
