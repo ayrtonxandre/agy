@@ -562,8 +562,13 @@ def sync_garmin_personal(limit: int = 250, days_history: int = 45) -> dict:
         with open(OUTPUT_VOL_JSON, "w", encoding="utf-8") as f:
             json.dump(all_strength_sets, f, indent=2)
     if all_strength_sets:
+        strength_fields = [
+            "Activity_ID", "Date", "Activity_Name", "Exercise", "Set", "Reps",
+            "Weight_kg", "Total_Volume_kg", "e1RM_kg", "Duration_s",
+            "Concentric_Velocity_cm_ms", "Peak_Power_W", "Session_Type"
+        ]
         with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=list(all_strength_sets[0].keys()), extrasaction="ignore")
+            writer = csv.DictWriter(f, fieldnames=strength_fields, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(all_strength_sets)
     print(f"✔ Strength sets: {len(all_strength_sets)} records -> {OUTPUT_JSON.name} (volume symlinked)")
@@ -667,8 +672,13 @@ def sync_garmin_personal(limit: int = 250, days_history: int = 45) -> dict:
     with open(OUTPUT_ALL_JSON, "w", encoding="utf-8") as f:
         json.dump(all_master_activities, f, indent=2)
     if all_master_activities:
+        master_fields = [
+            "Activity_ID", "Date", "Start_Time", "Activity_Name", "Activity_Type",
+            "Primary_Category", "Duration_min", "Distance_km", "Calories_kcal",
+            "Average_HR", "Max_HR", "Training_Effect", "Notes"
+        ]
         with open(OUTPUT_ALL_CSV, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=list(all_master_activities[0].keys()), extrasaction="ignore")
+            writer = csv.DictWriter(f, fieldnames=master_fields, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(all_master_activities)
     print(f"✔ Master activity feed: {len(all_master_activities)} records -> {OUTPUT_ALL_JSON.name}")

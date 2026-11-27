@@ -670,9 +670,17 @@ def _process_health_auto_export_payload_locked(payload: dict) -> dict:
         dash_script = ATHX_DIR / "generate_unified_athlete_dashboard.py"
         if not dash_script.exists():
             dash_script = BASE_DIR / "generate_unified_athlete_dashboard.py"
+        dash_env = {
+            **os.environ,
+            "ATHX_OFFLINE_ONLY": "1",
+            "NO_PROXY": "*",
+            "no_proxy": "*",
+            "OBJC_DISABLE_INITIALIZE_FORK_SAFETY": "YES",
+        }
         res = subprocess.run(
             [get_python_binary(), str(dash_script)],
             cwd=str(ATHX_DIR),
+            env=dash_env,
             capture_output=True,
             text=True,
             timeout=60

@@ -51,15 +51,15 @@ def locate_agy_dir() -> Path:
         return self_path.parent
 
     # 3. Check persistent config file
-    if CONFIG_FILE.exists():
-        try:
+    try:
+        if CONFIG_FILE.exists():
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 saved_path = Path(data.get("agy_dir", ""))
                 if saved_path.exists():
                     return saved_path.resolve()
-        except Exception:
-            pass
+    except Exception:
+        pass
 
     # 4. Check standard candidate directories
     candidates = [
@@ -91,15 +91,15 @@ if str(ATHX_DIR) not in sys.path:
 def find_virtualenv_python(agy_dir: Path) -> Path | None:
     """Locates the virtualenv Python binary across machines."""
     # 1. Check persistent config
-    if CONFIG_FILE.exists():
-        try:
+    try:
+        if CONFIG_FILE.exists():
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 p = Path(data.get("python_bin", ""))
                 if p.exists() and os.access(str(p), os.X_OK):
                     return p
-        except Exception:
-            pass
+    except Exception:
+        pass
 
     # 2. Check virtualenv prefix
     if hasattr(sys, "base_prefix") and sys.prefix != sys.base_prefix:
@@ -745,12 +745,19 @@ def run_athlete_dashboard_build(agy_dir: Path, venv_py: Path, force_coach: bool 
         cmd = [str(venv_py), str(builder_script)]
         if force_coach:
             cmd.append("--force")
+        env = {
+            **os.environ,
+            "NO_PROXY": "*",
+            "no_proxy": "*",
+            "OBJC_DISABLE_INITIALIZE_FORK_SAFETY": "YES",
+        }
         res = subprocess.run(
             cmd,
             cwd=str(athx_dir),
+            env=env,
             capture_output=True,
             text=True,
-            timeout=35
+            timeout=90
         )
         if res.returncode == 0:
             return "success", "ATHX 2027: Rebuilt athlete headquarters (garmin_workout.html)"
