@@ -1,5 +1,20 @@
 [
   {
+    "Activity_ID": 25213496973,
+    "Date": "2026-11-27",
+    "Start_Time": "2026-11-27 06:44:42",
+    "Activity_Name": "CrossFit",
+    "Activity_Type": "indoor_cardio",
+    "Primary_Category": "Cardio / Cross-Training",
+    "Duration_min": 38.4,
+    "Distance_km": 0.0,
+    "Calories_kcal": 406,
+    "Average_HR": 125.0,
+    "Max_HR": 180.0,
+    "Training_Effect": "SPEED",
+    "Notes": "Warm-up \n15 burpees\n\nWOD  - 6 Rounds\n3 ring muscle-ups\n8 thrusters - 70Lbs\nRowing - 17 Cal"
+  },
+  {
     "Activity_ID": 25202187173,
     "Date": "2026-11-26",
     "Start_Time": "2026-11-26 06:42:00",
